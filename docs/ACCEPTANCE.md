@@ -17,12 +17,12 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 18 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 19 | 全部通过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **79** 个用例。
+合计 **80** 个用例。
 
 ---
 
@@ -72,6 +72,7 @@
 | `demo-animation-scene` | pass；13 条 F-Curve，1280×720 MP4，3.0s |
 | `demo-modify` | pass；基于 `scene.blend` 追加，11 个对象 |
 | 6 个 invalid 夹具 | 全部被拒绝 |
+| 契约与执行分离 | `test_validators_agree_without_generated_artifacts`：`base_blend` 尚未生成时两套校验器结论一致 |
 
 产物：`build/blender-scene-acceptance/blender/` 与 `manifests/`。
 

@@ -10,7 +10,7 @@
 | FR-02 V-01~V-09 | `CourseControl/validators.py` | `test_contracts.py`（V-04）、validate 全量 | `check.ps1` | VERIFIED |
 | FR-03 预览与截图 | `CourseSlides/`；`adapters/slides.py`；`RemotionStudio/scripts/capture-slides.mjs` | 无单测（依赖浏览器） | 真实课程 20/20；`lesson-smoke` recording 模式 `not_applicable` | VERIFIED |
 | FR-04 动画渲染 | `adapters/motion_canvas.py`、`manim.py`、`blender.py` | `test_staging.py`（合成）；无 Motion 单测 | `lesson-manual` 夹具；真实课程 `manual_export_required` | PARTIAL（人工导出） |
-| FR-05 IR v2 | `CourseControl/blender_scene.py`、`blender_runner.py`；`BlenderStudio/scripts/scene_system/`、`verify_scene.py` | `test_blender_scene.py`（8 例） | `check-scene-system.ps1 -Render` 4 次真实渲染 pass | VERIFIED |
+| FR-05 IR v2 | `CourseControl/blender_scene.py`、`blender_runner.py`；`BlenderStudio/scripts/scene_system/`、`verify_scene.py` | `test_blender_scene.py`（9 例） | `check-scene-system.ps1 -Render` 4 次真实渲染 pass | VERIFIED |
 | FR-06 本地建模 | `ModelingStudio/src/modeling_studio/` | `test_contracts.py`、`test_script_guard.py`、`test_validator.py`、`test_budget.py`、`test_job_state.py`、`test_server_busy.py`（28 例） | 历史作业 `sample-001` 六阶段 completed | PARTIAL（未重跑全链路） |
 | FR-07 时间线 | `CourseControl/collect.py`、`utils.py` | `test_contracts.py`、`test_staging.py` | `lesson-smoke` shots.json 通过 verify | VERIFIED |
 | FR-08 合成与验收 | `CourseControl/verify.py`、`report.py`、`adapters/remotion.py` | `test_staging.py`；verify 检查 | `lesson-smoke` / `lesson-blender-only` 均 pass | VERIFIED |

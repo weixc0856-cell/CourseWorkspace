@@ -104,6 +104,14 @@ class SceneContractTest(unittest.TestCase):
                 f"validators disagree on {path.name}: external={external_ok} blender={blender_ok}",
             )
 
+    def test_validators_agree_without_generated_artifacts(self):
+        """Contract validation must not depend on build/ artifacts existing."""
+        blender = load_blender_validator()
+        data = load_task("demo-modify.json")
+        data["base_blend"] = "build/blender-scene-acceptance/blender/not-generated-yet.blend"
+        validate_scene_task(data, WORKSPACE)
+        blender.validate_task(data, cwd=str(WORKSPACE))
+
 
 if __name__ == "__main__":
     unittest.main()

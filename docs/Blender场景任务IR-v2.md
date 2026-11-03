@@ -49,7 +49,7 @@ task.json
 | `cameras` | 否 | 相机列表；无 `base_blend` 时至少一台，且最多一台 `active` |
 | `lights` | 否 | 灯光列表 |
 | `animations` | 否 | 关键帧动画列表 |
-| `base_blend` | 否 | 以已有 `.blend` 为起点追加内容；必须在工作区内，扩展名为 `.blend` |
+| `base_blend` | 否 | 以已有 `.blend` 为起点追加内容；必须在工作区内，扩展名为 `.blend`。契约校验只检查路径；文件是否已生成由执行阶段检查 |
 | `render` | 是 | 渲染与输出配置 |
 
 标准集合固定为：

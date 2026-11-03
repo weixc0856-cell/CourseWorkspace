@@ -595,8 +595,8 @@ def validate_task(task, cwd=None):
             inside = False
         if not inside:
             raise TaskError("base_blend must be inside the workspace")
-        if not os.path.isfile(base_abs):
-            raise TaskError(f"base_blend not found: {base_blend}")
+        # Existence is an execution precondition (scene.open_base_blend), not a
+        # contract error: base files may be produced by an earlier task.
 
     render_in = _require_mapping(task.get("render"), "render")
     engine = render_in.get("engine", "BLENDER_EEVEE")
