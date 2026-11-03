@@ -1,0 +1,24 @@
+{
+  "name": "remotion-studio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Final video composition for CourseWorkspace",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts CourseVideo",
+    "capture": "node scripts/capture-slides.mjs",
+    "stage": "node scripts/stage-assets.mjs"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.539",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "playwright": "1.64.1",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "reveal-courseware",
+  "version": "1.0.0",
+  "private": true,
+  "description": "McKinsey-inspired bilingual technical courseware powered by reveal.js",
+  "scripts": {
+    "dev": "live-server .. --port=8081 --entry-file=index.html --watch=lessons,CourseSlides/template,CourseSlides/css"
+  },
+  "keywords": [
+    "reveal.js",
+    "courseware",
+    "presentation"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "reveal.js": "^6.0.2"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

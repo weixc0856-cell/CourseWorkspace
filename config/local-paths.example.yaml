@@ -1,0 +1,4 @@
+ai_root: "<AI_ROOT>"
+blender_exe: "<BLENDER_EXE>"
+workspace: "<WORKSPACE>"
+reference_project: "<REFERENCE_PROJECT>"

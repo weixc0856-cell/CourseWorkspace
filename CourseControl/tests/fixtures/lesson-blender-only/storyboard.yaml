@@ -1,0 +1,11 @@
+schema_version: 1
+lesson: lesson-blender-only
+
+shots:
+  - id: shot_001
+    slide: 1
+    engine: blender
+    scene: scenes/lesson-blender-only/overlay.blend
+    cue_seconds: 1
+    expected_duration_s: 1.0
+    blend_task: tasks/lesson-blender-only/overlay.json

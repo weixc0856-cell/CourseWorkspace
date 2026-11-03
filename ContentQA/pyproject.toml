@@ -1,0 +1,25 @@
+[project]
+name = "content-qa"
+version = "0.1.0"
+description = "Online-model content review for CourseWorkspace (read-only)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "ai-runtime",
+    "httpx>=0.27,<1",
+    "pydantic>=2.9,<3",
+    "PyYAML>=6.0,<7",
+    "typer>=0.12,<1",
+]
+
+[project.scripts]
+content-qa = "content_qa.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/content_qa"]
+
+[tool.uv.sources]
+ai-runtime = { path = "../shared/ai_runtime", editable = true }

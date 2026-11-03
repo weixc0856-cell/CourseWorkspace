@@ -1,0 +1,16 @@
+schema_version: 1
+
+# Copy to config/content-qa.yaml (ignored) and fill in a provider.
+# The API key must come from the environment; never commit credentials.
+model:
+  base_url: "https://api.example.com/v1"
+  model: "<MODEL_ID>"
+  api_key_env: "CONTENT_QA_API_KEY"
+  timeout_s: 120
+  max_tokens: 2048
+  temperature: 0.0
+  retries: 1
+
+# 8K-16K by default; raise to 32768 only for proven complex pages.
+context_limit: 16384
+sources_file: "sources.yaml"

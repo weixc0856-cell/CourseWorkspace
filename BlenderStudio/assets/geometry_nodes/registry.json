@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "assets": {
+    "gn.displace_noise": {
+      "blend": "BlenderStudio/assets/geometry_nodes/gn_library.blend",
+      "node_group": "GN_DisplaceNoise",
+      "version": "1.0.0",
+      "blender_min": "5.2",
+      "description": "Displace geometry along a 4D noise field.",
+      "inputs": {
+        "Scale": { "type": "float", "default": 2.0, "min": 0.0, "max": 1000.0 },
+        "Strength": { "type": "float", "default": 0.2, "min": 0.0, "max": 100.0 },
+        "Seed": { "type": "int", "default": 0, "min": 0, "max": 1000000 }
+      }
+    },
+    "gn.scatter_cubes": {
+      "blend": "BlenderStudio/assets/geometry_nodes/gn_library.blend",
+      "node_group": "GN_ScatterCubes",
+      "version": "1.0.0",
+      "blender_min": "5.2",
+      "description": "Scatter instanced cubes over input faces.",
+      "inputs": {
+        "Density": { "type": "float", "default": 20.0, "min": 0.0, "max": 100000.0 },
+        "Scale": { "type": "float", "default": 1.0, "min": 0.0, "max": 1000.0 },
+        "Seed": { "type": "int", "default": 0, "min": 0, "max": 1000000 },
+        "Material": { "type": "material", "required": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-blender-only",
+  "scene": "procedural_cube",
+  "engine": "BLENDER_EEVEE",
+  "resolution": [1920, 1080],
+  "fps": 30,
+  "frames": 30,
+  "samples": 8,
+  "format": "mp4",
+  "output": "build/lesson-blender-only/blender/overlay.mp4",
+  "blend": "BlenderStudio/scenes/lesson-blender-only/overlay.blend"
+}

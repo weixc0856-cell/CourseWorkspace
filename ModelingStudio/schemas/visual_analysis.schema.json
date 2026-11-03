@@ -1,0 +1,194 @@
+{
+  "$defs": {
+    "VisualMaterial": {
+      "properties": {
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "color": {
+          "default": "",
+          "title": "Color",
+          "type": "string"
+        },
+        "finish": {
+          "default": "",
+          "title": "Finish",
+          "type": "string"
+        },
+        "confidence": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "VisualMaterial",
+      "type": "object"
+    },
+    "VisualPart": {
+      "properties": {
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "geometry": {
+          "default": "unknown",
+          "enum": [
+            "cuboid",
+            "cylinder",
+            "sphere",
+            "cone",
+            "torus",
+            "flat_plate",
+            "custom_mesh",
+            "curved_surface",
+            "unknown"
+          ],
+          "title": "Geometry",
+          "type": "string"
+        },
+        "confidence": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "visible": {
+          "default": true,
+          "title": "Visible",
+          "type": "boolean"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "appearance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Appearance"
+        },
+        "relative_proportions": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relative Proportions"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "VisualPart",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "object": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Object",
+      "type": "string"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "parts": {
+      "items": {
+        "$ref": "#/$defs/VisualPart"
+      },
+      "minItems": 1,
+      "title": "Parts",
+      "type": "array"
+    },
+    "spatial_relations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Spatial Relations",
+      "type": "array"
+    },
+    "materials": {
+      "items": {
+        "$ref": "#/$defs/VisualMaterial"
+      },
+      "title": "Materials",
+      "type": "array"
+    },
+    "unknowns": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unknowns",
+      "type": "array"
+    },
+    "image_quality": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Quality"
+    }
+  },
+  "required": [
+    "object",
+    "parts"
+  ],
+  "title": "VisualAnalysis",
+  "type": "object"
+}

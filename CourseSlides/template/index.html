@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A bilingual technical courseware shell powered by reveal.js.">
+  <title>Technical Courseware</title>
+
+  <link rel="stylesheet" href="../node_modules/reveal.js/dist/reset.css">
+  <link rel="stylesheet" href="../node_modules/reveal.js/dist/reveal.css">
+  <link rel="stylesheet" href="../css/mckinsey-orange.css">
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <!--
+        This is the only reveal.js shell in the project.
+        Choose a lesson with ?lesson=<folder-name>, for example:
+        http://localhost:8081/?lesson=01-transformer-demo
+
+        The Markdown file is loaded by reveal.js after this page boots.
+        Use root-relative asset paths in slides.md, for example:
+        /lessons/01-transformer-demo/assets/diagram.svg
+      -->
+      <section
+        data-markdown="../../lessons/01-transformer-demo/slides.md"
+        data-separator="^\r?\n---\r?\n$"
+        data-separator-vertical="^\r?\n--\r?\n$"
+        data-separator-notes="^\s*notes?:"
+        data-charset="UTF-8"
+      ></section>
+    </div>
+  </div>
+
+  <script src="../node_modules/reveal.js/dist/reveal.js"></script>
+  <script src="../node_modules/reveal.js/dist/plugin/markdown.js"></script>
+  <script src="../node_modules/reveal.js/dist/plugin/highlight.js"></script>
+  <script src="../node_modules/reveal.js/dist/plugin/notes.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const DEFAULT_LESSON = "01-transformer-demo";
+      const LESSON_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+      const requestedLesson = new URLSearchParams(window.location.search).get("lesson");
+      const lesson = requestedLesson && LESSON_PATTERN.test(requestedLesson)
+        ? requestedLesson
+        : DEFAULT_LESSON;
+
+      if (requestedLesson && requestedLesson !== lesson) {
+        console.warn(
+          `[courseware] Invalid lesson slug "${requestedLesson}". Falling back to "${DEFAULT_LESSON}".`
+        );
+      }
+
+      const mount = document.querySelector(".slides > section[data-markdown]");
+      if (!mount) {
+        throw new Error("[courseware] Missing the Markdown slide mount.");
+      }
+
+      mount.setAttribute("data-markdown", `../../lessons/${lesson}/slides.md`);
+      document.documentElement.dataset.lesson = lesson;
+      document.title = `${lesson} · Technical Courseware`;
+
+      Reveal.initialize({
+        width: 1280,
+        height: 720,
+        margin: 0.04,
+        minScale: 0.2,
+        maxScale: 2,
+        hash: true,
+        history: true,
+        controls: true,
+        progress: true,
+        center: false,
+        slideNumber: "c/t",
+        transition: "fade",
+        backgroundTransition: "none",
+        navigationMode: "linear",
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+        markdown: {
+          smartypants: true
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

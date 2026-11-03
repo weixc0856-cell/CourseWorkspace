@@ -1,0 +1,130 @@
+# 决策记录（ADR）
+
+格式：每条只记录**已生效**的决策、理由与后果。历史细节见 `docs/archive/`。
+状态：`accepted` / `superseded`。
+
+| 编号 | 决策 | 状态 |
+| --- | --- | --- |
+| D-001 | 分层：内容 / 展示 / 动画 / 三维 / 合成 / 控制 / 共享 | accepted |
+| D-002 | 双文件契约：`slides.md` 给观众，`lecture_notes.md` 给讲者 | accepted |
+| D-003 | 课程内容独立到 `lessons/`，不归任何渲染工程 | accepted |
+| D-004 | Motion Canvas 采用人工导出（无 CLI 导出） | accepted |
+| D-005 | Remotion 通过 staging + `staticFile` 访问素材 | accepted |
+| D-006 | 五状态语义：`skip ≠ pass` | accepted |
+| D-007 | Blender v1（课程渲染任务）与 v2（场景任务）并存，分工明确 | accepted |
+| D-008 | 本地模型调用统一经 `shared/ai_runtime` 的跨进程锁 | accepted |
+| D-009 | 在线模型独立为 `ContentQA`，不与本地模型互相冒充 | accepted |
+| D-010 | 上下文预算分档 16K / 32K，64K 仅硬上限 | accepted |
+| D-011 | 文本模型 CPU-only；视觉模型允许 GPU，且与 ComfyUI 互斥 | accepted |
+| D-012 | 取消 8082 备用端口约定 | accepted |
+| D-013 | Manim 保活但不接入课程主流程 | accepted |
+| D-014 | 真实课程内容缺失与人工步骤如实进入交付状态，不伪装自动化 | accepted |
+
+---
+
+## D-001 分层架构
+
+**背景**：早期幻灯片、动画、视频混在一个工程里，任何人改动都可能破坏另一个人的产物。
+
+**决策**：内容（`lessons/`）、展示（`CourseSlides`）、动画（`MotionStudio` / `ManimSandbox`）、三维（`BlenderStudio`）、合成（`RemotionStudio`）、控制（`CourseControl`）、共享（`shared/`）分层；工程之间只通过文件契约交换数据。
+
+**后果**：每个工程可独立验证；代价是契约变更需要同步多处。
+
+## D-002 双文件契约
+
+**背景**：口播稿混进幻灯片会导致观众看到讲稿，也让页数统计失真。
+
+**决策**：`slides.md` 只放观众可见内容；`lecture_notes.md` 按 `### Slide N` 分块，每块四要素（时长预算、动画切入、技术核查、逐字口播）。
+
+**后果**：页数可被程序校验（V-03/V-04）；作者需要维护两份文件。
+
+## D-003 内容独立
+
+**背景**：R1 之前课程在 `CourseSlides/lessons/`，内容被展示引擎"拥有"。
+
+**决策**：迁移到根级 `lessons/`；任何渲染工程只读。
+
+**后果**：更换展示引擎不影响内容；旧路径不再出现。
+
+## D-004 Motion Canvas 人工导出
+
+**背景**：Motion Canvas 3.17.2 没有 CLI 渲染入口，官方只提供编辑器 RENDER 按钮。
+
+**备选**：Playwright 驱动编辑器（依赖 UI，易碎）；自建 headless exporter（逆向 API，维护成本高）。
+
+**决策**：人工导出到 `build/<slug>/animation/<scene-stem>.mp4`，控制层只校验。缺失时 `skipped` + `incomplete`。
+
+**后果**：纯 Motion 课程在导出前无法 `pass`；这是有意的，避免伪造通过。
+
+## D-005 Remotion 素材访问
+
+**背景**：Remotion 只能通过 `public/` 访问静态文件，而产物必须留在 `build/`。
+
+**决策**：`stage-assets.mjs` 把 `shots.json` 声明的文件复制到 `public/staging/<slug>/`；合成成功清理，失败保留。路径经 `staticFile()` 解析。
+
+**后果**：`build/` 仍是唯一产物源；staging 是唯一临时目录。
+
+## D-006 五状态语义
+
+**决策**：`pass` / `fail` / `skipped` / `not_run` / `not_applicable`；verdict 只能是 `pass` / `fail` / `incomplete`。
+
+**后果**：报告必须解释每个非 pass 阶段；`incomplete` 不等于失败，但绝不算完成。
+
+## D-007 Blender 双 Schema
+
+**背景**：v1 是课程流水线的最小渲染任务（`output`、`format`、`resolution`、`fps`、`frames`、可选 `blend`）；v2 是完整场景描述（对象、材质、相机、灯光、GN、动画）。
+
+**决策**：保留两代，按用途分工：
+
+- v1：`BlenderStudio/tasks/<lesson>/*.json`，由 `render:blender` 阶段消费；
+- v2：`BlenderStudio/tasks/scene-system/` 与 `ModelingStudio/tasks/`，由 `scene-run` 消费。
+
+两代都有独立校验器；不合并，因为 v1 的极简契约是课程夹具的稳定接口。
+
+**后果**：需要明确文档标注，避免新任务误用 v1。
+
+## D-008 本地模型跨进程锁
+
+**背景**：进程内互斥无法约束多个 Agent/项目同时调用 8080；用户要求严格串行。
+
+**决策**：`shared/ai_runtime` 提供文件锁（原子创建 + PID + 陈旧回收），任务全程持锁；服务只由持锁者启动，且只停止自己启动的实例。
+
+**后果**：并发调用会排队或 `blocked`；硬杀进程可能留下陈旧锁，由回收机制处理。
+
+## D-009 在线模型独立
+
+**决策**：在线模型调用只出现在 `ContentQA`；它只读课程、只写 `build/<slug>/review/`，不影响构建 verdict。无凭据时 `blocked`，不降级到本地模型。
+
+**后果**：在线审查可以独立演进；构建仍可离线复现。
+
+## D-010 上下文预算
+
+**决策**：默认 16K，复杂任务 32K，硬上限 64K；请求前估算，超限抛错并要求拆分。
+
+**后果**：长资料必须切分并保留来源；不允许静默截断。
+
+## D-011 模型硬件
+
+**背景**：全局约定文本模型 CPU-only；视觉模型需要 GPU 才能可用。
+
+**决策**：文本模型（planner/coder）保持 `-ngl 0`；视觉模型保留现有 SYCL 配置（用户既有环境，不擅自修改）。ComfyUI 与 GPU 视觉模型不得同时运行。
+
+**后果**：视觉阶段占用 A750；与 ComfyUI 的时间冲突由人工调度。
+
+## D-012 取消 8082
+
+**背景**：多份文档写“预览备用 8082”，代码从未实现。
+
+**决策**：删除该约定；预览与截图统一使用 8081，端口被占用时截图复用现有实例。
+
+## D-013 Manim 定位
+
+**背景**：`ManimSandbox` 有 demo 与适配器，但当前没有课程使用。
+
+**决策**：保留为可选能力与回归样例，不强行接入课程；接入需要新的 `storyboard` 镜头与真实验收。
+
+## D-014 不伪装自动化
+
+**决策**：人工导出、内容占位、凭据缺失、模型不可用都必须作为状态出现在报告与交付清单中。
+
+**后果**：真实课程的 `incomplete` 是合法交付状态；补全责任在内容作者。

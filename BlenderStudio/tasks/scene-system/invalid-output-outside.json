@@ -1,0 +1,324 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-demo-001",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_Demo",
+    "units": "METRIC",
+    "unit_scale": 1,
+    "fps": 30,
+    "frame_start": 1,
+    "frame_end": 90,
+    "seed": 7
+  },
+  "world": {
+    "background_color": [
+      0.035,
+      0.04,
+      0.05,
+      1
+    ],
+    "strength": 0.6
+  },
+  "materials": [
+    {
+      "id": "mat.floor",
+      "shader": "principled",
+      "params": {
+        "base_color": [
+          0.04,
+          0.045,
+          0.05,
+          1
+        ],
+        "roughness": 0.9
+      }
+    },
+    {
+      "id": "mat.cube",
+      "shader": "principled",
+      "params": {
+        "base_color": [
+          0.85,
+          0.32,
+          0.08,
+          1
+        ],
+        "metallic": 0.1,
+        "roughness": 0.35
+      }
+    },
+    {
+      "id": "mat.sphere",
+      "shader": "principled",
+      "params": {
+        "base_color": [
+          0.1,
+          0.45,
+          0.85,
+          1
+        ],
+        "metallic": 0.3,
+        "roughness": 0.2
+      }
+    },
+    {
+      "id": "mat.torus",
+      "shader": "emission",
+      "params": {
+        "color": [
+          0.2,
+          0.9,
+          0.6,
+          1
+        ],
+        "strength": 4
+      }
+    },
+    {
+      "id": "mat.child",
+      "shader": "principled",
+      "params": {
+        "base_color": [
+          0.9,
+          0.8,
+          0.2,
+          1
+        ],
+        "roughness": 0.4
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "ground.plane",
+      "type": "MESH",
+      "primitive": "PLANE",
+      "params": {
+        "size": 12
+      },
+      "transform": {
+        "location": [
+          0,
+          0,
+          0
+        ]
+      },
+      "material": "mat.floor",
+      "collection": "ENVIRONMENT/Ground"
+    },
+    {
+      "id": "prop.cube",
+      "type": "MESH",
+      "primitive": "CUBE",
+      "params": {
+        "size": 1.6
+      },
+      "transform": {
+        "location": [
+          -1.2,
+          0,
+          0.8
+        ],
+        "rotation": [
+          0,
+          0,
+          25
+        ]
+      },
+      "material": "mat.cube",
+      "collection": "ASSETS/Geometry"
+    },
+    {
+      "id": "prop.sphere",
+      "type": "MESH",
+      "primitive": "UV_SPHERE",
+      "params": {
+        "radius": 0.7,
+        "u_segments": 48,
+        "v_segments": 24
+      },
+      "transform": {
+        "location": [
+          1.3,
+          0,
+          0.7
+        ]
+      },
+      "material": "mat.sphere",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "deco.torus",
+      "type": "MESH",
+      "primitive": "TORUS",
+      "params": {
+        "major_radius": 0.9,
+        "minor_radius": 0.16,
+        "major_segments": 64,
+        "minor_segments": 16
+      },
+      "transform": {
+        "location": [
+          0,
+          1.8,
+          0.9
+        ],
+        "rotation": [
+          90,
+          0,
+          0
+        ]
+      },
+      "material": "mat.torus",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "rig.pivot",
+      "type": "EMPTY",
+      "transform": {
+        "location": [
+          2.8,
+          0,
+          0
+        ]
+      },
+      "collection": "ANIMATION/Objects",
+      "empty_size": 0.4
+    },
+    {
+      "id": "prop.child",
+      "type": "MESH",
+      "primitive": "CONE",
+      "params": {
+        "radius1": 0.45,
+        "radius2": 0,
+        "depth": 0.9,
+        "vertices": 32
+      },
+      "transform": {
+        "location": [
+          2.8,
+          0,
+          0.45
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "material": "mat.child",
+      "collection": "ANIMATION/Objects",
+      "parent": "rig.pivot",
+      "smooth": true
+    }
+  ],
+  "cameras": [
+    {
+      "id": "cam.main",
+      "location": [
+        7,
+        -7,
+        5
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ],
+      "focal_length": 50,
+      "sensor_width": 36,
+      "active": true,
+      "dof": {
+        "enabled": true,
+        "focus_distance": 10,
+        "f_stop": 4
+      }
+    }
+  ],
+  "lights": [
+    {
+      "id": "light.key",
+      "type": "AREA",
+      "location": [
+        4,
+        -4,
+        6
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ],
+      "energy": 900,
+      "size": 4,
+      "shape": "SQUARE",
+      "color": [
+        1,
+        0.96,
+        0.9
+      ]
+    },
+    {
+      "id": "light.fill",
+      "type": "POINT",
+      "location": [
+        -4,
+        -2,
+        3
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ],
+      "energy": 250,
+      "size": 0.5,
+      "color": [
+        0.65,
+        0.8,
+        1
+      ]
+    },
+    {
+      "id": "light.rim",
+      "type": "SPOT",
+      "location": [
+        0,
+        5,
+        5
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ],
+      "energy": 1200,
+      "spot_size": 50,
+      "spot_blend": 0.2,
+      "size": 0.8,
+      "color": [
+        0.9,
+        0.95,
+        1
+      ]
+    }
+  ],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [
+      1280,
+      720
+    ],
+    "samples": 32,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/other/scene.png",
+    "save_blend": "build/blender-scene-acceptance/blender/scene.blend",
+    "view_transform": "AgX"
+  }
+}

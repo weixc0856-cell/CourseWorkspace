@@ -1,0 +1,1282 @@
+{
+  "$defs": {
+    "AnimationChannel": {
+      "additionalProperties": false,
+      "properties": {
+        "property": {
+          "enum": [
+            "location",
+            "rotation",
+            "scale",
+            "energy",
+            "focal_length"
+          ],
+          "title": "Property",
+          "type": "string"
+        },
+        "keyframes": {
+          "items": {
+            "$ref": "#/$defs/Keyframe"
+          },
+          "minItems": 2,
+          "title": "Keyframes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "property",
+        "keyframes"
+      ],
+      "title": "AnimationChannel",
+      "type": "object"
+    },
+    "AnimationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Target",
+          "type": "string"
+        },
+        "channels": {
+          "items": {
+            "$ref": "#/$defs/AnimationChannel"
+          },
+          "minItems": 1,
+          "title": "Channels",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target",
+        "channels"
+      ],
+      "title": "AnimationSpec",
+      "type": "object"
+    },
+    "CameraSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "location": {
+          "default": [
+            0.0,
+            -6.0,
+            3.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Location",
+          "type": "array"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "focal_length": {
+          "default": 50.0,
+          "maximum": 500.0,
+          "minimum": 1.0,
+          "title": "Focal Length",
+          "type": "number"
+        },
+        "sensor_width": {
+          "default": 36.0,
+          "maximum": 200.0,
+          "minimum": 1.0,
+          "title": "Sensor Width",
+          "type": "number"
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        },
+        "collection": {
+          "default": "ANIMATION/Cameras",
+          "pattern": "^(?:ENVIRONMENT|ASSETS|ANIMATION|MATERIALS|OUTPUT)(?:/[A-Za-z][A-Za-z0-9_-]{0,63}){0,3}$",
+          "title": "Collection",
+          "type": "string"
+        },
+        "dof": {
+          "$ref": "#/$defs/DofSpec",
+          "default": {
+            "enabled": false,
+            "focus_distance": 5.0,
+            "f_stop": 2.8
+          }
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "CameraSpec",
+      "type": "object"
+    },
+    "DofSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "focus_distance": {
+          "default": 5.0,
+          "maximum": 1000000.0,
+          "minimum": 0.001,
+          "title": "Focus Distance",
+          "type": "number"
+        },
+        "f_stop": {
+          "default": 2.8,
+          "maximum": 128.0,
+          "minimum": 0.1,
+          "title": "F Stop",
+          "type": "number"
+        }
+      },
+      "title": "DofSpec",
+      "type": "object"
+    },
+    "EmissionMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "shader": {
+          "const": "emission",
+          "title": "Shader",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/EmissionParams",
+          "default": {
+            "color": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "strength": 1.0
+          }
+        }
+      },
+      "required": [
+        "id",
+        "shader"
+      ],
+      "title": "EmissionMaterial",
+      "type": "object"
+    },
+    "EmissionParams": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 100000.0,
+          "minimum": 0.0,
+          "title": "Strength",
+          "type": "number"
+        }
+      },
+      "title": "EmissionParams",
+      "type": "object"
+    },
+    "GeometryNodeEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Asset",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              }
+            ]
+          },
+          "title": "Params",
+          "type": "object"
+        }
+      },
+      "required": [
+        "asset"
+      ],
+      "title": "GeometryNodeEntry",
+      "type": "object"
+    },
+    "Keyframe": {
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "maximum": 36000,
+          "minimum": 0,
+          "title": "Frame",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            }
+          ],
+          "title": "Value"
+        },
+        "interpolation": {
+          "default": "BEZIER",
+          "enum": [
+            "CONSTANT",
+            "LINEAR",
+            "BEZIER"
+          ],
+          "title": "Interpolation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame",
+        "value"
+      ],
+      "title": "Keyframe",
+      "type": "object"
+    },
+    "LightSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "AREA",
+            "POINT",
+            "SUN",
+            "SPOT"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "location": {
+          "default": [
+            0.0,
+            0.0,
+            5.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Location",
+          "type": "array"
+        },
+        "rotation": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "color": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        },
+        "energy": {
+          "default": 1000.0,
+          "maximum": 10000000.0,
+          "minimum": 0.0,
+          "title": "Energy",
+          "type": "number"
+        },
+        "size": {
+          "default": 1.0,
+          "maximum": 10000.0,
+          "minimum": 0.0001,
+          "title": "Size",
+          "type": "number"
+        },
+        "size_y": {
+          "default": 1.0,
+          "maximum": 10000.0,
+          "minimum": 0.0001,
+          "title": "Size Y",
+          "type": "number"
+        },
+        "shape": {
+          "default": "SQUARE",
+          "enum": [
+            "SQUARE",
+            "RECTANGLE",
+            "DISK"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "spot_size": {
+          "default": 45.0,
+          "maximum": 180.0,
+          "minimum": 1.0,
+          "title": "Spot Size",
+          "type": "number"
+        },
+        "spot_blend": {
+          "default": 0.15,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Spot Blend",
+          "type": "number"
+        },
+        "collection": {
+          "default": "ENVIRONMENT/Lighting",
+          "pattern": "^(?:ENVIRONMENT|ASSETS|ANIMATION|MATERIALS|OUTPUT)(?:/[A-Za-z][A-Za-z0-9_-]{0,63}){0,3}$",
+          "title": "Collection",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "LightSpec",
+      "type": "object"
+    },
+    "ObjectSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "default": "MESH",
+          "enum": [
+            "MESH",
+            "EMPTY"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "primitive": {
+          "anyOf": [
+            {
+              "enum": [
+                "CUBE",
+                "PLANE",
+                "GRID",
+                "UV_SPHERE",
+                "ICO_SPHERE",
+                "CYLINDER",
+                "CONE",
+                "TORUS",
+                "CIRCLE"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primitive"
+        },
+        "params": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "transform": {
+          "$ref": "#/$defs/Transform",
+          "default": {
+            "location": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "material": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "collection": {
+          "default": "ASSETS/Geometry",
+          "pattern": "^(?:ENVIRONMENT|ASSETS|ANIMATION|MATERIALS|OUTPUT)(?:/[A-Za-z][A-Za-z0-9_-]{0,63}){0,3}$",
+          "title": "Collection",
+          "type": "string"
+        },
+        "smooth": {
+          "default": false,
+          "title": "Smooth",
+          "type": "boolean"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "empty_size": {
+          "default": 0.5,
+          "maximum": 10000.0,
+          "minimum": 1e-06,
+          "title": "Empty Size",
+          "type": "number"
+        },
+        "geometry_nodes": {
+          "items": {
+            "$ref": "#/$defs/GeometryNodeEntry"
+          },
+          "maxItems": 8,
+          "title": "Geometry Nodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ObjectSpec",
+      "type": "object"
+    },
+    "PrincipledMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "shader": {
+          "const": "principled",
+          "title": "Shader",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/PrincipledParams",
+          "default": {
+            "base_color": [
+              0.8,
+              0.8,
+              0.8,
+              1.0
+            ],
+            "metallic": 0.0,
+            "roughness": 0.5,
+            "alpha": 1.0,
+            "ior": 1.45,
+            "emission_color": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "emission_strength": 0.0
+          }
+        }
+      },
+      "required": [
+        "id",
+        "shader"
+      ],
+      "title": "PrincipledMaterial",
+      "type": "object"
+    },
+    "PrincipledParams": {
+      "additionalProperties": false,
+      "properties": {
+        "base_color": {
+          "default": [
+            0.8,
+            0.8,
+            0.8,
+            1.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Base Color",
+          "type": "array"
+        },
+        "metallic": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Metallic",
+          "type": "number"
+        },
+        "roughness": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Roughness",
+          "type": "number"
+        },
+        "alpha": {
+          "default": 1.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Alpha",
+          "type": "number"
+        },
+        "ior": {
+          "default": 1.45,
+          "maximum": 3.0,
+          "minimum": 1.0,
+          "title": "Ior",
+          "type": "number"
+        },
+        "emission_color": {
+          "default": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Emission Color",
+          "type": "array"
+        },
+        "emission_strength": {
+          "default": 0.0,
+          "maximum": 100000.0,
+          "minimum": 0.0,
+          "title": "Emission Strength",
+          "type": "number"
+        }
+      },
+      "title": "PrincipledParams",
+      "type": "object"
+    },
+    "RenderSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
+          "default": "BLENDER_EEVEE",
+          "enum": [
+            "BLENDER_EEVEE",
+            "BLENDER_EEVEE_NEXT",
+            "CYCLES",
+            "BLENDER_WORKBENCH"
+          ],
+          "title": "Engine",
+          "type": "string"
+        },
+        "resolution": {
+          "default": [
+            1920,
+            1080
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Resolution",
+          "type": "array"
+        },
+        "fps": {
+          "anyOf": [
+            {
+              "maximum": 240,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fps"
+        },
+        "samples": {
+          "default": 16,
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Samples",
+          "type": "integer"
+        },
+        "format": {
+          "default": "png",
+          "enum": [
+            "png",
+            "mp4"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "frame": {
+          "default": 1,
+          "maximum": 36000,
+          "minimum": 0,
+          "title": "Frame",
+          "type": "integer"
+        },
+        "output": {
+          "title": "Output",
+          "type": "string"
+        },
+        "save_blend": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Save Blend"
+        },
+        "view_transform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "View Transform"
+        },
+        "look": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Look"
+        },
+        "film_transparent": {
+          "default": false,
+          "title": "Film Transparent",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "output"
+      ],
+      "title": "RenderSpec",
+      "type": "object"
+    },
+    "SceneSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "Scene",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "units": {
+          "default": "METRIC",
+          "enum": [
+            "METRIC",
+            "IMPERIAL",
+            "NONE"
+          ],
+          "title": "Units",
+          "type": "string"
+        },
+        "unit_scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": 1e-06,
+          "title": "Unit Scale",
+          "type": "number"
+        },
+        "fps": {
+          "default": 30,
+          "maximum": 240,
+          "minimum": 1,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "frame_start": {
+          "default": 1,
+          "maximum": 36000,
+          "minimum": 0,
+          "title": "Frame Start",
+          "type": "integer"
+        },
+        "frame_end": {
+          "default": 1,
+          "maximum": 36000,
+          "minimum": 0,
+          "title": "Frame End",
+          "type": "integer"
+        },
+        "seed": {
+          "default": 0,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "title": "SceneSpec",
+      "type": "object"
+    },
+    "Transform": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Location",
+          "type": "array"
+        },
+        "rotation": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rotation",
+          "type": "array"
+        },
+        "scale": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Scale",
+          "type": "array"
+        }
+      },
+      "title": "Transform",
+      "type": "object"
+    },
+    "WorldSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "background_color": {
+          "default": [
+            0.05,
+            0.05,
+            0.05,
+            1.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Background Color",
+          "type": "array"
+        },
+        "strength": {
+          "default": 1.0,
+          "maximum": 100000.0,
+          "minimum": 0.0,
+          "title": "Strength",
+          "type": "number"
+        }
+      },
+      "title": "WorldSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 2,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "task_id": {
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "lesson": {
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Lesson",
+      "type": "string"
+    },
+    "operation": {
+      "const": "build_scene",
+      "default": "build_scene",
+      "title": "Operation",
+      "type": "string"
+    },
+    "scene": {
+      "$ref": "#/$defs/SceneSpec",
+      "default": {
+        "name": "Scene",
+        "units": "METRIC",
+        "unit_scale": 1.0,
+        "fps": 30,
+        "frame_start": 1,
+        "frame_end": 1,
+        "seed": 0
+      }
+    },
+    "collections": {
+      "items": {
+        "pattern": "^(?:ENVIRONMENT|ASSETS|ANIMATION|MATERIALS|OUTPUT)(?:/[A-Za-z][A-Za-z0-9_-]{0,63}){0,3}$",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Collections",
+      "type": "array"
+    },
+    "world": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WorldSpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "materials": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "emission": "#/$defs/EmissionMaterial",
+            "principled": "#/$defs/PrincipledMaterial"
+          },
+          "propertyName": "shader"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/PrincipledMaterial"
+          },
+          {
+            "$ref": "#/$defs/EmissionMaterial"
+          }
+        ]
+      },
+      "title": "Materials",
+      "type": "array"
+    },
+    "objects": {
+      "items": {
+        "$ref": "#/$defs/ObjectSpec"
+      },
+      "maxItems": 1000,
+      "title": "Objects",
+      "type": "array"
+    },
+    "cameras": {
+      "items": {
+        "$ref": "#/$defs/CameraSpec"
+      },
+      "title": "Cameras",
+      "type": "array"
+    },
+    "lights": {
+      "items": {
+        "$ref": "#/$defs/LightSpec"
+      },
+      "title": "Lights",
+      "type": "array"
+    },
+    "animations": {
+      "items": {
+        "$ref": "#/$defs/AnimationSpec"
+      },
+      "title": "Animations",
+      "type": "array"
+    },
+    "base_blend": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Base Blend"
+    },
+    "render": {
+      "$ref": "#/$defs/RenderSpec"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "lesson",
+    "render"
+  ],
+  "title": "BlenderSceneTask",
+  "type": "object"
+}

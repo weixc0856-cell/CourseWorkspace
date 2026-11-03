@@ -1,0 +1,16 @@
+schema_version: 1
+blender:
+  # Absolute path to blender.exe. Replace this placeholder locally; never commit the real machine path.
+  executable: "<BLENDER_EXE>"
+  background: true
+  timeout_seconds: 1800
+  engine: BLENDER_EEVEE
+  device: CPU
+ffmpeg:
+  ffmpeg: "ffmpeg"
+  ffprobe: "ffprobe"
+node:
+  node: "node"
+  npm: "npm"
+python:
+  uv: "uv"

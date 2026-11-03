@@ -1,0 +1,17 @@
+# Python 虚拟环境（项目本地，不入库）
+.venv/
+__pycache__/
+*.py[cod]
+
+# Manim 渲染产物：视频、切片、缓存、LaTeX 中间文件
+media/
+*.mp4
+*.png
+*.log
+*.srt
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

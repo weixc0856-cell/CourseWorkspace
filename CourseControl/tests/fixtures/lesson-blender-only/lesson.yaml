@@ -1,0 +1,39 @@
+schema_version: 1
+lesson_id: lesson-blender-only
+title_en: R4 Blender-Only Fixture
+title_zh: R4 纯 Blender 夹具
+status: draft
+
+content:
+  slides: slides.md
+  notes: lecture_notes.md
+  outline: null
+  storyboard: storyboard.yaml
+  assets: assets/
+  subtitles: null
+
+outputs:
+  fps: 30
+  resolution: [1920, 1080]
+  slides_canvas: [1280, 720]
+  animation_canvas: [1920, 1080]
+
+engines: [blender]
+
+compose:
+  mode: recording
+  base_video: slides/recording.mp4
+
+narration:
+  enabled: false
+  source: null
+
+subtitles:
+  enabled: false
+
+acceptance:
+  notes_total_seconds: 6
+  duration_tolerance_seconds: 0.5
+
+build:
+  allow_manual_animation_export: true

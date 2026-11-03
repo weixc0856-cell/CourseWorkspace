@@ -1,0 +1,314 @@
+{
+  "$defs": {
+    "Acceptance": {
+      "additionalProperties": false,
+      "properties": {
+        "notes_total_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes Total Seconds"
+        },
+        "duration_tolerance_seconds": {
+          "default": 2.0,
+          "title": "Duration Tolerance Seconds",
+          "type": "number"
+        }
+      },
+      "title": "Acceptance",
+      "type": "object"
+    },
+    "BuildOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_manual_animation_export": {
+          "default": true,
+          "title": "Allow Manual Animation Export",
+          "type": "boolean"
+        }
+      },
+      "title": "BuildOptions",
+      "type": "object"
+    },
+    "Compose": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "deck",
+            "recording"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "base_video": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Video"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "Compose",
+      "type": "object"
+    },
+    "Content": {
+      "additionalProperties": false,
+      "properties": {
+        "slides": {
+          "title": "Slides",
+          "type": "string"
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outline"
+        },
+        "storyboard": {
+          "title": "Storyboard",
+          "type": "string"
+        },
+        "assets": {
+          "title": "Assets",
+          "type": "string"
+        },
+        "subtitles": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtitles"
+        }
+      },
+      "required": [
+        "slides",
+        "notes",
+        "storyboard",
+        "assets"
+      ],
+      "title": "Content",
+      "type": "object"
+    },
+    "Narration": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        }
+      },
+      "title": "Narration",
+      "type": "object"
+    },
+    "Outputs": {
+      "additionalProperties": false,
+      "properties": {
+        "fps": {
+          "default": 30,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "resolution": {
+          "default": [
+            1920,
+            1080
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Resolution",
+          "type": "array"
+        },
+        "slides_canvas": {
+          "default": [
+            1280,
+            720
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Slides Canvas",
+          "type": "array"
+        },
+        "animation_canvas": {
+          "default": [
+            1920,
+            1080
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Animation Canvas",
+          "type": "array"
+        }
+      },
+      "title": "Outputs",
+      "type": "object"
+    },
+    "Subtitles": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "Subtitles",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "title_en": {
+      "title": "Title En",
+      "type": "string"
+    },
+    "title_zh": {
+      "title": "Title Zh",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "review",
+        "final"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "content": {
+      "$ref": "#/$defs/Content"
+    },
+    "outputs": {
+      "$ref": "#/$defs/Outputs"
+    },
+    "engines": {
+      "items": {
+        "enum": [
+          "motion_canvas",
+          "manim",
+          "blender"
+        ],
+        "type": "string"
+      },
+      "title": "Engines",
+      "type": "array"
+    },
+    "compose": {
+      "$ref": "#/$defs/Compose"
+    },
+    "narration": {
+      "$ref": "#/$defs/Narration",
+      "default": {
+        "enabled": false,
+        "source": null
+      }
+    },
+    "subtitles": {
+      "$ref": "#/$defs/Subtitles",
+      "default": {
+        "enabled": false
+      }
+    },
+    "acceptance": {
+      "$ref": "#/$defs/Acceptance",
+      "default": {
+        "notes_total_seconds": null,
+        "duration_tolerance_seconds": 2.0
+      }
+    },
+    "build": {
+      "$ref": "#/$defs/BuildOptions",
+      "default": {
+        "allow_manual_animation_export": true
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "lesson_id",
+    "title_en",
+    "title_zh",
+    "status",
+    "content",
+    "outputs",
+    "engines",
+    "compose"
+  ],
+  "title": "LessonConfig",
+  "type": "object"
+}

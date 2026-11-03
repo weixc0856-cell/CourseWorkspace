@@ -1,0 +1,16 @@
+[project]
+name = "ai-runtime"
+version = "0.1.0"
+description = "Shared local-model runtime: cross-process lock, service lifecycle, task records, context budget"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[project.scripts]
+ai-runtime = "ai_runtime.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_runtime"]

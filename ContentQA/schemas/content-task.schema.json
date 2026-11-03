@@ -1,0 +1,46 @@
+{
+  "properties": {
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "slide": {
+      "title": "Slide",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "failed",
+        "blocked",
+        "skipped"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "estimated_input_tokens": {
+      "default": 0,
+      "title": "Estimated Input Tokens",
+      "type": "integer"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    }
+  },
+  "required": [
+    "task_id",
+    "slide",
+    "status"
+  ],
+  "title": "ReviewTask",
+  "type": "object"
+}

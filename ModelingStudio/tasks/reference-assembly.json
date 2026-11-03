@@ -1,0 +1,241 @@
+{
+  "schema_version": 2,
+  "task_id": "modeling-reference-assembly",
+  "lesson": "modeling-fixture",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_ReferenceAssembly",
+    "units": "METRIC",
+    "unit_scale": 1.0,
+    "fps": 30,
+    "frame_start": 1,
+    "frame_end": 1,
+    "seed": 0
+  },
+  "world": {
+    "background_color": [0.55, 0.58, 0.62, 1.0],
+    "strength": 0.8
+  },
+  "materials": [
+    {
+      "id": "mat.base",
+      "shader": "principled",
+      "params": {
+        "base_color": [0.12, 0.16, 0.2, 1.0],
+        "metallic": 0.25,
+        "roughness": 0.55
+      }
+    },
+    {
+      "id": "mat.steel",
+      "shader": "principled",
+      "params": {
+        "base_color": [0.62, 0.65, 0.68, 1.0],
+        "metallic": 0.85,
+        "roughness": 0.3
+      }
+    },
+    {
+      "id": "mat.brass",
+      "shader": "principled",
+      "params": {
+        "base_color": [0.78, 0.6, 0.22, 1.0],
+        "metallic": 0.9,
+        "roughness": 0.25
+      }
+    },
+    {
+      "id": "mat.bolt",
+      "shader": "principled",
+      "params": {
+        "base_color": [0.08, 0.08, 0.09, 1.0],
+        "metallic": 0.7,
+        "roughness": 0.4
+      }
+    },
+    {
+      "id": "mat.ground",
+      "shader": "principled",
+      "params": {
+        "base_color": [0.42, 0.45, 0.48, 1.0],
+        "metallic": 0.0,
+        "roughness": 0.9
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "ground",
+      "type": "MESH",
+      "primitive": "PLANE",
+      "params": { "size": 3.0 },
+      "transform": { "location": [0, 0, 0] },
+      "material": "mat.ground",
+      "collection": "ENVIRONMENT/Ground"
+    },
+    {
+      "id": "base_plate",
+      "type": "MESH",
+      "primitive": "CUBE",
+      "params": { "size": 1.0 },
+      "transform": {
+        "location": [0, 0, 0.02],
+        "scale": [0.3, 0.2, 0.04]
+      },
+      "material": "mat.base",
+      "collection": "ASSETS/Geometry"
+    },
+    {
+      "id": "shaft",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.02, "depth": 0.26, "vertices": 48 },
+      "transform": { "location": [0, 0, 0.17] },
+      "material": "mat.steel",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "collar",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.035, "depth": 0.04, "vertices": 48 },
+      "transform": { "location": [0, 0, 0.08] },
+      "material": "mat.brass",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "top_cap",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.038, "depth": 0.025, "vertices": 48 },
+      "transform": { "location": [0, 0, 0.306] },
+      "material": "mat.steel",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "knob",
+      "type": "MESH",
+      "primitive": "UV_SPHERE",
+      "params": { "radius": 0.04, "u_segments": 40, "v_segments": 20 },
+      "transform": { "location": [0, 0, 0.34] },
+      "material": "mat.brass",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "bracket_vertical",
+      "type": "MESH",
+      "primitive": "CUBE",
+      "params": { "size": 1.0 },
+      "transform": {
+        "location": [0.1, 0, 0.1],
+        "scale": [0.06, 0.025, 0.12]
+      },
+      "material": "mat.steel",
+      "collection": "ASSETS/Geometry"
+    },
+    {
+      "id": "bracket_horizontal",
+      "type": "MESH",
+      "primitive": "CUBE",
+      "params": { "size": 1.0 },
+      "transform": {
+        "location": [0.1, 0.05, 0.05],
+        "scale": [0.06, 0.1, 0.025]
+      },
+      "material": "mat.steel",
+      "collection": "ASSETS/Geometry"
+    },
+    {
+      "id": "bolt_front_left",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.008, "depth": 0.014, "vertices": 24 },
+      "transform": { "location": [-0.12, -0.07, 0.047] },
+      "material": "mat.bolt",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "bolt_front_right",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.008, "depth": 0.014, "vertices": 24 },
+      "transform": { "location": [0.12, -0.07, 0.047] },
+      "material": "mat.bolt",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "bolt_back_left",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.008, "depth": 0.014, "vertices": 24 },
+      "transform": { "location": [-0.12, 0.07, 0.047] },
+      "material": "mat.bolt",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    },
+    {
+      "id": "bolt_back_right",
+      "type": "MESH",
+      "primitive": "CYLINDER",
+      "params": { "radius": 0.008, "depth": 0.014, "vertices": 24 },
+      "transform": { "location": [0.12, 0.07, 0.047] },
+      "material": "mat.bolt",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    }
+  ],
+  "cameras": [
+    {
+      "id": "Camera",
+      "location": [0.62, -0.72, 0.46],
+      "target": [0.02, 0, 0.16],
+      "focal_length": 60.0,
+      "active": true
+    }
+  ],
+  "lights": [
+    {
+      "id": "light.key",
+      "type": "AREA",
+      "location": [0.65, -0.5, 0.95],
+      "target": [0, 0, 0.15],
+      "energy": 160.0,
+      "size": 0.7,
+      "color": [1.0, 0.97, 0.92]
+    },
+    {
+      "id": "light.fill",
+      "type": "AREA",
+      "location": [-0.6, 0.25, 0.55],
+      "target": [0, 0, 0.15],
+      "energy": 55.0,
+      "size": 0.8,
+      "color": [0.75, 0.85, 1.0]
+    },
+    {
+      "id": "light.rim",
+      "type": "POINT",
+      "location": [0.1, 0.55, 0.7],
+      "target": [0, 0, 0.25],
+      "energy": 45.0,
+      "size": 0.05,
+      "color": [1.0, 0.9, 0.8]
+    }
+  ],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [1024, 768],
+    "samples": 64,
+    "format": "png",
+    "frame": 1,
+    "output": "build/modeling-fixture/blender/reference.png",
+    "save_blend": "build/modeling-fixture/blender/reference.blend",
+    "view_transform": "AgX"
+  }
+}

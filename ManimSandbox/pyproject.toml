@@ -1,0 +1,13 @@
+[project]
+name = "manim-sandbox"
+version = "0.1.0"
+description = "Manim scenes for the bilingual technical courseware (fallback for math-heavy animation)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "manim==0.22.0",
+]
+
+[tool.uv]
+# 仓库只放场景脚本，不作为可安装包构建
+package = false

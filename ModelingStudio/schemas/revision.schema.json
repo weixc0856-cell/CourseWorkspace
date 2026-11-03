@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "RevisionDifference": {
+      "properties": {
+        "area": {
+          "default": "",
+          "title": "Area",
+          "type": "string"
+        },
+        "expected": {
+          "default": "",
+          "title": "Expected",
+          "type": "string"
+        },
+        "observed": {
+          "default": "",
+          "title": "Observed",
+          "type": "string"
+        },
+        "severity": {
+          "default": "medium",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "title": "RevisionDifference",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "differences": {
+      "items": {
+        "$ref": "#/$defs/RevisionDifference"
+      },
+      "title": "Differences",
+      "type": "array"
+    },
+    "suggestions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Suggestions",
+      "type": "array"
+    },
+    "rebuild_recommended": {
+      "default": false,
+      "title": "Rebuild Recommended",
+      "type": "boolean"
+    }
+  },
+  "title": "Revision",
+  "type": "object"
+}

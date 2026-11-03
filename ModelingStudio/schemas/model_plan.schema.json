@@ -1,0 +1,535 @@
+{
+  "$defs": {
+    "PlanCamera": {
+      "properties": {
+        "location": {
+          "default": [
+            0.6,
+            -0.6,
+            0.45
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Location",
+          "type": "array"
+        },
+        "target": {
+          "default": [
+            0.0,
+            0.0,
+            0.1
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Target",
+          "type": "array"
+        },
+        "focal_length": {
+          "default": 50.0,
+          "maximum": 300.0,
+          "minimum": 1.0,
+          "title": "Focal Length",
+          "type": "number"
+        }
+      },
+      "title": "PlanCamera",
+      "type": "object"
+    },
+    "PlanLight": {
+      "properties": {
+        "type": {
+          "default": "AREA",
+          "enum": [
+            "AREA",
+            "POINT",
+            "SUN",
+            "SPOT"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "location": {
+          "default": [
+            0.5,
+            -0.4,
+            0.8
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Location",
+          "type": "array"
+        },
+        "target": {
+          "default": [
+            0.0,
+            0.0,
+            0.1
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Target",
+          "type": "array"
+        },
+        "energy": {
+          "default": 150.0,
+          "maximum": 1000000.0,
+          "minimum": 0.0,
+          "title": "Energy",
+          "type": "number"
+        },
+        "size": {
+          "default": 0.6,
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Size",
+          "type": "number"
+        },
+        "color": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        }
+      },
+      "title": "PlanLight",
+      "type": "object"
+    },
+    "PlanMaterial": {
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "base_color": {
+          "default": [
+            0.6,
+            0.6,
+            0.6,
+            1.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Base Color",
+          "type": "array"
+        },
+        "metallic": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Metallic",
+          "type": "number"
+        },
+        "roughness": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Roughness",
+          "type": "number"
+        },
+        "emission_color": {
+          "default": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Emission Color",
+          "type": "array"
+        },
+        "emission_strength": {
+          "default": 0.0,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Emission Strength",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "PlanMaterial",
+      "type": "object"
+    },
+    "PlanPart": {
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "geometry": {
+          "default": "unknown",
+          "enum": [
+            "cuboid",
+            "cylinder",
+            "sphere",
+            "cone",
+            "torus",
+            "flat_plate",
+            "custom_mesh",
+            "curved_surface",
+            "unknown"
+          ],
+          "title": "Geometry",
+          "type": "string"
+        },
+        "size": {
+          "default": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Size",
+          "type": "array"
+        },
+        "location": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Location",
+          "type": "array"
+        },
+        "rotation": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rotation",
+          "type": "array"
+        },
+        "material_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material Id"
+        },
+        "operations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Operations",
+          "type": "array"
+        },
+        "mesh_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mesh Hint"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "confidence": {
+          "default": 0.5,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "PlanPart",
+      "type": "object"
+    },
+    "PlanRender": {
+      "properties": {
+        "resolution": {
+          "default": [
+            1280,
+            720
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Resolution",
+          "type": "array"
+        },
+        "samples": {
+          "default": 32,
+          "maximum": 512,
+          "minimum": 1,
+          "title": "Samples",
+          "type": "integer"
+        }
+      },
+      "title": "PlanRender",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "object_name": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Object Name",
+      "type": "string"
+    },
+    "units": {
+      "const": "METRIC",
+      "default": "METRIC",
+      "title": "Units",
+      "type": "string"
+    },
+    "coordinate_system": {
+      "const": "Z_UP",
+      "default": "Z_UP",
+      "title": "Coordinate System",
+      "type": "string"
+    },
+    "assumptions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "parts": {
+      "items": {
+        "$ref": "#/$defs/PlanPart"
+      },
+      "minItems": 1,
+      "title": "Parts",
+      "type": "array"
+    },
+    "materials": {
+      "items": {
+        "$ref": "#/$defs/PlanMaterial"
+      },
+      "title": "Materials",
+      "type": "array"
+    },
+    "camera": {
+      "$ref": "#/$defs/PlanCamera",
+      "default": {
+        "location": [
+          0.6,
+          -0.6,
+          0.45
+        ],
+        "target": [
+          0.0,
+          0.0,
+          0.1
+        ],
+        "focal_length": 50.0
+      }
+    },
+    "lights": {
+      "items": {
+        "$ref": "#/$defs/PlanLight"
+      },
+      "title": "Lights",
+      "type": "array"
+    },
+    "render": {
+      "$ref": "#/$defs/PlanRender",
+      "default": {
+        "resolution": [
+          1280,
+          720
+        ],
+        "samples": 32
+      }
+    },
+    "build_order": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Build Order",
+      "type": "array"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "object_name",
+    "parts"
+  ],
+  "title": "ModelPlan",
+  "type": "object"
+}

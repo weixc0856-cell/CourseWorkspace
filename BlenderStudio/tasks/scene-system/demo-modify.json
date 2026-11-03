@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-demo-modify",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "base_blend": "build/blender-scene-acceptance/blender/scene.blend",
+  "scene": {
+    "name": "Scene_Demo",
+    "units": "METRIC",
+    "unit_scale": 1.0,
+    "fps": 30,
+    "frame_start": 1,
+    "frame_end": 90,
+    "seed": 7
+  },
+  "materials": [
+    {
+      "id": "mat.extra",
+      "shader": "principled",
+      "params": {
+        "base_color": [0.85, 0.1, 0.35, 1.0],
+        "metallic": 0.2,
+        "roughness": 0.3
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "prop.extra",
+      "type": "MESH",
+      "primitive": "ICO_SPHERE",
+      "params": { "radius": 0.55, "subdivisions": 3 },
+      "transform": { "location": [0.0, -2.2, 0.55] },
+      "material": "mat.extra",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    }
+  ],
+  "cameras": [],
+  "lights": [],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [1280, 720],
+    "samples": 32,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/blender/modified.png",
+    "save_blend": "build/blender-scene-acceptance/blender/modified.blend",
+    "view_transform": "AgX"
+  }
+}

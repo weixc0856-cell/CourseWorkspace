@@ -1,0 +1,61 @@
+{
+  "$defs": {
+    "Finding": {
+      "description": "One candidate claim from the online model. Never a final decision.",
+      "properties": {
+        "slide": {
+          "minimum": 1,
+          "title": "Slide",
+          "type": "integer"
+        },
+        "claim": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "verdict": {
+          "default": "needs_human_review",
+          "enum": [
+            "supported",
+            "unsupported",
+            "disputed",
+            "needs_human_review",
+            "not_checked"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "rationale": {
+          "default": "",
+          "title": "Rationale",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "slide",
+        "claim"
+      ],
+      "title": "Finding",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    }
+  },
+  "title": "ModelReply",
+  "type": "object"
+}

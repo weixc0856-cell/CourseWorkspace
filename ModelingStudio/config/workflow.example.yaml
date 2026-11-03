@@ -1,0 +1,54 @@
+schema_version: 1
+
+llm:
+  base_url: "http://127.0.0.1:8080/v1"
+  api_key: "sk-local"
+  request_timeout_s: 900
+  max_retries: 1
+
+server:
+  executable: "<AI_ROOT>/bin-sycl/llama-server.exe"
+  host: "127.0.0.1"
+  port: 8080
+  startup_timeout_s: 300
+  stop_timeout_s: 30
+  log_dir: "logs"
+
+models:
+  vision:
+    path: "<AI_ROOT>/models/Qwen3VL-30B-A3B-Instruct-Q4_K_M.gguf"
+    mmproj: "<AI_ROOT>/models/mmproj-Qwen3VL-30B-A3B-Instruct-F16.gguf"
+    alias: "Qwen3VL-30B-A3B-Instruct-Q4_K_M"
+    context: 16384
+    args:
+      - "-dev"
+      - "SYCL0"
+      - "-ngl"
+      - "99"
+      - "--n-cpu-moe"
+      - "48"
+      - "--image-min-tokens"
+      - "1024"
+  planner:
+    path: "<AI_ROOT>/models/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"
+    alias: "Qwen3-30B-A3B-Instruct-2507"
+    context: 32768
+    args: ["-ngl", "0", "--reasoning", "off"]
+  coder:
+    path: "<AI_ROOT>/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
+    alias: "Qwen3-Coder-30B-A3B-Instruct-Q4_K_M"
+    context: 32768
+    args: ["-ngl", "0", "--reasoning", "off"]
+
+blender:
+  executable: "<BLENDER_EXE>"
+  timeout_seconds: 900
+
+jobs_root: "workspace/jobs"
+
+runtime:
+  # Shared with every other project that calls the local model on 8080.
+  lock_path: "../runtime/locks/llama-8080.lock"
+  task_root: "../runtime/tasks"
+  lock_timeout_s: 3600
+  stale_after_s: 3600

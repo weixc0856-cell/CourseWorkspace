@@ -1,0 +1,204 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-gn-001",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_GeometryNodes",
+    "units": "METRIC",
+    "unit_scale": 1,
+    "fps": 30,
+    "frame_start": 1,
+    "frame_end": 60,
+    "seed": 11
+  },
+  "world": {
+    "background_color": [
+      0.02,
+      0.025,
+      0.035,
+      1
+    ],
+    "strength": 0.35
+  },
+  "materials": [
+    {
+      "id": "mat.terrain",
+      "shader": "principled",
+      "params": {
+        "base_color": [
+          0.06,
+          0.08,
+          0.09,
+          1
+        ],
+        "metallic": 0.1,
+        "roughness": 0.65
+      }
+    },
+    {
+      "id": "mat.glow",
+      "shader": "principled",
+      "params": {
+        "base_color": [
+          0.05,
+          0.2,
+          0.25,
+          1
+        ],
+        "metallic": 0.6,
+        "roughness": 0.25,
+        "emission_color": [
+          0.1,
+          0.8,
+          0.7,
+          1
+        ],
+        "emission_strength": 1.2
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "env.terrain",
+      "type": "MESH",
+      "primitive": "GRID",
+      "params": {
+        "size": 14,
+        "x_segments": 48,
+        "y_segments": 48
+      },
+      "transform": {
+        "location": [
+          0,
+          0,
+          0
+        ]
+      },
+      "material": "mat.terrain",
+      "collection": "ENVIRONMENT/Ground",
+      "smooth": true,
+      "geometry_nodes": [
+        {
+          "asset": "gn.displace_noise",
+          "params": {
+            "Scale": 2.2,
+            "Strength": 0.18,
+            "Seed": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "deco.ring",
+      "type": "MESH",
+      "primitive": "TORUS",
+      "params": {
+        "major_radius": 2,
+        "minor_radius": 0.38,
+        "major_segments": 96,
+        "minor_segments": 24
+      },
+      "transform": {
+        "location": [
+          0,
+          0,
+          2.4
+        ],
+        "rotation": [
+          90,
+          0,
+          0
+        ]
+      },
+      "material": "mat.glow",
+      "collection": "ASSETS/Procedural",
+      "smooth": false,
+      "geometry_nodes": [
+        {
+          "asset": "gn.scatter_cubes",
+          "params": {
+            "Density": 550,
+            "Scale": 0.45,
+            "Seed": 3,
+            "Material": "mat.glow"
+          }
+        }
+      ]
+    }
+  ],
+  "cameras": [
+    {
+      "id": "cam.main",
+      "location": [
+        6.5,
+        -7,
+        4.6
+      ],
+      "target": [
+        0,
+        0,
+        1.6
+      ],
+      "focal_length": 45,
+      "active": true
+    }
+  ],
+  "lights": [
+    {
+      "id": "light.key",
+      "type": "AREA",
+      "location": [
+        4,
+        -4,
+        7
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ],
+      "energy": 1100,
+      "size": 5,
+      "color": [
+        1,
+        0.95,
+        0.88
+      ]
+    },
+    {
+      "id": "light.rim",
+      "type": "POINT",
+      "location": [
+        -3.5,
+        4,
+        4
+      ],
+      "target": [
+        0,
+        0,
+        2.4
+      ],
+      "energy": 400,
+      "size": 0.4,
+      "color": [
+        0.5,
+        0.85,
+        1
+      ]
+    }
+  ],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [
+      1280,
+      720
+    ],
+    "samples": 32,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/blender/geometry-nodes.png",
+    "save_blend": "build/blender-scene-acceptance/blender/geometry-nodes.blend",
+    "view_transform": "AgX"
+  }
+}

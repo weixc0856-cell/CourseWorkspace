@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "Shot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "slide",
+            "animation",
+            "recording"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "slide": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Slide"
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Engine"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "timeline_role": {
+          "enum": [
+            "base",
+            "overlay"
+          ],
+          "title": "Timeline Role",
+          "type": "string"
+        },
+        "presentation": {
+          "anyOf": [
+            {
+              "enum": [
+                "cutaway",
+                "picture_in_picture",
+                "transparent_overlay"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presentation"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "source",
+        "start_s",
+        "duration_s",
+        "timeline_role"
+      ],
+      "title": "Shot",
+      "type": "object"
+    },
+    "Timeline": {
+      "additionalProperties": false,
+      "properties": {
+        "fps": {
+          "exclusiveMinimum": 0,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "resolution": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Resolution",
+          "type": "array"
+        },
+        "total_duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Total Duration S",
+          "type": "number"
+        }
+      },
+      "required": [
+        "fps",
+        "resolution",
+        "total_duration_s"
+      ],
+      "title": "Timeline",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson": {
+      "title": "Lesson",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "timeline": {
+      "$ref": "#/$defs/Timeline"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/Shot"
+      },
+      "title": "Shots",
+      "type": "array"
+    },
+    "narration": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Narration"
+    },
+    "subtitles": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Subtitles"
+    }
+  },
+  "required": [
+    "lesson",
+    "generated_at",
+    "timeline",
+    "shots"
+  ],
+  "title": "ShotsFile",
+  "type": "object"
+}
