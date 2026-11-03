@@ -63,6 +63,8 @@ CourseWorkspace/
 
 ## 3. 调用关系
 
+> 面向操作的完整流程（输入、输出、人工节点、失败恢复）见 [WORKFLOW.md](WORKFLOW.md)。
+
 ### 3.1 课程构建
 
 ```text

@@ -12,7 +12,10 @@
 - 系统结构与数据契约：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 验收与命令：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
 - 决策记录：[docs/DECISIONS.md](docs/DECISIONS.md)
+- 当前状态与 PRD 盘点：[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
+- 真实工作流：[docs/WORKFLOW.md](docs/WORKFLOW.md)
 - 需求—模块—测试映射：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
+- 前端评估：[docs/FRONTEND_ASSESSMENT.md](docs/FRONTEND_ASSESSMENT.md)
 
 ## 2. 不可突破的硬约束
 
