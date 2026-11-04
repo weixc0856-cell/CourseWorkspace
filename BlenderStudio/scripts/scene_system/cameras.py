@@ -28,6 +28,8 @@ def create_cameras(specs, task_id):
         if name in bpy.data.objects:
             raise TaskError(f"object already exists in base scene: {name}")
         data = bpy.data.cameras.new(name)
+        data.type = "ORTHO" if spec["projection"] == "ORTHO" else "PERSP"
+        data.ortho_scale = spec["ortho_scale"]
         data.lens = spec["focal_length"]
         data.sensor_width = spec["sensor_width"]
         data.dof.use_dof = spec["dof"]["enabled"]

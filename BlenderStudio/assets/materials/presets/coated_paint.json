@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "preset": "coated_paint",
+  "shader": "principled",
+  "params": {
+    "base_color": [
+      0.1,
+      0.25,
+      0.6,
+      1.0
+    ],
+    "metallic": 0.1,
+    "roughness": 0.3,
+    "coat_weight": 1.0,
+    "coat_roughness": 0.05
+  }
+}

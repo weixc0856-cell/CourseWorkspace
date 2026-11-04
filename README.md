@@ -116,4 +116,6 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 - 运行时：[本地模型与配音工作流](docs/本地模型与配音工作流.md) · [AI-Blender 本地建模工作流](docs/AI-Blender本地建模工作流.md)
 - 三维契约：[Blender 场景任务 IR v2](docs/Blender场景任务IR-v2.md)
 - 流程：[提交前检查清单](docs/提交前检查清单.md)
+- 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
+- 产品决策：[前端必要性评估](docs/FRONTEND_ASSESSMENT.md)
 - 历史：[docs/archive/](docs/archive/README.md)

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "preset": "aluminum_brushed",
+  "shader": "principled",
+  "params": {
+    "base_color": [
+      0.72,
+      0.74,
+      0.78,
+      1.0
+    ],
+    "metallic": 0.9,
+    "roughness": 0.35,
+    "bump_strength": 0.15,
+    "bump_distance": 0.01,
+    "bump_scale": 40.0,
+    "bump_detail": 2.0
+  }
+}

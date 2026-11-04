@@ -5,7 +5,15 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .contracts import Shot, ShotsFile, Timeline
+from .colormaps import load_colormaps
+from .contracts import (
+    Annotation,
+    LegendAnnotation,
+    Shot,
+    ShotsFile,
+    TextAnnotation,
+    Timeline,
+)
 from .paths import ContractError, LessonPaths
 from .utils import count_srt_cues, load_json, page_budgets, probe_audio, probe_media
 
@@ -28,6 +36,74 @@ def _animation_source(paths: LessonPaths, shot) -> Path:
     if not output.is_absolute():
         output = paths.workspace / output
     return output
+
+
+def resolve_annotations(
+    specs,
+    page_starts: list[float],
+    budgets: list[float],
+    total_duration: float,
+    colormaps: dict | None = None,
+) -> list[Annotation]:
+    annotations: list[Annotation] = []
+    for spec in specs:
+        if spec.slide > len(budgets):
+            raise ContractError(f"{spec.id}: slide {spec.slide} exceeds {len(budgets)}")
+        start = page_starts[spec.slide - 1] + spec.cue_seconds
+        page_end = page_starts[spec.slide - 1] + budgets[spec.slide - 1]
+        end = start + spec.duration_s
+        if end > page_end + 0.05:
+            raise ContractError(
+                f"{spec.id}: annotation {start:.3f}+{spec.duration_s:.3f}s "
+                f"exceeds page {spec.slide} end {page_end:.3f}s"
+            )
+        if end > total_duration + 0.05:
+            raise ContractError(
+                f"{spec.id}: annotation ends at {end:.3f}s "
+                f"beyond timeline {total_duration:.3f}s"
+            )
+        common = {
+            "id": spec.id,
+            "start_s": round(start, 3),
+            "duration_s": round(spec.duration_s, 3),
+            "position": spec.position,
+        }
+        if spec.kind == "text":
+            annotations.append(
+                TextAnnotation(
+                    kind="text",
+                    text=spec.text,
+                    size=spec.size,
+                    align=spec.align,
+                    color=spec.color,
+                    background=spec.background,
+                    **common,
+                )
+            )
+            continue
+        definition = (colormaps or {}).get(spec.colormap)
+        if definition is None:
+            raise ContractError(
+                f"{spec.id}: unknown colormap {spec.colormap!r}; "
+                f"available: {sorted(colormaps or {})}"
+            )
+        annotations.append(
+            LegendAnnotation(
+                kind="legend",
+                colormap=spec.colormap,
+                min_value=spec.min_value,
+                max_value=spec.max_value,
+                units=spec.units,
+                stops=[
+                    (position, tuple(color)) for position, color in definition["stops"]
+                ],
+                bar_height=spec.bar_height,
+                bar_width=spec.bar_width,
+                label_size=spec.label_size,
+                **common,
+            )
+        )
+    return annotations
 
 
 def _relative_to_build(paths: LessonPaths, path: Path) -> str:
@@ -162,6 +238,17 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
         outputs.append(target)
         subtitles = {"path": "subtitles.srt", "cues": count_srt_cues(target)}
 
+    colormaps = None
+    if any(spec.kind == "legend" for spec in paths.storyboard.annotations):
+        colormaps = load_colormaps(paths.workspace)
+    annotations = resolve_annotations(
+        paths.storyboard.annotations,
+        page_starts,
+        budgets,
+        total_duration,
+        colormaps,
+    )
+
     shots_file = ShotsFile(
         lesson=paths.slug,
         generated_at=datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -171,6 +258,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
             total_duration_s=round(total_duration, 3),
         ),
         shots=shots,
+        annotations=annotations,
         narration=narration,
         subtitles=subtitles,
     )

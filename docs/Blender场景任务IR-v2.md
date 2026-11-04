@@ -88,7 +88,7 @@ OUTPUT
 
 ## 4. materials
 
-材质分两种 shader，`shader` 必填，参数白名单外一律拒绝。
+材质两种写法二选一：直接写 `shader` + `params`，或用 `preset` 引用预设。`preset` 不能与 `shader` / `params` 同时出现；控制层在双端校验前将其展开为等价的 `shader` + `params`，因此 Blender 只见过展开后的任务。
 
 ```json
 {
@@ -101,9 +101,21 @@ OUTPUT
     "alpha": 1.0,
     "ior": 1.45,
     "emission_color": [0.0, 0.0, 0.0, 1.0],
-    "emission_strength": 0.0
+    "emission_strength": 0.0,
+    "coat_weight": 0.0,
+    "coat_roughness": 0.03,
+    "bump_strength": 0.0,
+    "bump_distance": 0.02,
+    "bump_scale": 8.0,
+    "bump_detail": 4.0
   }
 }
+```
+
+预设写法：
+
+```json
+{ "id": "mat.aluminum", "preset": "aluminum_brushed" }
 ```
 
 | shader | 参数 | 范围 / 默认 |
@@ -112,10 +124,48 @@ OUTPUT
 | | `metallic` / `roughness` / `alpha` | `[0,1]`，默认 `0 / 0.5 / 1` |
 | | `ior` | `[1,3]`，默认 `1.45` |
 | | `emission_color` / `emission_strength` | RGBA / `[0,1e5]`，默认全黑 / `0` |
+| | `coat_weight` / `coat_roughness` | `[0,1]`，默认 `0 / 0.03` |
+| | `bump_strength` / `bump_distance` | `[0,1]` / `[1e-4,1]`，默认 `0 / 0.02`；`bump_strength = 0` 时不创建节点 |
+| | `bump_scale` / `bump_detail` | `[0.1,1000]` / `[0,16]`，默认 `8 / 4` |
 | `emission` | `color` | RGBA，默认白 |
 | | `strength` | `[0,1e5]`，默认 `1` |
+| `scientific_colormap` | `source_attribute` | 必填，对象点属性名 |
+| | `min_value` / `max_value` | 必填，`min < max`，不允许自动范围 |
+| | `units` | 必填，1–32 字符 |
+| | `colormap` | 必填，必须存在于 `shared/colormaps.json` |
 
-`alpha < 1` 时自动切换到混合渲染模式。节点输入按名称查找，不按索引硬编码。
+`alpha < 1` 时自动切换到混合渲染模式。节点输入按名称查找，不按索引硬编码。`bump_strength > 0` 时执行器创建 `Noise Texture → Bump → Normal` 节点链，不依赖外部贴图。
+
+### 4.1 材质预设
+
+- 目录：`BlenderStudio/assets/materials/presets/*.json`，每个文件一个预设，字段为 `schema_version`、`preset`、`shader`、`params`。
+- 当前预设：`studio_floor`、`aluminum_brushed`、`matte_plastic`、`coated_paint`、`rubber_matte`、`transparent_sheet`、`emissive_white`。
+- 展开在控制层完成（`scene_presets.expand_task`）；`scene-validate` 与 `scene-run` 都走同一条展开路径。
+- manifest 记录 `presets`（材质 id、预设名、文件路径）、`source_task_hash` 与展开后的 `task_hash`；有预设时另存 `<task_id>.expanded.json` 作为执行输入。
+- 材质语义验收：`scene.materials` 回读每个材质的 shader、socket 值以及 Bump 节点参数，与展开后的任务逐项比对。
+
+### 4.2 科学着色与对象属性
+
+- `scientific_colormap` 与 PBR 语义分离：不提供 metallic / roughness 等参数；节点链为 `Attribute → Map Range → Color Ramp → Emission`。
+- 颜色映射范围固定，**不提供 `auto`**；缺 `source_attribute`、`min_value`、`max_value`、`units`、`colormap` 任一项即校验失败。
+- 对象通过 `attributes[]` 声明点属性（仅 `MESH`，最多 8 个，名称唯一）：
+
+```json
+"attributes": [
+  { "name": "pressure", "field": { "kind": "axis", "axis": "x", "scale": 120.0, "offset": 0.0 } }
+]
+```
+
+| field.kind | 参数 | 说明 |
+| --- | --- | --- |
+| `axis` | `axis`（x/y/z）、`scale`、`offset` | 局部坐标的线性映射 |
+| `distance` | `point`、`scale` | 到点的欧氏距离 |
+| `noise` | `scale`、`seed` | 确定性哈希噪声，0–1 |
+
+- 字段是声明式数据，不是表达式；任意表达式留给 P4，真实数据导入留给 P5。
+- 科学材质只能挂在包含同名属性的对象上，否则校验失败。
+- 颜色定义只在 `shared/colormaps.json`；Blender 与 Remotion 色标读同一份文件。
+- 场景报告对每个属性取首/中/末三个顶点复算并比对；不一致产生 `ATTRIBUTE_MISMATCH`。
 
 ## 5. objects
 
@@ -140,7 +190,9 @@ OUTPUT
 }
 ```
 
-- `type`：`MESH` / `EMPTY`。相机与灯光走独立数组，不放进 `objects`。
+- `type`：`MESH` / `EMPTY` / `TEXT` / `CURVE`。相机与灯光走独立数组，不放进 `objects`。
+- `primitive`、`params`、`geometry_nodes`、`smooth` 只适用于 `MESH`；`text` / `curve` 只适用于对应类型（见 §5.1.1）。
+- `material` 适用于 `MESH` / `TEXT` / `CURVE`，不适用于 `EMPTY`。
 - `rotation` 单位为**度**，内部转换为弧度；`scale` 必须全部大于 0。
 - `transform` 是世界空间变换。设置 `parent` 时保留世界变换（通过 `matrix_parent_inverse`）。
 - 对象名使用 `id`；与 `base_blend` 中已有对象重名会直接失败，避免静默改名。
@@ -161,6 +213,64 @@ OUTPUT
 | `CIRCLE` | `radius`（1.0）、`vertices`（32）、`fill`（true） |
 
 所有分段数上限 512；场景对象上限 1000，场景条目总数上限 2000。
+
+### 5.1.1 TEXT 与 CURVE
+
+`TEXT` 使用 `text` 对象；`CURVE` 使用 `curve` 对象。两者互斥，且不能与 `primitive` / `params` / `geometry_nodes` / `smooth` 同时出现。
+
+```json
+{
+  "id": "label.formula",
+  "type": "TEXT",
+  "text": {
+    "body": "sin(x) = 0.5",
+    "size": 0.34,
+    "align_x": "LEFT",
+    "align_y": "CENTER"
+  },
+  "transform": { "location": [0, 0, 1.5], "rotation": [90, 0, 0] },
+  "material": "mat.label"
+}
+```
+
+```json
+{
+  "id": "path.parabola",
+  "type": "CURVE",
+  "curve": {
+    "points": [[-2.4, 0, 0.35], [0, 0, 1.0], [2.4, 0, 0.35]],
+    "bevel_depth": 0.03
+  },
+  "material": "mat.curve"
+}
+```
+
+`text` 字段：
+
+| 字段 | 默认 | 范围 |
+| --- | --- | --- |
+| `body` | 必填 | 1–512 字符；不能全为空白 |
+| `size` | 0.5 | 0.001–1000 |
+| `align_x` | `LEFT` | `LEFT` / `CENTER` / `RIGHT` |
+| `align_y` | `BOTTOM` | `TOP` / `CENTER` / `BOTTOM` |
+| `extrude` | 0.0 | 0–100 |
+| `bevel_depth` | 0.0 | 0–100 |
+| `space_line` | 1.0 | 0.1–10 |
+
+- 使用 Blender 内置字体（Bfont），不加载外部字体文件，不引入字体资产。
+- 首期承诺范围：数字、英文、数学符号。中文说明默认由 Remotion 承担（见 [评估文档 §4](评估-PBR与科学可视化接入.md)）；即便内置字体可渲染中文，也不把中文排版责任放进 Blender。
+- 文本对象在 Blender 中的对象类型为 `FONT`；材质槽可用。
+
+`curve` 字段：
+
+| 字段 | 默认 | 范围 |
+| --- | --- | --- |
+| `points` | 必填 | 2–4096 个 `[x, y, z]`；分量绝对值 ≤ 1e6；不能全部重合 |
+| `bevel_depth` | 0.02 | 0.0001–1000；必须大于 0，否则曲线不可见 |
+| `cyclic` | false | 布尔值 |
+
+- 曲线为 3D `POLY` 样条，执行时统一 `bevel_resolution = 3` 并封盖。
+- 曲线点坐标是对象局部坐标，随后叠加 `transform`。
 
 ### 5.2 Geometry Nodes
 
@@ -192,11 +302,15 @@ OUTPUT
   "target": [0, 0, 1.0],
   "focal_length": 50.0,
   "sensor_width": 36.0,
+  "projection": "PERSPECTIVE",
+  "ortho_scale": 6.0,
   "active": true,
   "dof": { "enabled": true, "focus_distance": 10.0, "f_stop": 4.0 }
 }
 ```
 
+- `projection`：`PERSPECTIVE`（默认）/ `ORTHO`。`ORTHO` 时忽略 `focal_length`，使用 `ortho_scale`。
+- `ortho_scale`：0.001–100000，默认 6.0；仅 `ORTHO` 生效。场景报告会回读实际投影方式与 `ortho_scale`。
 - `rotation`（度）与 `target` 二选一，必须且只能提供一个。
 - `active` 最多一个为 true；`base_blend` 模式可复用已有活动相机。
 - 默认集合 `ANIMATION/Cameras`。
@@ -324,6 +438,11 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 | `scene.report` | 场景问题列表为空 |
 | `scene.active_camera` | 存在活动相机 |
 | `scene.object_count` | 对象数量与任务一致（`base_blend` 模式为下限） |
+| `scene.text_objects` | 每个声明的 `TEXT` 都存在，且 `body` 与任务一致 |
+| `scene.curves` | 每个声明的 `CURVE` 都存在，且点数、`cyclic`、`bevel_depth` 与任务一致 |
+| `scene.cameras` | 声明的相机存在，投影方式与 `ortho_scale` 与任务一致 |
+| `scene.materials` | 每个材质的 shader、socket 值、Bump 参数或科学着色参数与任务一致 |
+| `scene.attributes` | 每个声明的点属性都存在 |
 | `scene.geometry_nodes` | GN 修改器数量 |
 | `scene.animation` | F-Curve 数量 |
 
@@ -341,6 +460,8 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 - 只输出一个 JSON 对象，`schema_version` 固定 `2`；
 - 不输出 Python、不输出 `bpy` 调用、不输出脚本路径；
 - 对象、材质、相机、灯光、动画目标的 `id` 必须自洽；
+- `TEXT` 只填 `text` 白名单字段，不填字体路径；中文说明默认不放进三维场景；
+- 科学着色必须给出显式范围与单位，不得自行推测或省略；
 - 不确定的参数使用保守默认值，不编造注册表之外的 GN 资产。
 
 校验失败时，把 `scene-validate` 的错误列表原样反馈给模型，并要求只修改对应字段。自动修复最多 2–3 轮，不做无限重试。

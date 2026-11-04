@@ -25,6 +25,8 @@ $env:CONTENT_QA_API_KEY = "<your-key>"
 
 `config/content-qa.yaml` 已被忽略，凭据不得写进仓库。也可用 `--config <path>` 指定其他本机配置。
 
+`api_key_env` 可以填**任何已存在的环境变量名**，不需要新建一套凭据。例如 Windows 上已有 `DeepSeek-API`，直接写 `api_key_env: "DeepSeek-API"`；base_url 与模型名按供应商的 OpenAI 兼容接口填写（模型 id 可用 `GET /v1/models` 查询）。
+
 上下文：默认 `context_limit: 16384`；长篇页面按段拆分。上限 65536，不允许把整门课塞进一次请求。
 
 ## 输出

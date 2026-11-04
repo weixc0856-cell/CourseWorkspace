@@ -5,6 +5,7 @@ schema_version: 1
 model:
   base_url: "https://api.example.com/v1"
   model: "<MODEL_ID>"
+  # 可映射到已存在的环境变量名（例如 Windows 上的 "DeepSeek-API"），不要复制密钥
   api_key_env: "CONTENT_QA_API_KEY"
   timeout_s: 120
   max_tokens: 2048

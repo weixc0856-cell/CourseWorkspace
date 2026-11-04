@@ -36,7 +36,10 @@ try {
         "demo-animation",
         "demo-geometry-nodes",
         "demo-animation-scene",
-        "demo-modify"
+        "demo-modify",
+        "demo-text-curve",
+        "demo-materials",
+        "demo-scientific"
     )
     $invalid = @(
         "invalid-collection-root",
@@ -44,7 +47,12 @@ try {
         "invalid-material-ref",
         "invalid-no-camera",
         "invalid-output-outside",
-        "invalid-primitive"
+        "invalid-primitive",
+        "invalid-text-empty",
+        "invalid-text-primitive",
+        "invalid-curve-points",
+        "invalid-curve-bevel",
+        "invalid-camera-projection"
     )
 
     foreach ($name in $valid) {
@@ -63,7 +71,7 @@ try {
     }
 
     if ($Render -and -not $script:failed) {
-        foreach ($name in @("demo-scene", "demo-geometry-nodes", "demo-animation-scene", "demo-modify")) {
+        foreach ($name in @("demo-scene", "demo-geometry-nodes", "demo-animation-scene", "demo-modify", "demo-text-curve", "demo-materials", "demo-scientific")) {
             Invoke-Checked "render $name" {
                 uv run --project CourseControl course-control scene-run `
                     --task "BlenderStudio/tasks/scene-system/$name.json" --workspace .

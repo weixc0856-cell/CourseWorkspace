@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+Unit = Annotated[float, Field(ge=0.0, le=1.0)]
 
 
 class Status(str, Enum):
@@ -100,10 +101,67 @@ class ShotSpec(StrictModel):
     note: str | None = None
 
 
+class AnnotationBase(StrictModel):
+    id: str
+    slide: int = Field(ge=1)
+    cue_seconds: float = Field(ge=0)
+    duration_s: float = Field(gt=0)
+    position: tuple[Unit, Unit] = (0.5, 0.1)
+
+
+class TextAnnotationSpec(AnnotationBase):
+    kind: Literal["text"]
+    text: str = Field(min_length=1, max_length=200)
+    size: float = Field(36.0, ge=8, le=200)
+    align: Literal["left", "center", "right"] = "center"
+    color: Literal["text", "muted", "orange", "white"] = "text"
+    background: bool = False
+
+    @field_validator("text")
+    @classmethod
+    def _text_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("text must not be blank")
+        return value
+
+
+class LegendAnnotationSpec(AnnotationBase):
+    kind: Literal["legend"]
+    colormap: str = Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")
+    min_value: float = Field(ge=-1e12, le=1e12)
+    max_value: float = Field(ge=-1e12, le=1e12)
+    units: str = Field(min_length=1, max_length=32)
+    bar_height: float = Field(240.0, ge=40, le=800)
+    bar_width: float = Field(28.0, ge=8, le=120)
+    label_size: float = Field(24.0, ge=8, le=96)
+
+    @model_validator(mode="after")
+    def _legend_range(self):
+        if self.max_value <= self.min_value:
+            raise ValueError("max_value must be greater than min_value")
+        if not self.units.strip():
+            raise ValueError("units must not be blank")
+        return self
+
+
+AnnotationSpec = Annotated[
+    TextAnnotationSpec | LegendAnnotationSpec, Field(discriminator="kind")
+]
+
+
 class Storyboard(StrictModel):
     schema_version: Literal[1]
     lesson: str
     shots: list[ShotSpec] = Field(min_length=1)
+    annotations: list[AnnotationSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _unique_ids(self):
+        names = [shot.id for shot in self.shots] + [item.id for item in self.annotations]
+        duplicates = sorted({name for name in names if names.count(name) > 1})
+        if duplicates:
+            raise ValueError(f"storyboard ids must be unique: {duplicates}")
+        return self
 
 
 class Timeline(StrictModel):
@@ -132,12 +190,47 @@ class Shot(StrictModel):
         return self
 
 
+class TextAnnotation(StrictModel):
+    id: str
+    kind: Literal["text"]
+    text: str
+    start_s: float = Field(ge=0)
+    duration_s: float = Field(gt=0)
+    position: tuple[Unit, Unit]
+    size: float = Field(ge=8, le=200)
+    align: Literal["left", "center", "right"] = "center"
+    color: Literal["text", "muted", "orange", "white"] = "text"
+    background: bool = False
+
+
+class LegendAnnotation(StrictModel):
+    id: str
+    kind: Literal["legend"]
+    start_s: float = Field(ge=0)
+    duration_s: float = Field(gt=0)
+    position: tuple[Unit, Unit]
+    colormap: str
+    min_value: float
+    max_value: float
+    units: str
+    stops: list[tuple[float, tuple[float, float, float]]]
+    bar_height: float = Field(ge=40, le=800)
+    bar_width: float = Field(ge=8, le=120)
+    label_size: float = Field(ge=8, le=96)
+
+
+Annotation = Annotated[
+    TextAnnotation | LegendAnnotation, Field(discriminator="kind")
+]
+
+
 class ShotsFile(StrictModel):
     schema_version: Literal[1] = 1
     lesson: str
     generated_at: str
     timeline: Timeline
     shots: list[Shot]
+    annotations: list[Annotation] = Field(default_factory=list)
     narration: dict | None = None
     subtitles: dict | None = None
 

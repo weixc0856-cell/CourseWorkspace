@@ -13,6 +13,7 @@ from PIL import Image, ImageStat
 
 from .blender_scene import BlenderSceneTask, validate_scene_task
 from .paths import ContractError
+from .scene_presets import expand_task
 from .utils import probe_media, run_command, which_command
 
 
@@ -142,6 +143,199 @@ def _check_video(path: Path, task: BlenderSceneTask, checks: list[Check]) -> Non
         checks.append(Check("output.duration", "pass", f"{info.duration:.3f}s"))
 
 
+def _close(left: float, right: float, tolerance: float = 1e-6) -> bool:
+    return abs(float(left) - float(right)) <= tolerance
+
+
+PRINCIPLED_SOCKETS = {
+    "base_color": "Base Color",
+    "metallic": "Metallic",
+    "roughness": "Roughness",
+    "alpha": "Alpha",
+    "ior": "IOR",
+    "emission_color": "Emission Color",
+    "emission_strength": "Emission Strength",
+    "coat_weight": "Coat Weight",
+    "coat_roughness": "Coat Roughness",
+}
+EMISSION_SOCKETS = {"color": "Color", "strength": "Strength"}
+
+
+def _value_matches(expected, actual, tolerance: float = 1e-4) -> bool:
+    if isinstance(expected, (list, tuple)):
+        if not isinstance(actual, (list, tuple)) or len(expected) != len(actual):
+            return False
+        return all(
+            abs(float(left) - float(right)) <= tolerance
+            for left, right in zip(expected, actual)
+        )
+    if actual is None:
+        return False
+    return abs(float(actual) - float(expected)) <= tolerance
+
+
+def _check_declared_attributes(
+    report: dict, task: BlenderSceneTask, checks: list[Check]
+) -> None:
+    object_specs = [obj for obj in task.objects if obj.attributes]
+    if not object_specs:
+        return
+    report_objects = {entry.get("name"): entry for entry in report.get("objects", [])}
+    problems = []
+    for spec in object_specs:
+        entry = report_objects.get(spec.id, {})
+        actual = set((entry.get("attributes") or {}).keys())
+        expected = {attribute.name for attribute in spec.attributes}
+        if actual != expected:
+            problems.append(
+                f"{spec.id}: attributes {sorted(actual)} != {sorted(expected)}"
+            )
+    checks.append(
+        Check(
+            "scene.attributes",
+            "fail" if problems else "pass",
+            "; ".join(problems) if problems else f"{len(object_specs)} objects match",
+        )
+    )
+
+
+def _check_declared_materials(
+    report: dict, task: BlenderSceneTask, checks: list[Check]
+) -> None:
+    if not task.materials:
+        return
+    materials = {entry.get("name"): entry for entry in report.get("materials", [])}
+    problems = []
+    for spec in task.materials:
+        entry = materials.get(spec.id)
+        if entry is None:
+            problems.append(f"{spec.id}: missing material")
+            continue
+        if entry.get("shader") != spec.shader:
+            problems.append(f"{spec.id}: shader {entry.get('shader')} != {spec.shader}")
+            continue
+        params = spec.params.model_dump()
+        if spec.shader == "scientific_colormap":
+            actual_params = entry.get("params", {})
+            for key in ("source_attribute", "units", "colormap"):
+                if actual_params.get(key) != params[key]:
+                    problems.append(
+                        f"{spec.id}.{key}: {actual_params.get(key)!r} != {params[key]!r}"
+                    )
+            for key in ("min_value", "max_value"):
+                if not _value_matches(params[key], actual_params.get(key)):
+                    problems.append(
+                        f"{spec.id}.{key}: {actual_params.get(key)!r} != {params[key]!r}"
+                    )
+            continue
+        sockets = PRINCIPLED_SOCKETS if spec.shader == "principled" else EMISSION_SOCKETS
+        actual_params = entry.get("params", {})
+        for field, socket in sockets.items():
+            actual = actual_params.get(socket)
+            if not _value_matches(params[field], actual):
+                problems.append(f"{spec.id}.{field}: {actual!r} != {params[field]!r}")
+        if spec.shader == "principled":
+            bump = entry.get("bump")
+            if params["bump_strength"] > 0.0:
+                if bump is None:
+                    problems.append(f"{spec.id}: bump nodes missing")
+                else:
+                    expected_bump = {
+                        "strength": params["bump_strength"],
+                        "distance": params["bump_distance"],
+                        "noise_scale": params["bump_scale"],
+                        "noise_detail": params["bump_detail"],
+                    }
+                    for key, expected in expected_bump.items():
+                        if not _value_matches(expected, bump.get(key)):
+                            problems.append(
+                                f"{spec.id}.{key}: {bump.get(key)!r} != {expected!r}"
+                            )
+            elif bump is not None:
+                problems.append(f"{spec.id}: unexpected bump nodes")
+    checks.append(
+        Check(
+            "scene.materials",
+            "fail" if problems else "pass",
+            "; ".join(problems) if problems else f"{len(task.materials)} materials match",
+        )
+    )
+
+
+def _check_declared_objects(report: dict, task: BlenderSceneTask, checks: list[Check]) -> None:
+    report_objects = {entry.get("name"): entry for entry in report.get("objects", [])}
+
+    text_specs = [obj for obj in task.objects if obj.type == "TEXT"]
+    if text_specs:
+        problems = []
+        for spec in text_specs:
+            entry = report_objects.get(spec.id, {})
+            body = (entry.get("text") or {}).get("body")
+            if entry.get("type") != "FONT":
+                problems.append(f"{spec.id}: missing FONT object")
+            elif body != spec.text.body:
+                problems.append(f"{spec.id}: body {body!r} != {spec.text.body!r}")
+        checks.append(
+            Check(
+                "scene.text_objects",
+                "fail" if problems else "pass",
+                "; ".join(problems) if problems else f"{len(text_specs)} text objects match",
+            )
+        )
+
+    curve_specs = [obj for obj in task.objects if obj.type == "CURVE"]
+    if curve_specs:
+        problems = []
+        for spec in curve_specs:
+            entry = report_objects.get(spec.id, {})
+            info = entry.get("curve") or {}
+            if entry.get("type") != "CURVE":
+                problems.append(f"{spec.id}: missing CURVE object")
+                continue
+            if info.get("points") != len(spec.curve.points):
+                problems.append(
+                    f"{spec.id}: points {info.get('points')} != {len(spec.curve.points)}"
+                )
+            if bool(info.get("cyclic")) != spec.curve.cyclic:
+                problems.append(f"{spec.id}: cyclic mismatch")
+            if not _close(info.get("bevel_depth", 0.0), spec.curve.bevel_depth):
+                problems.append(f"{spec.id}: bevel_depth mismatch")
+        checks.append(
+            Check(
+                "scene.curves",
+                "fail" if problems else "pass",
+                "; ".join(problems) if problems else f"{len(curve_specs)} curves match",
+            )
+        )
+
+    camera_specs = task.cameras
+    if camera_specs:
+        report_cameras = {entry.get("name"): entry for entry in report.get("cameras", [])}
+        problems = []
+        for spec in camera_specs:
+            entry = report_cameras.get(spec.id)
+            if entry is None:
+                continue
+            expected = "ORTHO" if spec.projection == "ORTHO" else "PERSP"
+            if entry.get("projection") != expected:
+                problems.append(
+                    f"{spec.id}: projection {entry.get('projection')} != {expected}"
+                )
+            if spec.projection == "ORTHO" and not _close(
+                entry.get("ortho_scale", 0.0), spec.ortho_scale
+            ):
+                problems.append(
+                    f"{spec.id}: ortho_scale {entry.get('ortho_scale')} != {spec.ortho_scale}"
+                )
+        checks.append(
+            Check(
+                "scene.cameras",
+                "fail" if problems else "pass",
+                "; ".join(problems) if problems else f"{len(camera_specs)} cameras match",
+            )
+        )
+
+
 def _scene_checks(report: dict, task: BlenderSceneTask, checks: list[Check]) -> None:
     if not report.get("ok"):
         issues = "; ".join(issue.get("message", "") for issue in report.get("issues", [])[:5])
@@ -163,6 +357,10 @@ def _scene_checks(report: dict, task: BlenderSceneTask, checks: list[Check]) -> 
         ok = actual >= expected
         detail = f"{actual} objects (>= {expected} including base blend)"
     checks.append(Check("scene.object_count", "pass" if ok else "fail", detail))
+
+    _check_declared_objects(report, task, checks)
+    _check_declared_materials(report, task, checks)
+    _check_declared_attributes(report, task, checks)
 
     expected_modifiers = sum(len(obj.geometry_nodes) for obj in task.objects)
     if expected_modifiers:
@@ -242,7 +440,8 @@ def run_scene_task(
     task_file = task_path if task_path.is_absolute() else workspace / task_path
     if not task_file.is_file():
         raise SceneRunError(f"task not found: {task_file}")
-    data = json.loads(task_file.read_text(encoding="utf-8"))
+    source_data = json.loads(task_file.read_text(encoding="utf-8"))
+    data, preset_refs = expand_task(source_data, workspace)
     task = validate_scene_task(data, workspace)
 
     executable, timeout = _tools(workspace)
@@ -254,6 +453,14 @@ def run_scene_task(
     log_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = manifest_dir / f"{task.task_id}.json"
     report_path = manifest_dir / f"{task.task_id}-scene.json"
+    execution_task = task_file
+    expanded_path = None
+    if preset_refs:
+        expanded_path = manifest_dir / f"{task.task_id}.expanded.json"
+        expanded_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        execution_task = expanded_path
 
     checks: list[Check] = []
     started_at = _now()
@@ -268,7 +475,7 @@ def run_scene_task(
         "-Lesson",
         task.lesson,
         "-Task",
-        str(task_file),
+        str(execution_task),
     ]
     result = run_command(
         command,
@@ -330,6 +537,9 @@ def run_scene_task(
         "status": status,
         "task_file": str(task_file),
         "task_hash": _task_hash(data),
+        "source_task_hash": _task_hash(source_data),
+        "presets": preset_refs,
+        "expanded_task": str(expanded_path) if expanded_path else None,
         "seed": task.scene.seed,
         "started_at": started_at,
         "finished_at": finished_at,

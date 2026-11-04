@@ -1,0 +1,71 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-scientific-001",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_Scientific",
+    "units": "METRIC",
+    "unit_scale": 1.0,
+    "fps": 30,
+    "frame_start": 1,
+    "frame_end": 90,
+    "seed": 31
+  },
+  "world": {
+    "background_color": [0.01, 0.012, 0.018, 1.0],
+    "strength": 0.2
+  },
+  "materials": [
+    {
+      "id": "mat.pressure",
+      "shader": "scientific_colormap",
+      "params": {
+        "source_attribute": "pressure",
+        "min_value": -400.0,
+        "max_value": 400.0,
+        "units": "Pa",
+        "colormap": "coolwarm"
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "field.pressure",
+      "type": "MESH",
+      "primitive": "GRID",
+      "params": { "size": 6.0, "x_segments": 40, "y_segments": 40 },
+      "attributes": [
+        {
+          "name": "pressure",
+          "field": { "kind": "axis", "axis": "x", "scale": 120.0, "offset": 0.0 }
+        }
+      ],
+      "transform": { "location": [0, 0, 0] },
+      "material": "mat.pressure",
+      "collection": "ASSETS/Geometry",
+      "smooth": false
+    }
+  ],
+  "cameras": [
+    {
+      "id": "cam.top",
+      "location": [0.0, 0.0, 9.0],
+      "target": [0.0, 0.0, 0.0],
+      "projection": "ORTHO",
+      "ortho_scale": 7.0,
+      "active": true
+    }
+  ],
+  "lights": [],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [1280, 720],
+    "samples": 16,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/blender/scientific.png",
+    "save_blend": "build/blender-scene-acceptance/blender/scientific.blend",
+    "view_transform": "AgX"
+  }
+}

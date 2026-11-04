@@ -39,7 +39,7 @@ def execute(task, cwd=None):
     scene_ops.ensure_standard_collections(extra_collections)
     scene_ops.configure_world(scene, spec["world"])
 
-    material_map = materials.build_materials(spec["materials"])
+    material_map = materials.build_materials(spec["materials"], cwd)
     object_map = objects.create_objects(spec["objects"], material_map, spec["task_id"])
     applied_modifiers = 0
     for object_spec in spec["objects"]:

@@ -155,6 +155,13 @@ def scene_validate_command(
     except json.JSONDecodeError as exc:
         typer.echo(f"invalid JSON in {task}: {exc}", err=True)
         raise typer.Exit(1)
+    from .scene_presets import expand_task
+
+    try:
+        data, _presets = expand_task(data, workspace.resolve())
+    except ContractError as exc:
+        typer.echo(f"{task}: {exc}", err=True)
+        raise typer.Exit(1)
     try:
         validated = validate_scene_task(data, workspace.resolve())
     except SceneContractError as exc:

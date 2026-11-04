@@ -54,6 +54,83 @@
       "title": "AnimationSpec",
       "type": "object"
     },
+    "AttributeSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "field": {
+          "discriminator": {
+            "mapping": {
+              "axis": "#/$defs/AxisField",
+              "distance": "#/$defs/DistanceField",
+              "noise": "#/$defs/NoiseField"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/AxisField"
+            },
+            {
+              "$ref": "#/$defs/DistanceField"
+            },
+            {
+              "$ref": "#/$defs/NoiseField"
+            }
+          ],
+          "title": "Field"
+        }
+      },
+      "required": [
+        "name",
+        "field"
+      ],
+      "title": "AttributeSpec",
+      "type": "object"
+    },
+    "AxisField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "axis",
+          "title": "Kind",
+          "type": "string"
+        },
+        "axis": {
+          "default": "z",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "offset": {
+          "default": 0.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Offset",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "AxisField",
+      "type": "object"
+    },
     "CameraSpec": {
       "additionalProperties": false,
       "properties": {
@@ -148,6 +225,22 @@
           "title": "Sensor Width",
           "type": "number"
         },
+        "projection": {
+          "default": "PERSPECTIVE",
+          "enum": [
+            "PERSPECTIVE",
+            "ORTHO"
+          ],
+          "title": "Projection",
+          "type": "string"
+        },
+        "ortho_scale": {
+          "default": 6.0,
+          "maximum": 100000.0,
+          "minimum": 0.001,
+          "title": "Ortho Scale",
+          "type": "number"
+        },
         "active": {
           "default": true,
           "title": "Active",
@@ -172,6 +265,94 @@
         "id"
       ],
       "title": "CameraSpec",
+      "type": "object"
+    },
+    "CurveSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "items": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 4096,
+          "minItems": 2,
+          "title": "Points",
+          "type": "array"
+        },
+        "bevel_depth": {
+          "default": 0.02,
+          "maximum": 1000.0,
+          "minimum": 0.0001,
+          "title": "Bevel Depth",
+          "type": "number"
+        },
+        "cyclic": {
+          "default": false,
+          "title": "Cyclic",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "CurveSpec",
+      "type": "object"
+    },
+    "DistanceField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "distance",
+          "title": "Kind",
+          "type": "string"
+        },
+        "point": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Point",
+          "type": "array"
+        },
+        "scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Scale",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DistanceField",
       "type": "object"
     },
     "DofSpec": {
@@ -560,6 +741,35 @@
       "title": "LightSpec",
       "type": "object"
     },
+    "NoiseField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "noise",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": 0.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "seed": {
+          "default": 0,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NoiseField",
+      "type": "object"
+    },
     "ObjectSpec": {
       "additionalProperties": false,
       "properties": {
@@ -572,7 +782,9 @@
           "default": "MESH",
           "enum": [
             "MESH",
-            "EMPTY"
+            "EMPTY",
+            "TEXT",
+            "CURVE"
           ],
           "title": "Type",
           "type": "string"
@@ -616,6 +828,36 @@
           },
           "title": "Params",
           "type": "object"
+        },
+        "attributes": {
+          "items": {
+            "$ref": "#/$defs/AttributeSpec"
+          },
+          "maxItems": 8,
+          "title": "Attributes",
+          "type": "array"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "curve": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CurveSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "transform": {
           "$ref": "#/$defs/Transform",
@@ -728,7 +970,13 @@
               0.0,
               1.0
             ],
-            "emission_strength": 0.0
+            "emission_strength": 0.0,
+            "coat_weight": 0.0,
+            "coat_roughness": 0.03,
+            "bump_strength": 0.0,
+            "bump_distance": 0.02,
+            "bump_scale": 8.0,
+            "bump_detail": 4.0
           }
         }
       },
@@ -843,6 +1091,48 @@
           "maximum": 100000.0,
           "minimum": 0.0,
           "title": "Emission Strength",
+          "type": "number"
+        },
+        "coat_weight": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Coat Weight",
+          "type": "number"
+        },
+        "coat_roughness": {
+          "default": 0.03,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Coat Roughness",
+          "type": "number"
+        },
+        "bump_strength": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Bump Strength",
+          "type": "number"
+        },
+        "bump_distance": {
+          "default": 0.02,
+          "maximum": 1.0,
+          "minimum": 0.0001,
+          "title": "Bump Distance",
+          "type": "number"
+        },
+        "bump_scale": {
+          "default": 8.0,
+          "maximum": 1000.0,
+          "minimum": 0.1,
+          "title": "Bump Scale",
+          "type": "number"
+        },
+        "bump_detail": {
+          "default": 4.0,
+          "maximum": 16.0,
+          "minimum": 0.0,
+          "title": "Bump Detail",
           "type": "number"
         }
       },
@@ -1028,6 +1318,137 @@
       "title": "SceneSpec",
       "type": "object"
     },
+    "ScientificColormapMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "shader": {
+          "const": "scientific_colormap",
+          "title": "Shader",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/ScientificColormapParams"
+        }
+      },
+      "required": [
+        "id",
+        "shader",
+        "params"
+      ],
+      "title": "ScientificColormapMaterial",
+      "type": "object"
+    },
+    "ScientificColormapParams": {
+      "additionalProperties": false,
+      "properties": {
+        "source_attribute": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Source Attribute",
+          "type": "string"
+        },
+        "min_value": {
+          "maximum": 1000000000000.0,
+          "minimum": -1000000000000.0,
+          "title": "Min Value",
+          "type": "number"
+        },
+        "max_value": {
+          "maximum": 1000000000000.0,
+          "minimum": -1000000000000.0,
+          "title": "Max Value",
+          "type": "number"
+        },
+        "units": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Units",
+          "type": "string"
+        },
+        "colormap": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Colormap",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_attribute",
+        "min_value",
+        "max_value",
+        "units",
+        "colormap"
+      ],
+      "title": "ScientificColormapParams",
+      "type": "object"
+    },
+    "TextSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Body",
+          "type": "string"
+        },
+        "size": {
+          "default": 0.5,
+          "maximum": 1000.0,
+          "minimum": 0.001,
+          "title": "Size",
+          "type": "number"
+        },
+        "align_x": {
+          "default": "LEFT",
+          "enum": [
+            "LEFT",
+            "CENTER",
+            "RIGHT"
+          ],
+          "title": "Align X",
+          "type": "string"
+        },
+        "align_y": {
+          "default": "BOTTOM",
+          "enum": [
+            "TOP",
+            "CENTER",
+            "BOTTOM"
+          ],
+          "title": "Align Y",
+          "type": "string"
+        },
+        "extrude": {
+          "default": 0.0,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Extrude",
+          "type": "number"
+        },
+        "bevel_depth": {
+          "default": 0.0,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Bevel Depth",
+          "type": "number"
+        },
+        "space_line": {
+          "default": 1.0,
+          "maximum": 10.0,
+          "minimum": 0.1,
+          "title": "Space Line",
+          "type": "number"
+        }
+      },
+      "required": [
+        "body"
+      ],
+      "title": "TextSpec",
+      "type": "object"
+    },
     "Transform": {
       "additionalProperties": false,
       "properties": {
@@ -1210,7 +1631,8 @@
         "discriminator": {
           "mapping": {
             "emission": "#/$defs/EmissionMaterial",
-            "principled": "#/$defs/PrincipledMaterial"
+            "principled": "#/$defs/PrincipledMaterial",
+            "scientific_colormap": "#/$defs/ScientificColormapMaterial"
           },
           "propertyName": "shader"
         },
@@ -1220,6 +1642,9 @@
           },
           {
             "$ref": "#/$defs/EmissionMaterial"
+          },
+          {
+            "$ref": "#/$defs/ScientificColormapMaterial"
           }
         ]
       },

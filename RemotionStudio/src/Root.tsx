@@ -9,6 +9,7 @@ const defaultProps: ShotsFile = {
   lesson: '01-shell-for-ai-era',
   timeline: {fps: 30, resolution: [1920, 1080], total_duration_s: 3},
   shots: [],
+  annotations: [],
   narration: null,
   subtitles: null,
 };

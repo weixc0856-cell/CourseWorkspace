@@ -79,9 +79,9 @@ course-control scene-run
 | --- | --- |
 | `task_schema.py` | v2 任务校验，无第三方依赖 |
 | `scene.py` | 场景重置、固定集合、单位、时间轴、保存/打开 |
-| `geometry.py` | `bmesh` 数据级图元 |
-| `objects.py` | 对象、变换、材质槽、父子关系 |
-| `materials.py` | Principled / Emission 节点模板 |
+| `geometry.py` | `bmesh` 数据级图元、`TEXT`、`CURVE`、点属性写入 |
+| `objects.py` | 对象（MESH/EMPTY/TEXT/CURVE）、变换、材质槽、父子关系 |
+| `materials.py` | Principled / Emission / 科学着色节点模板、Coat、程序化 Bump |
 | `cameras.py` | 相机、look-at、景深 |
 | `lighting.py` | Area / Point / Sun / Spot |
 | `geometry_nodes.py` | 资产注册表、接口检查、修改器参数 |
@@ -89,7 +89,7 @@ course-control scene-run
 | `rendering.py` | 引擎、分辨率、采样、色彩管理、输出 |
 | `executor.py` | 串联以上模块，保存 `.blend` 并渲染 |
 
-场景验收报告由 `scripts/verify_scene.py` 生成：对象/集合/网格统计、材质、相机、灯光、修改器、动画 F-Curve、缺失外部资源。
+场景验收报告由 `scripts/verify_scene.py` 生成：对象/集合/网格统计、文字内容、曲线点数与倒角、材质、相机（含投影方式与 `ortho_scale`）、灯光、修改器、动画 F-Curve、缺失外部资源。
 
 ## Geometry Nodes 资产
 
@@ -98,6 +98,20 @@ course-control scene-run
 - 构建脚本：`assets/geometry_nodes/build_assets.py`
 
 当前资产：`gn.displace_noise`、`gn.scatter_cubes`。资产修改后必须重建 `.blend` 并更新注册表版本；执行时会按 Interface 名称检查输入，缺失或类型不匹配会直接失败。
+
+## 材质预设
+
+- 目录：`assets/materials/presets/*.json`
+- 预设：`studio_floor`、`aluminum_brushed`、`matte_plastic`、`coated_paint`、`rubber_matte`、`transparent_sheet`、`emissive_white`
+- 任务中写 `{ "id": "mat.x", "preset": "aluminum_brushed" }`；控制层展开后再校验与执行，manifest 记录展开来源。
+- 预设只描述 `shader` 与 `params`，不包含对象或渲染设置。
+
+## 科学着色
+
+- 色标定义：`shared/colormaps.json`（`viridis`、`coolwarm`、`grayscale`），Blender 与 Remotion 共用。
+- 材质：`shader: "scientific_colormap"`，`source_attribute` / `min_value` / `max_value` / `units` / `colormap` 全部必填，无自动范围。
+- 对象：`attributes[]` 声明点属性，字段为 `axis` / `distance` / `noise` 的声明式描述。
+- 验收：`scene.materials` 回读着色参数，`scene.attributes` 核对属性存在；场景报告按首/中/末顶点复算并比对。
 
 ```powershell
 & "<BLENDER_EXE>" --background --factory-startup --python-exit-code 1 `
@@ -163,7 +177,10 @@ course-control scene-run
 | `demo-geometry-nodes.json` | 噪声位移、实例散布、材质输入、GN 参数 | `scene-run` pass，2 个 NODES 修改器 |
 | `demo-animation.json` | 多帧 MP4、无动画 | `scene-run` pass，时长 1 秒 |
 | `demo-animation-scene.json` | 变换/灯光/相机关键帧、3 秒 MP4 | `scene-run` pass，≥13 条 F-Curve |
-| `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质 | `scene-validate` 与 Blender 均拒绝 |
+| `demo-text-curve.json` | `TEXT`、`CURVE`、`ORTHO` 相机；4 个文字、3 条曲线 | `scene-run` pass，文字/曲线/相机专项检查通过 |
+| `demo-materials.json` | 7 个材质预设、Coat、程序化 Bump、简化车形体 | `scene-run` pass，`scene.materials` 7 项全部回读一致 |
+| `demo-scientific.json` | 点属性、科学着色、ORTHO 相机 | `scene-run` pass，`scene.attributes` 与 `scene.materials` 通过 |
+| `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质、空文字、文字带图元、曲线点数不足、曲线倒角为 0、非法投影方式 | `scene-validate` 与 Blender 均拒绝 |
 
 ## 课程 YAML 与 JSON 的关系
 

@@ -63,6 +63,8 @@ CourseWorkspace/
 
 ## 3. 调用关系
 
+> 面向操作的完整流程（输入、输出、人工节点、失败恢复）见 [WORKFLOW.md](WORKFLOW.md)。
+
 ### 3.1 课程构建
 
 ```text
@@ -136,6 +138,8 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
 
 Schema 由 Pydantic 模型导出：`course-control schemas --output shared/schemas`。提交前必须与模型一致（有测试锁定）。
+
+`shots.json` 的 `annotations[]` 是二维标注的正式通道：`storyboard.yaml` 的可选 `annotations` 由 `collect` 按页面预算与 `cue_seconds` 解析成绝对时间；Remotion 只渲染该字段，不读取课程内容。标注分 `text` 与 `legend` 两类，`legend` 的色标 `stops` 由 `collect` 从 `shared/colormaps.json` 解析后写入，Blender 科学着色读同一份定义。
 
 ### 4.2 模型任务记录（`schema_version: 1`）
 

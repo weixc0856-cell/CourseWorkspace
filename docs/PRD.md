@@ -4,7 +4,7 @@
 - **日期**：2026-11-03
 - **地位**：本文件是唯一有效的产品需求基线。任何开发任务必须能对应到本文的 `FR-*` / `NFR-*` 条目。
 - **取代**：`docs/archive/CourseWorkspace-R0-R5改造PRD.md`（改造规格，已执行完毕）、`docs/archive/ContentQA_实施评估.md`（设计稿，仅保留审查内核）、`docs/archive/AI-Blender落地路线图.md`（历史状态快照）。
-- **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；实现状态见 [TRACEABILITY.md](TRACEABILITY.md)。
+- **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；真实工作流见 [WORKFLOW.md](WORKFLOW.md)；当前状态见 [PROJECT_STATUS.md](PROJECT_STATUS.md)。
 
 ---
 
@@ -133,7 +133,7 @@
 - 验收项：退出码、PNG 分辨率/大小/黑帧、MP4 编码/分辨率/时长、场景问题、活动相机、对象数、GN 修改器数、F-Curve 数。
 - 路径约束：输出与 `.blend` 必须位于 `build/<lesson>/blender/`，禁止绝对路径、反斜杠、`..`。
 
-**验收**：`check-scene-system.ps1`（5 合法 + 6 非法）、`test_blender_scene.py` 全部通过；4 个 demo 任务真实渲染通过（`-Render`，资源允许时执行）。
+**验收**：`check-scene-system.ps1`（8 合法 + 11 非法）、`test_blender_scene.py` 全部通过；7 个 demo 任务真实渲染通过（`-Render`，资源允许时执行）。
 
 ### FR-06 本地自动建模（ModelingStudio）
 
@@ -276,6 +276,8 @@
 ---
 
 ## 7. 阶段工作流（含人工节点）
+
+> 详细输入、输出、失败恢复与真实证据见 [WORKFLOW.md](WORKFLOW.md)。
 
 ```text
 [人工] 撰写 slides.md / lecture_notes.md / storyboard.yaml
