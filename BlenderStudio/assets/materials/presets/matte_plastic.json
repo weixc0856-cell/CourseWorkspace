@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "preset": "matte_plastic",
+  "shader": "principled",
+  "params": {
+    "base_color": [
+      0.82,
+      0.83,
+      0.85,
+      1.0
+    ],
+    "metallic": 0.0,
+    "roughness": 0.65
+  }
+}

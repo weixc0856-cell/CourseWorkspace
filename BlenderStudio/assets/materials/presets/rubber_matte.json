@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "preset": "rubber_matte",
+  "shader": "principled",
+  "params": {
+    "base_color": [
+      0.06,
+      0.06,
+      0.065,
+      1.0
+    ],
+    "roughness": 0.95,
+    "bump_strength": 0.2,
+    "bump_distance": 0.005,
+    "bump_scale": 60.0,
+    "bump_detail": 3.0
+  }
+}

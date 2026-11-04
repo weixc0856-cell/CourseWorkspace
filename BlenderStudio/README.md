@@ -81,7 +81,7 @@ course-control scene-run
 | `scene.py` | 场景重置、固定集合、单位、时间轴、保存/打开 |
 | `geometry.py` | `bmesh` 数据级图元、`TEXT`、`CURVE` |
 | `objects.py` | 对象（MESH/EMPTY/TEXT/CURVE）、变换、材质槽、父子关系 |
-| `materials.py` | Principled / Emission 节点模板 |
+| `materials.py` | Principled / Emission 节点模板、Coat、程序化 Bump |
 | `cameras.py` | 相机、look-at、景深 |
 | `lighting.py` | Area / Point / Sun / Spot |
 | `geometry_nodes.py` | 资产注册表、接口检查、修改器参数 |
@@ -98,6 +98,13 @@ course-control scene-run
 - 构建脚本：`assets/geometry_nodes/build_assets.py`
 
 当前资产：`gn.displace_noise`、`gn.scatter_cubes`。资产修改后必须重建 `.blend` 并更新注册表版本；执行时会按 Interface 名称检查输入，缺失或类型不匹配会直接失败。
+
+## 材质预设
+
+- 目录：`assets/materials/presets/*.json`
+- 预设：`studio_floor`、`aluminum_brushed`、`matte_plastic`、`coated_paint`、`rubber_matte`、`transparent_sheet`、`emissive_white`
+- 任务中写 `{ "id": "mat.x", "preset": "aluminum_brushed" }`；控制层展开后再校验与执行，manifest 记录展开来源。
+- 预设只描述 `shader` 与 `params`，不包含对象或渲染设置。
 
 ```powershell
 & "<BLENDER_EXE>" --background --factory-startup --python-exit-code 1 `
@@ -164,6 +171,7 @@ course-control scene-run
 | `demo-animation.json` | 多帧 MP4、无动画 | `scene-run` pass，时长 1 秒 |
 | `demo-animation-scene.json` | 变换/灯光/相机关键帧、3 秒 MP4 | `scene-run` pass，≥13 条 F-Curve |
 | `demo-text-curve.json` | `TEXT`、`CURVE`、`ORTHO` 相机；4 个文字、3 条曲线 | `scene-run` pass，文字/曲线/相机专项检查通过 |
+| `demo-materials.json` | 7 个材质预设、Coat、程序化 Bump、简化车形体 | `scene-run` pass，`scene.materials` 7 项全部回读一致 |
 | `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质、空文字、文字带图元、曲线点数不足、曲线倒角为 0、非法投影方式 | `scene-validate` 与 Blender 均拒绝 |
 
 ## 课程 YAML 与 JSON 的关系

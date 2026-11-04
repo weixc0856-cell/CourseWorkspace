@@ -60,8 +60,8 @@
 ## 3. 三维场景 IR v2
 
 ```powershell
-.\scripts\check-scene-system.ps1          # 契约：6 合法 + 11 非法
-.\scripts\check-scene-system.ps1 -Render  # 追加 5 次真实 Blender 渲染
+.\scripts\check-scene-system.ps1          # 契约：7 合法 + 11 非法
+.\scripts\check-scene-system.ps1 -Render  # 追加 6 次真实 Blender 渲染
 ```
 
 最近一次带渲染执行：**`scene system check ok`，exit 0**。
@@ -73,6 +73,7 @@
 | `demo-animation-scene` | pass；13 条 F-Curve，1280×720 MP4，3.0s |
 | `demo-modify` | pass；基于 `scene.blend` 追加，11 个对象 |
 | `demo-text-curve` | pass；4 个 TEXT、3 个 CURVE、1 个 ORTHO 相机专项检查通过 |
+| `demo-materials` | pass；7 个材质预设展开并逐项回读一致 |
 | 11 个 invalid 夹具 | 全部被拒绝 |
 | 契约与执行分离 | `test_validators_agree_without_generated_artifacts`：`base_blend` 尚未生成时两套校验器结论一致 |
 

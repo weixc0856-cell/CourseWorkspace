@@ -50,6 +50,19 @@ def build_material(spec):
         _set(shader, "IOR", params["ior"])
         _set(shader, "Emission Color", params["emission_color"])
         _set(shader, "Emission Strength", params["emission_strength"])
+        _set(shader, "Coat Weight", params["coat_weight"])
+        _set(shader, "Coat Roughness", params["coat_roughness"])
+        if params["bump_strength"] > 0.0:
+            noise = tree.nodes.new("ShaderNodeTexNoise")
+            noise.location = (-600.0, -300.0)
+            noise.inputs["Scale"].default_value = params["bump_scale"]
+            noise.inputs["Detail"].default_value = params["bump_detail"]
+            bump = tree.nodes.new("ShaderNodeBump")
+            bump.location = (-300.0, -300.0)
+            bump.inputs["Strength"].default_value = params["bump_strength"]
+            bump.inputs["Distance"].default_value = params["bump_distance"]
+            tree.links.new(noise.outputs["Fac"], bump.inputs["Height"])
+            tree.links.new(bump.outputs["Normal"], shader.inputs["Normal"])
         material.metallic = params["metallic"]
         material.roughness = params["roughness"]
         material.diffuse_color = params["base_color"]

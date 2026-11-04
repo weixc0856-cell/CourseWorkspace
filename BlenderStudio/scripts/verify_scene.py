@@ -113,6 +113,11 @@ def _json_value(value):
         return value.to_list()
     if isinstance(value, (list, tuple)):
         return list(value)
+    if hasattr(value, "__len__") and hasattr(value, "__iter__"):
+        try:
+            return [float(item) for item in value]
+        except (TypeError, ValueError):
+            pass
     if hasattr(value, "name"):
         return value.name
     return str(value)
@@ -138,6 +143,69 @@ def _modifier_info(obj):
             entry["inputs"] = inputs
         entries.append(entry)
     return entries
+
+
+def _socket_value(node, name):
+    socket = node.inputs.get(name)
+    if socket is None:
+        return None
+    return _json_value(socket.default_value)
+
+
+def _material_info(material):
+    entry = {"name": material.name, "shader": None, "params": {}, "bump": None}
+    tree = getattr(material, "node_tree", None)
+    if tree is None:
+        return entry
+    shader = None
+    for node in tree.nodes:
+        if node.bl_idname == "ShaderNodeBsdfPrincipled":
+            shader = node
+            entry["shader"] = "principled"
+            break
+        if node.bl_idname == "ShaderNodeEmission":
+            shader = node
+            entry["shader"] = "emission"
+            break
+    if shader is None:
+        return entry
+    if entry["shader"] == "principled":
+        names = (
+            "Base Color",
+            "Metallic",
+            "Roughness",
+            "Alpha",
+            "IOR",
+            "Emission Color",
+            "Emission Strength",
+            "Coat Weight",
+            "Coat Roughness",
+        )
+    else:
+        names = ("Color", "Strength")
+    for name in names:
+        value = _socket_value(shader, name)
+        if value is not None:
+            entry["params"][name] = value
+    if entry["shader"] == "principled":
+        normal = shader.inputs.get("Normal")
+        if normal is not None and normal.is_linked:
+            source = normal.links[0].from_node
+            if source.bl_idname == "ShaderNodeBump":
+                bump = {
+                    "strength": _socket_value(source, "Strength"),
+                    "distance": _socket_value(source, "Distance"),
+                    "noise_scale": None,
+                    "noise_detail": None,
+                }
+                height = source.inputs.get("Height")
+                if height is not None and height.is_linked:
+                    noise = height.links[0].from_node
+                    if noise.bl_idname == "ShaderNodeTexNoise":
+                        bump["noise_scale"] = _socket_value(noise, "Scale")
+                        bump["noise_detail"] = _socket_value(noise, "Detail")
+                entry["bump"] = bump
+    return entry
 
 
 def build_report(filepath):
@@ -284,6 +352,7 @@ def build_report(filepath):
     for path in missing_files:
         issues.append({"code": "MISSING_RESOURCE", "message": f"missing file: {path}"})
 
+    materials = [_material_info(material) for material in bpy.data.materials]
     animations = collect_animations(scene)
     animated = sorted({entry["owner"] for entry in animations})
 
@@ -304,6 +373,7 @@ def build_report(filepath):
         },
         "collections": collection_paths(scene.collection.children),
         "objects": objects,
+        "materials": materials,
         "cameras": cameras,
         "lights": lights,
         "animated_objects": animated,

@@ -22,6 +22,7 @@
 | D-015 | IR v2 增量扩展 TEXT / CURVE / ORTHO，保持 `schema_version: 2` | accepted |
 | D-016 | 二维标注通过 `shots.json` 的 `annotations[]` 传递，Remotion 负责渲染 | accepted |
 | D-017 | 二维文字捆绑 Noto Sans SC（OFL）；Blender TEXT 仍用内置 Bfont | accepted |
+| D-018 | 材质预设由控制层展开，Blender 只接收展开后的任务 | accepted |
 
 ---
 
@@ -157,3 +158,11 @@
 **决策**：只读使用 Noto Sans SC（SIL Open Font License 1.1）的 Regular，vendor 到 `RemotionStudio/public/fonts/`，由 `@remotion/fonts` 的 `loadFont` 在渲染前加载；`design-tokens` 的 `fonts.sans` 增加该家族。Blender TEXT 仍用内置 Bfont，不加载外部字体。
 
 **后果**：二维字幕与标注跨机器一致；字体文件（约 1.1 MB + 13 KB）入库并携带 OFL 许可证。只捆绑 400 字重，粗体为合成粗体。
+
+## D-018 材质预设展开
+
+**背景**：常用材质应当复用，但 Blender 内置校验器不应重复实现预设查找，也不应让任务文件包含两份真值。
+
+**决策**：`preset` 是控制层概念；`scene-validate` 与 `scene-run` 在双端校验前调用 `scene_presets.expand_task`，Blender 只接收展开后的 `shader` + `params`。manifest 记录预设来源、源任务哈希与展开任务哈希。
+
+**后果**：预设可独立演进；未知预设、预设与 `shader`/`params` 混用都会在校验期失败。旧任务不受影响。

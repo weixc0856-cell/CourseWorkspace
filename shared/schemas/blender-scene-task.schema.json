@@ -812,7 +812,13 @@
               0.0,
               1.0
             ],
-            "emission_strength": 0.0
+            "emission_strength": 0.0,
+            "coat_weight": 0.0,
+            "coat_roughness": 0.03,
+            "bump_strength": 0.0,
+            "bump_distance": 0.02,
+            "bump_scale": 8.0,
+            "bump_detail": 4.0
           }
         }
       },
@@ -927,6 +933,48 @@
           "maximum": 100000.0,
           "minimum": 0.0,
           "title": "Emission Strength",
+          "type": "number"
+        },
+        "coat_weight": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Coat Weight",
+          "type": "number"
+        },
+        "coat_roughness": {
+          "default": 0.03,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Coat Roughness",
+          "type": "number"
+        },
+        "bump_strength": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Bump Strength",
+          "type": "number"
+        },
+        "bump_distance": {
+          "default": 0.02,
+          "maximum": 1.0,
+          "minimum": 0.0001,
+          "title": "Bump Distance",
+          "type": "number"
+        },
+        "bump_scale": {
+          "default": 8.0,
+          "maximum": 1000.0,
+          "minimum": 0.1,
+          "title": "Bump Scale",
+          "type": "number"
+        },
+        "bump_detail": {
+          "default": 4.0,
+          "maximum": 16.0,
+          "minimum": 0.0,
+          "title": "Bump Detail",
           "type": "number"
         }
       },

@@ -112,6 +112,12 @@ class PrincipledParams(BaseModel):
     ior: float = Field(1.45, ge=1.0, le=3.0)
     emission_color: Color4 = (0.0, 0.0, 0.0, 1.0)
     emission_strength: float = Field(0.0, ge=0.0, le=1e5)
+    coat_weight: float = Field(0.0, ge=0.0, le=1.0)
+    coat_roughness: float = Field(0.03, ge=0.0, le=1.0)
+    bump_strength: float = Field(0.0, ge=0.0, le=1.0)
+    bump_distance: float = Field(0.02, ge=1e-4, le=1.0)
+    bump_scale: float = Field(8.0, ge=0.1, le=1000.0)
+    bump_detail: float = Field(4.0, ge=0.0, le=16.0)
 
 
 class EmissionParams(BaseModel):

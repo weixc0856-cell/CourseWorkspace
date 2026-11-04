@@ -11,6 +11,8 @@ from course_control.blender_scene import (
     task_summary,
     validate_scene_task,
 )
+from course_control.paths import ContractError
+from course_control.scene_presets import expand_task
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 TASKS = WORKSPACE / "BlenderStudio" / "tasks" / "scene-system"
@@ -62,6 +64,29 @@ class SceneContractTest(unittest.TestCase):
         with self.assertRaises(SceneContractError) as raised:
             validate_scene_task(data, WORKSPACE)
         self.assertIn("curve is only valid for CURVE objects", "\n".join(raised.exception.messages))
+
+    def test_material_presets_expand(self):
+        data, refs = expand_task(load_task("demo-materials.json"), WORKSPACE)
+        self.assertEqual(len(refs), 7)
+        self.assertEqual(refs[0]["preset"], "studio_floor")
+        self.assertEqual(data["materials"][1]["shader"], "principled")
+        self.assertEqual(data["materials"][1]["params"]["metallic"], 0.9)
+        task = validate_scene_task(data, WORKSPACE)
+        self.assertEqual(task_summary(task)["materials"], 7)
+
+    def test_unknown_material_preset_rejected(self):
+        data = load_task("demo-materials.json")
+        data["materials"][1]["preset"] = "missing_preset"
+        with self.assertRaises(ContractError) as raised:
+            expand_task(data, WORKSPACE)
+        self.assertIn("unknown preset", str(raised.exception))
+
+    def test_preset_conflicts_with_params_rejected(self):
+        data = load_task("demo-materials.json")
+        data["materials"][1]["params"] = {"metallic": 0.5}
+        with self.assertRaises(ContractError) as raised:
+            expand_task(data, WORKSPACE)
+        self.assertIn("cannot be combined", str(raised.exception))
 
     def test_geometry_nodes_and_animation_tasks_pass(self):
         gn = validate_scene_task(load_task("demo-geometry-nodes.json"), WORKSPACE)
@@ -118,6 +143,7 @@ class SceneContractTest(unittest.TestCase):
         blender = load_blender_validator()
         for path in sorted(TASKS.glob("*.json")):
             data = json.loads(path.read_text(encoding="utf-8"))
+            data, _refs = expand_task(data, WORKSPACE)
             external_ok = True
             try:
                 validate_scene_task(data, WORKSPACE)

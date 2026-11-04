@@ -88,7 +88,7 @@ OUTPUT
 
 ## 4. materials
 
-材质分两种 shader，`shader` 必填，参数白名单外一律拒绝。
+材质两种写法二选一：直接写 `shader` + `params`，或用 `preset` 引用预设。`preset` 不能与 `shader` / `params` 同时出现；控制层在双端校验前将其展开为等价的 `shader` + `params`，因此 Blender 只见过展开后的任务。
 
 ```json
 {
@@ -101,9 +101,21 @@ OUTPUT
     "alpha": 1.0,
     "ior": 1.45,
     "emission_color": [0.0, 0.0, 0.0, 1.0],
-    "emission_strength": 0.0
+    "emission_strength": 0.0,
+    "coat_weight": 0.0,
+    "coat_roughness": 0.03,
+    "bump_strength": 0.0,
+    "bump_distance": 0.02,
+    "bump_scale": 8.0,
+    "bump_detail": 4.0
   }
 }
+```
+
+预设写法：
+
+```json
+{ "id": "mat.aluminum", "preset": "aluminum_brushed" }
 ```
 
 | shader | 参数 | 范围 / 默认 |
@@ -112,10 +124,21 @@ OUTPUT
 | | `metallic` / `roughness` / `alpha` | `[0,1]`，默认 `0 / 0.5 / 1` |
 | | `ior` | `[1,3]`，默认 `1.45` |
 | | `emission_color` / `emission_strength` | RGBA / `[0,1e5]`，默认全黑 / `0` |
+| | `coat_weight` / `coat_roughness` | `[0,1]`，默认 `0 / 0.03` |
+| | `bump_strength` / `bump_distance` | `[0,1]` / `[1e-4,1]`，默认 `0 / 0.02`；`bump_strength = 0` 时不创建节点 |
+| | `bump_scale` / `bump_detail` | `[0.1,1000]` / `[0,16]`，默认 `8 / 4` |
 | `emission` | `color` | RGBA，默认白 |
 | | `strength` | `[0,1e5]`，默认 `1` |
 
-`alpha < 1` 时自动切换到混合渲染模式。节点输入按名称查找，不按索引硬编码。
+`alpha < 1` 时自动切换到混合渲染模式。节点输入按名称查找，不按索引硬编码。`bump_strength > 0` 时执行器创建 `Noise Texture → Bump → Normal` 节点链，不依赖外部贴图。
+
+### 4.1 材质预设
+
+- 目录：`BlenderStudio/assets/materials/presets/*.json`，每个文件一个预设，字段为 `schema_version`、`preset`、`shader`、`params`。
+- 当前预设：`studio_floor`、`aluminum_brushed`、`matte_plastic`、`coated_paint`、`rubber_matte`、`transparent_sheet`、`emissive_white`。
+- 展开在控制层完成（`scene_presets.expand_task`）；`scene-validate` 与 `scene-run` 都走同一条展开路径。
+- manifest 记录 `presets`（材质 id、预设名、文件路径）、`source_task_hash` 与展开后的 `task_hash`；有预设时另存 `<task_id>.expanded.json` 作为执行输入。
+- 材质语义验收：`scene.materials` 回读每个材质的 shader、socket 值以及 Bump 节点参数，与展开后的任务逐项比对。
 
 ## 5. objects
 
@@ -391,6 +414,7 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 | `scene.text_objects` | 每个声明的 `TEXT` 都存在，且 `body` 与任务一致 |
 | `scene.curves` | 每个声明的 `CURVE` 都存在，且点数、`cyclic`、`bevel_depth` 与任务一致 |
 | `scene.cameras` | 声明的相机存在，投影方式与 `ortho_scale` 与任务一致 |
+| `scene.materials` | 每个材质的 shader、socket 值与 Bump 参数与展开后的任务一致 |
 | `scene.geometry_nodes` | GN 修改器数量 |
 | `scene.animation` | F-Curve 数量 |
 

@@ -377,6 +377,24 @@ def validate_task(task, cwd=None):
             params["emission_strength"] = _number(
                 params_in.get("emission_strength", 0.0), f"{path}.params.emission_strength", 0.0, 1e5
             )
+            params["coat_weight"] = _number(
+                params_in.get("coat_weight", 0.0), f"{path}.params.coat_weight", 0.0, 1.0
+            )
+            params["coat_roughness"] = _number(
+                params_in.get("coat_roughness", 0.03), f"{path}.params.coat_roughness", 0.0, 1.0
+            )
+            params["bump_strength"] = _number(
+                params_in.get("bump_strength", 0.0), f"{path}.params.bump_strength", 0.0, 1.0
+            )
+            params["bump_distance"] = _number(
+                params_in.get("bump_distance", 0.02), f"{path}.params.bump_distance", 1e-4, 1.0
+            )
+            params["bump_scale"] = _number(
+                params_in.get("bump_scale", 8.0), f"{path}.params.bump_scale", 0.1, 1000.0
+            )
+            params["bump_detail"] = _number(
+                params_in.get("bump_detail", 4.0), f"{path}.params.bump_detail", 0.0, 16.0
+            )
         else:
             params["color"] = _color(
                 params_in.get("color", (1.0, 1.0, 1.0, 1.0)), f"{path}.params.color"
