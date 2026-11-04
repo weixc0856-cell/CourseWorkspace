@@ -36,7 +36,7 @@ ENGINE_ALIASES = {
 ALLOWED_FORMATS = {"png", "mp4"}
 UNITS = {"METRIC", "IMPERIAL", "NONE"}
 SHADERS = {"principled", "emission", "scientific_colormap"}
-OBJECT_TYPES = {"MESH", "EMPTY", "TEXT", "CURVE"}
+OBJECT_TYPES = {"MESH", "EMPTY", "TEXT", "CURVE", "SURFACE"}
 CAMERA_PROJECTIONS = {"PERSPECTIVE", "ORTHO"}
 TEXT_ALIGN_X = {"LEFT", "CENTER", "RIGHT"}
 TEXT_ALIGN_Y = {"TOP", "CENTER", "BOTTOM"}
@@ -182,6 +182,80 @@ def _identifier(value, path):
     return text
 
 
+_SCENE_EXPR = None
+_EXPR_ROOT = None
+
+
+def _set_expression_root(cwd):
+    global _EXPR_ROOT
+    _EXPR_ROOT = cwd
+
+
+def _scene_expr():
+    global _SCENE_EXPR
+    if _SCENE_EXPR is None:
+        import sys
+
+        root = _EXPR_ROOT or os.getcwd()
+        source = os.path.join(root, "shared", "scene_expr", "src")
+        if source not in sys.path:
+            sys.path.insert(0, source)
+        try:
+            import scene_expr
+        except ImportError as exc:
+            raise TaskError(
+                "scene-expr package not found; run from the workspace root"
+            ) from exc
+        _SCENE_EXPR = scene_expr
+    return _SCENE_EXPR
+
+
+def _expression_text(value, path):
+    text = _require_str(value, path)
+    if len(text) > 200:
+        raise TaskError(f"{path} must be <= 200 characters")
+    module = _scene_expr()
+    try:
+        module.compile_expression(text)
+    except module.ExpressionError as exc:
+        raise TaskError(f"{path}: {exc}") from exc
+    return text
+
+
+def _range_pair(value, path):
+    pair = _vec(value, path, 2, -1e6, 1e6)
+    if pair[0] >= pair[1]:
+        raise TaskError(f"{path} start must be less than end")
+    if pair[1] - pair[0] > 1e4:
+        raise TaskError(f"{path} span must be <= 1e4")
+    return pair
+
+
+def _surface_spec(value, path):
+    data = _require_mapping(value, path)
+    allowed = {
+        "expression",
+        "x_range",
+        "y_range",
+        "x_segments",
+        "y_segments",
+        "z_scale",
+        "z_offset",
+    }
+    unknown = sorted(set(data) - allowed)
+    if unknown:
+        raise TaskError(f"{path} has unknown fields {unknown}; expected {sorted(allowed)}")
+    return {
+        "expression": _expression_text(data.get("expression"), f"{path}.expression"),
+        "x_range": _range_pair(data.get("x_range", (-3.0, 3.0)), f"{path}.x_range"),
+        "y_range": _range_pair(data.get("y_range", (-3.0, 3.0)), f"{path}.y_range"),
+        "x_segments": _integer(data.get("x_segments", 60), f"{path}.x_segments", 2, 512),
+        "y_segments": _integer(data.get("y_segments", 60), f"{path}.y_segments", 2, 512),
+        "z_scale": _number(data.get("z_scale", 1.0), f"{path}.z_scale", -1e6, 1e6),
+        "z_offset": _number(data.get("z_offset", 0.0), f"{path}.z_offset", -1e6, 1e6),
+    }
+
+
 def _attribute_name(value, path):
     text = _require_str(value, path)
     if not ATTRIBUTE_RE.match(text):
@@ -228,7 +302,18 @@ def _field_spec(value, path):
             "scale": _number(data.get("scale", 1.0), f"{path}.scale", 0.0, 1e6),
             "seed": _integer(data.get("seed", 0), f"{path}.seed", 0, 2**31 - 1),
         }
-    raise TaskError(f"{path}.kind must be one of ['axis', 'distance', 'noise']")
+    if kind == "expression":
+        allowed = {"kind", "expression"}
+        unknown = sorted(set(data) - allowed)
+        if unknown:
+            raise TaskError(f"{path} has unknown fields {unknown}; expected {sorted(allowed)}")
+        return {
+            "kind": "expression",
+            "expression": _expression_text(data.get("expression"), f"{path}.expression"),
+        }
+    raise TaskError(
+        f"{path}.kind must be one of ['axis', 'distance', 'noise', 'expression']"
+    )
 
 
 def _attributes(value, path):
@@ -395,6 +480,8 @@ def validate_task(task, cwd=None):
     if task.get("schema_version") != SCHEMA_VERSION:
         raise TaskError(f"schema_version must be {SCHEMA_VERSION}")
 
+    _set_expression_root(cwd)
+
     task_id = _identifier(task.get("task_id"), "task_id")
     operation = task.get("operation", "build_scene")
     if operation != "build_scene":
@@ -536,11 +623,14 @@ def validate_task(task, cwd=None):
         attributes = []
         text_spec = None
         curve_spec = None
+        surface_spec = None
         if object_type == "MESH":
             if data.get("text") is not None:
                 raise TaskError(f"{path}.text is only valid for TEXT objects")
             if data.get("curve") is not None:
                 raise TaskError(f"{path}.curve is only valid for CURVE objects")
+            if data.get("surface") is not None:
+                raise TaskError(f"{path}.surface is only valid for SURFACE objects")
             attributes = _attributes(data.get("attributes"), f"{path}.attributes")
             primitive = data.get("primitive")
             if primitive not in PRIMITIVE_PARAMS:
@@ -577,11 +667,26 @@ def validate_task(task, cwd=None):
                 raise TaskError(f"{path}.text is only valid for TEXT objects")
             if data.get("attributes"):
                 raise TaskError(f"{path}.attributes is only valid for MESH objects")
+            if data.get("surface") is not None:
+                raise TaskError(f"{path}.surface is only valid for SURFACE objects")
             if data.get("curve") is None:
                 raise TaskError(f"{path}.curve is required for CURVE objects")
             if _bool(data.get("smooth", False), f"{path}.smooth"):
                 raise TaskError(f"{path}.smooth is only valid for MESH objects")
             curve_spec = _curve_spec(data.get("curve"), f"{path}.curve")
+        elif object_type == "SURFACE":
+            if data.get("primitive") is not None:
+                raise TaskError(f"{path}.primitive is only valid for MESH objects")
+            if data.get("params"):
+                raise TaskError(f"{path}.params is only valid for MESH objects")
+            if data.get("text") is not None:
+                raise TaskError(f"{path}.text is only valid for TEXT objects")
+            if data.get("curve") is not None:
+                raise TaskError(f"{path}.curve is only valid for CURVE objects")
+            if data.get("surface") is None:
+                raise TaskError(f"{path}.surface is required for SURFACE objects")
+            attributes = _attributes(data.get("attributes"), f"{path}.attributes")
+            surface_spec = _surface_spec(data.get("surface"), f"{path}.surface")
         else:
             if data.get("primitive") is not None:
                 raise TaskError(f"{path}.primitive is only valid for MESH objects")
@@ -593,6 +698,8 @@ def validate_task(task, cwd=None):
                 raise TaskError(f"{path}.text is only valid for TEXT objects")
             if data.get("curve") is not None:
                 raise TaskError(f"{path}.curve is only valid for CURVE objects")
+            if data.get("surface") is not None:
+                raise TaskError(f"{path}.surface is only valid for SURFACE objects")
             if data.get("attributes"):
                 raise TaskError(f"{path}.attributes is only valid for MESH objects")
             if _bool(data.get("smooth", False), f"{path}.smooth"):
@@ -643,6 +750,7 @@ def validate_task(task, cwd=None):
                 "attributes": attributes,
                 "text": text_spec,
                 "curve": curve_spec,
+                "surface": surface_spec,
                 "transform": _transform(data.get("transform"), f"{path}.transform"),
                 "material": material_id,
                 "collection": _collection_path(

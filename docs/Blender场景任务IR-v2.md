@@ -190,8 +190,8 @@ OUTPUT
 }
 ```
 
-- `type`：`MESH` / `EMPTY` / `TEXT` / `CURVE`。相机与灯光走独立数组，不放进 `objects`。
-- `primitive`、`params`、`geometry_nodes`、`smooth` 只适用于 `MESH`；`text` / `curve` 只适用于对应类型（见 §5.1.1）。
+- `type`：`MESH` / `EMPTY` / `TEXT` / `CURVE` / `SURFACE`。相机与灯光走独立数组，不放进 `objects`。
+- `primitive`、`params`、`geometry_nodes` 只适用于 `MESH`；`text` / `curve` / `surface` 只适用于对应类型（见 §5.1.1–§5.1.2）；`smooth` 适用于 `MESH` 与 `SURFACE`。
 - `material` 适用于 `MESH` / `TEXT` / `CURVE`，不适用于 `EMPTY`。
 - `rotation` 单位为**度**，内部转换为弧度；`scale` 必须全部大于 0。
 - `transform` 是世界空间变换。设置 `parent` 时保留世界变换（通过 `matrix_parent_inverse`）。
@@ -271,6 +271,47 @@ OUTPUT
 
 - 曲线为 3D `POLY` 样条，执行时统一 `bevel_resolution = 3` 并封盖。
 - 曲线点坐标是对象局部坐标，随后叠加 `transform`。
+
+### 5.1.2 SURFACE 与表达式属性
+
+`SURFACE` 由受限表达式生成网格：
+
+```json
+{
+  "id": "surface.wave",
+  "type": "SURFACE",
+  "surface": {
+    "expression": "sin(x) * cos(y)",
+    "x_range": [-3.0, 3.0],
+    "y_range": [-3.0, 3.0],
+    "x_segments": 60,
+    "y_segments": 60,
+    "z_scale": 1.5,
+    "z_offset": 0.0
+  },
+  "attributes": [
+    { "name": "height", "field": { "kind": "expression", "expression": "z" } }
+  ],
+  "material": "mat.height",
+  "smooth": true
+}
+```
+
+| 字段 | 默认 | 范围 / 说明 |
+| --- | --- | --- |
+| `expression` | 必填 | 受限表达式，变量为 `x` / `y` / `z` |
+| `x_range` / `y_range` | `[-3, 3]` | 起止必须递增，跨度 ≤ 1e4 |
+| `x_segments` / `y_segments` | 60 | 2–512；顶点数为 `(x+1)(y+1)` |
+| `z_scale` / `z_offset` | 1 / 0 | 结果范围 ±1e6；非有限值直接失败 |
+
+表达式规则：
+
+- 只允许数字常量、`x` / `y` / `z`、`+ - * / ** %`、一元 `+ -`，以及白名单函数 `sin cos tan asin acos atan exp log log10 sqrt abs floor ceil min max`。
+- **不使用 `eval` / `exec`**：AST 白名单校验后由纯解释器求值；实现位于 `shared/scene_expr`，控制层与 Blender 共用同一份。
+- 上限：表达式 200 字符、64 个 AST 节点、嵌套 16 层；越界、未知变量、未知函数、非有限结果都失败。
+- `attributes[].field.kind = "expression"` 使用同一求值器，变量是对象局部坐标；可用于 `MESH` 与 `SURFACE`。
+
+验收：`scene.surfaces` 核对对象、顶点数与表达式；场景报告按采样顶点复算 `z`，不一致产生 `SURFACE_MISMATCH`。
 
 ### 5.2 Geometry Nodes
 
@@ -443,6 +484,7 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 | `scene.cameras` | 声明的相机存在，投影方式与 `ortho_scale` 与任务一致 |
 | `scene.materials` | 每个材质的 shader、socket 值、Bump 参数或科学着色参数与任务一致 |
 | `scene.attributes` | 每个声明的点属性都存在 |
+| `scene.surfaces` | 每个 `SURFACE` 的顶点数与表达式与任务一致 |
 | `scene.geometry_nodes` | GN 修改器数量 |
 | `scene.animation` | F-Curve 数量 |
 
@@ -462,6 +504,7 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 - 对象、材质、相机、灯光、动画目标的 `id` 必须自洽；
 - `TEXT` 只填 `text` 白名单字段，不填字体路径；中文说明默认不放进三维场景；
 - 科学着色必须给出显式范围与单位，不得自行推测或省略；
+- 表达式只能是 §5.1.2 的白名单形式，不能生成脚本或调用外部函数；
 - 不确定的参数使用保守默认值，不编造注册表之外的 GN 资产。
 
 校验失败时，把 `scene-validate` 的错误列表原样反馈给模型，并要求只修改对应字段。自动修复最多 2–3 轮，不做无限重试。

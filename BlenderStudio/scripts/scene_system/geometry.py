@@ -7,7 +7,7 @@ import math
 import bmesh
 import bpy
 
-from .fields import evaluate_field
+from .fields import compile_cached, evaluate_field
 from .task_schema import TaskError
 
 
@@ -115,6 +115,40 @@ def write_attributes(mesh, specs):
         if len(attribute.data) != len(mesh.vertices):
             raise TaskError(f"attribute {spec['name']} size mismatch")
     return len(specs)
+
+
+def build_surface(name, spec, smooth=False):
+    """Create a z = f(x, y) grid mesh from a restricted expression."""
+    compiled = compile_cached(spec["expression"])
+    x_min, x_max = spec["x_range"]
+    y_min, y_max = spec["y_range"]
+    x_segments = spec["x_segments"]
+    y_segments = spec["y_segments"]
+    vertices = []
+    for j in range(y_segments + 1):
+        y = y_min + (y_max - y_min) * j / y_segments
+        for i in range(x_segments + 1):
+            x = x_min + (x_max - x_min) * i / x_segments
+            z = compiled(x, y, 0.0) * spec["z_scale"] + spec["z_offset"]
+            if not math.isfinite(z):
+                raise TaskError(f"surface {name}: non-finite z at ({x}, {y})")
+            vertices.append((x, y, z))
+    faces = []
+    stride = x_segments + 1
+    for j in range(y_segments):
+        for i in range(x_segments):
+            a = j * stride + i
+            faces.append((a, a + 1, a + stride + 1, a + stride))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(vertices, [], faces)
+    mesh.validate(verbose=False)
+    mesh.update()
+    if not mesh.vertices or not mesh.polygons:
+        raise TaskError(f"surface {name} produced an empty mesh")
+    if smooth:
+        for polygon in mesh.polygons:
+            polygon.use_smooth = True
+    return mesh
 
 
 def build_text(name, spec):

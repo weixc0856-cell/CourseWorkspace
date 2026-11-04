@@ -67,6 +67,7 @@
             "mapping": {
               "axis": "#/$defs/AxisField",
               "distance": "#/$defs/DistanceField",
+              "expression": "#/$defs/ExpressionField",
               "noise": "#/$defs/NoiseField"
             },
             "propertyName": "kind"
@@ -80,6 +81,9 @@
             },
             {
               "$ref": "#/$defs/NoiseField"
+            },
+            {
+              "$ref": "#/$defs/ExpressionField"
             }
           ],
           "title": "Field"
@@ -462,6 +466,28 @@
       "title": "EmissionParams",
       "type": "object"
     },
+    "ExpressionField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "expression",
+          "title": "Kind",
+          "type": "string"
+        },
+        "expression": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "expression"
+      ],
+      "title": "ExpressionField",
+      "type": "object"
+    },
     "GeometryNodeEntry": {
       "additionalProperties": false,
       "properties": {
@@ -784,7 +810,8 @@
             "MESH",
             "EMPTY",
             "TEXT",
-            "CURVE"
+            "CURVE",
+            "SURFACE"
           ],
           "title": "Type",
           "type": "string"
@@ -852,6 +879,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/CurveSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "surface": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SurfaceSpec"
             },
             {
               "type": "null"
@@ -1383,6 +1421,86 @@
         "colormap"
       ],
       "title": "ScientificColormapParams",
+      "type": "object"
+    },
+    "SurfaceSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "expression": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "x_range": {
+          "default": [
+            -3.0,
+            3.0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "X Range",
+          "type": "array"
+        },
+        "y_range": {
+          "default": [
+            -3.0,
+            3.0
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Y Range",
+          "type": "array"
+        },
+        "x_segments": {
+          "default": 60,
+          "maximum": 512,
+          "minimum": 2,
+          "title": "X Segments",
+          "type": "integer"
+        },
+        "y_segments": {
+          "default": 60,
+          "maximum": 512,
+          "minimum": 2,
+          "title": "Y Segments",
+          "type": "integer"
+        },
+        "z_scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Z Scale",
+          "type": "number"
+        },
+        "z_offset": {
+          "default": 0.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Z Offset",
+          "type": "number"
+        }
+      },
+      "required": [
+        "expression"
+      ],
+      "title": "SurfaceSpec",
       "type": "object"
     },
     "TextSpec": {

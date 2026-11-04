@@ -39,7 +39,7 @@
 | FR-02 | V-01~V-09 校验 | `validators.py` | `check.ps1`；V-04 失败单测 | COMPLETED | — |
 | FR-03 | 预览与截图 | `adapters/slides.py` + `capture-slides.mjs` | 真实课程 20/20（`build/01-shell-for-ai-era/slides`） | COMPLETED | — |
 | FR-04 | 动画渲染 | Motion 人工导出；Manim / Blender v1 适配器 | `lesson-manual` 夹具；真实课程 `manual_export_required` | PARTIAL | 8 段 Motion 导出未完成 |
-| FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py` | `check-scene-system.ps1 -Render` 7 次真实渲染；39 个 CourseControl 测试（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色与语义验收） | COMPLETED | — |
+| FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py`、`shared/scene_expr` | `check-scene-system.ps1 -Render` 8 次真实渲染；51 个 CourseControl 测试（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色、参数化曲面与语义验收） | COMPLETED | — |
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
 | FR-07 | 时间线收集 | `collect.py`（含 `annotations[]`） | `lesson-smoke` shots.json 通过 verify；V-22 标注检查 | COMPLETED | — |
 | FR-08 | 合成与成片验收 | `verify.py`、`report.py`、`adapters/remotion.py` | `lesson-smoke`、`lesson-blender-only` verdict pass | COMPLETED | — |
@@ -68,8 +68,8 @@
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 100 个用例（39+28+22+11） |
-| 3 | 5 课程 + 19 场景契约 | COMPLETED | `check.ps1` |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 112 个用例（51+28+22+11） |
+| 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
 | 6 | 本地模型串行有真实证据 | COMPLETED | 双进程竞争测试 |

@@ -39,7 +39,8 @@ try {
         "demo-modify",
         "demo-text-curve",
         "demo-materials",
-        "demo-scientific"
+        "demo-scientific",
+        "demo-surface"
     )
     $invalid = @(
         "invalid-collection-root",
@@ -71,7 +72,7 @@ try {
     }
 
     if ($Render -and -not $script:failed) {
-        foreach ($name in @("demo-scene", "demo-geometry-nodes", "demo-animation-scene", "demo-modify", "demo-text-curve", "demo-materials", "demo-scientific")) {
+        foreach ($name in @("demo-scene", "demo-geometry-nodes", "demo-animation-scene", "demo-modify", "demo-text-curve", "demo-materials", "demo-scientific", "demo-surface")) {
             Invoke-Checked "render $name" {
                 uv run --project CourseControl course-control scene-run `
                     --task "BlenderStudio/tasks/scene-system/$name.json" --workspace .

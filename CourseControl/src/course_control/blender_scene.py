@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Annotated, Literal
 
+from scene_expr import ExpressionError, compile_expression
+
 from .colormaps import load_colormaps
 from .paths import ContractError
 
@@ -175,8 +177,25 @@ class NoiseField(BaseModel):
     seed: int = Field(0, ge=0, le=2**31 - 1)
 
 
+class ExpressionField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["expression"]
+    expression: str = Field(min_length=1, max_length=200)
+
+    @field_validator("expression")
+    @classmethod
+    def _expression(cls, value: str) -> str:
+        try:
+            compile_expression(value)
+        except ExpressionError as exc:
+            raise ValueError(str(exc)) from exc
+        return value
+
+
 FieldSpec = Annotated[
-    AxisField | DistanceField | NoiseField, Field(discriminator="kind")
+    AxisField | DistanceField | NoiseField | ExpressionField,
+    Field(discriminator="kind"),
 ]
 
 
@@ -294,11 +313,41 @@ class CurveSpec(BaseModel):
         return value
 
 
+class SurfaceSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expression: str = Field(min_length=1, max_length=200)
+    x_range: tuple[float, float] = (-3.0, 3.0)
+    y_range: tuple[float, float] = (-3.0, 3.0)
+    x_segments: int = Field(60, ge=2, le=512)
+    y_segments: int = Field(60, ge=2, le=512)
+    z_scale: float = Field(1.0, ge=-1e6, le=1e6)
+    z_offset: float = Field(0.0, ge=-1e6, le=1e6)
+
+    @field_validator("expression")
+    @classmethod
+    def _expression(cls, value: str) -> str:
+        try:
+            compile_expression(value)
+        except ExpressionError as exc:
+            raise ValueError(str(exc)) from exc
+        return value
+
+    @field_validator("x_range", "y_range")
+    @classmethod
+    def _range(cls, value: tuple[float, float]) -> tuple[float, float]:
+        if value[0] >= value[1]:
+            raise ValueError("range start must be less than range end")
+        if value[1] - value[0] > 1e4:
+            raise ValueError("range span must be <= 1e4")
+        return value
+
+
 class ObjectSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: Id
-    type: Literal["MESH", "EMPTY", "TEXT", "CURVE"] = "MESH"
+    type: Literal["MESH", "EMPTY", "TEXT", "CURVE", "SURFACE"] = "MESH"
     primitive: (
         Literal[
             "CUBE",
@@ -317,6 +366,7 @@ class ObjectSpec(BaseModel):
     attributes: list[AttributeSpec] = Field(default_factory=list, max_length=8)
     text: TextSpec | None = None
     curve: CurveSpec | None = None
+    surface: SurfaceSpec | None = None
     transform: Transform = Transform()
     material: Id | None = None
     collection: CollectionPath = "ASSETS/Geometry"
@@ -341,7 +391,9 @@ class ObjectSpec(BaseModel):
             if self.curve is not None:
                 raise ValueError("curve is only valid for CURVE objects")
             if self.attributes:
-                raise ValueError("attributes are only valid for MESH objects")
+                raise ValueError("attributes are only valid for MESH or SURFACE objects")
+            if self.surface is not None:
+                raise ValueError("surface is only valid for SURFACE objects")
             if self.smooth:
                 raise ValueError("smooth is only valid for MESH objects")
             return self
@@ -357,7 +409,9 @@ class ObjectSpec(BaseModel):
             if self.text is None:
                 raise ValueError("TEXT objects require text")
             if self.attributes:
-                raise ValueError("attributes are only valid for MESH objects")
+                raise ValueError("attributes are only valid for MESH or SURFACE objects")
+            if self.surface is not None:
+                raise ValueError("surface is only valid for SURFACE objects")
             if self.smooth:
                 raise ValueError("smooth is only valid for MESH objects")
             return self
@@ -373,10 +427,32 @@ class ObjectSpec(BaseModel):
             if self.curve is None:
                 raise ValueError("CURVE objects require curve")
             if self.attributes:
-                raise ValueError("attributes are only valid for MESH objects")
+                raise ValueError("attributes are only valid for MESH or SURFACE objects")
+            if self.surface is not None:
+                raise ValueError("surface is only valid for SURFACE objects")
             if self.smooth:
                 raise ValueError("smooth is only valid for MESH objects")
             return self
+        if self.type == "SURFACE":
+            if self.primitive is not None:
+                raise ValueError("primitive is only valid for MESH objects")
+            if self.params:
+                raise ValueError("params are only valid for MESH objects")
+            if self.geometry_nodes:
+                raise ValueError("geometry_nodes are only valid for MESH objects")
+            if self.text is not None:
+                raise ValueError("text is only valid for TEXT objects")
+            if self.curve is not None:
+                raise ValueError("curve is only valid for CURVE objects")
+            if self.surface is None:
+                raise ValueError("SURFACE objects require surface")
+            names = [attribute.name for attribute in self.attributes]
+            duplicates = sorted({name for name in names if names.count(name) > 1})
+            if duplicates:
+                raise ValueError(f"attribute names must be unique: {duplicates}")
+            return self
+        if self.surface is not None:
+            raise ValueError("surface is only valid for SURFACE objects")
         if self.text is not None:
             raise ValueError("text is only valid for TEXT objects")
         if self.curve is not None:
@@ -827,6 +903,7 @@ def task_summary(task: BlenderSceneTask) -> dict:
         "text_objects": sum(1 for obj in task.objects if obj.type == "TEXT"),
         "curve_objects": sum(1 for obj in task.objects if obj.type == "CURVE"),
         "ortho_cameras": sum(1 for camera in task.cameras if camera.projection == "ORTHO"),
+        "surface_objects": sum(1 for obj in task.objects if obj.type == "SURFACE"),
         "materials": len(task.materials),
         "cameras": len(task.cameras),
         "lights": len(task.lights),

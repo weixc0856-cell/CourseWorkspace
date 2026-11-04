@@ -21,6 +21,7 @@ CourseWorkspace/
 ├── ContentQA/          审查内部能力：在线模型内容审查（Python）
 ├── shared/
 │   ├── ai_runtime/     AI 运行时：跨进程锁、服务生命周期、任务状态、上下文预算
+│   ├── scene_expr/     受限表达式：AST 白名单 + 解释器（控制层与 Blender 共用）
 │   ├── schemas/        JSON Schema（由 Pydantic 导出）
 │   └── design-tokens/  设计令牌
 ├── config/             本机配置（*.yaml 本地文件不入库）
