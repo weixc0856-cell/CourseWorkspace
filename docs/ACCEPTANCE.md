@@ -78,7 +78,7 @@
 
 产物：`build/blender-scene-acceptance/blender/` 与 `manifests/`。
 
-二维标注（V-22）的渲染证据：`build/p1b-annotation-evidence/annotation-still.png`（真实 Remotion still，frame 45，三条标注与背景/边框样式）。
+二维标注（V-22）的渲染证据：`build/p1b-annotation-evidence/annotation-still.png`（三条标注与背景/边框样式）与 `annotation-font-still.png`（中文标注，捆绑字体 Noto Sans SC）。
 
 ---
 

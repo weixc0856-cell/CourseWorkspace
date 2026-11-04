@@ -68,7 +68,7 @@
 | overlay 镜头必须是**媒体文件**（视频/图片），不是矢量层 | 同上 `:60-120`；`types.ts` 的 `presentation` 只有 cutaway / picture_in_picture / transparent_overlay |
 | 没有任何图例、色标、任意文字标注组件 | `RemotionStudio/src/` 全文无 `legend` / `annotation` / `colorbar` |
 | 字幕由 SRT 驱动，只能显示台词 | `RemotionStudio/src/subtitles/Captions.tsx` |
-| 字体来自系统字体栈，未捆绑字体 | `shared/design-tokens/tokens.json`；`RemotionStudio/src/styles/tokens.ts` |
+| 字体来自系统字体栈（P1b 后已捆绑 Noto Sans SC，见 D-017） | `shared/design-tokens/tokens.json`；`RemotionStudio/src/styles/tokens.ts` |
 | staging 只复制 `shots` / `narration` / `subtitles` 引用的文件 | `RemotionStudio/scripts/stage-assets.mjs:32-34` |
 | `shots.json` 的 `Shot` 为 `additionalProperties: false`，新增字段必须同步改 Pydantic 模型与 Schema | `shared/schemas/shots.schema.json` |
 
