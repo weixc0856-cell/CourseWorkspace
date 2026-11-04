@@ -250,8 +250,16 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
         annotation_errors = []
         total = shots_file.timeline.total_duration_s
         for annotation in annotations:
-            if not annotation.text.strip():
-                annotation_errors.append(f"{annotation.id}: blank text")
+            if annotation.kind == "text":
+                if not annotation.text.strip():
+                    annotation_errors.append(f"{annotation.id}: blank text")
+            else:
+                if annotation.max_value <= annotation.min_value:
+                    annotation_errors.append(f"{annotation.id}: invalid legend range")
+                if not annotation.stops:
+                    annotation_errors.append(f"{annotation.id}: empty colormap stops")
+                if not annotation.units.strip():
+                    annotation_errors.append(f"{annotation.id}: blank legend units")
             if annotation.start_s + annotation.duration_s > total + 0.01:
                 annotation_errors.append(f"{annotation.id}: ends after timeline")
             if any(

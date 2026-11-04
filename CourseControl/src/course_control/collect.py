@@ -5,7 +5,15 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .contracts import Annotation, Shot, ShotsFile, Timeline
+from .colormaps import load_colormaps
+from .contracts import (
+    Annotation,
+    LegendAnnotation,
+    Shot,
+    ShotsFile,
+    TextAnnotation,
+    Timeline,
+)
 from .paths import ContractError, LessonPaths
 from .utils import count_srt_cues, load_json, page_budgets, probe_audio, probe_media
 
@@ -35,6 +43,7 @@ def resolve_annotations(
     page_starts: list[float],
     budgets: list[float],
     total_duration: float,
+    colormaps: dict | None = None,
 ) -> list[Annotation]:
     annotations: list[Annotation] = []
     for spec in specs:
@@ -53,18 +62,45 @@ def resolve_annotations(
                 f"{spec.id}: annotation ends at {end:.3f}s "
                 f"beyond timeline {total_duration:.3f}s"
             )
+        common = {
+            "id": spec.id,
+            "start_s": round(start, 3),
+            "duration_s": round(spec.duration_s, 3),
+            "position": spec.position,
+        }
+        if spec.kind == "text":
+            annotations.append(
+                TextAnnotation(
+                    kind="text",
+                    text=spec.text,
+                    size=spec.size,
+                    align=spec.align,
+                    color=spec.color,
+                    background=spec.background,
+                    **common,
+                )
+            )
+            continue
+        definition = (colormaps or {}).get(spec.colormap)
+        if definition is None:
+            raise ContractError(
+                f"{spec.id}: unknown colormap {spec.colormap!r}; "
+                f"available: {sorted(colormaps or {})}"
+            )
         annotations.append(
-            Annotation(
-                id=spec.id,
-                kind=spec.kind,
-                text=spec.text,
-                start_s=round(start, 3),
-                duration_s=round(spec.duration_s, 3),
-                position=spec.position,
-                size=spec.size,
-                align=spec.align,
-                color=spec.color,
-                background=spec.background,
+            LegendAnnotation(
+                kind="legend",
+                colormap=spec.colormap,
+                min_value=spec.min_value,
+                max_value=spec.max_value,
+                units=spec.units,
+                stops=[
+                    (position, tuple(color)) for position, color in definition["stops"]
+                ],
+                bar_height=spec.bar_height,
+                bar_width=spec.bar_width,
+                label_size=spec.label_size,
+                **common,
             )
         )
     return annotations
@@ -202,8 +238,15 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
         outputs.append(target)
         subtitles = {"path": "subtitles.srt", "cues": count_srt_cues(target)}
 
+    colormaps = None
+    if any(spec.kind == "legend" for spec in paths.storyboard.annotations):
+        colormaps = load_colormaps(paths.workspace)
     annotations = resolve_annotations(
-        paths.storyboard.annotations, page_starts, budgets, total_duration
+        paths.storyboard.annotations,
+        page_starts,
+        budgets,
+        total_duration,
+        colormaps,
     )
 
     shots_file = ShotsFile(

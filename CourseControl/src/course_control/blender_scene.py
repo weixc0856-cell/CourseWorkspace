@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 from typing import Annotated, Literal
 
+from .colormaps import load_colormaps
+from .paths import ContractError
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -143,8 +146,76 @@ class EmissionMaterial(BaseModel):
     params: EmissionParams = EmissionParams()
 
 
+ATTRIBUTE_PATTERN = r"^[A-Za-z][A-Za-z0-9_]{0,63}$"
+COLORMAP_PATTERN = r"^[a-z][a-z0-9_]{0,63}$"
+
+
+class AxisField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["axis"]
+    axis: Literal["x", "y", "z"] = "z"
+    scale: float = Field(1.0, ge=-1e6, le=1e6)
+    offset: float = Field(0.0, ge=-1e6, le=1e6)
+
+
+class DistanceField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["distance"]
+    point: Vec3 = (0.0, 0.0, 0.0)
+    scale: float = Field(1.0, ge=-1e6, le=1e6)
+
+
+class NoiseField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["noise"]
+    scale: float = Field(1.0, ge=0.0, le=1e6)
+    seed: int = Field(0, ge=0, le=2**31 - 1)
+
+
+FieldSpec = Annotated[
+    AxisField | DistanceField | NoiseField, Field(discriminator="kind")
+]
+
+
+class AttributeSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(pattern=ATTRIBUTE_PATTERN)
+    field: FieldSpec
+
+
+class ScientificColormapParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_attribute: str = Field(pattern=ATTRIBUTE_PATTERN)
+    min_value: float = Field(ge=-1e12, le=1e12)
+    max_value: float = Field(ge=-1e12, le=1e12)
+    units: str = Field(min_length=1, max_length=32)
+    colormap: str = Field(pattern=COLORMAP_PATTERN)
+
+    @model_validator(mode="after")
+    def _range(self):
+        if self.max_value <= self.min_value:
+            raise ValueError("max_value must be greater than min_value")
+        if not self.units.strip():
+            raise ValueError("units must not be blank")
+        return self
+
+
+class ScientificColormapMaterial(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: Id
+    shader: Literal["scientific_colormap"]
+    params: ScientificColormapParams
+
+
 MaterialSpec = Annotated[
-    PrincipledMaterial | EmissionMaterial, Field(discriminator="shader")
+    PrincipledMaterial | EmissionMaterial | ScientificColormapMaterial,
+    Field(discriminator="shader"),
 ]
 
 
@@ -243,6 +314,7 @@ class ObjectSpec(BaseModel):
         | None
     ) = None
     params: dict[str, float | int | bool] = Field(default_factory=dict)
+    attributes: list[AttributeSpec] = Field(default_factory=list, max_length=8)
     text: TextSpec | None = None
     curve: CurveSpec | None = None
     transform: Transform = Transform()
@@ -268,6 +340,8 @@ class ObjectSpec(BaseModel):
                 raise ValueError("text is only valid for TEXT objects")
             if self.curve is not None:
                 raise ValueError("curve is only valid for CURVE objects")
+            if self.attributes:
+                raise ValueError("attributes are only valid for MESH objects")
             if self.smooth:
                 raise ValueError("smooth is only valid for MESH objects")
             return self
@@ -282,6 +356,8 @@ class ObjectSpec(BaseModel):
                 raise ValueError("curve is only valid for CURVE objects")
             if self.text is None:
                 raise ValueError("TEXT objects require text")
+            if self.attributes:
+                raise ValueError("attributes are only valid for MESH objects")
             if self.smooth:
                 raise ValueError("smooth is only valid for MESH objects")
             return self
@@ -296,6 +372,8 @@ class ObjectSpec(BaseModel):
                 raise ValueError("text is only valid for TEXT objects")
             if self.curve is None:
                 raise ValueError("CURVE objects require curve")
+            if self.attributes:
+                raise ValueError("attributes are only valid for MESH objects")
             if self.smooth:
                 raise ValueError("smooth is only valid for MESH objects")
             return self
@@ -303,6 +381,10 @@ class ObjectSpec(BaseModel):
             raise ValueError("text is only valid for TEXT objects")
         if self.curve is not None:
             raise ValueError("curve is only valid for CURVE objects")
+        names = [attribute.name for attribute in self.attributes]
+        duplicates = sorted({name for name in names if names.count(name) > 1})
+        if duplicates:
+            raise ValueError(f"attribute names must be unique: {duplicates}")
         if self.primitive is None:
             raise ValueError("MESH objects require a primitive")
         table = PRIMITIVE_PARAMS[self.primitive]
@@ -491,10 +573,23 @@ class BlenderSceneTask(BaseModel):
         if duplicates:
             raise ValueError(f"object names must be unique: {duplicates}")
 
+        scientific = {
+            material.id: material
+            for material in self.materials
+            if material.shader == "scientific_colormap"
+        }
         object_ids = {obj.id for obj in self.objects}
         for obj in self.objects:
             if obj.material is not None and obj.material not in material_ids:
                 raise ValueError(f"{obj.id} references unknown material: {obj.material}")
+            if obj.material in scientific:
+                source = scientific[obj.material].params.source_attribute
+                names = {attribute.name for attribute in obj.attributes}
+                if source not in names:
+                    raise ValueError(
+                        f"{obj.id} uses scientific material {obj.material} but has no "
+                        f"attribute {source}"
+                    )
             if obj.parent is not None and obj.parent not in object_ids:
                 raise ValueError(f"{obj.id} references unknown parent: {obj.parent}")
         self._check_parent_cycles()
@@ -602,6 +697,30 @@ def _check_output_path(value: str, lesson: str, label: str, suffix: str) -> None
         raise SceneContractError([f"{label}: must be inside {root}"])
 
 
+def _load_colormaps(workspace: Path) -> dict:
+    try:
+        return load_colormaps(workspace)
+    except ContractError as exc:
+        raise SceneContractError([str(exc)]) from exc
+
+
+def _validate_colormaps(task: BlenderSceneTask, workspace: Path) -> list[str]:
+    scientific = [
+        material
+        for material in task.materials
+        if material.shader == "scientific_colormap"
+    ]
+    if not scientific:
+        return []
+    colormaps = _load_colormaps(workspace)
+    return [
+        f"{material.id}: unknown colormap {material.params.colormap}; "
+        f"available: {sorted(colormaps)}"
+        for material in scientific
+        if material.params.colormap not in colormaps
+    ]
+
+
 def _validate_registry(task: BlenderSceneTask, workspace: Path) -> list[str]:
     registry_path = workspace / "BlenderStudio" / "assets" / "geometry_nodes" / "registry.json"
     if not registry_path.is_file():
@@ -693,6 +812,7 @@ def validate_scene_task(
             errors.append("render requires one camera with active=true")
     if workspace is not None:
         errors.extend(_validate_registry(task, workspace))
+        errors.extend(_validate_colormaps(task, workspace))
     if errors:
         raise SceneContractError(errors)
     return task

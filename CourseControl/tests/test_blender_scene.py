@@ -65,6 +65,46 @@ class SceneContractTest(unittest.TestCase):
             validate_scene_task(data, WORKSPACE)
         self.assertIn("curve is only valid for CURVE objects", "\n".join(raised.exception.messages))
 
+    def test_scientific_task_passes(self):
+        task = validate_scene_task(load_task("demo-scientific.json"), WORKSPACE)
+        summary = task_summary(task)
+        self.assertEqual(summary["objects"], 1)
+        self.assertEqual(len(task.objects[0].attributes), 1)
+        self.assertEqual(task.objects[0].attributes[0].name, "pressure")
+        material = task.materials[0]
+        self.assertEqual(material.shader, "scientific_colormap")
+        self.assertEqual(material.params.colormap, "coolwarm")
+        self.assertEqual(material.params.units, "Pa")
+        self.assertEqual(material.params.min_value, -400.0)
+
+    def test_scientific_material_requires_metadata(self):
+        for field in ("source_attribute", "min_value", "max_value", "units", "colormap"):
+            data = load_task("demo-scientific.json")
+            del data["materials"][0]["params"][field]
+            with self.subTest(field=field), self.assertRaises(SceneContractError):
+                validate_scene_task(data, WORKSPACE)
+
+    def test_scientific_range_must_be_increasing(self):
+        data = load_task("demo-scientific.json")
+        data["materials"][0]["params"]["max_value"] = -500.0
+        with self.assertRaises(SceneContractError) as raised:
+            validate_scene_task(data, WORKSPACE)
+        self.assertIn("max_value", "\n".join(raised.exception.messages))
+
+    def test_scientific_unknown_colormap_rejected(self):
+        data = load_task("demo-scientific.json")
+        data["materials"][0]["params"]["colormap"] = "missing"
+        with self.assertRaises(SceneContractError) as raised:
+            validate_scene_task(data, WORKSPACE)
+        self.assertIn("unknown colormap", "\n".join(raised.exception.messages))
+
+    def test_scientific_requires_matching_attribute(self):
+        data = load_task("demo-scientific.json")
+        data["objects"][0]["attributes"] = []
+        with self.assertRaises(SceneContractError) as raised:
+            validate_scene_task(data, WORKSPACE)
+        self.assertIn("has no attribute", "\n".join(raised.exception.messages))
+
     def test_material_presets_expand(self):
         data, refs = expand_task(load_task("demo-materials.json"), WORKSPACE)
         self.assertEqual(len(refs), 7)

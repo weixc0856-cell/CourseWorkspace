@@ -54,6 +54,83 @@
       "title": "AnimationSpec",
       "type": "object"
     },
+    "AttributeSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "field": {
+          "discriminator": {
+            "mapping": {
+              "axis": "#/$defs/AxisField",
+              "distance": "#/$defs/DistanceField",
+              "noise": "#/$defs/NoiseField"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/AxisField"
+            },
+            {
+              "$ref": "#/$defs/DistanceField"
+            },
+            {
+              "$ref": "#/$defs/NoiseField"
+            }
+          ],
+          "title": "Field"
+        }
+      },
+      "required": [
+        "name",
+        "field"
+      ],
+      "title": "AttributeSpec",
+      "type": "object"
+    },
+    "AxisField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "axis",
+          "title": "Kind",
+          "type": "string"
+        },
+        "axis": {
+          "default": "z",
+          "enum": [
+            "x",
+            "y",
+            "z"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "offset": {
+          "default": 0.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Offset",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "AxisField",
+      "type": "object"
+    },
     "CameraSpec": {
       "additionalProperties": false,
       "properties": {
@@ -232,6 +309,50 @@
         "points"
       ],
       "title": "CurveSpec",
+      "type": "object"
+    },
+    "DistanceField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "distance",
+          "title": "Kind",
+          "type": "string"
+        },
+        "point": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Point",
+          "type": "array"
+        },
+        "scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": -1000000.0,
+          "title": "Scale",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "DistanceField",
       "type": "object"
     },
     "DofSpec": {
@@ -620,6 +741,35 @@
       "title": "LightSpec",
       "type": "object"
     },
+    "NoiseField": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "noise",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1.0,
+          "maximum": 1000000.0,
+          "minimum": 0.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "seed": {
+          "default": 0,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "NoiseField",
+      "type": "object"
+    },
     "ObjectSpec": {
       "additionalProperties": false,
       "properties": {
@@ -678,6 +828,14 @@
           },
           "title": "Params",
           "type": "object"
+        },
+        "attributes": {
+          "items": {
+            "$ref": "#/$defs/AttributeSpec"
+          },
+          "maxItems": 8,
+          "title": "Attributes",
+          "type": "array"
         },
         "text": {
           "anyOf": [
@@ -1160,6 +1318,73 @@
       "title": "SceneSpec",
       "type": "object"
     },
+    "ScientificColormapMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "shader": {
+          "const": "scientific_colormap",
+          "title": "Shader",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/ScientificColormapParams"
+        }
+      },
+      "required": [
+        "id",
+        "shader",
+        "params"
+      ],
+      "title": "ScientificColormapMaterial",
+      "type": "object"
+    },
+    "ScientificColormapParams": {
+      "additionalProperties": false,
+      "properties": {
+        "source_attribute": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+          "title": "Source Attribute",
+          "type": "string"
+        },
+        "min_value": {
+          "maximum": 1000000000000.0,
+          "minimum": -1000000000000.0,
+          "title": "Min Value",
+          "type": "number"
+        },
+        "max_value": {
+          "maximum": 1000000000000.0,
+          "minimum": -1000000000000.0,
+          "title": "Max Value",
+          "type": "number"
+        },
+        "units": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Units",
+          "type": "string"
+        },
+        "colormap": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Colormap",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_attribute",
+        "min_value",
+        "max_value",
+        "units",
+        "colormap"
+      ],
+      "title": "ScientificColormapParams",
+      "type": "object"
+    },
     "TextSpec": {
       "additionalProperties": false,
       "properties": {
@@ -1406,7 +1631,8 @@
         "discriminator": {
           "mapping": {
             "emission": "#/$defs/EmissionMaterial",
-            "principled": "#/$defs/PrincipledMaterial"
+            "principled": "#/$defs/PrincipledMaterial",
+            "scientific_colormap": "#/$defs/ScientificColormapMaterial"
           },
           "propertyName": "shader"
         },
@@ -1416,6 +1642,9 @@
           },
           {
             "$ref": "#/$defs/EmissionMaterial"
+          },
+          {
+            "$ref": "#/$defs/ScientificColormapMaterial"
           }
         ]
       },

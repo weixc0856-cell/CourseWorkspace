@@ -4,7 +4,7 @@ export type ShotKind = 'slide' | 'animation' | 'recording';
 
 export type AnnotationColor = 'text' | 'muted' | 'orange' | 'white';
 
-export type Annotation = {
+export type TextAnnotation = {
   id: string;
   kind: 'text';
   text: string;
@@ -16,6 +16,26 @@ export type Annotation = {
   color: AnnotationColor;
   background: boolean;
 };
+
+export type LegendStop = [number, [number, number, number]];
+
+export type LegendAnnotation = {
+  id: string;
+  kind: 'legend';
+  start_s: number;
+  duration_s: number;
+  position: [number, number];
+  colormap: string;
+  min_value: number;
+  max_value: number;
+  units: string;
+  stops: LegendStop[];
+  bar_height: number;
+  bar_width: number;
+  label_size: number;
+};
+
+export type Annotation = TextAnnotation | LegendAnnotation;
 
 export type Shot = {
   id: string;

@@ -11,10 +11,12 @@ from pydantic import ValidationError
 from course_control.collect import resolve_annotations
 from course_control.contracts import (
     AnnotationSpec,
+    LegendAnnotationSpec,
     Shot,
     ShotsFile,
     ShotSpec,
     Storyboard,
+    TextAnnotationSpec,
     Timeline,
 )
 from course_control.paths import ContractError, LessonPaths, path_problem
@@ -115,6 +117,7 @@ class AnnotationContractTest(unittest.TestCase):
             "slide": 2,
             "cue_seconds": 5,
             "duration_s": 10,
+            "kind": "text",
             "text": "sin(x) = 0.5",
         }
         payload.update(annotation_overrides)
@@ -130,7 +133,7 @@ class AnnotationContractTest(unittest.TestCase):
                     cue_seconds=1,
                 )
             ],
-            annotations=[AnnotationSpec(**payload)],
+            annotations=[TextAnnotationSpec(**payload)],
         )
 
     def test_storyboard_annotations_validate(self):
@@ -161,6 +164,82 @@ class AnnotationContractTest(unittest.TestCase):
         self.assertEqual(len(annotations), 1)
         self.assertEqual(annotations[0].start_s, 95.0)
         self.assertEqual(annotations[0].duration_s, 10.0)
+
+    def test_legend_annotation_validates(self):
+        spec = LegendAnnotationSpec(
+            id="ann.legend",
+            slide=1,
+            cue_seconds=0,
+            duration_s=5,
+            kind="legend",
+            colormap="coolwarm",
+            min_value=-400,
+            max_value=400,
+            units="Pa",
+        )
+        self.assertEqual(spec.bar_height, 240.0)
+
+    def test_legend_range_rejected(self):
+        with self.assertRaises(ValidationError):
+            LegendAnnotationSpec(
+                id="ann.legend",
+                slide=1,
+                cue_seconds=0,
+                duration_s=5,
+                kind="legend",
+                colormap="coolwarm",
+                min_value=400,
+                max_value=-400,
+                units="Pa",
+            )
+
+    def test_resolve_legend_uses_colormap_stops(self):
+        spec = LegendAnnotationSpec(
+            id="ann.legend",
+            slide=1,
+            cue_seconds=0,
+            duration_s=5,
+            kind="legend",
+            colormap="coolwarm",
+            min_value=-1,
+            max_value=1,
+            units="Pa",
+        )
+        annotations = resolve_annotations(
+            [spec],
+            page_starts=[0.0],
+            budgets=[10.0],
+            total_duration=10.0,
+            colormaps={
+                "coolwarm": {
+                    "stops": [[0.0, [0.0, 0.0, 1.0]], [1.0, [1.0, 0.0, 0.0]]]
+                }
+            },
+        )
+        self.assertEqual(annotations[0].kind, "legend")
+        self.assertEqual(annotations[0].stops[1][0], 1.0)
+        self.assertEqual(annotations[0].stops[1][1], (1.0, 0.0, 0.0))
+
+    def test_resolve_legend_requires_known_colormap(self):
+        spec = LegendAnnotationSpec(
+            id="ann.legend",
+            slide=1,
+            cue_seconds=0,
+            duration_s=5,
+            kind="legend",
+            colormap="missing",
+            min_value=-1,
+            max_value=1,
+            units="Pa",
+        )
+        with self.assertRaises(ContractError):
+            resolve_annotations(
+                [spec],
+                page_starts=[0.0],
+                budgets=[10.0],
+                total_duration=10.0,
+                colormaps={"coolwarm": {"stops": [[0.0, [0.0, 0.0, 1.0]]]}},
+            )
 
     def test_resolve_annotations_overflow_rejected(self):
         storyboard = self._storyboard(slide=1, cue_seconds=85, duration_s=10)

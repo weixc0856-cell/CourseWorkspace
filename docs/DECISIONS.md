@@ -23,6 +23,7 @@
 | D-016 | 二维标注通过 `shots.json` 的 `annotations[]` 传递，Remotion 负责渲染 | accepted |
 | D-017 | 二维文字捆绑 Noto Sans SC（OFL）；Blender TEXT 仍用内置 Bfont | accepted |
 | D-018 | 材质预设由控制层展开，Blender 只接收展开后的任务 | accepted |
+| D-019 | 科学着色使用独立 shader，范围与单位必填，色标定义单一来源 | accepted |
 
 ---
 
@@ -166,3 +167,11 @@
 **决策**：`preset` 是控制层概念；`scene-validate` 与 `scene-run` 在双端校验前调用 `scene_presets.expand_task`，Blender 只接收展开后的 `shader` + `params`。manifest 记录预设来源、源任务哈希与展开任务哈希。
 
 **后果**：预设可独立演进；未知预设、预设与 `shader`/`params` 混用都会在校验期失败。旧任务不受影响。
+
+## D-019 科学着色语义
+
+**背景**：云图必须让颜色与物理量一一对应；由模型推测范围或单位会让画面变成错误陈述。
+
+**决策**：`scientific_colormap` 是独立 shader，不继承 PBR 参数；`source_attribute`、`min_value`、`max_value`、`units`、`colormap` 全部必填，不提供 `auto`；色标定义只在 `shared/colormaps.json`，Blender 与 Remotion 共用。点属性由声明式字段 `axis` / `distance` / `noise` 生成，不接受任意表达式。
+
+**后果**：缺元数据直接校验失败；色标与材质不会出现两套颜色；P4 只扩展字段来源，P5 只替换数据源。

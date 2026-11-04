@@ -46,7 +46,7 @@
 | 失败 | 契约校验会指出缺失文件、页数不符、路径不合法 |
 | 证据 | `course-control validate` |
 
-`lesson.yaml` 声明 `engines`、`compose.mode`、`outputs`、`narration`、`subtitles`、`acceptance`；`storyboard.yaml` 声明镜头、切入秒点与可选二维标注（`annotations`）。
+`lesson.yaml` 声明 `engines`、`compose.mode`、`outputs`、`narration`、`subtitles`、`acceptance`；`storyboard.yaml` 声明镜头、切入秒点与可选二维标注（`annotations`，含文字与色标）。
 
 ---
 

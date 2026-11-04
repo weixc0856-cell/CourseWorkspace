@@ -101,14 +101,17 @@ class ShotSpec(StrictModel):
     note: str | None = None
 
 
-class AnnotationSpec(StrictModel):
+class AnnotationBase(StrictModel):
     id: str
     slide: int = Field(ge=1)
     cue_seconds: float = Field(ge=0)
     duration_s: float = Field(gt=0)
-    kind: Literal["text"] = "text"
-    text: str = Field(min_length=1, max_length=200)
     position: tuple[Unit, Unit] = (0.5, 0.1)
+
+
+class TextAnnotationSpec(AnnotationBase):
+    kind: Literal["text"]
+    text: str = Field(min_length=1, max_length=200)
     size: float = Field(36.0, ge=8, le=200)
     align: Literal["left", "center", "right"] = "center"
     color: Literal["text", "muted", "orange", "white"] = "text"
@@ -120,6 +123,30 @@ class AnnotationSpec(StrictModel):
         if not value.strip():
             raise ValueError("text must not be blank")
         return value
+
+
+class LegendAnnotationSpec(AnnotationBase):
+    kind: Literal["legend"]
+    colormap: str = Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")
+    min_value: float = Field(ge=-1e12, le=1e12)
+    max_value: float = Field(ge=-1e12, le=1e12)
+    units: str = Field(min_length=1, max_length=32)
+    bar_height: float = Field(240.0, ge=40, le=800)
+    bar_width: float = Field(28.0, ge=8, le=120)
+    label_size: float = Field(24.0, ge=8, le=96)
+
+    @model_validator(mode="after")
+    def _legend_range(self):
+        if self.max_value <= self.min_value:
+            raise ValueError("max_value must be greater than min_value")
+        if not self.units.strip():
+            raise ValueError("units must not be blank")
+        return self
+
+
+AnnotationSpec = Annotated[
+    TextAnnotationSpec | LegendAnnotationSpec, Field(discriminator="kind")
+]
 
 
 class Storyboard(StrictModel):
@@ -163,9 +190,9 @@ class Shot(StrictModel):
         return self
 
 
-class Annotation(StrictModel):
+class TextAnnotation(StrictModel):
     id: str
-    kind: Literal["text"] = "text"
+    kind: Literal["text"]
     text: str
     start_s: float = Field(ge=0)
     duration_s: float = Field(gt=0)
@@ -174,6 +201,27 @@ class Annotation(StrictModel):
     align: Literal["left", "center", "right"] = "center"
     color: Literal["text", "muted", "orange", "white"] = "text"
     background: bool = False
+
+
+class LegendAnnotation(StrictModel):
+    id: str
+    kind: Literal["legend"]
+    start_s: float = Field(ge=0)
+    duration_s: float = Field(gt=0)
+    position: tuple[Unit, Unit]
+    colormap: str
+    min_value: float
+    max_value: float
+    units: str
+    stops: list[tuple[float, tuple[float, float, float]]]
+    bar_height: float = Field(ge=40, le=800)
+    bar_width: float = Field(ge=8, le=120)
+    label_size: float = Field(ge=8, le=96)
+
+
+Annotation = Annotated[
+    TextAnnotation | LegendAnnotation, Field(discriminator="kind")
+]
 
 
 class ShotsFile(StrictModel):

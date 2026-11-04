@@ -254,7 +254,7 @@ P1b（Remotion 二维标注层）不是“加个组件”：
 | **P5** 真实数据导入 | 仅在有真实数据源时启动；格式由数据决定 | 未估 | P3；Q2 | 文件哈希入 manifest；单位与场名来自元数据或作者声明；缺失即失败 |
 | **P6** AI 场景规划 | 课程页 → IR 草案 → 人审 → 执行 | L | **实际采纳的能力**的 IR 稳定；`ai_runtime` 锁与预算。不强制依赖 P5 | 草案通过 `scene-validate`；人工确认记录入 manifest；按页切片，不整课入模 |
 
-**实施状态（2026-11-04）**：P1a、P1b、P2、P2b 已实施并通过真实渲染与全量回归（P1b 证据：`build/p1b-annotation-evidence/annotation-still.png`；P2b 证据：`build/blender-scene-acceptance/blender/materials.png`）；P3 及后续阶段未启动。
+**实施状态（2026-11-04）**：P1a、P1b、P2、P2b、P3 已实施并通过真实渲染与全量回归（P1b 证据：`build/p1b-annotation-evidence/annotation-still.png`；P2b 证据：`build/blender-scene-acceptance/blender/materials.png`；P3 证据：`build/blender-scene-acceptance/blender/scientific.png`、`build/p3-legend-evidence/legend-still.png`）；P4 及后续阶段未启动。
 
 删除与调整说明：
 

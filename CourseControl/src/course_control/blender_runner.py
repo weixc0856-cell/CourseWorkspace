@@ -174,6 +174,31 @@ def _value_matches(expected, actual, tolerance: float = 1e-4) -> bool:
     return abs(float(actual) - float(expected)) <= tolerance
 
 
+def _check_declared_attributes(
+    report: dict, task: BlenderSceneTask, checks: list[Check]
+) -> None:
+    object_specs = [obj for obj in task.objects if obj.attributes]
+    if not object_specs:
+        return
+    report_objects = {entry.get("name"): entry for entry in report.get("objects", [])}
+    problems = []
+    for spec in object_specs:
+        entry = report_objects.get(spec.id, {})
+        actual = set((entry.get("attributes") or {}).keys())
+        expected = {attribute.name for attribute in spec.attributes}
+        if actual != expected:
+            problems.append(
+                f"{spec.id}: attributes {sorted(actual)} != {sorted(expected)}"
+            )
+    checks.append(
+        Check(
+            "scene.attributes",
+            "fail" if problems else "pass",
+            "; ".join(problems) if problems else f"{len(object_specs)} objects match",
+        )
+    )
+
+
 def _check_declared_materials(
     report: dict, task: BlenderSceneTask, checks: list[Check]
 ) -> None:
@@ -190,6 +215,19 @@ def _check_declared_materials(
             problems.append(f"{spec.id}: shader {entry.get('shader')} != {spec.shader}")
             continue
         params = spec.params.model_dump()
+        if spec.shader == "scientific_colormap":
+            actual_params = entry.get("params", {})
+            for key in ("source_attribute", "units", "colormap"):
+                if actual_params.get(key) != params[key]:
+                    problems.append(
+                        f"{spec.id}.{key}: {actual_params.get(key)!r} != {params[key]!r}"
+                    )
+            for key in ("min_value", "max_value"):
+                if not _value_matches(params[key], actual_params.get(key)):
+                    problems.append(
+                        f"{spec.id}.{key}: {actual_params.get(key)!r} != {params[key]!r}"
+                    )
+            continue
         sockets = PRINCIPLED_SOCKETS if spec.shader == "principled" else EMISSION_SOCKETS
         actual_params = entry.get("params", {})
         for field, socket in sockets.items():
@@ -322,6 +360,7 @@ def _scene_checks(report: dict, task: BlenderSceneTask, checks: list[Check]) -> 
 
     _check_declared_objects(report, task, checks)
     _check_declared_materials(report, task, checks)
+    _check_declared_attributes(report, task, checks)
 
     expected_modifiers = sum(len(obj.geometry_nodes) for obj in task.objects)
     if expected_modifiers:

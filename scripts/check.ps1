@@ -90,7 +90,8 @@ try {
         "demo-animation-scene",
         "demo-modify",
         "demo-text-curve",
-        "demo-materials"
+        "demo-materials",
+        "demo-scientific"
     )
     foreach ($name in $validTasks) {
         Invoke-Checked "scene-validate $name" {

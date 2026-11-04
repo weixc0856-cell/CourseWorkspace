@@ -11,7 +11,11 @@ import json
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import bpy
+
+from scene_system.fields import evaluate_field
 
 
 def get_arg(argv, name, default=None):
@@ -157,6 +161,24 @@ def _material_info(material):
     tree = getattr(material, "node_tree", None)
     if tree is None:
         return entry
+    if "colormap_name" in material:
+        attribute = next(
+            (node for node in tree.nodes if node.bl_idname == "ShaderNodeAttribute"),
+            None,
+        )
+        mapping = next(
+            (node for node in tree.nodes if node.bl_idname == "ShaderNodeMapRange"),
+            None,
+        )
+        entry["shader"] = "scientific_colormap"
+        entry["params"] = {
+            "source_attribute": getattr(attribute, "attribute_name", None),
+            "min_value": mapping.inputs["From Min"].default_value if mapping else None,
+            "max_value": mapping.inputs["From Max"].default_value if mapping else None,
+            "units": material.get("units"),
+            "colormap": material.get("colormap_name"),
+        }
+        return entry
     shader = None
     for node in tree.nodes:
         if node.bl_idname == "ShaderNodeBsdfPrincipled":
@@ -235,6 +257,39 @@ def build_report(filepath):
                 issues.append({"code": "NO_FACES", "message": f"{obj.name}: mesh has no faces"})
             if mesh.validate(verbose=False):
                 issues.append({"code": "INVALID_MESH", "message": f"{obj.name}: mesh data required fixes"})
+            fields_json = obj.get("attribute_fields")
+            if fields_json:
+                try:
+                    fields = json.loads(fields_json)
+                except (TypeError, ValueError):
+                    fields = {}
+                samples = {}
+                for name, field in fields.items():
+                    attribute = mesh.attributes.get(name)
+                    if attribute is None:
+                        issues.append(
+                            {
+                                "code": "ATTRIBUTE_MISSING",
+                                "message": f"{obj.name}: attribute {name} is missing",
+                            }
+                        )
+                        continue
+                    indices = sorted({0, len(mesh.vertices) // 2, len(mesh.vertices) - 1})
+                    values = [float(attribute.data[index].value) for index in indices]
+                    samples[name] = {"indices": indices, "values": values}
+                    for index, value in zip(indices, values):
+                        expected = evaluate_field(field, mesh.vertices[index].co)
+                        if abs(value - expected) > 1e-4:
+                            issues.append(
+                                {
+                                    "code": "ATTRIBUTE_MISMATCH",
+                                    "message": (
+                                        f"{obj.name}.{name}[{index}]: {value} != {expected}"
+                                    ),
+                                }
+                            )
+                            break
+                entry["attributes"] = samples
         elif obj.type == "FONT" and obj.data is not None:
             text = obj.data
             entry["text"] = {

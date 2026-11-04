@@ -129,6 +129,10 @@ OUTPUT
 | | `bump_scale` / `bump_detail` | `[0.1,1000]` / `[0,16]`，默认 `8 / 4` |
 | `emission` | `color` | RGBA，默认白 |
 | | `strength` | `[0,1e5]`，默认 `1` |
+| `scientific_colormap` | `source_attribute` | 必填，对象点属性名 |
+| | `min_value` / `max_value` | 必填，`min < max`，不允许自动范围 |
+| | `units` | 必填，1–32 字符 |
+| | `colormap` | 必填，必须存在于 `shared/colormaps.json` |
 
 `alpha < 1` 时自动切换到混合渲染模式。节点输入按名称查找，不按索引硬编码。`bump_strength > 0` 时执行器创建 `Noise Texture → Bump → Normal` 节点链，不依赖外部贴图。
 
@@ -139,6 +143,29 @@ OUTPUT
 - 展开在控制层完成（`scene_presets.expand_task`）；`scene-validate` 与 `scene-run` 都走同一条展开路径。
 - manifest 记录 `presets`（材质 id、预设名、文件路径）、`source_task_hash` 与展开后的 `task_hash`；有预设时另存 `<task_id>.expanded.json` 作为执行输入。
 - 材质语义验收：`scene.materials` 回读每个材质的 shader、socket 值以及 Bump 节点参数，与展开后的任务逐项比对。
+
+### 4.2 科学着色与对象属性
+
+- `scientific_colormap` 与 PBR 语义分离：不提供 metallic / roughness 等参数；节点链为 `Attribute → Map Range → Color Ramp → Emission`。
+- 颜色映射范围固定，**不提供 `auto`**；缺 `source_attribute`、`min_value`、`max_value`、`units`、`colormap` 任一项即校验失败。
+- 对象通过 `attributes[]` 声明点属性（仅 `MESH`，最多 8 个，名称唯一）：
+
+```json
+"attributes": [
+  { "name": "pressure", "field": { "kind": "axis", "axis": "x", "scale": 120.0, "offset": 0.0 } }
+]
+```
+
+| field.kind | 参数 | 说明 |
+| --- | --- | --- |
+| `axis` | `axis`（x/y/z）、`scale`、`offset` | 局部坐标的线性映射 |
+| `distance` | `point`、`scale` | 到点的欧氏距离 |
+| `noise` | `scale`、`seed` | 确定性哈希噪声，0–1 |
+
+- 字段是声明式数据，不是表达式；任意表达式留给 P4，真实数据导入留给 P5。
+- 科学材质只能挂在包含同名属性的对象上，否则校验失败。
+- 颜色定义只在 `shared/colormaps.json`；Blender 与 Remotion 色标读同一份文件。
+- 场景报告对每个属性取首/中/末三个顶点复算并比对；不一致产生 `ATTRIBUTE_MISMATCH`。
 
 ## 5. objects
 
@@ -414,7 +441,8 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 | `scene.text_objects` | 每个声明的 `TEXT` 都存在，且 `body` 与任务一致 |
 | `scene.curves` | 每个声明的 `CURVE` 都存在，且点数、`cyclic`、`bevel_depth` 与任务一致 |
 | `scene.cameras` | 声明的相机存在，投影方式与 `ortho_scale` 与任务一致 |
-| `scene.materials` | 每个材质的 shader、socket 值与 Bump 参数与展开后的任务一致 |
+| `scene.materials` | 每个材质的 shader、socket 值、Bump 参数或科学着色参数与任务一致 |
+| `scene.attributes` | 每个声明的点属性都存在 |
 | `scene.geometry_nodes` | GN 修改器数量 |
 | `scene.animation` | F-Curve 数量 |
 
@@ -433,6 +461,7 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 - 不输出 Python、不输出 `bpy` 调用、不输出脚本路径；
 - 对象、材质、相机、灯光、动画目标的 `id` 必须自洽；
 - `TEXT` 只填 `text` 白名单字段，不填字体路径；中文说明默认不放进三维场景；
+- 科学着色必须给出显式范围与单位，不得自行推测或省略；
 - 不确定的参数使用保守默认值，不编造注册表之外的 GN 资产。
 
 校验失败时，把 `scene-validate` 的错误列表原样反馈给模型，并要求只修改对应字段。自动修复最多 2–3 轮，不做无限重试。

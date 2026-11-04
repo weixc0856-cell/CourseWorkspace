@@ -51,7 +51,7 @@
 | V-19 | 阶段/检查适用性 | `report.py` | 通过 |
 | V-20 | recording 时长与笔记累计一致 | `verify.py` | `lesson-smoke` 通过 |
 | V-21 | 所有声明路径合法 | `path_problem` | 单测覆盖绝对路径/反斜杠/`..` |
-| V-22 | 二维标注在时间线内、文字非空、位置在 0–1 | `verify.py` | `resolve_annotations` 单测；真实 Remotion still 渲染 |
+| V-22 | 二维标注/图例在时间线内、内容有效、位置在 0–1 | `verify.py` | `resolve_annotations` 单测；真实 Remotion still 渲染 |
 
 失败注入证据：`tests/test_staging.py`（合成失败保留 staging、成功清理）；R5 历史故障注入见 `docs/archive/R5-验收矩阵.md`；本轮未重复构造全部故障样本（见 §6）。
 
@@ -60,8 +60,8 @@
 ## 3. 三维场景 IR v2
 
 ```powershell
-.\scripts\check-scene-system.ps1          # 契约：7 合法 + 11 非法
-.\scripts\check-scene-system.ps1 -Render  # 追加 6 次真实 Blender 渲染
+.\scripts\check-scene-system.ps1          # 契约：8 合法 + 11 非法
+.\scripts\check-scene-system.ps1 -Render  # 追加 7 次真实 Blender 渲染
 ```
 
 最近一次带渲染执行：**`scene system check ok`，exit 0**。
@@ -74,12 +74,13 @@
 | `demo-modify` | pass；基于 `scene.blend` 追加，11 个对象 |
 | `demo-text-curve` | pass；4 个 TEXT、3 个 CURVE、1 个 ORTHO 相机专项检查通过 |
 | `demo-materials` | pass；7 个材质预设展开并逐项回读一致 |
+| `demo-scientific` | pass；点属性与科学着色参数回读一致 |
 | 11 个 invalid 夹具 | 全部被拒绝 |
 | 契约与执行分离 | `test_validators_agree_without_generated_artifacts`：`base_blend` 尚未生成时两套校验器结论一致 |
 
 产物：`build/blender-scene-acceptance/blender/` 与 `manifests/`。
 
-二维标注（V-22）的渲染证据：`build/p1b-annotation-evidence/annotation-still.png`（三条标注与背景/边框样式）与 `annotation-font-still.png`（中文标注，捆绑字体 Noto Sans SC）。
+二维标注（V-22）的渲染证据：`build/p1b-annotation-evidence/annotation-still.png`（三条标注与背景/边框样式）与 `annotation-font-still.png`（中文标注，捆绑字体 Noto Sans SC）。色标证据：`build/p3-legend-evidence/legend-still.png`（coolwarm、-400–400 Pa、真实 Remotion still）。
 
 ---
 

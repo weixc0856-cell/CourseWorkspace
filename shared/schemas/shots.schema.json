@@ -1,6 +1,6 @@
 {
   "$defs": {
-    "Annotation": {
+    "LegendAnnotation": {
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -8,13 +8,8 @@
           "type": "string"
         },
         "kind": {
-          "const": "text",
-          "default": "text",
+          "const": "legend",
           "title": "Kind",
-          "type": "string"
-        },
-        "text": {
-          "title": "Text",
           "type": "string"
         },
         "start_s": {
@@ -45,48 +40,87 @@
           "title": "Position",
           "type": "array"
         },
-        "size": {
-          "maximum": 200,
-          "minimum": 8,
-          "title": "Size",
+        "colormap": {
+          "title": "Colormap",
+          "type": "string"
+        },
+        "min_value": {
+          "title": "Min Value",
           "type": "number"
         },
-        "align": {
-          "default": "center",
-          "enum": [
-            "left",
-            "center",
-            "right"
-          ],
-          "title": "Align",
+        "max_value": {
+          "title": "Max Value",
+          "type": "number"
+        },
+        "units": {
+          "title": "Units",
           "type": "string"
         },
-        "color": {
-          "default": "text",
-          "enum": [
-            "text",
-            "muted",
-            "orange",
-            "white"
-          ],
-          "title": "Color",
-          "type": "string"
+        "stops": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "maxItems": 3,
+                "minItems": 3,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Stops",
+          "type": "array"
         },
-        "background": {
-          "default": false,
-          "title": "Background",
-          "type": "boolean"
+        "bar_height": {
+          "maximum": 800,
+          "minimum": 40,
+          "title": "Bar Height",
+          "type": "number"
+        },
+        "bar_width": {
+          "maximum": 120,
+          "minimum": 8,
+          "title": "Bar Width",
+          "type": "number"
+        },
+        "label_size": {
+          "maximum": 96,
+          "minimum": 8,
+          "title": "Label Size",
+          "type": "number"
         }
       },
       "required": [
         "id",
-        "text",
+        "kind",
         "start_s",
         "duration_s",
         "position",
-        "size"
+        "colormap",
+        "min_value",
+        "max_value",
+        "units",
+        "stops",
+        "bar_height",
+        "bar_width",
+        "label_size"
       ],
-      "title": "Annotation",
+      "title": "LegendAnnotation",
       "type": "object"
     },
     "Shot": {
@@ -180,6 +214,95 @@
       "title": "Shot",
       "type": "object"
     },
+    "TextAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "position": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "size": {
+          "maximum": 200,
+          "minimum": 8,
+          "title": "Size",
+          "type": "number"
+        },
+        "align": {
+          "default": "center",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "title": "Align",
+          "type": "string"
+        },
+        "color": {
+          "default": "text",
+          "enum": [
+            "text",
+            "muted",
+            "orange",
+            "white"
+          ],
+          "title": "Color",
+          "type": "string"
+        },
+        "background": {
+          "default": false,
+          "title": "Background",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "text",
+        "start_s",
+        "duration_s",
+        "position",
+        "size"
+      ],
+      "title": "TextAnnotation",
+      "type": "object"
+    },
     "Timeline": {
       "additionalProperties": false,
       "properties": {
@@ -245,7 +368,21 @@
     },
     "annotations": {
       "items": {
-        "$ref": "#/$defs/Annotation"
+        "discriminator": {
+          "mapping": {
+            "legend": "#/$defs/LegendAnnotation",
+            "text": "#/$defs/TextAnnotation"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/TextAnnotation"
+          },
+          {
+            "$ref": "#/$defs/LegendAnnotation"
+          }
+        ]
       },
       "title": "Annotations",
       "type": "array"

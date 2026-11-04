@@ -7,6 +7,7 @@ import math
 import bmesh
 import bpy
 
+from .fields import evaluate_field
 from .task_schema import TaskError
 
 
@@ -102,6 +103,18 @@ def _fill_bmesh(bm, primitive, params):
         _torus(bm, params)
     else:  # validated earlier; keep the executor total
         raise TaskError(f"unsupported primitive: {primitive}")
+
+
+def write_attributes(mesh, specs):
+    """Write deterministic FLOAT point attributes onto a mesh."""
+    for spec in specs:
+        attribute = mesh.attributes.new(name=spec["name"], type="FLOAT", domain="POINT")
+        field = spec["field"]
+        for index, vertex in enumerate(mesh.vertices):
+            attribute.data[index].value = evaluate_field(field, vertex.co)
+        if len(attribute.data) != len(mesh.vertices):
+            raise TaskError(f"attribute {spec['name']} size mismatch")
+    return len(specs)
 
 
 def build_text(name, spec):
