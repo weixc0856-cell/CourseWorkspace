@@ -104,6 +104,44 @@ def _fill_bmesh(bm, primitive, params):
         raise TaskError(f"unsupported primitive: {primitive}")
 
 
+def build_text(name, spec):
+    """Create a text data-block using Blender's built-in font.
+
+    The built-in font is used deliberately: no external font file is loaded, so
+    the scene stays reproducible and no extra asset dependency is introduced.
+    """
+    curve = bpy.data.curves.new(name, type="FONT")
+    curve.body = spec["body"]
+    curve.size = spec["size"]
+    curve.align_x = spec["align_x"]
+    curve.align_y = spec["align_y"]
+    curve.extrude = spec["extrude"]
+    curve.bevel_depth = spec["bevel_depth"]
+    curve.space_line = spec["space_line"]
+    if not curve.body.strip():
+        raise TaskError("text body must not be blank")
+    return curve
+
+
+def build_curve(name, spec):
+    """Create a 3D polyline curve with a round bevel profile."""
+    points = spec["points"]
+    curve = bpy.data.curves.new(name, type="CURVE")
+    curve.dimensions = "3D"
+    curve.resolution_u = 6
+    spline = curve.splines.new("POLY")
+    spline.points.add(len(points) - 1)
+    for point, coordinate in zip(spline.points, points):
+        point.co = (coordinate[0], coordinate[1], coordinate[2], 1.0)
+    spline.use_cyclic_u = spec["cyclic"]
+    curve.bevel_depth = spec["bevel_depth"]
+    curve.bevel_resolution = 3
+    curve.use_fill_caps = True
+    if not curve.splines or not curve.splines[0].points:
+        raise TaskError("curve produced no points")
+    return curve
+
+
 def build_mesh(name, primitive, params, smooth=False):
     bm = bmesh.new()
     try:

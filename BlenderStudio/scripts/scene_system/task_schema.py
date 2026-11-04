@@ -35,7 +35,12 @@ ENGINE_ALIASES = {
 ALLOWED_FORMATS = {"png", "mp4"}
 UNITS = {"METRIC", "IMPERIAL", "NONE"}
 SHADERS = {"principled", "emission"}
-OBJECT_TYPES = {"MESH", "EMPTY"}
+OBJECT_TYPES = {"MESH", "EMPTY", "TEXT", "CURVE"}
+CAMERA_PROJECTIONS = {"PERSPECTIVE", "ORTHO"}
+TEXT_ALIGN_X = {"LEFT", "CENTER", "RIGHT"}
+TEXT_ALIGN_Y = {"TOP", "CENTER", "BOTTOM"}
+MAX_TEXT_LENGTH = 512
+MAX_CURVE_POINTS = 4096
 LIGHT_TYPES = {"AREA", "POINT", "SUN", "SPOT"}
 
 ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
@@ -214,6 +219,74 @@ def _rotation_or_target(data, path):
     raise TaskError(f"{path} must define either rotation (degrees) or target")
 
 
+def _text_spec(value, path):
+    data = _require_mapping(value, path)
+    expected = (
+        "align_x",
+        "align_y",
+        "bevel_depth",
+        "body",
+        "extrude",
+        "size",
+        "space_line",
+    )
+    unknown = sorted(set(data) - set(expected))
+    if unknown:
+        raise TaskError(f"{path} has unknown fields {unknown}; expected {list(expected)}")
+    body = data.get("body")
+    if not isinstance(body, str):
+        raise TaskError(f"{path}.body must be a string")
+    if not body.strip():
+        raise TaskError(f"{path}.body must not be blank")
+    if len(body) > MAX_TEXT_LENGTH:
+        raise TaskError(f"{path}.body must be <= {MAX_TEXT_LENGTH} characters")
+    align_x = data.get("align_x", "LEFT")
+    if align_x not in TEXT_ALIGN_X:
+        raise TaskError(f"{path}.align_x must be one of {sorted(TEXT_ALIGN_X)}")
+    align_y = data.get("align_y", "BOTTOM")
+    if align_y not in TEXT_ALIGN_Y:
+        raise TaskError(f"{path}.align_y must be one of {sorted(TEXT_ALIGN_Y)}")
+    return {
+        "body": body,
+        "size": _number(data.get("size", 0.5), f"{path}.size", 1e-3, 1e3),
+        "align_x": align_x,
+        "align_y": align_y,
+        "extrude": _number(data.get("extrude", 0.0), f"{path}.extrude", 0.0, 100.0),
+        "bevel_depth": _number(
+            data.get("bevel_depth", 0.0), f"{path}.bevel_depth", 0.0, 100.0
+        ),
+        "space_line": _number(data.get("space_line", 1.0), f"{path}.space_line", 0.1, 10.0),
+    }
+
+
+def _curve_spec(value, path):
+    data = _require_mapping(value, path)
+    expected = ("bevel_depth", "cyclic", "points")
+    unknown = sorted(set(data) - set(expected))
+    if unknown:
+        raise TaskError(f"{path} has unknown fields {unknown}; expected {list(expected)}")
+    raw_points = _require_list(data.get("points"), f"{path}.points")
+    if len(raw_points) < 2:
+        raise TaskError(f"{path}.points requires at least 2 points")
+    if len(raw_points) > MAX_CURVE_POINTS:
+        raise TaskError(f"{path}.points supports at most {MAX_CURVE_POINTS} points")
+    points = [
+        _vec(point, f"{path}.points[{index}]", 3, -1e6, 1e6)
+        for index, point in enumerate(raw_points)
+    ]
+    spans = [
+        max(point[axis] for point in points) - min(point[axis] for point in points)
+        for axis in range(3)
+    ]
+    if max(spans) <= 1e-6:
+        raise TaskError(f"{path}.points must not all coincide")
+    return {
+        "points": points,
+        "bevel_depth": _number(data.get("bevel_depth", 0.02), f"{path}.bevel_depth", 1e-4, 1e3),
+        "cyclic": _bool(data.get("cyclic", False), f"{path}.cyclic"),
+    }
+
+
 def _path_inside(path, allowed_root, label, base=None):
     if not os.path.isabs(path):
         path = os.path.join(base or os.getcwd(), path)
@@ -328,7 +401,13 @@ def validate_task(task, cwd=None):
             raise TaskError(f"{path}.type must be one of {sorted(OBJECT_TYPES)}")
         primitive = None
         params = {}
+        text_spec = None
+        curve_spec = None
         if object_type == "MESH":
+            if data.get("text") is not None:
+                raise TaskError(f"{path}.text is only valid for TEXT objects")
+            if data.get("curve") is not None:
+                raise TaskError(f"{path}.curve is only valid for CURVE objects")
             primitive = data.get("primitive")
             if primitive not in PRIMITIVE_PARAMS:
                 raise TaskError(f"{path}.primitive must be one of {sorted(PRIMITIVE_PARAMS)}")
@@ -341,6 +420,30 @@ def validate_task(task, cwd=None):
                     params[key] = _bool(value, f"{path}.params.{key}")
                 else:
                     params[key] = _number(value, f"{path}.params.{key}", minimum, maximum)
+        elif object_type == "TEXT":
+            if data.get("primitive") is not None:
+                raise TaskError(f"{path}.primitive is only valid for MESH objects")
+            if data.get("params"):
+                raise TaskError(f"{path}.params is only valid for MESH objects")
+            if data.get("curve") is not None:
+                raise TaskError(f"{path}.curve is only valid for CURVE objects")
+            if data.get("text") is None:
+                raise TaskError(f"{path}.text is required for TEXT objects")
+            if _bool(data.get("smooth", False), f"{path}.smooth"):
+                raise TaskError(f"{path}.smooth is only valid for MESH objects")
+            text_spec = _text_spec(data.get("text"), f"{path}.text")
+        elif object_type == "CURVE":
+            if data.get("primitive") is not None:
+                raise TaskError(f"{path}.primitive is only valid for MESH objects")
+            if data.get("params"):
+                raise TaskError(f"{path}.params is only valid for MESH objects")
+            if data.get("text") is not None:
+                raise TaskError(f"{path}.text is only valid for TEXT objects")
+            if data.get("curve") is None:
+                raise TaskError(f"{path}.curve is required for CURVE objects")
+            if _bool(data.get("smooth", False), f"{path}.smooth"):
+                raise TaskError(f"{path}.smooth is only valid for MESH objects")
+            curve_spec = _curve_spec(data.get("curve"), f"{path}.curve")
         else:
             if data.get("primitive") is not None:
                 raise TaskError(f"{path}.primitive is only valid for MESH objects")
@@ -348,6 +451,12 @@ def validate_task(task, cwd=None):
                 raise TaskError(f"{path}.params is only valid for MESH objects")
             if data.get("material") is not None:
                 raise TaskError(f"{path}.material is only valid for MESH objects")
+            if data.get("text") is not None:
+                raise TaskError(f"{path}.text is only valid for TEXT objects")
+            if data.get("curve") is not None:
+                raise TaskError(f"{path}.curve is only valid for CURVE objects")
+            if _bool(data.get("smooth", False), f"{path}.smooth"):
+                raise TaskError(f"{path}.smooth is only valid for MESH objects")
         material_id = data.get("material")
         if material_id is not None:
             material_id = _identifier(material_id, f"{path}.material")
@@ -391,6 +500,8 @@ def validate_task(task, cwd=None):
                 "type": object_type,
                 "primitive": primitive,
                 "params": params,
+                "text": text_spec,
+                "curve": curve_spec,
                 "transform": _transform(data.get("transform"), f"{path}.transform"),
                 "material": material_id,
                 "collection": _collection_path(
@@ -426,6 +537,9 @@ def validate_task(task, cwd=None):
         dof_data = _require_mapping(dof_in, f"{path}.dof")
         active = _bool(data.get("active", True), f"{path}.active")
         active_cameras += 1 if active else 0
+        projection = data.get("projection", "PERSPECTIVE")
+        if projection not in CAMERA_PROJECTIONS:
+            raise TaskError(f"{path}.projection must be one of {sorted(CAMERA_PROJECTIONS)}")
         cameras.append(
             {
                 "id": camera_id,
@@ -437,6 +551,10 @@ def validate_task(task, cwd=None):
                 ),
                 "sensor_width": _number(
                     data.get("sensor_width", 36.0), f"{path}.sensor_width", 1.0, 200.0
+                ),
+                "projection": projection,
+                "ortho_scale": _number(
+                    data.get("ortho_scale", 6.0), f"{path}.ortho_scale", 1e-3, 1e5
                 ),
                 "active": active,
                 "collection": _collection_path(

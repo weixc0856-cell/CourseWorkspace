@@ -176,11 +176,52 @@ class SceneSpec(BaseModel):
         return self
 
 
+class TextSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    body: str = Field(min_length=1, max_length=512)
+    size: float = Field(0.5, ge=1e-3, le=1e3)
+    align_x: Literal["LEFT", "CENTER", "RIGHT"] = "LEFT"
+    align_y: Literal["TOP", "CENTER", "BOTTOM"] = "BOTTOM"
+    extrude: float = Field(0.0, ge=0.0, le=100.0)
+    bevel_depth: float = Field(0.0, ge=0.0, le=100.0)
+    space_line: float = Field(1.0, ge=0.1, le=10.0)
+
+    @field_validator("body")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("body must not be blank")
+        return value
+
+
+class CurveSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    points: list[Vec3] = Field(min_length=2, max_length=4096)
+    bevel_depth: float = Field(0.02, ge=1e-4, le=1e3)
+    cyclic: bool = False
+
+    @field_validator("points")
+    @classmethod
+    def _points(cls, value: list[Vec3]) -> list[Vec3]:
+        for point in value:
+            if any(abs(component) > 1e6 for component in point):
+                raise ValueError("point components must be within +/-1e6")
+        spans = [
+            max(point[axis] for point in value) - min(point[axis] for point in value)
+            for axis in range(3)
+        ]
+        if max(spans) <= 1e-6:
+            raise ValueError("points must not all coincide")
+        return value
+
+
 class ObjectSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: Id
-    type: Literal["MESH", "EMPTY"] = "MESH"
+    type: Literal["MESH", "EMPTY", "TEXT", "CURVE"] = "MESH"
     primitive: (
         Literal[
             "CUBE",
@@ -196,6 +237,8 @@ class ObjectSpec(BaseModel):
         | None
     ) = None
     params: dict[str, float | int | bool] = Field(default_factory=dict)
+    text: TextSpec | None = None
+    curve: CurveSpec | None = None
     transform: Transform = Transform()
     material: Id | None = None
     collection: CollectionPath = "ASSETS/Geometry"
@@ -215,7 +258,45 @@ class ObjectSpec(BaseModel):
                 raise ValueError("geometry_nodes are only valid for MESH objects")
             if self.material is not None:
                 raise ValueError("material is only valid for MESH objects")
+            if self.text is not None:
+                raise ValueError("text is only valid for TEXT objects")
+            if self.curve is not None:
+                raise ValueError("curve is only valid for CURVE objects")
+            if self.smooth:
+                raise ValueError("smooth is only valid for MESH objects")
             return self
+        if self.type == "TEXT":
+            if self.primitive is not None:
+                raise ValueError("primitive is only valid for MESH objects")
+            if self.params:
+                raise ValueError("params are only valid for MESH objects")
+            if self.geometry_nodes:
+                raise ValueError("geometry_nodes are only valid for MESH objects")
+            if self.curve is not None:
+                raise ValueError("curve is only valid for CURVE objects")
+            if self.text is None:
+                raise ValueError("TEXT objects require text")
+            if self.smooth:
+                raise ValueError("smooth is only valid for MESH objects")
+            return self
+        if self.type == "CURVE":
+            if self.primitive is not None:
+                raise ValueError("primitive is only valid for MESH objects")
+            if self.params:
+                raise ValueError("params are only valid for MESH objects")
+            if self.geometry_nodes:
+                raise ValueError("geometry_nodes are only valid for MESH objects")
+            if self.text is not None:
+                raise ValueError("text is only valid for TEXT objects")
+            if self.curve is None:
+                raise ValueError("CURVE objects require curve")
+            if self.smooth:
+                raise ValueError("smooth is only valid for MESH objects")
+            return self
+        if self.text is not None:
+            raise ValueError("text is only valid for TEXT objects")
+        if self.curve is not None:
+            raise ValueError("curve is only valid for CURVE objects")
         if self.primitive is None:
             raise ValueError("MESH objects require a primitive")
         table = PRIMITIVE_PARAMS[self.primitive]
@@ -271,6 +352,8 @@ class CameraSpec(BaseModel):
     target: Vec3 | None = None
     focal_length: float = Field(50.0, ge=1.0, le=500.0)
     sensor_width: float = Field(36.0, ge=1.0, le=200.0)
+    projection: Literal["PERSPECTIVE", "ORTHO"] = "PERSPECTIVE"
+    ortho_scale: float = Field(6.0, ge=1e-3, le=1e5)
     active: bool = True
     collection: CollectionPath = "ANIMATION/Cameras"
     dof: DofSpec = DofSpec()
@@ -615,6 +698,9 @@ def task_summary(task: BlenderSceneTask) -> dict:
         "lesson": task.lesson,
         "scene": task.scene.name,
         "objects": len(task.objects),
+        "text_objects": sum(1 for obj in task.objects if obj.type == "TEXT"),
+        "curve_objects": sum(1 for obj in task.objects if obj.type == "CURVE"),
+        "ortho_cameras": sum(1 for camera in task.cameras if camera.projection == "ORTHO"),
         "materials": len(task.materials),
         "cameras": len(task.cameras),
         "lights": len(task.lights),

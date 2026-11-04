@@ -1,5 +1,105 @@
 {
   "$defs": {
+    "AnnotationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "slide": {
+          "minimum": 1,
+          "title": "Slide",
+          "type": "integer"
+        },
+        "cue_seconds": {
+          "minimum": 0,
+          "title": "Cue Seconds",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "kind": {
+          "const": "text",
+          "default": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "position": {
+          "default": [
+            0.5,
+            0.1
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "size": {
+          "default": 36.0,
+          "maximum": 200,
+          "minimum": 8,
+          "title": "Size",
+          "type": "number"
+        },
+        "align": {
+          "default": "center",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "title": "Align",
+          "type": "string"
+        },
+        "color": {
+          "default": "text",
+          "enum": [
+            "text",
+            "muted",
+            "orange",
+            "white"
+          ],
+          "title": "Color",
+          "type": "string"
+        },
+        "background": {
+          "default": false,
+          "title": "Background",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "slide",
+        "cue_seconds",
+        "duration_s",
+        "text"
+      ],
+      "title": "AnnotationSpec",
+      "type": "object"
+    },
     "ShotSpec": {
       "additionalProperties": false,
       "properties": {
@@ -96,6 +196,13 @@
       },
       "minItems": 1,
       "title": "Shots",
+      "type": "array"
+    },
+    "annotations": {
+      "items": {
+        "$ref": "#/$defs/AnnotationSpec"
+      },
+      "title": "Annotations",
       "type": "array"
     }
   },

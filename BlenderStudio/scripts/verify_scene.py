@@ -167,6 +167,69 @@ def build_report(filepath):
                 issues.append({"code": "NO_FACES", "message": f"{obj.name}: mesh has no faces"})
             if mesh.validate(verbose=False):
                 issues.append({"code": "INVALID_MESH", "message": f"{obj.name}: mesh data required fixes"})
+        elif obj.type == "FONT" and obj.data is not None:
+            text = obj.data
+            entry["text"] = {
+                "body": text.body,
+                "size": text.size,
+                "align_x": text.align_x,
+                "align_y": text.align_y,
+                "extrude": text.extrude,
+                "bevel_depth": text.bevel_depth,
+                "space_line": text.space_line,
+                "font": getattr(text.font, "name", None),
+            }
+            entry["materials"] = [
+                slot.material.name if slot.material else None for slot in obj.material_slots
+            ]
+            if not text.body.strip():
+                issues.append({"code": "EMPTY_TEXT", "message": f"{obj.name}: text body is blank"})
+        elif obj.type == "CURVE" and obj.data is not None:
+            curve = obj.data
+            coordinates = []
+            for spline in curve.splines:
+                if spline.type == "BEZIER":
+                    coordinates.extend(tuple(point.co[:3]) for point in spline.bezier_points)
+                else:
+                    coordinates.extend(tuple(point.co[:3]) for point in spline.points)
+            point_count = len(coordinates)
+            entry["curve"] = {
+                "splines": len(curve.splines),
+                "points": point_count,
+                "cyclic": any(spline.use_cyclic_u for spline in curve.splines),
+                "bevel_depth": curve.bevel_depth,
+                "dimensions": curve.dimensions,
+            }
+            entry["materials"] = [
+                slot.material.name if slot.material else None for slot in obj.material_slots
+            ]
+            if point_count < 2:
+                issues.append(
+                    {
+                        "code": "CURVE_TOO_FEW_POINTS",
+                        "message": f"{obj.name}: curve has {point_count} points (need >= 2)",
+                    }
+                )
+            if curve.bevel_depth <= 0.0:
+                issues.append(
+                    {
+                        "code": "CURVE_NO_BEVEL",
+                        "message": f"{obj.name}: curve bevel_depth is {curve.bevel_depth}",
+                    }
+                )
+            if coordinates:
+                spans = [
+                    max(point[axis] for point in coordinates)
+                    - min(point[axis] for point in coordinates)
+                    for axis in range(3)
+                ]
+                if max(spans) <= 1e-6:
+                    issues.append(
+                        {
+                            "code": "CURVE_DEGENERATE",
+                            "message": f"{obj.name}: curve points all coincide",
+                        }
+                    )
         objects.append(entry)
 
     cameras = []
@@ -176,10 +239,19 @@ def build_report(filepath):
                 {
                     "name": obj.name,
                     "lens": obj.data.lens,
+                    "projection": obj.data.type,
+                    "ortho_scale": obj.data.ortho_scale,
                     "active": scene.camera == obj,
                     "location": list(obj.location),
                 }
             )
+            if obj.data.type == "ORTHO" and obj.data.ortho_scale <= 0.0:
+                issues.append(
+                    {
+                        "code": "ORTHO_SCALE_INVALID",
+                        "message": f"{obj.name}: ortho_scale is {obj.data.ortho_scale}",
+                    }
+                )
     lights = []
     for obj in scene.objects:
         if obj.type == "LIGHT":

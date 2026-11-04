@@ -38,6 +38,31 @@ class SceneContractTest(unittest.TestCase):
         self.assertEqual(summary["cameras"], 1)
         self.assertEqual(summary["lights"], 3)
 
+    def test_text_curve_ortho_task_passes(self):
+        task = validate_scene_task(load_task("demo-text-curve.json"), WORKSPACE)
+        summary = task_summary(task)
+        self.assertEqual(summary["objects"], 7)
+        self.assertEqual(summary["text_objects"], 4)
+        self.assertEqual(summary["curve_objects"], 3)
+        self.assertEqual(summary["ortho_cameras"], 1)
+        self.assertEqual(task.cameras[0].projection, "ORTHO")
+        self.assertEqual(task.cameras[0].ortho_scale, 6.0)
+        self.assertEqual(task.objects[3].text.body, "x")
+
+    def test_text_and_curve_fields_are_type_scoped(self):
+        data = load_task("demo-scene.json")
+        data["objects"][0]["text"] = {"body": "x"}
+        with self.assertRaises(SceneContractError) as raised:
+            validate_scene_task(data, WORKSPACE)
+        self.assertIn("text is only valid for TEXT objects", "\n".join(raised.exception.messages))
+
+        data = load_task("demo-text-curve.json")
+        text = next(obj for obj in data["objects"] if obj["type"] == "TEXT")
+        text["curve"] = {"points": [[0, 0, 0], [1, 0, 0]]}
+        with self.assertRaises(SceneContractError) as raised:
+            validate_scene_task(data, WORKSPACE)
+        self.assertIn("curve is only valid for CURVE objects", "\n".join(raised.exception.messages))
+
     def test_geometry_nodes_and_animation_tasks_pass(self):
         gn = validate_scene_task(load_task("demo-geometry-nodes.json"), WORKSPACE)
         self.assertEqual(task_summary(gn)["geometry_nodes"], 2)
@@ -52,6 +77,11 @@ class SceneContractTest(unittest.TestCase):
             "invalid-no-camera.json": "camera",
             "invalid-output-outside.json": "build/blender-scene-acceptance/blender/",
             "invalid-primitive.json": "primitive",
+            "invalid-text-empty.json": "at least 1 character",
+            "invalid-text-primitive.json": "primitive is only valid",
+            "invalid-curve-points.json": "at least 2 items",
+            "invalid-curve-bevel.json": "greater than or equal to 0.0001",
+            "invalid-camera-projection.json": "'PERSPECTIVE' or 'ORTHO'",
         }
         for name, needle in expected.items():
             with self.subTest(name=name), self.assertRaises(SceneContractError) as raised:

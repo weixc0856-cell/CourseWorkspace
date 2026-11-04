@@ -142,6 +142,84 @@ def _check_video(path: Path, task: BlenderSceneTask, checks: list[Check]) -> Non
         checks.append(Check("output.duration", "pass", f"{info.duration:.3f}s"))
 
 
+def _close(left: float, right: float, tolerance: float = 1e-6) -> bool:
+    return abs(float(left) - float(right)) <= tolerance
+
+
+def _check_declared_objects(report: dict, task: BlenderSceneTask, checks: list[Check]) -> None:
+    report_objects = {entry.get("name"): entry for entry in report.get("objects", [])}
+
+    text_specs = [obj for obj in task.objects if obj.type == "TEXT"]
+    if text_specs:
+        problems = []
+        for spec in text_specs:
+            entry = report_objects.get(spec.id, {})
+            body = (entry.get("text") or {}).get("body")
+            if entry.get("type") != "FONT":
+                problems.append(f"{spec.id}: missing FONT object")
+            elif body != spec.text.body:
+                problems.append(f"{spec.id}: body {body!r} != {spec.text.body!r}")
+        checks.append(
+            Check(
+                "scene.text_objects",
+                "fail" if problems else "pass",
+                "; ".join(problems) if problems else f"{len(text_specs)} text objects match",
+            )
+        )
+
+    curve_specs = [obj for obj in task.objects if obj.type == "CURVE"]
+    if curve_specs:
+        problems = []
+        for spec in curve_specs:
+            entry = report_objects.get(spec.id, {})
+            info = entry.get("curve") or {}
+            if entry.get("type") != "CURVE":
+                problems.append(f"{spec.id}: missing CURVE object")
+                continue
+            if info.get("points") != len(spec.curve.points):
+                problems.append(
+                    f"{spec.id}: points {info.get('points')} != {len(spec.curve.points)}"
+                )
+            if bool(info.get("cyclic")) != spec.curve.cyclic:
+                problems.append(f"{spec.id}: cyclic mismatch")
+            if not _close(info.get("bevel_depth", 0.0), spec.curve.bevel_depth):
+                problems.append(f"{spec.id}: bevel_depth mismatch")
+        checks.append(
+            Check(
+                "scene.curves",
+                "fail" if problems else "pass",
+                "; ".join(problems) if problems else f"{len(curve_specs)} curves match",
+            )
+        )
+
+    camera_specs = task.cameras
+    if camera_specs:
+        report_cameras = {entry.get("name"): entry for entry in report.get("cameras", [])}
+        problems = []
+        for spec in camera_specs:
+            entry = report_cameras.get(spec.id)
+            if entry is None:
+                continue
+            expected = "ORTHO" if spec.projection == "ORTHO" else "PERSP"
+            if entry.get("projection") != expected:
+                problems.append(
+                    f"{spec.id}: projection {entry.get('projection')} != {expected}"
+                )
+            if spec.projection == "ORTHO" and not _close(
+                entry.get("ortho_scale", 0.0), spec.ortho_scale
+            ):
+                problems.append(
+                    f"{spec.id}: ortho_scale {entry.get('ortho_scale')} != {spec.ortho_scale}"
+                )
+        checks.append(
+            Check(
+                "scene.cameras",
+                "fail" if problems else "pass",
+                "; ".join(problems) if problems else f"{len(camera_specs)} cameras match",
+            )
+        )
+
+
 def _scene_checks(report: dict, task: BlenderSceneTask, checks: list[Check]) -> None:
     if not report.get("ok"):
         issues = "; ".join(issue.get("message", "") for issue in report.get("issues", [])[:5])
@@ -163,6 +241,8 @@ def _scene_checks(report: dict, task: BlenderSceneTask, checks: list[Check]) -> 
         ok = actual >= expected
         detail = f"{actual} objects (>= {expected} including base blend)"
     checks.append(Check("scene.object_count", "pass" if ok else "fail", detail))
+
+    _check_declared_objects(report, task, checks)
 
     expected_modifiers = sum(len(obj.geometry_nodes) for obj in task.objects)
     if expected_modifiers:

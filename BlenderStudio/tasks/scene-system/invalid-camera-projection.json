@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-invalid-camera-projection",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_Invalid",
+    "frame_start": 1,
+    "frame_end": 1
+  },
+  "objects": [],
+  "cameras": [
+    {
+      "id": "cam.bad",
+      "location": [
+        0,
+        -6,
+        2
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ],
+      "projection": "FISHEYE"
+    }
+  ],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [
+      640,
+      360
+    ],
+    "samples": 8,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/blender/invalid.png"
+  }
+}

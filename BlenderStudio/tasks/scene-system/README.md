@@ -9,7 +9,8 @@
 | `demo-animation-scene.json` | 变换、相机、灯光关键帧 | 90 帧 / 3 秒 MP4，≥13 条 F-Curve |
 | `demo-modify.json` | `base_blend` 追加、复用活动相机 | 在 `scene.blend` 基础上追加对象 |
 | `demo-geometry-nodes.json` | GN 位移、GN 实例散布、GN 材质输入 | 2 个 NODES 修改器 |
-| `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质 | 外部与 Blender 双端均拒绝 |
+| `demo-text-curve.json` | `TEXT` 文字、`CURVE` 曲线、`ORTHO` 正交相机 | 4 个文字与 3 条曲线通过专项验收 |
+| `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质、空文字、文字带图元、曲线点数不足、曲线倒角为 0、非法投影方式 | 外部与 Blender 双端均拒绝 |
 
 ## 运行
 

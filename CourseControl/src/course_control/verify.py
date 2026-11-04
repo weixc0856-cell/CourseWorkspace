@@ -245,4 +245,30 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
             CheckRecord(id="V-20", status=Status.NOT_APPLICABLE, detail="deck mode")
         )
 
+    annotations = shots_file.annotations
+    if annotations:
+        annotation_errors = []
+        total = shots_file.timeline.total_duration_s
+        for annotation in annotations:
+            if not annotation.text.strip():
+                annotation_errors.append(f"{annotation.id}: blank text")
+            if annotation.start_s + annotation.duration_s > total + 0.01:
+                annotation_errors.append(f"{annotation.id}: ends after timeline")
+            if any(
+                component < 0.0 or component > 1.0 for component in annotation.position
+            ):
+                annotation_errors.append(f"{annotation.id}: position outside 0..1")
+        checks.append(
+            _check(
+                "V-22",
+                not annotation_errors,
+                "annotations fit timeline; text and position valid",
+                "ok" if not annotation_errors else "; ".join(annotation_errors),
+            )
+        )
+    else:
+        checks.append(
+            CheckRecord(id="V-22", status=Status.NOT_APPLICABLE, detail="no annotations")
+        )
+
     return checks

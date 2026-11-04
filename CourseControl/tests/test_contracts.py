@@ -8,8 +8,16 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from course_control.contracts import Shot, ShotsFile, Timeline
-from course_control.paths import LessonPaths, path_problem
+from course_control.collect import resolve_annotations
+from course_control.contracts import (
+    AnnotationSpec,
+    Shot,
+    ShotsFile,
+    ShotSpec,
+    Storyboard,
+    Timeline,
+)
+from course_control.paths import ContractError, LessonPaths, path_problem
 from course_control.utils import page_budgets
 from course_control.validators import validate
 
@@ -100,6 +108,72 @@ class ValidatorTest(unittest.TestCase):
         self.assertTrue(any(issue.rule == "V-04" for issue in result.errors))
 
 
+class AnnotationContractTest(unittest.TestCase):
+    def _storyboard(self, **annotation_overrides):
+        payload = {
+            "id": "ann_001",
+            "slide": 2,
+            "cue_seconds": 5,
+            "duration_s": 10,
+            "text": "sin(x) = 0.5",
+        }
+        payload.update(annotation_overrides)
+        return Storyboard(
+            schema_version=1,
+            lesson="lesson-smoke",
+            shots=[
+                ShotSpec(
+                    id="shot_001",
+                    slide=1,
+                    engine="blender",
+                    scene="scenes/a.blend",
+                    cue_seconds=1,
+                )
+            ],
+            annotations=[AnnotationSpec(**payload)],
+        )
+
+    def test_storyboard_annotations_validate(self):
+        storyboard = self._storyboard(position=(0.5, 0.1), align="center")
+        self.assertEqual(storyboard.annotations[0].text, "sin(x) = 0.5")
+        self.assertEqual(storyboard.annotations[0].position, (0.5, 0.1))
+
+    def test_duplicate_storyboard_ids_rejected(self):
+        with self.assertRaises(ValidationError):
+            self._storyboard(id="shot_001")
+
+    def test_annotation_position_out_of_range_rejected(self):
+        with self.assertRaises(ValidationError):
+            self._storyboard(position=(1.2, 0.1))
+
+    def test_blank_annotation_text_rejected(self):
+        with self.assertRaises(ValidationError):
+            self._storyboard(text="   ")
+
+    def test_resolve_annotations_offsets_by_page(self):
+        storyboard = self._storyboard()
+        annotations = resolve_annotations(
+            storyboard.annotations,
+            page_starts=[0.0, 90.0],
+            budgets=[90.0, 90.0],
+            total_duration=180.0,
+        )
+        self.assertEqual(len(annotations), 1)
+        self.assertEqual(annotations[0].start_s, 95.0)
+        self.assertEqual(annotations[0].duration_s, 10.0)
+
+    def test_resolve_annotations_overflow_rejected(self):
+        storyboard = self._storyboard(slide=1, cue_seconds=85, duration_s=10)
+        with self.assertRaises(ContractError) as raised:
+            resolve_annotations(
+                storyboard.annotations,
+                page_starts=[0.0],
+                budgets=[90.0],
+                total_duration=90.0,
+            )
+        self.assertIn("exceeds page", str(raised.exception))
+
+
 class ShotsFileTest(unittest.TestCase):
     def test_minimal_shots(self):
         data = ShotsFile(
@@ -118,6 +192,7 @@ class ShotsFileTest(unittest.TestCase):
             ],
         )
         self.assertEqual(data.timeline.total_duration_s, 6)
+        self.assertEqual(data.annotations, [])
 
 
 if __name__ == "__main__":

@@ -1,5 +1,94 @@
 {
   "$defs": {
+    "Annotation": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "text",
+          "default": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "position": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "size": {
+          "maximum": 200,
+          "minimum": 8,
+          "title": "Size",
+          "type": "number"
+        },
+        "align": {
+          "default": "center",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "title": "Align",
+          "type": "string"
+        },
+        "color": {
+          "default": "text",
+          "enum": [
+            "text",
+            "muted",
+            "orange",
+            "white"
+          ],
+          "title": "Color",
+          "type": "string"
+        },
+        "background": {
+          "default": false,
+          "title": "Background",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "start_s",
+        "duration_s",
+        "position",
+        "size"
+      ],
+      "title": "Annotation",
+      "type": "object"
+    },
     "Shot": {
       "additionalProperties": false,
       "properties": {
@@ -152,6 +241,13 @@
         "$ref": "#/$defs/Shot"
       },
       "title": "Shots",
+      "type": "array"
+    },
+    "annotations": {
+      "items": {
+        "$ref": "#/$defs/Annotation"
+      },
+      "title": "Annotations",
       "type": "array"
     },
     "narration": {

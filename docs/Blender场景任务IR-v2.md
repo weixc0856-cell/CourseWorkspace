@@ -140,7 +140,9 @@ OUTPUT
 }
 ```
 
-- `type`：`MESH` / `EMPTY`。相机与灯光走独立数组，不放进 `objects`。
+- `type`：`MESH` / `EMPTY` / `TEXT` / `CURVE`。相机与灯光走独立数组，不放进 `objects`。
+- `primitive`、`params`、`geometry_nodes`、`smooth` 只适用于 `MESH`；`text` / `curve` 只适用于对应类型（见 §5.1.1）。
+- `material` 适用于 `MESH` / `TEXT` / `CURVE`，不适用于 `EMPTY`。
 - `rotation` 单位为**度**，内部转换为弧度；`scale` 必须全部大于 0。
 - `transform` 是世界空间变换。设置 `parent` 时保留世界变换（通过 `matrix_parent_inverse`）。
 - 对象名使用 `id`；与 `base_blend` 中已有对象重名会直接失败，避免静默改名。
@@ -161,6 +163,64 @@ OUTPUT
 | `CIRCLE` | `radius`（1.0）、`vertices`（32）、`fill`（true） |
 
 所有分段数上限 512；场景对象上限 1000，场景条目总数上限 2000。
+
+### 5.1.1 TEXT 与 CURVE
+
+`TEXT` 使用 `text` 对象；`CURVE` 使用 `curve` 对象。两者互斥，且不能与 `primitive` / `params` / `geometry_nodes` / `smooth` 同时出现。
+
+```json
+{
+  "id": "label.formula",
+  "type": "TEXT",
+  "text": {
+    "body": "sin(x) = 0.5",
+    "size": 0.34,
+    "align_x": "LEFT",
+    "align_y": "CENTER"
+  },
+  "transform": { "location": [0, 0, 1.5], "rotation": [90, 0, 0] },
+  "material": "mat.label"
+}
+```
+
+```json
+{
+  "id": "path.parabola",
+  "type": "CURVE",
+  "curve": {
+    "points": [[-2.4, 0, 0.35], [0, 0, 1.0], [2.4, 0, 0.35]],
+    "bevel_depth": 0.03
+  },
+  "material": "mat.curve"
+}
+```
+
+`text` 字段：
+
+| 字段 | 默认 | 范围 |
+| --- | --- | --- |
+| `body` | 必填 | 1–512 字符；不能全为空白 |
+| `size` | 0.5 | 0.001–1000 |
+| `align_x` | `LEFT` | `LEFT` / `CENTER` / `RIGHT` |
+| `align_y` | `BOTTOM` | `TOP` / `CENTER` / `BOTTOM` |
+| `extrude` | 0.0 | 0–100 |
+| `bevel_depth` | 0.0 | 0–100 |
+| `space_line` | 1.0 | 0.1–10 |
+
+- 使用 Blender 内置字体（Bfont），不加载外部字体文件，不引入字体资产。
+- 首期承诺范围：数字、英文、数学符号。中文说明默认由 Remotion 承担（见 [评估文档 §4](评估-PBR与科学可视化接入.md)）；即便内置字体可渲染中文，也不把中文排版责任放进 Blender。
+- 文本对象在 Blender 中的对象类型为 `FONT`；材质槽可用。
+
+`curve` 字段：
+
+| 字段 | 默认 | 范围 |
+| --- | --- | --- |
+| `points` | 必填 | 2–4096 个 `[x, y, z]`；分量绝对值 ≤ 1e6；不能全部重合 |
+| `bevel_depth` | 0.02 | 0.0001–1000；必须大于 0，否则曲线不可见 |
+| `cyclic` | false | 布尔值 |
+
+- 曲线为 3D `POLY` 样条，执行时统一 `bevel_resolution = 3` 并封盖。
+- 曲线点坐标是对象局部坐标，随后叠加 `transform`。
 
 ### 5.2 Geometry Nodes
 
@@ -192,11 +252,15 @@ OUTPUT
   "target": [0, 0, 1.0],
   "focal_length": 50.0,
   "sensor_width": 36.0,
+  "projection": "PERSPECTIVE",
+  "ortho_scale": 6.0,
   "active": true,
   "dof": { "enabled": true, "focus_distance": 10.0, "f_stop": 4.0 }
 }
 ```
 
+- `projection`：`PERSPECTIVE`（默认）/ `ORTHO`。`ORTHO` 时忽略 `focal_length`，使用 `ortho_scale`。
+- `ortho_scale`：0.001–100000，默认 6.0；仅 `ORTHO` 生效。场景报告会回读实际投影方式与 `ortho_scale`。
 - `rotation`（度）与 `target` 二选一，必须且只能提供一个。
 - `active` 最多一个为 true；`base_blend` 模式可复用已有活动相机。
 - 默认集合 `ANIMATION/Cameras`。
@@ -324,6 +388,9 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 | `scene.report` | 场景问题列表为空 |
 | `scene.active_camera` | 存在活动相机 |
 | `scene.object_count` | 对象数量与任务一致（`base_blend` 模式为下限） |
+| `scene.text_objects` | 每个声明的 `TEXT` 都存在，且 `body` 与任务一致 |
+| `scene.curves` | 每个声明的 `CURVE` 都存在，且点数、`cyclic`、`bevel_depth` 与任务一致 |
+| `scene.cameras` | 声明的相机存在，投影方式与 `ortho_scale` 与任务一致 |
 | `scene.geometry_nodes` | GN 修改器数量 |
 | `scene.animation` | F-Curve 数量 |
 
@@ -341,6 +408,7 @@ manifest 记录：任务哈希、随机种子、Blender 版本、宿主 Python/�
 - 只输出一个 JSON 对象，`schema_version` 固定 `2`；
 - 不输出 Python、不输出 `bpy` 调用、不输出脚本路径；
 - 对象、材质、相机、灯光、动画目标的 `id` 必须自洽；
+- `TEXT` 只填 `text` 白名单字段，不填字体路径；中文说明默认不放进三维场景；
 - 不确定的参数使用保守默认值，不编造注册表之外的 GN 资产。
 
 校验失败时，把 `scene-validate` 的错误列表原样反馈给模型，并要求只修改对应字段。自动修复最多 2–3 轮，不做无限重试。

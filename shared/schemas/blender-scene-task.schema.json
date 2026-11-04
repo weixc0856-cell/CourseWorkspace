@@ -148,6 +148,22 @@
           "title": "Sensor Width",
           "type": "number"
         },
+        "projection": {
+          "default": "PERSPECTIVE",
+          "enum": [
+            "PERSPECTIVE",
+            "ORTHO"
+          ],
+          "title": "Projection",
+          "type": "string"
+        },
+        "ortho_scale": {
+          "default": 6.0,
+          "maximum": 100000.0,
+          "minimum": 0.001,
+          "title": "Ortho Scale",
+          "type": "number"
+        },
         "active": {
           "default": true,
           "title": "Active",
@@ -172,6 +188,50 @@
         "id"
       ],
       "title": "CameraSpec",
+      "type": "object"
+    },
+    "CurveSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "items": {
+            "maxItems": 3,
+            "minItems": 3,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 4096,
+          "minItems": 2,
+          "title": "Points",
+          "type": "array"
+        },
+        "bevel_depth": {
+          "default": 0.02,
+          "maximum": 1000.0,
+          "minimum": 0.0001,
+          "title": "Bevel Depth",
+          "type": "number"
+        },
+        "cyclic": {
+          "default": false,
+          "title": "Cyclic",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "CurveSpec",
       "type": "object"
     },
     "DofSpec": {
@@ -572,7 +632,9 @@
           "default": "MESH",
           "enum": [
             "MESH",
-            "EMPTY"
+            "EMPTY",
+            "TEXT",
+            "CURVE"
           ],
           "title": "Type",
           "type": "string"
@@ -616,6 +678,28 @@
           },
           "title": "Params",
           "type": "object"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "curve": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CurveSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "transform": {
           "$ref": "#/$defs/Transform",
@@ -1026,6 +1110,70 @@
         }
       },
       "title": "SceneSpec",
+      "type": "object"
+    },
+    "TextSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Body",
+          "type": "string"
+        },
+        "size": {
+          "default": 0.5,
+          "maximum": 1000.0,
+          "minimum": 0.001,
+          "title": "Size",
+          "type": "number"
+        },
+        "align_x": {
+          "default": "LEFT",
+          "enum": [
+            "LEFT",
+            "CENTER",
+            "RIGHT"
+          ],
+          "title": "Align X",
+          "type": "string"
+        },
+        "align_y": {
+          "default": "BOTTOM",
+          "enum": [
+            "TOP",
+            "CENTER",
+            "BOTTOM"
+          ],
+          "title": "Align Y",
+          "type": "string"
+        },
+        "extrude": {
+          "default": 0.0,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Extrude",
+          "type": "number"
+        },
+        "bevel_depth": {
+          "default": 0.0,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Bevel Depth",
+          "type": "number"
+        },
+        "space_line": {
+          "default": 1.0,
+          "maximum": 10.0,
+          "minimum": 0.1,
+          "title": "Space Line",
+          "type": "number"
+        }
+      },
+      "required": [
+        "body"
+      ],
+      "title": "TextSpec",
       "type": "object"
     },
     "Transform": {

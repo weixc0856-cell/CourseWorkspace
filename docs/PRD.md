@@ -133,7 +133,7 @@
 - 验收项：退出码、PNG 分辨率/大小/黑帧、MP4 编码/分辨率/时长、场景问题、活动相机、对象数、GN 修改器数、F-Curve 数。
 - 路径约束：输出与 `.blend` 必须位于 `build/<lesson>/blender/`，禁止绝对路径、反斜杠、`..`。
 
-**验收**：`check-scene-system.ps1`（5 合法 + 6 非法）、`test_blender_scene.py` 全部通过；4 个 demo 任务真实渲染通过（`-Render`，资源允许时执行）。
+**验收**：`check-scene-system.ps1`（6 合法 + 11 非法）、`test_blender_scene.py` 全部通过；5 个 demo 任务真实渲染通过（`-Render`，资源允许时执行）。
 
 ### FR-06 本地自动建模（ModelingStudio）
 

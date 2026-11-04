@@ -1,0 +1,58 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-invalid-text-empty",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_Invalid",
+    "frame_start": 1,
+    "frame_end": 1
+  },
+  "objects": [
+    {
+      "id": "label.bad",
+      "type": "TEXT",
+      "text": {
+        "body": ""
+      },
+      "transform": {
+        "location": [
+          0,
+          0,
+          1
+        ],
+        "rotation": [
+          90,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "cameras": [
+    {
+      "id": "cam.main",
+      "location": [
+        0,
+        -6,
+        2
+      ],
+      "target": [
+        0,
+        0,
+        1
+      ]
+    }
+  ],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [
+      640,
+      360
+    ],
+    "samples": 8,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/blender/invalid.png"
+  }
+}

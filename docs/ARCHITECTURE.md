@@ -139,6 +139,8 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 
 Schema 由 Pydantic 模型导出：`course-control schemas --output shared/schemas`。提交前必须与模型一致（有测试锁定）。
 
+`shots.json` 的 `annotations[]` 是二维标注的正式通道：`storyboard.yaml` 的可选 `annotations` 由 `collect` 按页面预算与 `cue_seconds` 解析成绝对时间；Remotion 只渲染该字段，不读取课程内容。
+
 ### 4.2 模型任务记录（`schema_version: 1`）
 
 路径：`runtime/tasks/<task_id>.json`；ModelingStudio 另在 `workspace/jobs/<job>/tasks/<stage>.json` 留副本。

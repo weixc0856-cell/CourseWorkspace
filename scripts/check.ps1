@@ -88,7 +88,8 @@ try {
         "demo-animation",
         "demo-geometry-nodes",
         "demo-animation-scene",
-        "demo-modify"
+        "demo-modify",
+        "demo-text-curve"
     )
     foreach ($name in $validTasks) {
         Invoke-Checked "scene-validate $name" {
@@ -104,7 +105,12 @@ try {
         "invalid-material-ref",
         "invalid-no-camera",
         "invalid-output-outside",
-        "invalid-primitive"
+        "invalid-primitive",
+        "invalid-text-empty",
+        "invalid-text-primitive",
+        "invalid-curve-points",
+        "invalid-curve-bevel",
+        "invalid-camera-projection"
     )
     foreach ($name in $invalidTasks) {
         Expect-Failure "scene-validate $name (must be rejected)" {

@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import {Narration} from '../audio/Narration';
+import {Annotations} from '../overlays/Annotations';
 import {Captions} from '../subtitles/Captions';
 import {COLORS} from '../styles/tokens';
 import {Presentation, Shot, ShotsFile} from '../types';
@@ -139,6 +140,7 @@ export const CourseVideo: React.FC<ShotsFile> = (props) => {
       {overlayShots.map((shot) => (
         <OverlayShot key={shot.id} lesson={props.lesson} shot={shot} fps={fps} />
       ))}
+      <Annotations annotations={props.annotations ?? null} />
       <Captions lesson={props.lesson} subtitles={props.subtitles ?? null} />
       <Narration lesson={props.lesson} narration={props.narration ?? null} />
     </AbsoluteFill>

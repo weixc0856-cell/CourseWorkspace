@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+Unit = Annotated[float, Field(ge=0.0, le=1.0)]
 
 
 class Status(str, Enum):
@@ -100,10 +101,40 @@ class ShotSpec(StrictModel):
     note: str | None = None
 
 
+class AnnotationSpec(StrictModel):
+    id: str
+    slide: int = Field(ge=1)
+    cue_seconds: float = Field(ge=0)
+    duration_s: float = Field(gt=0)
+    kind: Literal["text"] = "text"
+    text: str = Field(min_length=1, max_length=200)
+    position: tuple[Unit, Unit] = (0.5, 0.1)
+    size: float = Field(36.0, ge=8, le=200)
+    align: Literal["left", "center", "right"] = "center"
+    color: Literal["text", "muted", "orange", "white"] = "text"
+    background: bool = False
+
+    @field_validator("text")
+    @classmethod
+    def _text_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("text must not be blank")
+        return value
+
+
 class Storyboard(StrictModel):
     schema_version: Literal[1]
     lesson: str
     shots: list[ShotSpec] = Field(min_length=1)
+    annotations: list[AnnotationSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _unique_ids(self):
+        names = [shot.id for shot in self.shots] + [item.id for item in self.annotations]
+        duplicates = sorted({name for name in names if names.count(name) > 1})
+        if duplicates:
+            raise ValueError(f"storyboard ids must be unique: {duplicates}")
+        return self
 
 
 class Timeline(StrictModel):
@@ -132,12 +163,26 @@ class Shot(StrictModel):
         return self
 
 
+class Annotation(StrictModel):
+    id: str
+    kind: Literal["text"] = "text"
+    text: str
+    start_s: float = Field(ge=0)
+    duration_s: float = Field(gt=0)
+    position: tuple[Unit, Unit]
+    size: float = Field(ge=8, le=200)
+    align: Literal["left", "center", "right"] = "center"
+    color: Literal["text", "muted", "orange", "white"] = "text"
+    background: bool = False
+
+
 class ShotsFile(StrictModel):
     schema_version: Literal[1] = 1
     lesson: str
     generated_at: str
     timeline: Timeline
     shots: list[Shot]
+    annotations: list[Annotation] = Field(default_factory=list)
     narration: dict | None = None
     subtitles: dict | None = None
 

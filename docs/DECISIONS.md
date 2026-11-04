@@ -19,6 +19,8 @@
 | D-012 | 取消 8082 备用端口约定 | accepted |
 | D-013 | Manim 保活但不接入课程主流程 | accepted |
 | D-014 | 真实课程内容缺失与人工步骤如实进入交付状态，不伪装自动化 | accepted |
+| D-015 | IR v2 增量扩展 TEXT / CURVE / ORTHO，保持 `schema_version: 2` | accepted |
+| D-016 | 二维标注通过 `shots.json` 的 `annotations[]` 传递，Remotion 负责渲染 | accepted |
 
 ---
 
@@ -128,3 +130,21 @@
 **决策**：人工导出、内容占位、凭据缺失、模型不可用都必须作为状态出现在报告与交付清单中。
 
 **后果**：真实课程的 `incomplete` 是合法交付状态；补全责任在内容作者。
+
+## D-015 IR v2 增量扩展 TEXT / CURVE / ORTHO
+
+**背景**：P1a 需要文字、曲线与正交相机，而 IR v2 原本只有 9 种图元、`MESH`/`EMPTY` 两类对象和透视相机。
+
+**评估**：新增对象类型 `TEXT`/`CURVE`、对象子结构 `text`/`curve`、相机字段 `projection`/`ortho_scale`，以及 `scene.text_objects`/`scene.curves`/`scene.cameras` 三条验收检查，均为增量变更：旧任务缺省值不变，原有 5 个合法与 6 个非法夹具结论不变，双端一致性测试通过。
+
+**决策**：保持 `schema_version: 2`，不升 v3；字段与取值范围写入 [Blender 场景任务 IR v2](Blender场景任务IR-v2.md) §5.1.1 与 §6。
+
+**后果**：旧任务与 `base_blend` 路径无需迁移；后续若修改既有字段语义或收紧既有校验，仍须升版本并提供迁移说明。
+
+## D-016 二维标注契约
+
+**背景**：PBR 评估（Q4）已定：二维标题、图例、单位说明不得硬编码在 Remotion 组件里。
+
+**决策**：`storyboard.yaml` 新增可选 `annotations`；`collect` 按页面预算与 `cue_seconds` 解析为绝对时间，写入 `shots.json.annotations[]`；Remotion 只渲染该字段，不读取课程内容。
+
+**后果**：标注随 `shots.json` 进入产物与报告；`verify` 新增 V-22。旧 `storyboard.yaml` / `shots.json` 不带该字段时按空列表处理，`schema_version` 保持 1。

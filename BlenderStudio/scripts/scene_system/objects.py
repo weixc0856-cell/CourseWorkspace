@@ -7,7 +7,7 @@ import math
 import bpy
 
 from . import scene as scene_ops
-from .geometry import build_mesh
+from .geometry import build_curve, build_mesh, build_text
 from .task_schema import TaskError
 
 
@@ -28,6 +28,18 @@ def create_objects(specs, materials, task_id):
         if spec["type"] == "MESH":
             mesh = build_mesh(name, spec["primitive"], spec["params"], spec["smooth"])
             obj = bpy.data.objects.new(name, mesh)
+            material = materials.get(spec["material"]) if spec["material"] else None
+            if material is not None:
+                obj.data.materials.append(material)
+        elif spec["type"] == "TEXT":
+            data = build_text(name, spec["text"])
+            obj = bpy.data.objects.new(name, data)
+            material = materials.get(spec["material"]) if spec["material"] else None
+            if material is not None:
+                obj.data.materials.append(material)
+        elif spec["type"] == "CURVE":
+            data = build_curve(name, spec["curve"])
+            obj = bpy.data.objects.new(name, data)
             material = materials.get(spec["material"]) if spec["material"] else None
             if material is not None:
                 obj.data.materials.append(material)
