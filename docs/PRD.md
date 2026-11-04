@@ -159,7 +159,7 @@
 
 **验收**：夹具构建后 `shots.json` 通过 `verify`；越界路径有失败测试。
 
-### FR-08 合成与成片验收（V-10~V-21）
+### FR-08 合成与成片验收（V-10~V-22）
 
 **目标**：Remotion 合成最终视频，并以程序检查判定。
 
@@ -168,7 +168,7 @@
 - 合成失败保留 `RemotionStudio/public/staging/<slug>/`；成功清理。
 - 报告 `verdict` 只能是 `pass` / `fail` / `incomplete`。
 
-**验收**：夹具 `lesson-smoke` 全链路 `pass`；V-10~V-21 有实现与至少一条失败注入证据。
+**验收**：夹具 `lesson-smoke` 全链路 `pass`；V-10~V-22 有实现与至少一条失败注入证据。
 
 ### FR-09 本地模型统一调度与严格串行
 

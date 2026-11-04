@@ -42,7 +42,7 @@ collect                                → build/<slug>/shots.json
 compose（staging + Remotion）           → build/<slug>/final/course-video.mp4
         │
         ▼
-verify                                 → build/<slug>/final/build-report.json（V-10~V-21）
+verify                                 → build/<slug>/final/build-report.json（V-10~V-22）
 ```
 
 人工节点是正式设计：Motion Canvas 没有 CLI 导出，作者必须在编辑器导出到 `build/<slug>/animation/<scene-stem>.mp4`；未导出时构建结论是 `incomplete`，不是通过。
@@ -61,6 +61,7 @@ verify                                 → build/<slug>/final/build-report.json�
 | `ModelingStudio/` | 图片 → Blender 模型 | `workspace/jobs/<job>/` | 否（内部能力） |
 | `ContentQA/` | 在线模型内容审查 | `build/<slug>/review/` | 否（内部能力） |
 | `shared/ai_runtime/` | 跨进程锁、服务生命周期、任务记录、上下文预算 | `runtime/` | 支撑 |
+| `shared/scene_expr/` | 受限表达式：AST 白名单 + 解释器 | — | 支撑 |
 | `shared/schemas/` | JSON Schema | — | 支撑 |
 | `config/`、`scripts/` | 本机配置与工作区入口 | — | 支撑 |
 | `docs/` | 权威文档；`docs/archive/` 为历史 | — | — |

@@ -26,7 +26,7 @@
 [自动] compose                         staging → npx remotion render → final/course-video.mp4
    │
    ▼
-[自动] verify                          V-10~V-21 → final/build-report.json
+[自动] verify                          V-10~V-22 → final/build-report.json
 
 [独立][自动][可选] scene-run           IR v2 → Blender → 场景验收 → manifests/
 [独立][自动][人工触发] modeling-studio 本地模型 → 脚本 → Blender → validation.json
@@ -117,7 +117,7 @@
 | 模块 | `course-control scene-run` → `blender_runner.py` → `blender-render.ps1` → `scene_system/` → `verify_scene.py` |
 | 校验 | Pydantic 与 Blender 内置校验器双端一致；`base_blend` 存在性属于执行前置条件 |
 | 失败 | 校验、退出码、输出检查、场景报告任一失败即 `fail`，manifest 记录 |
-| 证据 | `check-scene-system.ps1 -Render`：4 次真实渲染通过 |
+| 证据 | `check-scene-system.ps1 -Render`：8 次真实渲染通过 |
 
 ---
 
@@ -155,7 +155,7 @@
 | 输入 | `shots.json`、最终视频、`lesson.yaml` |
 | 输出 | `build/<slug>/final/build-report.json`（stages / checks / artifacts / verdict / failures） |
 | 模块 | `verify.py`、`report.py` |
-| 检查 | V-10~V-21：源文件、分辨率/帧率、时间线、成片时长、音画、字幕、报告一致性、产物边界、适用性、recording 时长、路径 |
+| 检查 | V-10~V-22：源文件、分辨率/帧率、时间线、成片时长、音画、字幕、报告一致性、产物边界、适用性、recording 时长、路径、二维标注 |
 | verdict | `pass` / `fail` / `incomplete`；`skipped`、`not_run`、`not_applicable` 不算通过 |
 | 模型 | 无 |
 

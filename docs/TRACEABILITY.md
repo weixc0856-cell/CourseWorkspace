@@ -10,10 +10,10 @@
 | FR-02 校验 V-01~V-09 | `CourseControl/src/course_control/validators.py` | `test_contracts.py`、`check.ps1` |
 | FR-03 截图 | `CourseControl/src/course_control/adapters/slides.py`；`CourseSlides/template/`；`RemotionStudio/scripts/capture-slides.mjs` | `check.ps1` + 真实课程截图 |
 | FR-04 动画 | `adapters/motion_canvas.py`、`manim.py`、`blender.py` | `test_staging.py`、`lesson-manual` 夹具 |
-| FR-05 IR v2 | `CourseControl/src/course_control/blender_scene.py`、`blender_runner.py`；`BlenderStudio/scripts/scene_system/`、`verify_scene.py` | `CourseControl/tests/test_blender_scene.py` |
+| FR-05 IR v2 | `CourseControl/src/course_control/blender_scene.py`、`blender_runner.py`、`scene_presets.py`、`colormaps.py`；`BlenderStudio/scripts/scene_system/`、`verify_scene.py`；`shared/scene_expr/` | `CourseControl/tests/test_blender_scene.py`、`test_scene_expr.py` |
 | FR-06 本地建模 | `ModelingStudio/src/modeling_studio/` | `ModelingStudio/tests/` |
-| FR-07 时间线 | `CourseControl/src/course_control/collect.py`、`utils.py` | `test_contracts.py`、`test_staging.py` |
-| FR-08 合成与验收 | `CourseControl/src/course_control/verify.py`、`report.py`、`adapters/remotion.py` | `test_staging.py`、夹具构建 |
+| FR-07 时间线 | `CourseControl/src/course_control/collect.py`、`contracts.py`（annotations）、`utils.py`；`shared/colormaps.json` | `test_contracts.py`、`test_staging.py` |
+| FR-08 合成与验收 | `CourseControl/src/course_control/verify.py`、`report.py`、`adapters/remotion.py`；`RemotionStudio/src/compositions/CourseVideo.tsx`、`overlays/Annotations.tsx` | `test_staging.py`、夹具构建、真实 Remotion still |
 | FR-09 本地模型串行 | `shared/ai_runtime/src/ai_runtime/locks.py`、`service.py`；`ModelingStudio/server.py` | `shared/ai_runtime/tests/test_concurrency.py`、`test_service.py`、`test_lifecycle.py` |
 | FR-10 任务状态 | `shared/ai_runtime/src/ai_runtime/tasks.py`；`ModelingStudio/src/modeling_studio/job.py` | `test_runtime.py`、`ModelingStudio/tests/test_job_state.py` |
 | FR-11 上下文预算 | `shared/ai_runtime/src/ai_runtime/budget.py`；`ModelingStudio/src/modeling_studio/config.py`、`llm.py` | `test_runtime.py`、`ModelingStudio/tests/test_budget.py`、`ContentQA/tests/test_content_qa.py` |

@@ -1,11 +1,31 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
+- **最近更新**：2026-11-04（P1–P4 增量，见 §0）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
 状态词：`COMPLETED`（实现且有真实证据）/ `PARTIAL`（有缺口）/ `NOT_IMPLEMENTED` / `BLOCKED`（外部条件限制）/ `NOT_RUN` / `DEFERRED` / `OUT_OF_SCOPE`。
+
+---
+
+## 0. 2026-11-04 增量（P1–P4）
+
+- **分支**：`feat/p1-teaching-primitives`（已推送，6 个提交）
+- **范围**：三维教学基元、二维标注、字体、材质、科学着色、参数化曲面；**未改动任何课程正文**。
+
+| 能力 | 契约 / 代码 | 证据 |
+| --- | --- | --- |
+| TEXT / CURVE / ORTHO | IR v2 §5.1.1、§6；`scene_system/` | 8 次真实渲染中的 `text-curve.png` |
+| 二维标注 + 字体 | `storyboard.annotations` → `shots.json`；`overlays/Annotations.tsx`；Noto Sans SC（OFL） | `annotation-still.png`、`annotation-font-still.png` |
+| 材质预设 / Coat / Bump | `scene_presets.py`、`assets/materials/presets/`、`scene.materials` | `materials.png` |
+| 科学着色 | `scientific_colormap`、`shared/colormaps.json`、`scene.attributes` | `scientific.png` |
+| 参数化曲面 | `shared/scene_expr`、`SURFACE`、`scene.surfaces` | `surface.png` |
+
+当前计数：**9 合法 + 11 非法场景契约**，**8 次真实 Blender 渲染**，**112 个单测**（51+28+22+11）。
+
+未做：课程内容（作者负责）、P5 真实数据导入（无数据源）、P6 AI 场景规划（待课程页输入）。
 
 ---
 

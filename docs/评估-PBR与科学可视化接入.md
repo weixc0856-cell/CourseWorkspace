@@ -35,7 +35,7 @@
 | ARCHITECTURE §7 | 扩展规则：新引擎走 `StageOutcome`；新数据文件必须有 Pydantic + Schema + 同步测试；不新增平行实现 |
 | DECISIONS D-007 | Blender v1/v2 并存，v2 是完整场景描述 |
 | DECISIONS D-014 | 人工导出、内容占位、凭据缺失、模型不可用必须如实进入状态；不伪装自动化 |
-| PROJECT_STATUS FR-05 | IR v2 状态 `COMPLETED`，证据为 4 次真实渲染 + 19 个 CourseControl 测试 |
+| PROJECT_STATUS FR-05（评估时基线） | IR v2 状态 `COMPLETED`，证据为 4 次真实渲染 + 19 个 CourseControl 测试；2026-11-04 已增至 8 次渲染 + 51 个测试 |
 | PROJECT_STATUS FR-06 | ModelingStudio `PARTIAL`，真实全链路本轮未重跑 |
 | PROJECT_STATUS NFR-01 | 可复现为 `PARTIAL`：夹具稳定，真实课程未重复构建 |
 
