@@ -74,6 +74,22 @@
       }
     },
     {
+      "id": "c_wait",
+      "run": [
+        "bash",
+        "-lc",
+        "sleep 2; echo waited"
+      ],
+      "expect": {
+        "exit_code": 0
+      },
+      "trim": {
+        "command": "c_wait",
+        "keep_head_s": 0.3,
+        "keep_tail_s": 0.3
+      }
+    },
+    {
       "id": "c3",
       "run": [
         ".venv/bin/python",

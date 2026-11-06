@@ -17,12 +17,12 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 64 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 65 | 全部通过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **125** 个用例。
+合计 **126** 个用例。
 
 ---
 
@@ -121,8 +121,9 @@
 
 - 场景：`uv venv` → 本地 wheel 安装 → 导入；随后在 `network: none` 的第二容器中做离线验证。
 - 证据：`build/lesson-smoke/code/python_001/{result.json,offline-result.json,validation.json}`；V-23/V-25 pass。
-- 说明：当前 Docker 容器到 PyPI 的 TLS 被本机代理/TUN 阻断，因此 fixture 使用本地 wheelhouse（`course-demo-pkg`）；真实联网演示需先解决容器代理（`host.docker.internal:7890` 目前不可达）。
-- 等待剪辑（`trim`）尚未实现；当前 fixture 的安装为本地 wheel，无等待。
+- 网络演示：`check-python-network.ps1` 在本机 8899 启一个只读 wheelhouse HTTP 索引，容器经 `host.docker.internal:8899` 真实下载安装；随后仍在 `network: none` 容器做离线验证。真实 PyPI 仍被本机代理/TUN 阻断，未伪装成公网演示。
+- 等待剪辑：`trim` 已实现并验证；`check-python-session.ps1 -Record` 中 `sleep 2` 命令被剪到约 0.6 秒，成片时长从约 5 秒降到 3.27 秒。
+- 证据：`build/lesson-smoke/code/python_network_001/{result.json,offline-result.json,validation.json}`。
 
 ---
 

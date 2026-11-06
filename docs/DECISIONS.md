@@ -27,7 +27,7 @@
 | D-020 | 受限表达式由 `shared/scene_expr` 单实现，禁止 `eval` / `exec` | accepted |
 | D-021 | 代码/终端会话采用三证据链 + Docker 受限执行 + V-23/V-24 | accepted |
 | D-022 | VS Code 会话用 shell integration 执行、PrintWindow 录制 | accepted |
-| D-023 | Python 工具链采用联网演示 + 离线验证；容器网络受阻时用本地 wheelhouse | accepted |
+| D-023 | Python 工具链采用联网演示 + 离线验证；本机以 8899 端口本地 HTTP 索引演示 | accepted |
 
 ---
 
@@ -208,6 +208,6 @@
 
 **背景**：pip/uv/venv 课程需要展示安装过程，同时证明产物不依赖网络。本机 Docker 容器到 PyPI 的 TLS 被代理/TUN 阻断，真实联网演示暂时不可用。
 
-**决策**：`SessionSpec` 增加 `offline_commands`：在线容器（`network: bridge`）完成 venv 与安装，第二个 `network: none` 容器挂同一 `/work` 执行导入断言，V-25 检查离线结果。当前 fixture 使用本地 wheelhouse（`course-demo-pkg`）；联网演示在容器代理可用后恢复。
+**决策**：`SessionSpec` 增加 `offline_commands`：在线容器（`network: bridge`）完成 venv 与安装，第二个 `network: none` 容器挂同一 `/work` 执行导入断言，V-25 检查离线结果。联网演示使用本机 8899 的只读 wheelhouse HTTP 索引（容器经 `host.docker.internal` 真实下载），不伪装成公网 PyPI；`trim` 按命令起止时间剪掉等待区间。
 
-**后果**：离线可复现性得到证明；未完成的是真实网络安装的录制与等待剪辑（`trim`）。
+**后果**：安装、离线可运行与等待剪辑都有真实证据；真实公网 PyPI 仍受本机代理/TUN 限制，需要时再解决。

@@ -36,6 +36,13 @@ class SessionContractTest(unittest.TestCase):
         self.assertIsNone(spec.environment.image)
         self.assertEqual(spec.record.target, "vscode")
 
+    def test_python_network_session_spec_validates(self):
+        spec = load_session_spec(
+            LESSON_DIR / "sessions" / "python-network-001.session.json"
+        )
+        self.assertEqual(spec.environment.network, "bridge")
+        self.assertEqual(len(spec.offline_commands), 1)
+
     def test_python_offline_session_spec_validates(self):
         spec = load_session_spec(LESSON_DIR / "sessions" / "python-001.session.json")
         self.assertEqual(spec.environment.network, "bridge")

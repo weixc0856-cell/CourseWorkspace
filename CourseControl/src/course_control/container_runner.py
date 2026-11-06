@@ -46,6 +46,7 @@ def main() -> int:
                 transcript.write(f"\n=== {command_id} START ===\n")
                 transcript.flush()
             started = time.monotonic()
+            started_wall = time.time()
             timed_out = False
             env = os.environ.copy()
             env.setdefault("UV_CACHE_DIR", "/work/.uv-cache")
@@ -83,6 +84,7 @@ def main() -> int:
                 stdout = ""
                 stderr = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
             duration_ms = int((time.monotonic() - started) * 1000)
+            finished_wall = time.time()
             _emit(sys.stdout, stdout)
             _emit(sys.stderr, stderr)
             if transcript:
@@ -101,6 +103,8 @@ def main() -> int:
                     "exit_code": exit_code,
                     "timed_out": timed_out,
                     "duration_ms": duration_ms,
+                    "started_at": started_wall,
+                    "finished_at": finished_wall,
                     "stdout": stdout,
                     "stderr": stderr,
                 }

@@ -169,6 +169,8 @@ def _docker_argv(
         str(env.cpus),
         "--network",
         network or env.network,
+        "--add-host",
+        "host.docker.internal:host-gateway",
         "-v",
         f"{workdir}:/work:rw",
         "-v",
@@ -476,6 +478,83 @@ def _probe_recording(path: Path, spec: SessionSpec) -> RecordingResult | None:
     )
 
 
+def _apply_trims(
+    video: Path,
+    raw: dict,
+    record_started: float,
+    spec: SessionSpec,
+    recording: RecordingResult,
+) -> RecordingResult:
+    items = {item.get("id"): item for item in raw.get("commands", [])}
+    total = recording.duration_s
+    cuts = []
+    for command in spec.commands:
+        trim = command.trim
+        if trim is None:
+            continue
+        target = trim.command or command.id
+        item = items.get(target)
+        if not item or "started_at" not in item or "finished_at" not in item:
+            raise SessionRunError(f"trim target has no timing: {target}")
+        start = max(0.0, float(item["started_at"]) - record_started + trim.keep_head_s)
+        end = min(total, float(item["finished_at"]) - record_started - trim.keep_tail_s)
+        if end > start:
+            cuts.append((start, end))
+    if not cuts:
+        return recording
+    cuts.sort()
+    keep = []
+    cursor = 0.0
+    for start, end in cuts:
+        if start > cursor:
+            keep.append((cursor, start))
+        cursor = max(cursor, end)
+    if cursor < total:
+        keep.append((cursor, total))
+    if not keep:
+        raise SessionRunError("trim removed the entire recording")
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise SessionRunError("ffmpeg executable not found")
+    parts = []
+    for index, (start, end) in enumerate(keep):
+        parts.append(
+            f"[0:v]trim=start={start:.3f}:end={end:.3f},setpts=PTS-STARTPTS[v{index}]"
+        )
+    parts.append(
+        "".join(f"[v{index}]" for index in range(len(keep)))
+        + f"concat=n={len(keep)}:v=1:a=0[out]"
+    )
+    temp = video.with_name(video.stem + ".trim" + video.suffix)
+    result = _run(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(video),
+            "-filter_complex",
+            ";".join(parts),
+            "-map",
+            "[out]",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-pix_fmt",
+            "yuv420p",
+            str(temp),
+        ],
+        timeout=300,
+    )
+    if result.returncode != 0 or not temp.is_file():
+        raise SessionRunError(f"trim failed: {result.stderr.strip()[-500:]}")
+    temp.replace(video)
+    return _probe_recording(video, spec) or recording
+
+
 def run_session(
     workspace: Path,
     spec_path: Path,
@@ -507,6 +586,7 @@ def run_session(
     started_at = now()
     recording = None
     recording_error = None
+    record_started: float | None = None
     try:
         if record:
             if spec.record.target != "terminal":
@@ -549,6 +629,7 @@ def run_session(
                 )
             _focus_window(hwnd)
             process = _start_recording(spec, video, hwnd, build_root / "ffmpeg.log")
+            record_started = time.time()
             deadline = time.monotonic() + spec.environment.timeout_s + 120
             while time.monotonic() < deadline and not raw_path.is_file():
                 time.sleep(0.5)
@@ -609,6 +690,13 @@ def run_session(
         return result, manifest, recording
 
     raw = json.loads(raw_path.read_text(encoding="utf-8"))
+    if recording is not None and record_started is not None:
+        try:
+            recording = _apply_trims(
+                build_root / "session.mp4", raw, record_started, spec, recording
+            )
+        except SessionRunError as exc:
+            recording_error = str(exc)
     commands, failure = _assert_commands(workdir, spec, raw)
     if failure is None and recording_error:
         failure = FailureCode.RECORDING_FAILED

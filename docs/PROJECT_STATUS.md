@@ -36,9 +36,9 @@
 | 终端录制 | mintty + gdigrab `hwnd` | `build/lesson-smoke/code/shell_001/session.mp4`；V-23/V-24 |
 | VS Code 会话（E2） | `CourseDemo/` 扩展、shell integration、`vscode_runner.py`、PrintWindow 录制 | `build/lesson-smoke/code/vscode_001/session.mp4`；V-23/V-24 |
 | 旁白 V1 | `narrate.py`：VoxCPM2 单段合成、缓存键、meta、50000 锁、自动起停 | 真实 `smoke-001.wav`（48 kHz，1.76 s）与 `.meta.json` |
-| Python 工具链（E3） | `offline_commands`、本地 wheelhouse、`check-python-session.ps1` | `python_001`：venv + 安装 + 离线验证；V-23/V-25 |
+| Python 工具链（E3） | `offline_commands`、本地 HTTP 索引、`trim`、`check-python-session.ps1`、`check-python-network.ps1` | `python_001` / `python_network_001`：安装 + 离线验证；V-23/V-25 |
 
-当前计数：CourseControl 64 个单测；全套 125 个；场景契约仍为 9 合法 + 11 非法；8080 未被触碰。
+当前计数：CourseControl 65 个单测；全套 126 个；场景契约仍为 9 合法 + 11 非法；8080 未被触碰。
 
 ---
 
@@ -101,7 +101,7 @@
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 125 个用例（64+28+22+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 126 个用例（65+28+22+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
