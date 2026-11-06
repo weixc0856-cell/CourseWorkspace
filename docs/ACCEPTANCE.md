@@ -134,7 +134,18 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 
 - 场景：`ManimSandbox/02-fft-baseline/fft_baseline.py`，两条正弦叠加与和波形。
 - 证据：`build/manim-fft/fft_baseline.mp4`（1920×1080，30 fps，7.8 s）；抽帧已确认坐标轴、两条分量与和波形。
-- 未完成：3Blue1Brown Transformer 产品基线（E6）。
+- 未完成：3Blue1Brown Transformer 完整复刻（E6 仅完成技术产品基线）。
+
+### 3.1.5 Transformer 产品基线（E6）
+
+```powershell
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-transformer/media ManimSandbox/03-transformer-baseline/attention_baseline.py AttentionBaseline
+```
+
+- 场景：tokens 行、query 权重柱、注意力热图。
+- 证据：`build/manim-transformer/attention_baseline.mp4`（1920×1080，30 fps，9.1 s）；抽帧已确认。
+- 边界：这是技术产品基线，不等于 3Blue1Brown 的完整风格复刻；镜头编排、旁白与复杂概念拆解仍待 E6 第二阶段。
 
 ### 3.1.4 Rust 镜头（E4）
 

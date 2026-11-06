@@ -32,6 +32,10 @@ uv sync
 uv run manim render -r 1920,1080 --fps 30 `
   --media_dir ..uild\manim-fft\media 02-fft-baseline/fft_baseline.py FFTBaseline
 
+# Transformer 注意力产品基线（1920×1080 / 30 fps）
+uv run manim render -r 1920,1080 --fps 30 `
+  --media_dir ..uild\manim-transformer\media 03-transformer-baseline/attention_baseline.py AttentionBaseline
+
 # 低清预览，-p 渲染完自动播放
 uv run manim -pql 01-transformer-demo/dot_product.py DotProduct
 
