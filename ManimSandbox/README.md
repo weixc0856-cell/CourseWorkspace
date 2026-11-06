@@ -28,6 +28,10 @@ uv sync
 ## 日常使用
 
 ```powershell
+# FFT 技术基线（1920×1080 / 30 fps）
+uv run manim render -r 1920,1080 --fps 30 `
+  --media_dir ..uild\manim-fft\media 02-fft-baseline/fft_baseline.py FFTBaseline
+
 # 低清预览，-p 渲染完自动播放
 uv run manim -pql 01-transformer-demo/dot_product.py DotProduct
 

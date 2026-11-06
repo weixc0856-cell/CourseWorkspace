@@ -125,6 +125,17 @@
 - 等待剪辑：`trim` 已实现并验证；`check-python-session.ps1 -Record` 中 `sleep 2` 命令被剪到约 0.6 秒，成片时长从约 5 秒降到 3.27 秒。
 - 证据：`build/lesson-smoke/code/python_network_001/{result.json,offline-result.json,validation.json}`。
 
+### 3.1.3 Manim FFT 技术基线（E5）
+
+```powershell
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-fft/media ManimSandbox/02-fft-baseline/fft_baseline.py FFTBaseline
+```
+
+- 场景：`ManimSandbox/02-fft-baseline/fft_baseline.py`，两条正弦叠加与和波形。
+- 证据：`build/manim-fft/fft_baseline.mp4`（1920×1080，30 fps，7.8 s）；抽帧已确认坐标轴、两条分量与和波形。
+- 未完成：3Blue1Brown Transformer 产品基线（E6）。
+
 ---
 
 ## 4. 课程构建
