@@ -50,4 +50,4 @@ uv run --project ContentQA content-qa review --lesson <slug>
 
 - Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - 本机配置：`config/tools.yaml`、`config/local-paths.yaml`、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
-- 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 CosyVoice。8082 不存在。
+- 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 VoxCPM2 TTS。8082 不存在。

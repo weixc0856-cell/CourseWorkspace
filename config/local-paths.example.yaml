@@ -2,3 +2,9 @@ ai_root: "<AI_ROOT>"
 blender_exe: "<BLENDER_EXE>"
 workspace: "<WORKSPACE>"
 reference_project: "<REFERENCE_PROJECT>"
+tts:
+  runtime_dir: "<AI_ROOT>/VoxCPM-Runtime"
+  voice_ref: "<VOICE_REF_WAV>"
+  prompt_text: "<REFERENCE_TRANSCRIPT>"
+  auto_start: true
+  wait_timeout_s: 1800

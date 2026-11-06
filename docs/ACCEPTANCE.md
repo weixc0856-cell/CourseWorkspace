@@ -17,12 +17,12 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 51 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 63 | 全部通过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **112** 个用例。
+合计 **124** 个用例。
 
 ---
 
@@ -83,6 +83,36 @@
 
 二维标注（V-22）的渲染证据：`build/p1b-annotation-evidence/annotation-still.png`（三条标注与背景/边框样式）与 `annotation-font-still.png`（中文标注，捆绑字体 Noto Sans SC）。色标证据：`build/p3-legend-evidence/legend-still.png`（coolwarm、-400–400 Pa、真实 Remotion still）。
 
+## 3.1 代码/终端会话（E1/V1）
+
+```powershell
+.\scripts\check-session.ps1            # 构建镜像 + 无录屏执行 + V-23
+.\scripts\check-session.ps1 -Record    # 追加 mintty + gdigrab 录制 + V-24
+```
+
+| 项 | 证据 |
+| --- | --- |
+| 镜像 | `course-tools:e1`，`docker image inspect` 的 Id 写入 `result.json` |
+| 执行 | `build/<lesson>/code/<shot>/result.json`（退出码、分离的 stdout/stderr、断言） |
+| transcript | `build/<lesson>/code/<shot>/work/transcript.log`（结构化会话日志） |
+| 录制 | `build/<lesson>/code/<shot>/session.mp4` + `recording.json`（ffprobe） |
+| 验收 | `validation.json`：V-23 执行证据、V-24 录制证据 |
+| 旁白（V1） | `course-control narrate` 输出 `build/<lesson>/narration/segments/<id>.wav` + `.meta.json`，真实 VoxCPM2 合成 |
+
+最近一次：`session check ok`；录制 `1322×702 / 2.1s`（mintty 窗口，gdigrab `hwnd`）；V-23/V-24 pass。
+
+### 3.1.1 VS Code 会话（E2）
+
+```powershell
+.\scripts\check-vscode-session.ps1            # 真实 VS Code + shell integration
+.\scripts\check-vscode-session.ps1 -Record    # 追加 PrintWindow 录制
+```
+
+- 扩展：`CourseDemo/`（plain JS，无第三方依赖）。
+- 执行：`executeCommand` + 立即 `read()` + `onDidEndTerminalShellExecution` 的 `exitCode`；`undefined` 判失败。
+- 录制：gdigrab 对 Electron 窗口为黑屏，改用 **PrintWindow** 逐帧 + ffmpeg rawvideo；已抽帧确认终端命令与 `hello from vs code` 输出可见。
+- 证据：`build/lesson-smoke/code/vscode_001/{result.json,vscode-result.json,validation.json,session.mp4}`；V-23/V-24 pass。
+
 ---
 
 ## 4. 课程构建
@@ -133,7 +163,7 @@
 | 本轮重跑 ModelingStudio 全链路 | 需独占 8080 约 10–30 分钟，且会与用户其他任务冲突 | 仅有历史作业证据 |
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |
-| CosyVoice / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
+| VoxCPM2 / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
 
 ---
 

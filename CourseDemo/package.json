@@ -1,0 +1,14 @@
+{
+  "name": "course-demo",
+  "displayName": "Course Demo",
+  "description": "Drive a VS Code terminal session for CourseWorkspace recordings.",
+  "version": "0.1.0",
+  "publisher": "courseworkspace",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./extension.js"
+}

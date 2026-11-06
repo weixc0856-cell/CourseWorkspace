@@ -3,6 +3,11 @@ revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
+name = "ai-runtime"
+version = "0.1.0"
+source = { editable = "../shared/ai_runtime" }
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -34,6 +39,7 @@ name = "course-control"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "ai-runtime" },
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -43,6 +49,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ai-runtime", editable = "../shared/ai_runtime" },
     { name = "pillow", specifier = ">=10,<12" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pyyaml", specifier = ">=6.0,<7" },

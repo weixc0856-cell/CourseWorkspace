@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-smoke",
+  "shot_id": "shell_001",
+  "session_id": "session-smoke-001",
+  "environment": {
+    "kind": "docker",
+    "image": "course-tools:e1",
+    "user": "course",
+    "network": "none",
+    "workdir": "/work",
+    "cpus": 1.0,
+    "memory": "512m",
+    "pids": 64,
+    "timeout_s": 30
+  },
+  "files": [
+    { "source": "assets/code/shell-001/hello.sh", "path": "hello.sh" },
+    { "source": "assets/code/shell-001/expected.txt", "path": "expected.txt" }
+  ],
+  "commands": [
+    {
+      "id": "c1",
+      "run": ["bash", "hello.sh"],
+      "expect": { "exit_code": 0, "stdout": "expected.txt" }
+    }
+  ],
+  "record": {
+    "target": "terminal",
+    "capture": "window",
+    "window_title": "CourseDemo",
+    "resolution": [1280, 720],
+    "fps": 30
+  },
+  "typing_cps": 20.0
+}

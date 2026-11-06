@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-smoke",
+  "shot_id": "vscode_001",
+  "session_id": "session-vscode-001",
+  "environment": {
+    "kind": "host",
+    "network": "none",
+    "workdir": "/",
+    "cpus": 1.0,
+    "memory": "512m",
+    "pids": 64,
+    "timeout_s": 60
+  },
+  "files": [
+    { "source": "assets/code/vscode-001/expected.txt", "path": "expected.txt" }
+  ],
+  "commands": [
+    {
+      "id": "c1",
+      "run": ["bash", "-lc", "cat expected.txt"],
+      "expect": { "exit_code": 0, "stdout": "expected.txt" }
+    }
+  ],
+  "record": {
+    "target": "vscode",
+    "capture": "window",
+    "window_title": "CourseDemo",
+    "resolution": [1280, 720],
+    "fps": 30
+  }
+}

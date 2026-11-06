@@ -102,6 +102,18 @@ try {
         }
     }
 
+    Invoke-Checked "session-validate shell-001" {
+        uv run --project CourseControl course-control session-validate `
+            --spec CourseControl/tests/fixtures/lesson-smoke/sessions/shell-001.session.json `
+            --lesson-dir CourseControl/tests/fixtures/lesson-smoke
+    }
+
+    Invoke-Checked "session-validate vscode-001" {
+        uv run --project CourseControl course-control session-validate `
+            --spec CourseControl/tests/fixtures/lesson-smoke/sessions/vscode-001.session.json `
+            --lesson-dir CourseControl/tests/fixtures/lesson-smoke
+    }
+
     $invalidTasks = @(
         "invalid-collection-root",
         "invalid-duplicate-id",

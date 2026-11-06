@@ -60,6 +60,7 @@ verify                                 → build/<slug>/final/build-report.json�
 | `RemotionStudio/` | 截图、staging、合成 | `final/course-video.mp4` | 是 |
 | `ModelingStudio/` | 图片 → Blender 模型 | `workspace/jobs/<job>/` | 否（内部能力） |
 | `ContentQA/` | 在线模型内容审查 | `build/<slug>/review/` | 否（内部能力） |
+| `CourseDemo/` | VS Code 会话驱动扩展 | `vscode-result.json` | 否（内部能力） |
 | `shared/ai_runtime/` | 跨进程锁、服务生命周期、任务记录、上下文预算 | `runtime/` | 支撑 |
 | `shared/scene_expr/` | 受限表达式：AST 白名单 + 解释器 | — | 支撑 |
 | `shared/schemas/` | JSON Schema | — | 支撑 |
@@ -77,6 +78,12 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 
 # 完整构建
 .\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era
+
+# 代码/终端会话（E1；需要 Docker）
+.\scripts\check-session.ps1
+
+# VS Code 会话（E2；真实窗口 + shell integration）
+.\scripts\check-vscode-session.ps1
 
 # 三维场景任务（IR v2）
 uv run --project CourseControl course-control scene-validate `
@@ -99,7 +106,7 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 | 课件预览 / 截图 | 8081 | `live-server`，截图复用现有实例 |
 | Motion Canvas 编辑器 | 5173 | 人工导出 |
 | Remotion Studio | 3000 | 预览 |
-| CosyVoice（外部） | 50000 | 同一时刻一个模式 |
+| VoxCPM2 TTS（外部） | 50000 | 唯一实例；谁启动谁停止 |
 
 没有 8082 备用端口。
 
