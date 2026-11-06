@@ -24,6 +24,9 @@
 | D-017 | 二维文字捆绑 Noto Sans SC（OFL）；Blender TEXT 仍用内置 Bfont | accepted |
 | D-018 | 材质预设由控制层展开，Blender 只接收展开后的任务 | accepted |
 | D-019 | 科学着色使用独立 shader，范围与单位必填，色标定义单一来源 | accepted |
+| D-020 | 受限表达式由 `shared/scene_expr` 单实现，禁止 `eval` / `exec` | accepted |
+| D-021 | 代码/终端会话采用三证据链 + Docker 受限执行 + V-23/V-24 | accepted |
+| D-022 | VS Code 会话用 shell integration 执行、PrintWindow 录制 | accepted |
 
 ---
 
@@ -175,3 +178,27 @@
 **决策**：`scientific_colormap` 是独立 shader，不继承 PBR 参数；`source_attribute`、`min_value`、`max_value`、`units`、`colormap` 全部必填，不提供 `auto`；色标定义只在 `shared/colormaps.json`，Blender 与 Remotion 共用。点属性由声明式字段 `axis` / `distance` / `noise` 生成，不接受任意表达式。
 
 **后果**：缺元数据直接校验失败；色标与材质不会出现两套颜色；P4 只扩展字段来源，P5 只替换数据源。
+
+## D-020 受限表达式
+
+**背景**：参数化曲面与表达式属性需要在控制层和 Blender 内置校验器中得到一致结论；两侧各写一份 AST 白名单必然漂移，而 `eval` / `exec` 违反工程红线。
+
+**决策**：新增纯标准库包 `shared/scene_expr`，控制层通过 uv 路径依赖引用，Blender 通过 `shared/scene_expr/src` 加入 `sys.path`；表达式只做 AST 白名单校验与递归解释，不调用 `eval`。
+
+**后果**：双端共用同一实现；表达式上限、函数白名单与求值错误只有一处定义。旧任务不受影响。
+
+## D-021 代码/终端会话证据链
+
+**背景**：代码与终端课程需要真实执行、可断言、可录制，不能用录屏代替正确性。
+
+**决策**：会话由 `SessionSpec` 描述；Docker 内 `container_runner` 执行并分离 stdout/stderr；宿主 `session_runner` 断言并写 `result.json`；mintty + gdigrab `hwnd` 录制 `session.mp4`；`validation.json` 给出 V-23（执行）与 V-24（录制）。V1 以 VoxCPM2 生成旁白，固定 timesteps=10，不做 draft profile。
+
+**后果**：执行、展示、视觉证据分离；录屏失败不掩盖执行失败，反之亦然。8080 不在本能力范围内。
+
+## D-022 VS Code 会话
+
+**背景**：VS Code 的 Electron 窗口在 gdigrab 下为黑屏，且外部脚本无法稳定向编辑器打字。
+
+**决策**：仓库内 `CourseDemo` 扩展通过 `TerminalShellIntegration.executeCommand` 执行命令，立即消费 `read()`，以 `onDidEndTerminalShellExecution.exitCode` 为退出码（`undefined` 判失败）；录制改用 `PrintWindow` 逐帧 + ffmpeg rawvideo，不再依赖 gdigrab/ddagrab 的区域捕获。
+
+**后果**：执行证据来自被录制的同一终端；录制与执行解耦。VS Code 版本需支持 shell integration（本机 1.145.1 已验证）。

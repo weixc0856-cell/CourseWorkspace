@@ -21,6 +21,7 @@ CourseWorkspace/
 ├── ContentQA/          审查内部能力：在线模型内容审查（Python）
 ├── shared/
 │   ├── ai_runtime/     AI 运行时：跨进程锁、服务生命周期、任务状态、上下文预算
+│   ├── scene_expr/     受限表达式：AST 白名单 + 解释器（控制层与 Blender 共用）
 │   ├── schemas/        JSON Schema（由 Pydantic 导出）
 │   └── design-tokens/  设计令牌
 ├── config/             本机配置（*.yaml 本地文件不入库）
@@ -57,6 +58,7 @@ CourseWorkspace/
 | `RemotionStudio` | 截图、staging、合成、字幕/旁白渲染 | 不做时间线推导 |
 | `ModelingStudio` | 图片→分析→规划→脚本→Blender→验收 | 不写 `lessons/` 与课程 `build/` |
 | `ContentQA` | 在线审查候选意见与报告 | 不改课程、不影响 verdict |
+| `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 
 ---
@@ -134,6 +136,7 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | `build/<slug>/shots.json` | 时间线（生成物） | `shared/schemas/shots.schema.json` |
 | `build/<slug>/final/build-report.json` | 构建报告（生成物） | `shared/schemas/build-report.schema.json` |
 | Blender 任务 v2 | 场景任务 | `shared/schemas/blender-scene-task.schema.json` |
+| 代码/终端会话 | 执行、录制、证据 | `shared/schemas/session.schema.json`、`evidence.schema.json` |
 | 模型任务记录 | 任务状态与预算 | `shared/schemas/model-task.schema.json` |
 | 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
 
@@ -229,7 +232,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | 课件预览 / 截图源 | 8081 | live-server |
 | Motion Canvas 编辑器 | 5173 | 人工导出 |
 | Remotion Studio | 3000 | 预览 |
-| CosyVoice（外部） | 50000 | 同一时刻一个模式 |
+| VoxCPM2 TTS（外部） | 50000 | 唯一实例；谁启动谁停止 |
 
 不存在的约定：不提供 8082 备用端口。
 

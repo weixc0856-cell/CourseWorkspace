@@ -65,6 +65,41 @@ class SceneContractTest(unittest.TestCase):
             validate_scene_task(data, WORKSPACE)
         self.assertIn("curve is only valid for CURVE objects", "\n".join(raised.exception.messages))
 
+    def test_surface_task_passes(self):
+        task = validate_scene_task(load_task("demo-surface.json"), WORKSPACE)
+        summary = task_summary(task)
+        self.assertEqual(summary["surface_objects"], 1)
+        self.assertEqual(task.objects[0].surface.expression, "sin(x) * cos(y)")
+        self.assertEqual(task.objects[0].attributes[0].field.kind, "expression")
+        self.assertEqual(task.objects[0].attributes[0].field.expression, "z")
+
+    def test_surface_rejects_unsafe_expression(self):
+        data = load_task("demo-surface.json")
+        data["objects"][0]["surface"]["expression"] = "__import__('os')"
+        with self.assertRaises(SceneContractError):
+            validate_scene_task(data, WORKSPACE)
+
+    def test_both_validators_reject_unsafe_expression(self):
+        blender = load_blender_validator()
+        data = load_task("demo-surface.json")
+        data["objects"][0]["surface"]["expression"] = "open('x')"
+        with self.assertRaises(SceneContractError):
+            validate_scene_task(data, WORKSPACE)
+        with self.assertRaises(blender.TaskError):
+            blender.validate_task(data, cwd=str(WORKSPACE))
+
+    def test_surface_rejects_bad_range(self):
+        data = load_task("demo-surface.json")
+        data["objects"][0]["surface"]["x_range"] = [3.0, -3.0]
+        with self.assertRaises(SceneContractError):
+            validate_scene_task(data, WORKSPACE)
+
+    def test_expression_attribute_rejected(self):
+        data = load_task("demo-surface.json")
+        data["objects"][0]["attributes"][0]["field"]["expression"] = "lambda: 1"
+        with self.assertRaises(SceneContractError):
+            validate_scene_task(data, WORKSPACE)
+
     def test_scientific_task_passes(self):
         task = validate_scene_task(load_task("demo-scientific.json"), WORKSPACE)
         summary = task_summary(task)

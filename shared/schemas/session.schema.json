@@ -1,0 +1,361 @@
+{
+  "$defs": {
+    "CommandSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "run": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Run",
+          "type": "array"
+        },
+        "expect": {
+          "$ref": "#/$defs/Expect",
+          "default": {
+            "exit_code": 0,
+            "stdout": null,
+            "stderr": null,
+            "files": []
+          }
+        },
+        "trim": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trim"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "run"
+      ],
+      "title": "CommandSpec",
+      "type": "object"
+    },
+    "Expect": {
+      "additionalProperties": false,
+      "properties": {
+        "exit_code": {
+          "default": 0,
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "stdout": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stdout"
+        },
+        "stderr": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stderr"
+        },
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Files",
+          "type": "array"
+        }
+      },
+      "title": "Expect",
+      "type": "object"
+    },
+    "FileSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "path"
+      ],
+      "title": "FileSpec",
+      "type": "object"
+    },
+    "RecordSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "default": "terminal",
+          "enum": [
+            "terminal",
+            "vscode"
+          ],
+          "title": "Target",
+          "type": "string"
+        },
+        "capture": {
+          "default": "window",
+          "enum": [
+            "window",
+            "desktop"
+          ],
+          "title": "Capture",
+          "type": "string"
+        },
+        "window_title": {
+          "default": "CourseDemo",
+          "title": "Window Title",
+          "type": "string"
+        },
+        "resolution": {
+          "default": [
+            1920,
+            1080
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Resolution",
+          "type": "array"
+        },
+        "fps": {
+          "default": 30,
+          "maximum": 120,
+          "minimum": 1,
+          "title": "Fps",
+          "type": "integer"
+        }
+      },
+      "title": "RecordSpec",
+      "type": "object"
+    },
+    "SessionEnvironment": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "default": "docker",
+          "enum": [
+            "docker",
+            "wsl",
+            "host"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image"
+        },
+        "user": {
+          "default": "course",
+          "title": "User",
+          "type": "string"
+        },
+        "network": {
+          "default": "none",
+          "enum": [
+            "none",
+            "bridge"
+          ],
+          "title": "Network",
+          "type": "string"
+        },
+        "workdir": {
+          "default": "/work",
+          "title": "Workdir",
+          "type": "string"
+        },
+        "cpus": {
+          "default": 2.0,
+          "exclusiveMinimum": 0.0,
+          "maximum": 64.0,
+          "title": "Cpus",
+          "type": "number"
+        },
+        "memory": {
+          "default": "2g",
+          "pattern": "^[0-9]+[bkmgBKMG]$",
+          "title": "Memory",
+          "type": "string"
+        },
+        "pids": {
+          "default": 256,
+          "maximum": 65536,
+          "minimum": 16,
+          "title": "Pids",
+          "type": "integer"
+        },
+        "timeout_s": {
+          "default": 120,
+          "maximum": 3600,
+          "minimum": 5,
+          "title": "Timeout S",
+          "type": "integer"
+        }
+      },
+      "title": "SessionEnvironment",
+      "type": "object"
+    },
+    "Trim": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "keep_head_s": {
+          "default": 1.0,
+          "maximum": 60.0,
+          "minimum": 0.0,
+          "title": "Keep Head S",
+          "type": "number"
+        },
+        "keep_tail_s": {
+          "default": 1.0,
+          "maximum": 60.0,
+          "minimum": 0.0,
+          "title": "Keep Tail S",
+          "type": "number"
+        },
+        "max_wait_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "maximum": 3600.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Wait S"
+        }
+      },
+      "title": "Trim",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson": {
+      "title": "Lesson",
+      "type": "string"
+    },
+    "shot_id": {
+      "title": "Shot Id",
+      "type": "string"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "environment": {
+      "$ref": "#/$defs/SessionEnvironment"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/FileSpec"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "commands": {
+      "items": {
+        "$ref": "#/$defs/CommandSpec"
+      },
+      "minItems": 1,
+      "title": "Commands",
+      "type": "array"
+    },
+    "record": {
+      "$ref": "#/$defs/RecordSpec",
+      "default": {
+        "target": "terminal",
+        "capture": "window",
+        "window_title": "CourseDemo",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "fps": 30
+      }
+    },
+    "typing_cps": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "maximum": 240.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Typing Cps"
+    }
+  },
+  "required": [
+    "schema_version",
+    "lesson",
+    "shot_id",
+    "session_id",
+    "environment",
+    "commands"
+  ],
+  "title": "SessionSpec",
+  "type": "object"
+}

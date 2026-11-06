@@ -35,7 +35,7 @@
 | ARCHITECTURE §7 | 扩展规则：新引擎走 `StageOutcome`；新数据文件必须有 Pydantic + Schema + 同步测试；不新增平行实现 |
 | DECISIONS D-007 | Blender v1/v2 并存，v2 是完整场景描述 |
 | DECISIONS D-014 | 人工导出、内容占位、凭据缺失、模型不可用必须如实进入状态；不伪装自动化 |
-| PROJECT_STATUS FR-05 | IR v2 状态 `COMPLETED`，证据为 4 次真实渲染 + 19 个 CourseControl 测试 |
+| PROJECT_STATUS FR-05（评估时基线） | IR v2 状态 `COMPLETED`，证据为 4 次真实渲染 + 19 个 CourseControl 测试；2026-11-04 已增至 8 次渲染 + 51 个测试 |
 | PROJECT_STATUS FR-06 | ModelingStudio `PARTIAL`，真实全链路本轮未重跑 |
 | PROJECT_STATUS NFR-01 | 可复现为 `PARTIAL`：夹具稳定，真实课程未重复构建 |
 
@@ -254,7 +254,7 @@ P1b（Remotion 二维标注层）不是“加个组件”：
 | **P5** 真实数据导入 | 仅在有真实数据源时启动；格式由数据决定 | 未估 | P3；Q2 | 文件哈希入 manifest；单位与场名来自元数据或作者声明；缺失即失败 |
 | **P6** AI 场景规划 | 课程页 → IR 草案 → 人审 → 执行 | L | **实际采纳的能力**的 IR 稳定；`ai_runtime` 锁与预算。不强制依赖 P5 | 草案通过 `scene-validate`；人工确认记录入 manifest；按页切片，不整课入模 |
 
-**实施状态（2026-11-04）**：P1a、P1b、P2、P2b、P3 已实施并通过真实渲染与全量回归（P1b 证据：`build/p1b-annotation-evidence/annotation-still.png`；P2b 证据：`build/blender-scene-acceptance/blender/materials.png`；P3 证据：`build/blender-scene-acceptance/blender/scientific.png`、`build/p3-legend-evidence/legend-still.png`）；P4 及后续阶段未启动。
+**实施状态（2026-11-04）**：P1a、P1b、P2、P2b、P3、P4 已实施并通过真实渲染与全量回归（P1b：`build/p1b-annotation-evidence/annotation-still.png`；P2b：`build/blender-scene-acceptance/blender/materials.png`；P3：`build/blender-scene-acceptance/blender/scientific.png`、`build/p3-legend-evidence/legend-still.png`；P4：`build/blender-scene-acceptance/blender/surface.png`）；P5 待真实数据源；P6 待课程页输入与人工审查（IR 已稳定）。
 
 删除与调整说明：
 

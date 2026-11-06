@@ -133,7 +133,7 @@
 - 验收项：退出码、PNG 分辨率/大小/黑帧、MP4 编码/分辨率/时长、场景问题、活动相机、对象数、GN 修改器数、F-Curve 数。
 - 路径约束：输出与 `.blend` 必须位于 `build/<lesson>/blender/`，禁止绝对路径、反斜杠、`..`。
 
-**验收**：`check-scene-system.ps1`（8 合法 + 11 非法）、`test_blender_scene.py` 全部通过；7 个 demo 任务真实渲染通过（`-Render`，资源允许时执行）。
+**验收**：`check-scene-system.ps1`（9 合法 + 11 非法）、`test_blender_scene.py` 全部通过；8 个 demo 任务真实渲染通过（`-Render`，资源允许时执行）。
 
 ### FR-06 本地自动建模（ModelingStudio）
 
@@ -159,7 +159,7 @@
 
 **验收**：夹具构建后 `shots.json` 通过 `verify`；越界路径有失败测试。
 
-### FR-08 合成与成片验收（V-10~V-21）
+### FR-08 合成与成片验收（V-10~V-22）
 
 **目标**：Remotion 合成最终视频，并以程序检查判定。
 
@@ -168,7 +168,7 @@
 - 合成失败保留 `RemotionStudio/public/staging/<slug>/`；成功清理。
 - 报告 `verdict` 只能是 `pass` / `fail` / `incomplete`。
 
-**验收**：夹具 `lesson-smoke` 全链路 `pass`；V-10~V-21 有实现与至少一条失败注入证据。
+**验收**：夹具 `lesson-smoke` 全链路 `pass`；V-10~V-22 有实现与至少一条失败注入证据。
 
 ### FR-09 本地模型统一调度与严格串行
 

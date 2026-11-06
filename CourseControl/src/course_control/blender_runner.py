@@ -174,6 +174,33 @@ def _value_matches(expected, actual, tolerance: float = 1e-4) -> bool:
     return abs(float(actual) - float(expected)) <= tolerance
 
 
+def _check_declared_surfaces(
+    report: dict, task: BlenderSceneTask, checks: list[Check]
+) -> None:
+    surface_specs = [obj for obj in task.objects if obj.type == "SURFACE"]
+    if not surface_specs:
+        return
+    report_objects = {entry.get("name"): entry for entry in report.get("objects", [])}
+    problems = []
+    for spec in surface_specs:
+        entry = report_objects.get(spec.id, {})
+        info = entry.get("surface") or {}
+        expected_vertices = (spec.surface.x_segments + 1) * (spec.surface.y_segments + 1)
+        if info.get("vertices") != expected_vertices:
+            problems.append(
+                f"{spec.id}: vertices {info.get('vertices')} != {expected_vertices}"
+            )
+        if info.get("expression") != spec.surface.expression:
+            problems.append(f"{spec.id}: expression mismatch")
+    checks.append(
+        Check(
+            "scene.surfaces",
+            "fail" if problems else "pass",
+            "; ".join(problems) if problems else f"{len(surface_specs)} surfaces match",
+        )
+    )
+
+
 def _check_declared_attributes(
     report: dict, task: BlenderSceneTask, checks: list[Check]
 ) -> None:
@@ -361,6 +388,7 @@ def _scene_checks(report: dict, task: BlenderSceneTask, checks: list[Check]) -> 
     _check_declared_objects(report, task, checks)
     _check_declared_materials(report, task, checks)
     _check_declared_attributes(report, task, checks)
+    _check_declared_surfaces(report, task, checks)
 
     expected_modifiers = sum(len(obj.geometry_nodes) for obj in task.objects)
     if expected_modifiers:

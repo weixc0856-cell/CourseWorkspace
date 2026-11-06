@@ -91,7 +91,8 @@ try {
         "demo-modify",
         "demo-text-curve",
         "demo-materials",
-        "demo-scientific"
+        "demo-scientific",
+        "demo-surface"
     )
     foreach ($name in $validTasks) {
         Invoke-Checked "scene-validate $name" {
@@ -99,6 +100,18 @@ try {
                 --task "BlenderStudio/tasks/scene-system/$name.json" --workspace . `
                 2>&1 | Out-Null
         }
+    }
+
+    Invoke-Checked "session-validate shell-001" {
+        uv run --project CourseControl course-control session-validate `
+            --spec CourseControl/tests/fixtures/lesson-smoke/sessions/shell-001.session.json `
+            --lesson-dir CourseControl/tests/fixtures/lesson-smoke
+    }
+
+    Invoke-Checked "session-validate vscode-001" {
+        uv run --project CourseControl course-control session-validate `
+            --spec CourseControl/tests/fixtures/lesson-smoke/sessions/vscode-001.session.json `
+            --lesson-dir CourseControl/tests/fixtures/lesson-smoke
     }
 
     $invalidTasks = @(

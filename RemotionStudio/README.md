@@ -68,7 +68,7 @@ npx remotion render src/index.ts CourseVideo `
 - 旁白：`shots.json` 的 `narration.path` 相对 `build/<lesson>/`，staging 后由 `src/audio/Narration.tsx` 播放。
 - 字幕：`shots.json` 的 `subtitles.path` 指向 `build/<lesson>/subtitles.srt`，staging 后由 `src/subtitles/Captions.tsx` 解析。
 - 两者都由 `lesson.yaml` 的开关控制；关闭时不加载。
-- 配音生成在 `<AI_ROOT>\CosyVoice-Runtime`，接入流程见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
+- 配音生成在 `<AI_ROOT>\VoxCPM-Runtime`，接入流程见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
 
 ## 结构
 

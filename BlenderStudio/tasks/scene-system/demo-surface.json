@@ -1,0 +1,78 @@
+{
+  "schema_version": 2,
+  "task_id": "scene-surface-001",
+  "lesson": "blender-scene-acceptance",
+  "operation": "build_scene",
+  "scene": {
+    "name": "Scene_Surface",
+    "units": "METRIC",
+    "unit_scale": 1.0,
+    "fps": 30,
+    "frame_start": 1,
+    "frame_end": 90,
+    "seed": 41
+  },
+  "world": {
+    "background_color": [0.01, 0.012, 0.018, 1.0],
+    "strength": 0.2
+  },
+  "materials": [
+    {
+      "id": "mat.height",
+      "shader": "scientific_colormap",
+      "params": {
+        "source_attribute": "height",
+        "min_value": -1.5,
+        "max_value": 1.5,
+        "units": "u",
+        "colormap": "viridis"
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "surface.wave",
+      "type": "SURFACE",
+      "surface": {
+        "expression": "sin(x) * cos(y)",
+        "x_range": [-3.0, 3.0],
+        "y_range": [-3.0, 3.0],
+        "x_segments": 60,
+        "y_segments": 60,
+        "z_scale": 1.5,
+        "z_offset": 0.0
+      },
+      "attributes": [
+        {
+          "name": "height",
+          "field": { "kind": "expression", "expression": "z" }
+        }
+      ],
+      "transform": { "location": [0, 0, 0] },
+      "material": "mat.height",
+      "collection": "ASSETS/Geometry",
+      "smooth": true
+    }
+  ],
+  "cameras": [
+    {
+      "id": "cam.main",
+      "location": [7.0, -8.0, 6.0],
+      "target": [0.0, 0.0, 0.0],
+      "focal_length": 45.0,
+      "sensor_width": 36.0,
+      "active": true
+    }
+  ],
+  "lights": [],
+  "render": {
+    "engine": "BLENDER_EEVEE",
+    "resolution": [1280, 720],
+    "samples": 16,
+    "format": "png",
+    "frame": 1,
+    "output": "build/blender-scene-acceptance/blender/surface.png",
+    "save_blend": "build/blender-scene-acceptance/blender/surface.blend",
+    "view_transform": "AgX"
+  }
+}

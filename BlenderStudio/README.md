@@ -79,7 +79,7 @@ course-control scene-run
 | --- | --- |
 | `task_schema.py` | v2 任务校验，无第三方依赖 |
 | `scene.py` | 场景重置、固定集合、单位、时间轴、保存/打开 |
-| `geometry.py` | `bmesh` 数据级图元、`TEXT`、`CURVE`、点属性写入 |
+| `geometry.py` | `bmesh` 数据级图元、`TEXT`、`CURVE`、参数化曲面、点属性写入 |
 | `objects.py` | 对象（MESH/EMPTY/TEXT/CURVE）、变换、材质槽、父子关系 |
 | `materials.py` | Principled / Emission / 科学着色节点模板、Coat、程序化 Bump |
 | `cameras.py` | 相机、look-at、景深 |
@@ -112,6 +112,13 @@ course-control scene-run
 - 材质：`shader: "scientific_colormap"`，`source_attribute` / `min_value` / `max_value` / `units` / `colormap` 全部必填，无自动范围。
 - 对象：`attributes[]` 声明点属性，字段为 `axis` / `distance` / `noise` 的声明式描述。
 - 验收：`scene.materials` 回读着色参数，`scene.attributes` 核对属性存在；场景报告按首/中/末顶点复算并比对。
+
+## 受限表达式
+
+- 实现：`shared/scene_expr`（纯标准库，无 `eval`/`exec`）。
+- 用途：`SURFACE` 的 `z = f(x, y)`，以及 `attributes[].field.kind = "expression"`。
+- 变量只有 `x` / `y` / `z`；函数白名单见 IR 文档 §5.1.2。
+- 控制层与 Blender 内置校验器共用同一解释器，保证双端结论一致。
 
 ```powershell
 & "<BLENDER_EXE>" --background --factory-startup --python-exit-code 1 `
@@ -180,6 +187,7 @@ course-control scene-run
 | `demo-text-curve.json` | `TEXT`、`CURVE`、`ORTHO` 相机；4 个文字、3 条曲线 | `scene-run` pass，文字/曲线/相机专项检查通过 |
 | `demo-materials.json` | 7 个材质预设、Coat、程序化 Bump、简化车形体 | `scene-run` pass，`scene.materials` 7 项全部回读一致 |
 | `demo-scientific.json` | 点属性、科学着色、ORTHO 相机 | `scene-run` pass，`scene.attributes` 与 `scene.materials` 通过 |
+| `demo-surface.json` | 参数化曲面、表达式属性、viridis 着色 | `scene-run` pass，`scene.surfaces` 通过 |
 | `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质、空文字、文字带图元、曲线点数不足、曲线倒角为 0、非法投影方式 | `scene-validate` 与 Blender 均拒绝 |
 
 ## 课程 YAML 与 JSON 的关系

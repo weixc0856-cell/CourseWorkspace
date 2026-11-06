@@ -8,7 +8,13 @@ import math
 import bpy
 
 from . import scene as scene_ops
-from .geometry import build_curve, build_mesh, build_text, write_attributes
+from .geometry import (
+    build_curve,
+    build_mesh,
+    build_surface,
+    build_text,
+    write_attributes,
+)
 from .task_schema import TaskError
 
 
@@ -48,6 +54,22 @@ def create_objects(specs, materials, task_id):
         elif spec["type"] == "CURVE":
             data = build_curve(name, spec["curve"])
             obj = bpy.data.objects.new(name, data)
+            material = materials.get(spec["material"]) if spec["material"] else None
+            if material is not None:
+                obj.data.materials.append(material)
+        elif spec["type"] == "SURFACE":
+            mesh = build_surface(name, spec["surface"], spec["smooth"])
+            write_attributes(mesh, spec["attributes"])
+            obj = bpy.data.objects.new(name, mesh)
+            obj["surface_spec"] = json.dumps(
+                spec["surface"], ensure_ascii=False, sort_keys=True
+            )
+            if spec["attributes"]:
+                obj["attribute_fields"] = json.dumps(
+                    {item["name"]: item["field"] for item in spec["attributes"]},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
             material = materials.get(spec["material"]) if spec["material"] else None
             if material is not None:
                 obj.data.materials.append(material)

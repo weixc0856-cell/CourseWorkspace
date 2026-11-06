@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import bpy
 
-from scene_system.fields import evaluate_field
+from scene_system.fields import compile_cached, evaluate_field
 
 
 def get_arg(argv, name, default=None):
@@ -257,6 +257,40 @@ def build_report(filepath):
                 issues.append({"code": "NO_FACES", "message": f"{obj.name}: mesh has no faces"})
             if mesh.validate(verbose=False):
                 issues.append({"code": "INVALID_MESH", "message": f"{obj.name}: mesh data required fixes"})
+            surface_json = obj.get("surface_spec")
+            if surface_json:
+                try:
+                    surface = json.loads(surface_json)
+                except (TypeError, ValueError):
+                    surface = None
+                if surface:
+                    compiled = compile_cached(surface["expression"])
+                    step = max(1, len(mesh.vertices) // 64)
+                    indices = sorted(
+                        set(list(range(0, len(mesh.vertices), step)) + [len(mesh.vertices) - 1])
+                    )
+                    for index in indices:
+                        vertex = mesh.vertices[index]
+                        expected = (
+                            compiled(vertex.co[0], vertex.co[1], 0.0)
+                            * surface["z_scale"]
+                            + surface["z_offset"]
+                        )
+                        if abs(float(vertex.co[2]) - expected) > 1e-4:
+                            issues.append(
+                                {
+                                    "code": "SURFACE_MISMATCH",
+                                    "message": (
+                                        f"{obj.name}[{index}]: z={vertex.co[2]} != {expected}"
+                                    ),
+                                }
+                            )
+                            break
+                    entry["surface"] = {
+                        "expression": surface["expression"],
+                        "vertices": len(mesh.vertices),
+                        "polygons": len(mesh.polygons),
+                    }
             fields_json = obj.get("attribute_fields")
             if fields_json:
                 try:

@@ -12,6 +12,7 @@
 | `demo-text-curve.json` | `TEXT` 文字、`CURVE` 曲线、`ORTHO` 正交相机 | 4 个文字与 3 条曲线通过专项验收 |
 | `demo-materials.json` | 7 个材质预设、Coat、程序化 Bump、简化车形体 | 7 个材质回读一致 |
 | `demo-scientific.json` | 点属性、科学着色、ORTHO 相机 | 属性与着色参数回读一致 |
+| `demo-surface.json` | 参数化曲面、表达式属性、viridis 着色 | 顶点数与表达式复算一致 |
 | `invalid-*.json` | 重复 ID、非法集合根、无相机、越界输出、非法图元、未知材质、空文字、文字带图元、曲线点数不足、曲线倒角为 0、非法投影方式 | 外部与 Blender 双端均拒绝 |
 
 ## 运行

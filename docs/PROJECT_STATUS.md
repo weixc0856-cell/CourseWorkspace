@@ -1,11 +1,43 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
+- **最近更新**：2026-11-06（E0/E1/V1 代码会话增量，见 §0.1）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
 状态词：`COMPLETED`（实现且有真实证据）/ `PARTIAL`（有缺口）/ `NOT_IMPLEMENTED` / `BLOCKED`（外部条件限制）/ `NOT_RUN` / `DEFERRED` / `OUT_OF_SCOPE`。
+
+---
+
+## 0. 2026-11-04 增量（P1–P4）
+
+- **分支**：`feat/p1-teaching-primitives`（已推送，6 个提交）
+- **范围**：三维教学基元、二维标注、字体、材质、科学着色、参数化曲面；**未改动任何课程正文**。
+
+| 能力 | 契约 / 代码 | 证据 |
+| --- | --- | --- |
+| TEXT / CURVE / ORTHO | IR v2 §5.1.1、§6；`scene_system/` | 8 次真实渲染中的 `text-curve.png` |
+| 二维标注 + 字体 | `storyboard.annotations` → `shots.json`；`overlays/Annotations.tsx`；Noto Sans SC（OFL） | `annotation-still.png`、`annotation-font-still.png` |
+| 材质预设 / Coat / Bump | `scene_presets.py`、`assets/materials/presets/`、`scene.materials` | `materials.png` |
+| 科学着色 | `scientific_colormap`、`shared/colormaps.json`、`scene.attributes` | `scientific.png` |
+| 参数化曲面 | `shared/scene_expr`、`SURFACE`、`scene.surfaces` | `surface.png` |
+
+当前计数：**9 合法 + 11 非法场景契约**，**8 次真实 Blender 渲染**，**112 个单测**（51+28+22+11）。
+
+未做：课程内容（作者负责）、P5 真实数据导入（无数据源）、P6 AI 场景规划（待课程页输入）。
+
+### 0.1 2026-11-06 代码会话增量
+
+| 能力 | 代码 / 契约 | 证据 |
+| --- | --- | --- |
+| 会话契约 | `session.py`：SessionSpec / ExecutionResult / RecordingResult / EvidenceManifest / ValidationReport | `shared/schemas/session.schema.json`、`evidence.schema.json`；62 个 CourseControl 测试 |
+| Docker 执行 | `session_runner.py`、`container_runner.py`、`course-tools:e1` | 无网络、非 root、只读根文件系统、cap-drop、资源限制 |
+| 终端录制 | mintty + gdigrab `hwnd` | `build/lesson-smoke/code/shell_001/session.mp4`；V-23/V-24 |
+| VS Code 会话（E2） | `CourseDemo/` 扩展、shell integration、`vscode_runner.py`、PrintWindow 录制 | `build/lesson-smoke/code/vscode_001/session.mp4`；V-23/V-24 |
+| 旁白 V1 | `narrate.py`：VoxCPM2 单段合成、缓存键、meta、50000 锁、自动起停 | 真实 `smoke-001.wav`（48 kHz，1.76 s）与 `.meta.json` |
+
+当前计数：CourseControl 63 个单测；全套 124 个；场景契约仍为 9 合法 + 11 非法；8080 未被触碰。
 
 ---
 
@@ -39,7 +71,7 @@
 | FR-02 | V-01~V-09 校验 | `validators.py` | `check.ps1`；V-04 失败单测 | COMPLETED | — |
 | FR-03 | 预览与截图 | `adapters/slides.py` + `capture-slides.mjs` | 真实课程 20/20（`build/01-shell-for-ai-era/slides`） | COMPLETED | — |
 | FR-04 | 动画渲染 | Motion 人工导出；Manim / Blender v1 适配器 | `lesson-manual` 夹具；真实课程 `manual_export_required` | PARTIAL | 8 段 Motion 导出未完成 |
-| FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py` | `check-scene-system.ps1 -Render` 7 次真实渲染；39 个 CourseControl 测试（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色与语义验收） | COMPLETED | — |
+| FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py`、`shared/scene_expr` | `check-scene-system.ps1 -Render` 8 次真实渲染；51 个 CourseControl 测试（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色、参数化曲面与语义验收） | COMPLETED | — |
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
 | FR-07 | 时间线收集 | `collect.py`（含 `annotations[]`） | `lesson-smoke` shots.json 通过 verify；V-22 标注检查 | COMPLETED | — |
 | FR-08 | 合成与成片验收 | `verify.py`、`report.py`、`adapters/remotion.py` | `lesson-smoke`、`lesson-blender-only` verdict pass | COMPLETED | — |
@@ -68,8 +100,8 @@
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 100 个用例（39+28+22+11） |
-| 3 | 5 课程 + 19 场景契约 | COMPLETED | `check.ps1` |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 124 个用例（63+28+22+11） |
+| 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
 | 6 | 本地模型串行有真实证据 | COMPLETED | 双进程竞争测试 |
