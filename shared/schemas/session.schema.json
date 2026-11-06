@@ -320,6 +320,13 @@
       "title": "Commands",
       "type": "array"
     },
+    "offline_commands": {
+      "items": {
+        "$ref": "#/$defs/CommandSpec"
+      },
+      "title": "Offline Commands",
+      "type": "array"
+    },
     "record": {
       "$ref": "#/$defs/RecordSpec",
       "default": {

@@ -73,6 +73,19 @@ def _image_digest(docker: str, image: str) -> str | None:
     return result.stdout.strip() or None
 
 
+def _remove_tree(path: Path) -> None:
+    def on_error(_func, target, _exc):
+        try:
+            os.unlink(target)
+        except OSError:
+            try:
+                os.rmdir(target)
+            except OSError:
+                pass
+
+    shutil.rmtree(path, onexc=on_error)
+
+
 def _hash_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -85,7 +98,7 @@ def _prepare(workspace: Path, lesson_dir: Path, spec: SessionSpec) -> tuple[Path
     build_root = workspace / "build" / spec.lesson / "code" / spec.shot_id
     workdir = build_root / "work"
     if workdir.exists():
-        shutil.rmtree(workdir)
+        _remove_tree(workdir)
     workdir.mkdir(parents=True)
     hashes: dict[str, str] = {}
     for entry in spec.files:
@@ -129,6 +142,8 @@ def _docker_argv(
     runner: Path,
     *,
     tty: bool,
+    network: str | None = None,
+    suffix: str = "",
 ) -> list[str]:
     env = spec.environment
     command = [
@@ -136,7 +151,7 @@ def _docker_argv(
         "run",
         "--rm",
         "--name",
-        f"course-session-{spec.session_id}",
+        f"course-session-{spec.session_id}{suffix}",
         "--user",
         env.user,
         "--read-only",
@@ -153,7 +168,7 @@ def _docker_argv(
         "--cpus",
         str(env.cpus),
         "--network",
-        env.network,
+        network or env.network,
         "-v",
         f"{workdir}:/work:rw",
         "-v",
@@ -177,12 +192,15 @@ def _first_difference(expected: str, actual: str) -> str:
 
 
 def _assert_commands(
-    workdir: Path, spec: SessionSpec, raw: dict
+    workdir: Path,
+    spec: SessionSpec,
+    raw: dict,
+    commands: list | None = None,
 ) -> tuple[list[CommandResult], FailureCode | None]:
     raw_by_id = {item.get("id"): item for item in raw.get("commands", [])}
     results: list[CommandResult] = []
     failure: FailureCode | None = None
-    for command in spec.commands:
+    for command in (commands if commands is not None else spec.commands):
         item = raw_by_id.get(command.id, {})
         stdout = item.get("stdout", "")
         stderr = item.get("stderr", "")
@@ -230,7 +248,10 @@ def _assert_commands(
                     failure = failure or FailureCode.ASSERTION_FAILED
         for relative in command.expect.files:
             target = workdir / relative
-            ok = target.exists()
+            try:
+                ok = target.exists()
+            except OSError:
+                ok = False
             add(f"file:{relative}", ok, "" if ok else "missing")
             if not ok:
                 failure = failure or FailureCode.ASSERTION_FAILED
@@ -591,6 +612,63 @@ def run_session(
     commands, failure = _assert_commands(workdir, spec, raw)
     if failure is None and recording_error:
         failure = FailureCode.RECORDING_FAILED
+    offline_failure = None
+    if spec.offline_commands:
+        offline_raw_path = workdir / "offline-raw-result.json"
+        if offline_raw_path.exists():
+            offline_raw_path.unlink()
+        offline_spec_path = workdir / "offline-run.json"
+        offline_spec_path.write_text(
+            json.dumps(
+                {
+                    "workdir": spec.environment.workdir,
+                    "timeout_s": spec.environment.timeout_s,
+                    "transcript": spec.environment.workdir.rstrip("/") + "/offline-transcript.log",
+                    "commands": [
+                        {
+                            "id": command.id,
+                            "run": command.run,
+                            "timeout_s": spec.environment.timeout_s,
+                        }
+                        for command in spec.offline_commands
+                    ],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        offline_args = _docker_argv(
+            docker,
+            spec,
+            workdir,
+            runner,
+            tty=False,
+            network="none",
+            suffix="-offline",
+        )
+        offline_args = [
+            arg.replace("/work/run.json", "/work/offline-run.json").replace(
+                "/work/raw-result.json", "/work/offline-raw-result.json"
+            )
+            for arg in offline_args
+        ]
+        offline_run = _run(offline_args, timeout=spec.environment.timeout_s + 120)
+        if not offline_raw_path.is_file():
+            offline_failure = FailureCode.OFFLINE_VERIFY_FAILED
+        else:
+            offline_raw = json.loads(offline_raw_path.read_text(encoding="utf-8"))
+            offline_commands, offline_failure = _assert_commands(
+                workdir, spec, offline_raw, commands=spec.offline_commands
+            )
+            commands.extend(offline_commands)
+            (build_root / "offline-result.json").write_text(
+                json.dumps(offline_raw, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+    if offline_failure is not None:
+        failure = failure or offline_failure
     status = "passed" if failure is None else "failed"
     result = ExecutionResult(
         shot_id=spec.shot_id,
@@ -643,6 +721,20 @@ def run_session(
         )
     else:
         checks.append(CheckResult(id="V-24", status="not_applicable", detail="record disabled"))
+    if spec.offline_commands:
+        checks.append(
+            CheckResult(
+                id="V-25",
+                status="pass" if offline_failure is None else "fail",
+                detail=(
+                    f"{len(spec.offline_commands)} offline commands passed"
+                    if offline_failure is None
+                    else offline_failure.value
+                ),
+            )
+        )
+    else:
+        checks.append(CheckResult(id="V-25", status="not_applicable", detail="no offline commands"))
     validation = ValidationReport(
         shot_id=spec.shot_id,
         session_id=spec.session_id,

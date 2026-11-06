@@ -85,6 +85,9 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 # VS Code 会话（E2；真实窗口 + shell integration）
 .\scripts\check-vscode-session.ps1
 
+# Python 工具链（E3；venv + 离线验证）
+.\scripts\check-python-session.ps1
+
 # 三维场景任务（IR v2）
 uv run --project CourseControl course-control scene-validate `
   --task BlenderStudio/tasks/scene-system/demo-scene.json

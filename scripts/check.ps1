@@ -114,6 +114,12 @@ try {
             --lesson-dir CourseControl/tests/fixtures/lesson-smoke
     }
 
+    Invoke-Checked "session-validate python-001" {
+        uv run --project CourseControl course-control session-validate `
+            --spec CourseControl/tests/fixtures/lesson-smoke/sessions/python-001.session.json `
+            --lesson-dir CourseControl/tests/fixtures/lesson-smoke
+    }
+
     $invalidTasks = @(
         "invalid-collection-root",
         "invalid-duplicate-id",

@@ -17,12 +17,12 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 63 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 64 | 全部通过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **124** 个用例。
+合计 **125** 个用例。
 
 ---
 
@@ -112,6 +112,17 @@
 - 执行：`executeCommand` + 立即 `read()` + `onDidEndTerminalShellExecution` 的 `exitCode`；`undefined` 判失败。
 - 录制：gdigrab 对 Electron 窗口为黑屏，改用 **PrintWindow** 逐帧 + ffmpeg rawvideo；已抽帧确认终端命令与 `hello from vs code` 输出可见。
 - 证据：`build/lesson-smoke/code/vscode_001/{result.json,vscode-result.json,validation.json,session.mp4}`；V-23/V-24 pass。
+
+### 3.1.2 Python 工具链（E3）
+
+```powershell
+.\scripts\check-python-session.ps1
+```
+
+- 场景：`uv venv` → 本地 wheel 安装 → 导入；随后在 `network: none` 的第二容器中做离线验证。
+- 证据：`build/lesson-smoke/code/python_001/{result.json,offline-result.json,validation.json}`；V-23/V-25 pass。
+- 说明：当前 Docker 容器到 PyPI 的 TLS 被本机代理/TUN 阻断，因此 fixture 使用本地 wheelhouse（`course-demo-pkg`）；真实联网演示需先解决容器代理（`host.docker.internal:7890` 目前不可达）。
+- 等待剪辑（`trim`）尚未实现；当前 fixture 的安装为本地 wheel，无等待。
 
 ---
 

@@ -8,6 +8,7 @@ so that the verifier has a single implementation.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -46,10 +47,21 @@ def main() -> int:
                 transcript.flush()
             started = time.monotonic()
             timed_out = False
+            env = os.environ.copy()
+            env.setdefault("UV_CACHE_DIR", "/work/.uv-cache")
+            env.setdefault("UV_PYTHON_INSTALL_DIR", "/work/.uv-python")
+            env.setdefault("HOME", "/work/.home")
+            for directory in (
+                env["UV_CACHE_DIR"],
+                env["UV_PYTHON_INSTALL_DIR"],
+                env["HOME"],
+            ):
+                os.makedirs(directory, exist_ok=True)
             try:
                 process = subprocess.run(
                     argv,
                     cwd=workdir,
+                    env=env,
                     capture_output=True,
                     text=True,
                     encoding="utf-8",
