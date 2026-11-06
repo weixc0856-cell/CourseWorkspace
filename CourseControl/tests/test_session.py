@@ -36,6 +36,11 @@ class SessionContractTest(unittest.TestCase):
         self.assertIsNone(spec.environment.image)
         self.assertEqual(spec.record.target, "vscode")
 
+    def test_rust_session_spec_validates(self):
+        spec = load_session_spec(LESSON_DIR / "sessions" / "rust-001.session.json")
+        self.assertEqual(spec.environment.kind, "host")
+        self.assertEqual(spec.record.target, "vscode")
+
     def test_python_network_session_spec_validates(self):
         spec = load_session_spec(
             LESSON_DIR / "sessions" / "python-network-001.session.json"

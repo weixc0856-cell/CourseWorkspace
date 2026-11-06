@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-smoke",
+  "shot_id": "rust_001",
+  "session_id": "session-rust-001",
+  "environment": {
+    "kind": "host",
+    "network": "none",
+    "workdir": "/",
+    "cpus": 1.0,
+    "memory": "512m",
+    "pids": 64,
+    "timeout_s": 180
+  },
+  "files": [
+    { "source": "assets/code/rust-001/Cargo.toml", "path": "Cargo.toml" },
+    { "source": "assets/code/rust-001/src/main.rs", "path": "src/main.rs" },
+    { "source": "assets/code/rust-001/expected.txt", "path": "expected.txt" }
+  ],
+  "commands": [
+    { "id": "c1", "run": ["bash", "-lc", "cargo --version"], "expect": { "exit_code": 0 } },
+    { "id": "c2", "run": ["bash", "-lc", "cargo run --quiet"], "expect": { "exit_code": 0, "stdout": "expected.txt" } }
+  ],
+  "record": {
+    "target": "vscode",
+    "capture": "window",
+    "window_title": "CourseDemo",
+    "resolution": [1280, 720],
+    "fps": 30
+  }
+}

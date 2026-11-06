@@ -17,12 +17,12 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 65 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 66 | 全部通过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **126** 个用例。
+合计 **127** 个用例。
 
 ---
 
@@ -135,6 +135,17 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 - 场景：`ManimSandbox/02-fft-baseline/fft_baseline.py`，两条正弦叠加与和波形。
 - 证据：`build/manim-fft/fft_baseline.mp4`（1920×1080，30 fps，7.8 s）；抽帧已确认坐标轴、两条分量与和波形。
 - 未完成：3Blue1Brown Transformer 产品基线（E6）。
+
+### 3.1.4 Rust 镜头（E4）
+
+```powershell
+.\scripts\check-rust-session.ps1
+.\scripts\check-rust-session.ps1 -Record
+```
+
+- 环境：**host VS Code + Git Bash**（Rust 1.97）。Docker Hub 的 Rust 镜像拉取被本机 TLS 阻断，未伪装成容器验证。
+- 场景：`cargo --version` + `cargo run --quiet`。
+- 证据：`build/lesson-smoke/code/rust_001/{result.json,validation.json,session.mp4}`；V-23/V-24 pass；抽帧可见 `hello from rust`。
 
 ---
 

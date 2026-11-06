@@ -91,6 +91,9 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 # Python 工具链（E3；本地 HTTP 索引网络安装）
 .\scripts\check-python-network.ps1
 
+# Rust 镜头（E4；host VS Code + Git Bash）
+.\scripts\check-rust-session.ps1
+
 # 三维场景任务（IR v2）
 uv run --project CourseControl course-control scene-validate `
   --task BlenderStudio/tasks/scene-system/demo-scene.json

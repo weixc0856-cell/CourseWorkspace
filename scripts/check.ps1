@@ -114,6 +114,12 @@ try {
             --lesson-dir CourseControl/tests/fixtures/lesson-smoke
     }
 
+    Invoke-Checked "session-validate rust-001" {
+        uv run --project CourseControl course-control session-validate `
+            --spec CourseControl/tests/fixtures/lesson-smoke/sessions/rust-001.session.json `
+            --lesson-dir CourseControl/tests/fixtures/lesson-smoke
+    }
+
     Invoke-Checked "session-validate python-network-001" {
         uv run --project CourseControl course-control session-validate `
             --spec CourseControl/tests/fixtures/lesson-smoke/sessions/python-network-001.session.json `

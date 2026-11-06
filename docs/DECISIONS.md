@@ -29,6 +29,7 @@
 | D-022 | VS Code 会话用 shell integration 执行、PrintWindow 录制 | accepted |
 | D-023 | Python 工具链采用联网演示 + 离线验证；本机以 8899 端口本地 HTTP 索引演示 | accepted |
 | D-024 | Manim 作为动画渲染引擎；FFT 为技术基线，Transformer 为产品基线 | accepted |
+| D-025 | Rust 镜头先用 host VS Code + Git Bash；Docker Rust 镜像受阻再迁移 | accepted |
 
 ---
 
@@ -220,3 +221,11 @@
 **决策**：Manim 只作为渲染引擎；FFT 作为技术基线（验证坐标系、曲线、时间轴、输出），Transformer 作为产品基线（复杂概念拆解），最终仍进入 Remotion/FFmpeg 合成。复刻定义为表现手法与结构对齐，不逐帧复制。
 
 **后果**：动画轨道与代码录屏轨道解耦；E5 基线已渲染，E6 尚未开始。
+
+## D-025 Rust 执行环境
+
+**背景**：E4 需要真实 cargo 执行；本机 Docker Hub/镜像加速器 TLS 握手超时，无法拉取 Rust 镜像。
+
+**决策**：E4 先用 host VS Code + Git Bash（Rust 1.97）执行并录制，保留 `SessionSpec` 契约；Docker Rust 镜像可用后切回容器，不改课程镜头。
+
+**后果**：Rust 镜头有真实执行证据，但隔离级别低于 Docker；报告中明确标注 `kind: host`。
