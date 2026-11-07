@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.2（2026-11-07）
+- **版本**：v1.3（2026-11-07）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -10,7 +10,7 @@
 
 ```powershell
 .\scripts\check.ps1
-# 期望：四套单测 + 课程契约（本地有课程时 5 个，干净克隆时 3 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
+# 期望：五套单测 + 课程契约（本地有课程时 5 个，干净克隆时 3 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
 最近一次执行（2026-11-07）：**`check ok`，exit 0**。
@@ -21,8 +21,9 @@
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
+| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 8 | 全部通过 |
 
-合计 **190** 个用例（188 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **198** 个用例（196 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -30,6 +31,7 @@
 uv run --project CourseControl course-control schemas-v1 --output shared/schemas
 uv run --project CourseControl course-control contract-v1-validate --kind timeline-v1 --file docs/contracts/examples/timeline.spec.json
 uv run --project CourseControl course-control e6-adapt --workspace . --manifest build/manim-transformer/e6/manifest.json --output build/manim-transformer/e6/render.manifest.v1.json
+python ManimSandbox/05-multi-head/verify_math.py --output build/manim-multi-head/e6.5/math-report.json
 ```
 
 - `schemas-v1`：导出 7 份 V1 JSON Schema。

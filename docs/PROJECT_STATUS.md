@@ -1,7 +1,7 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（V1-C E6 只读适配，见 §0.4）
+- **最近更新**：2026-11-07（E6.5 视觉渲染，见 §0.6）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
@@ -77,6 +77,27 @@ CourseControl 现为 **116 个用例（114 通过 + 2 跳过）**；全项目合
 | 实施报告 | [V1-C-实施报告.md](V1-C-实施报告.md) | 测试与兼容性说明 |
 
 CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合计 190 个用例（188 通过 + 2 跳过）。E6 V0 `manifest.json` 仍为 `43037d39…` 未被修改；E6.1–E6.4 未改；8080 未触碰。V0 人工 `checks` 只进入 `legacy.manual_checks`，`manual_checks_trusted=false`。
+
+### 0.5 2026-11-07 E6.5 数学验证
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| 两头算例唯一数据源 | `ManimSandbox/05-multi-head/multi_head_math.py` | 纯标准库；无 numpy/Manim |
+| 独立计算脚本 | `ManimSandbox/05-multi-head/verify_math.py` | exit 0；30 条检查全 pass |
+| 单元测试 | `ManimSandbox/tests/test_multi_head_math.py` | 8 个用例 |
+| 验证报告 | [E6.5-数学验证报告.md](E6.5-数学验证报告.md) | 形状、alpha 行和、头差异、concat、W_O |
+
+全项目现为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数学算例已验证，可进入 `MultiHeadScene` 视觉编码；尚未生成旁白/字幕/成片。
+
+### 0.6 2026-11-07 E6.5 视觉场景
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| MultiHeadScene | `ManimSandbox/05-multi-head/multi_head.py` | 已创建并真实渲染 |
+| 视觉成片 | `build/manim-multi-head/e6.5/media/videos/multi_head/1080p30/MultiHeadScene.mp4` | 1920×1080 / 30fps / 1504 帧 / 50.129s；仅视频 |
+| 渲染报告 | [E6.5-视觉渲染报告.md](E6.5-视觉渲染报告.md) | 五 beat、抽帧核对、未做旁白/字幕 |
+
+场景从 `multi_head_math.py` 读取全部矩阵，未另写算例。E6.1–E6.4 未改；8080 未触碰。
 
 ---
 
