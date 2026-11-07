@@ -17,23 +17,24 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 116（114 通过 + 2 跳过；含 V1-B 新增 50） | 114 通过，2 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 129（127 通过 + 2 跳过；含 V1-B/C 新增 63） | 127 通过，2 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **177** 个用例（175 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **190** 个用例（188 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
 ```powershell
 uv run --project CourseControl course-control schemas-v1 --output shared/schemas
 uv run --project CourseControl course-control contract-v1-validate --kind timeline-v1 --file docs/contracts/examples/timeline.spec.json
+uv run --project CourseControl course-control e6-adapt --workspace . --manifest build/manim-transformer/e6/manifest.json --output build/manim-transformer/e6/render.manifest.v1.json
 ```
 
 - `schemas-v1`：导出 7 份 V1 JSON Schema。
 - `contract-v1-validate`：按 `kind` 校验单个 V1 文件；非法输入 exit 1，未知 kind exit 2。
-- 时间换算边界测试见 `CourseControl/tests/test_timecode.py`；模型与示例测试见 `CourseControl/tests/test_contracts_v1.py`。
+- 时间换算边界测试见 `CourseControl/tests/test_timecode.py`；模型与示例测试见 `CourseControl/tests/test_contracts_v1.py`；E6 V0 只读适配见 `CourseControl/tests/test_legacy_e6.py`。
 
 ---
 

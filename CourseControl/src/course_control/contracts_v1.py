@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from typing import Annotated, Any, Literal
 
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from .contracts import SLUG_RE, StrictModel
 from .paths import path_problem
@@ -745,7 +745,7 @@ class RenderManifest(V1Model):
     render_id: str
     run_id: str
     created_at: str = Field(min_length=1)
-    source: RenderSource
+    source: RenderSource | None = None
     output: RenderOutput
     shots: list[RenderShot] = Field(min_length=1)
     narration: RenderNarration | None = None
@@ -778,6 +778,18 @@ class RenderManifest(V1Model):
 
     @model_validator(mode="after")
     def _manifest(self):
+        if self.source is None:
+            legacy_manifest = (self.legacy or {}).get("v0_manifest")
+            if legacy_manifest is None:
+                raise ValueError(
+                    "source is required unless legacy.v0_manifest is provided"
+                )
+            try:
+                AssetRef.model_validate(legacy_manifest)
+            except ValidationError as exc:
+                raise ValueError(
+                    "legacy.v0_manifest must be a valid AssetRef"
+                ) from exc
         if self.video.kind != "video":
             raise ValueError("video must be kind=video")
         if len({shot.shot_id for shot in self.shots}) != len(self.shots):

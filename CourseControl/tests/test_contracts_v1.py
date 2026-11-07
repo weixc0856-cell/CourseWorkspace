@@ -296,6 +296,13 @@ class RenderManifestTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             RenderManifest.model_validate(data)
 
+    def test_legacy_source_requires_v0_manifest(self):
+        data = example("e6.render.manifest.v1.json")
+        data["legacy"] = None
+        with self.assertRaises(ValidationError) as ctx:
+            RenderManifest.model_validate(data)
+        self.assertIn("legacy.v0_manifest", str(ctx.exception))
+
 
 class SchemaAndExampleTest(unittest.TestCase):
     def test_schema_files_match_models(self):

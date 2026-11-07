@@ -364,7 +364,15 @@
       "type": "string"
     },
     "source": {
-      "$ref": "#/$defs/RenderSource"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RenderSource"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "output": {
       "$ref": "#/$defs/RenderOutput"
@@ -435,7 +443,6 @@
     "render_id",
     "run_id",
     "created_at",
-    "source",
     "output",
     "shots",
     "video"

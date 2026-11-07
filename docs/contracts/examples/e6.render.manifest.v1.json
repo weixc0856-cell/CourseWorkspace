@@ -5,32 +5,7 @@
   "render_id": "e6-transformer-attention-20261107T000000Z-00000000",
   "run_id": "20261107T000000Z-00000000",
   "created_at": "2026-11-07T00:00:00Z",
-  "source": {
-    "lesson_spec": {
-      "path": "build/e6-transformer-attention/contracts/lesson.spec.json",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "bytes": 0,
-      "kind": "json",
-      "origin": "generated",
-      "version": "v1"
-    },
-    "timeline": {
-      "path": "build/e6-transformer-attention/contracts/timeline.spec.json",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "bytes": 0,
-      "kind": "json",
-      "origin": "generated",
-      "version": "v1"
-    },
-    "narration": {
-      "path": "build/e6-transformer-attention/contracts/narration.spec.json",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "bytes": 0,
-      "kind": "json",
-      "origin": "generated",
-      "version": "v1"
-    }
-  },
+  "source": null,
   "output": {
     "fps": {
       "fps_num": 30,

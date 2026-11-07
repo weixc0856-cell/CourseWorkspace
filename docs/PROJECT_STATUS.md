@@ -1,7 +1,7 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（V1-B 契约模型与时间换算实现，见 §0.3）
+- **最近更新**：2026-11-07（V1-C E6 只读适配，见 §0.4）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
@@ -65,6 +65,18 @@
 | 实施报告 | [V1-B-实施报告.md](V1-B-实施报告.md) | 测试与兼容性说明 |
 
 CourseControl 现为 **116 个用例（114 通过 + 2 跳过）**；全项目合计 177 个用例（175 通过 + 2 跳过）。跳过的 2 个不计为通过。未迁移 E6 manifest，未改 E6.1–E6.4，未触碰 8080。
+
+### 0.4 2026-11-07 V1-C E6 只读适配增量
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| E6 V0 只读适配 | `CourseControl/src/course_control/legacy_e6.py` | 已实现；V0 与媒体未改 |
+| `e6-adapt` CLI | `CourseControl/src/course_control/cli.py` | 已实现；失败检查 exit 1 |
+| 自动检查 | ffprobe + sha256 + SRT 解析 | 本地 36 条：35 pass + 1 not_applicable |
+| 适配器测试 | `CourseControl/tests/test_legacy_e6.py` | 12 个；本地集成测试执行，干净克隆显式 skip |
+| 实施报告 | [V1-C-实施报告.md](V1-C-实施报告.md) | 测试与兼容性说明 |
+
+CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合计 190 个用例（188 通过 + 2 跳过）。E6 V0 `manifest.json` 仍为 `43037d39…` 未被修改；E6.1–E6.4 未改；8080 未触碰。V0 人工 `checks` 只进入 `legacy.manual_checks`，`manual_checks_trusted=false`。
 
 ---
 

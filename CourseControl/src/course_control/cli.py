@@ -195,6 +195,46 @@ def contract_v1_validate_command(
     typer.echo(f"{kind}: ok")
 
 
+@app.command("e6-adapt")
+def e6_adapt_command(
+    manifest: Path = typer.Option(
+        Path("build/manim-transformer/e6/manifest.json"), "--manifest"
+    ),
+    output: Path = typer.Option(
+        Path("build/manim-transformer/e6/render.manifest.v1.json"), "--output"
+    ),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    run_id: str | None = typer.Option(None, "--run-id"),
+) -> None:
+    """Read E6 V0 manifest and media, then write a V1 RenderManifest.
+
+    V0 and its media are never modified.  Failed automatic checks are written
+    into the manifest and make the command exit 1.
+    """
+    from .legacy_e6 import LegacyE6Error, adapt_e6_manifest
+
+    if not manifest.is_file():
+        typer.echo(f"manifest not found: {manifest}", err=True)
+        raise typer.Exit(2)
+    try:
+        render, checks = adapt_e6_manifest(
+            manifest, workspace=workspace, run_id=run_id
+        )
+    except LegacyE6Error as exc:
+        typer.echo(f"E6 adapt failed: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        render.model_dump_json(indent=2) + chr(10),
+        encoding="utf-8",
+    )
+    typer.echo(f"wrote {output}")
+    for check in checks:
+        typer.echo(f"[{check.id}] {check.status}: {check.detail}")
+    failed = [check for check in checks if check.status == "fail"]
+    raise typer.Exit(1 if failed else 0)
+
+
 @app.command("scene-validate")
 def scene_validate_command(
     task: Path = typer.Option(..., "--task"),
