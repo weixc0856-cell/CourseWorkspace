@@ -153,7 +153,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 功能提交 | `d95d887 feat: 路径卫生、远程模型回退与 V1-D/E 兼容层`；本文件为随后的基线同步提交 |
 | `origin/main` | `577501e chore: 移除与本项目无关的 Django CI 模板` |
 | 本地 `main` | `577501e`，与 `origin/main` 同步 |
-| 未推送提交 | 当前 feature 分支含功能提交与基线同步提交，尚未推送 |
+| 未推送提交 | 当前 feature 分支含功能、基线同步与路径检查修复 3 个提交，尚未推送 |
 | `d53ebd1` | 干净的初始工作流快照（无父提交）；仍是最早基线 |
 | `converge/v1` | `dd1d7f2`，完整收敛历史（含早期课程内容），**仅本地** |
 | `archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |

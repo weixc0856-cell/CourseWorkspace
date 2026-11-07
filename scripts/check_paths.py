@@ -14,6 +14,7 @@ ALLOW = (
     "docs/提交前检查清单.md",
     "CourseControl/tests/test_contracts_v1.py",
     "CourseControl/docker/",
+    "scripts/check_paths.py",
 )
 ALLOW_SUFFIX = ("package-lock.json", "uv.lock")
 
