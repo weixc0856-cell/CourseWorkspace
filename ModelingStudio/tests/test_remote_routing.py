@@ -90,6 +90,12 @@ class RemoteRouteTest(unittest.TestCase):
         self.assertEqual(usage["finish_reason"], "stop")
         self.assertEqual(_Handler.seen_model, "remote-model")
 
+    def test_remote_defaults_use_flash_with_vision(self):
+        runtime = RemoteSettings().runtime()
+        self.assertEqual(runtime.model, "deepseek-flash")
+        self.assertTrue(runtime.supports_vision)
+        self.assertEqual(runtime.vision_model, "deepseek-flash")
+
     def test_remote_settings_convert_to_runtime_config(self):
         settings = RemoteSettings(
             enabled=True,

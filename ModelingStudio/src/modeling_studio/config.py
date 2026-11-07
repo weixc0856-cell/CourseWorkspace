@@ -46,13 +46,13 @@ class RemoteSettings(BaseModel):
     enabled: bool = False
     provider: str = "deepseek"
     base_url: str = "https://api.deepseek.com/v1"
-    model: str = "deepseek-chat"
+    model: str = "deepseek-flash"
     api_key_env: str = "DEEPSEEK_API_KEY"
     timeout_s: int = Field(120, ge=10, le=3600)
     max_tokens: int = Field(4096, ge=1, le=131072)
     temperature: float = Field(0.1, ge=0.0, le=2.0)
-    supports_vision: bool = False
-    vision_model: str | None = None
+    supports_vision: bool = True
+    vision_model: str | None = "deepseek-flash"
     trust_env: bool = True
     fallback_on: list[
         Literal["busy", "start_error", "lock_timeout", "missing_executable"]

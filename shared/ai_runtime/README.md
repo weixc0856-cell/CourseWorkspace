@@ -42,8 +42,10 @@ remote = RemoteConfig(
     enabled=True,
     provider="deepseek",
     base_url="https://api.deepseek.com/v1",
-    model="deepseek-chat",
+    model="deepseek-flash",
     api_key_env="DEEPSEEK_API_KEY",
+    supports_vision=True,
+    vision_model="deepseek-flash",
 )
 with route_model(server, model, lock, log_path, remote=remote) as route:
     print(route.provider, route.model)   # local / remote，实际模型

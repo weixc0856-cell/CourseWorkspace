@@ -3,7 +3,7 @@
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8；同日完成全链路基线核实与计数校正）
 - **代码基线**：`origin/main` = `577501e`；当前分支 `feat/v1-pipeline-remote-fallback` 的功能提交 = `d95d887`（未推送）；本地 `main` 已同步 `origin/main`
-- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 223 个用例（221 通过 + 2 跳过）
+- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 226 个用例（224 通过 + 2 跳过）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -135,8 +135,8 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | ModelingStudio 接入 | `config.py`、`server.py`、`llm.py`、四个阶段模块 | 远程模型与 key 由 `config/model-routing.yaml` + 环境变量提供；视觉阶段不降级到文本模型 |
 | V1-E 兼容层 | `CourseControl/src/course_control/v1_timeline.py` | `shots.json ↔ TimelineSpec` 双向；`collect` 已写 `contracts/timeline.spec.json`；Remotion 仍读旧文件 |
 | V1-D 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py` | 现有 `evidence.json` → `EvidenceManifestV1`；缺失录屏不伪造 |
-| 测试 | 各套新增用例 | 全项目 **223 个用例（221 通过 + 2 跳过）** |
-| 远程真实冒烟 | `config/model-routing.yaml`、`DeepSeek-API` | 2026-11-07 可达；`deepseek-chat` 返回 `OK`（服务端模型名 `deepseek-flash`）；密钥未落盘、未打印 |
+| 测试 | 各套新增用例 | 全项目 **226 个用例（224 通过 + 2 跳过）** |
+| 远程真实冒烟 | `config/model-routing.yaml`、`DeepSeek-API` | 2026-11-07 可达；`deepseek-flash` 文本返回 `OK`，图片返回“红色”；密钥未落盘、未打印 |
 
 V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩展 `session/simulation/graphics`、Remotion 直接消费 `TimelineSpec`。本轮只做只读适配与兼容桥接，未改 `shots.json` 的消费方。
 
@@ -185,7 +185,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
 | FR-07 | 时间线收集 | `collect.py`（含 `annotations[]`） | `lesson-smoke` shots.json 通过 verify；V-22 标注检查 | COMPLETED | — |
 | FR-08 | 合成与成片验收 | `verify.py`、`report.py`、`adapters/remotion.py` | `lesson-smoke`、`lesson-blender-only` verdict pass | COMPLETED | — |
-| FR-09 | 本地模型严格串行 | `shared/ai_runtime`（含 `remote.py` / `routing.py`） | 33 个 ai_runtime 测试（双进程、生命周期、远程回退）；真实 DeepSeek 冒烟 | COMPLETED | — |
+| FR-09 | 本地模型严格串行 | `shared/ai_runtime`（含 `remote.py` / `routing.py`） | 35 个 ai_runtime 测试（双进程、生命周期、远程回退）；真实 DeepSeek 文本/图片冒烟 | COMPLETED | — |
 | FR-10 | 任务状态与恢复 | `tasks.py`、`job.py`、`--resume` | 失败落盘、断点续跑测试 | COMPLETED | — |
 | FR-11 | 上下文预算 | `budget.py` + 各阶段预算 | 预算/超限/重试绕过测试 | COMPLETED | — |
 | FR-12 | 在线内容审查 | `ContentQA/` | 11 个 mock 测试；真实课程 `blocked` exit 3 | PARTIAL | 真实供应商与凭据未配置 |
@@ -211,7 +211,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 223 个用例（221 通过 + 2 跳过；138+30+33+11+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 226 个用例（224 通过 + 2 跳过；138+31+35+11+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |

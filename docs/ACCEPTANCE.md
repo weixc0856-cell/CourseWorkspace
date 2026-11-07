@@ -18,12 +18,12 @@
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
 | CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 138（136 通过 + 2 跳过；含 V1-B/C/D/E 与 E6.5 契约） | 136 通过，2 跳过 |
-| ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 30 | 全部通过 |
-| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 33 | 全部通过 |
+| ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 31 | 全部通过 |
+| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 35 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
 
-合计 **223** 个用例（221 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **226** 个用例（224 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -245,7 +245,8 @@ python ManimSandbox/05-multi-head/assemble.py
 | 无凭据 | 同上 | blocked |
 | 远程回退（mock） | `test_remote.py` | 本地繁忙 → `provider=remote`；本地正常不切换；无远程/无 key/无 vision 模型均不伪造 |
 | 远程凭据隔离 | `test_remote.py`、`test_remote_routing.py` | key 只从环境变量读取；健康输出不含 key；任务记录 `provider` 可追溯 |
-| 远程真实端点冒烟 | `config/model-routing.yaml` + `DeepSeek-API` | 2026-11-07 可达；`deepseek-chat` 返回 `OK`（服务端模型名 `deepseek-flash`）；未打印密钥 |
+| 远程真实文本冒烟 | `config/model-routing.yaml` + `DeepSeek-API` | 2026-11-07 可达；`deepseek-flash` 返回 `OK`；未打印密钥 |
+| 远程真实图片冒烟 | 256×256 PNG + `deepseek-flash` | 2026-11-07 返回“红色”；`deepseek-v4-pro` 不支持图片 |
 | 路径卫生 | `scripts/check-paths.ps1` | `path check ok`；跟踪文件中无本机盘符/用户目录绝对路径 |
 | 真实课程无配置 | `content-qa review --lesson 01-shell-for-ai-era` | **blocked，exit 3**；报告写入 `build/01-shell-for-ai-era/review/review.json` |
 
@@ -258,16 +259,14 @@ python ManimSandbox/05-multi-head/assemble.py
 | 项 | 原因 | 影响 |
 | --- | --- | --- |
 | 真实课程成片 | Motion Canvas 8 段未导出（人工） | `01-shell-for-ai-era` 为 `incomplete` |
-| 真实在线模型调用 | 未配置供应商与凭据 | ContentQA 真实课程为 `blocked` |
+| 真实在线模型调用 | ContentQA 已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
 | 本轮重跑 ModelingStudio 全链路 | 需独占 8080 约 10–30 分钟，且会与用户其他任务冲突 | 仅有历史作业证据 |
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |
 | VoxCPM2 / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
 | V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成 | 新 session 不会自动产出 `EvidenceManifestV1` |
 | V1-E Remotion 切换 | Remotion 仍读 `shots.json`；V1 时间线是并列视图 | 尚未用 V1 直接驱动合成 |
-| 远程视觉回退 | `vision_model` 未配置 | 图片分析/修正阶段在 8080 不可用时仍失败，不降级到文本模型 |
-| 远程真实视觉调用 | 未配置视觉远程模型 | 只验证了文本 DeepSeek 端点 |
-| 远程回退的完整 ModelingStudio 作业 | 需构造 8080 占用场景并消耗远程额度 | 仅有 routing 单测与文本冒烟 |
+| 远程完整作业 | 只验证了单轮文本/图片；未跑完整 ModelingStudio 远程作业 | 远程回退的路由与协议已测，作业级证据待补 |
 
 ---
 

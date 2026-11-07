@@ -230,7 +230,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 - 入口仍是 `route_model(server, model, lock, log_path, remote=...)`：先按 §5.2 使用本地 8080。
 - 仅当 `RemoteConfig` 显式启用、API key 环境变量存在、且本地失败原因在 `fallback_on` 中（`busy` / `start_error` / `lock_timeout` / `missing_executable`）时，才切换到远程 OpenAI 兼容端点。
 - 远程调用不持有本地 8080 锁；本地锁在切换前已释放。远程路由返回 `provider="remote"`、实际模型名与 `trust_env`，调用方必须写入任务记录与阶段元数据。
-- 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。
+- 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。默认远程模型 `deepseek-flash` 满足这两个条件；`deepseek-v4-pro` 不支持图片。
 - 远程凭据只从环境变量读取；配置、日志、任务记录、异常与健康输出都不包含密钥。
 - 配置参考：`config/model-routing.example.yaml`；本机实际文件 `config/model-routing.yaml` 被 `.gitignore` 忽略。
 

@@ -31,6 +31,7 @@ class _MockHandler(BaseHTTPRequestHandler):
     alias = "local-alias"
     expected_key = "test-key"
     fail_status = 0
+    seen_model = ""
 
     def log_message(self, *_args):
         pass
@@ -61,6 +62,7 @@ class _MockHandler(BaseHTTPRequestHandler):
             return
         length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(length) or b"{}")
+        _MockHandler.seen_model = payload.get("model", "")
         self._json(
             {
                 "model": payload.get("model", self.alias),
@@ -96,6 +98,8 @@ def remote_config(port: int, **overrides) -> RemoteConfig:
         api_key="test-key",
         trust_env=False,
         timeout_s=5,
+        supports_vision=False,
+        vision_model=None,
         fallback_on=("busy", "start_error", "lock_timeout"),
     )
     values.update(overrides)
@@ -139,6 +143,16 @@ class RemoteProviderTest(unittest.TestCase):
         config = remote_config(self.port)
         with self.assertRaises(RemoteUnavailable):
             chat_completion(config, [{"role": "user", "content": "x"}], vision=True)
+
+    def test_vision_uses_configured_vision_model(self):
+        config = remote_config(
+            self.port, supports_vision=True, vision_model="vision-model"
+        )
+        result = chat_completion(
+            config, [{"role": "user", "content": "x"}], vision=True
+        )
+        self.assertEqual(result.model, "vision-model")
+        self.assertEqual(_MockHandler.seen_model, "vision-model")
 
 
 class RoutingTest(unittest.TestCase):
@@ -219,6 +233,22 @@ class RoutingTest(unittest.TestCase):
                 vision=True,
             ):
                 pass
+
+    def test_vision_falls_back_when_vision_model_is_configured(self):
+        with route_model(
+            self._server(self.local.server_port),
+            self._model(),
+            FileLock(self.lock, task_id="vision-ok", timeout_s=2),
+            self.log,
+            remote=remote_config(
+                self.remote.server_port,
+                supports_vision=True,
+                vision_model="vision-model",
+            ),
+            vision=True,
+        ) as route:
+            self.assertEqual(route.provider, "remote")
+            self.assertEqual(route.model, "vision-model")
 
 
 class TaskProviderTest(unittest.TestCase):

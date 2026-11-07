@@ -6,12 +6,13 @@ remote:
   enabled: true
   provider: "deepseek"
   base_url: "https://api.deepseek.com/v1"
-  model: "deepseek-chat"
+  model: "deepseek-flash"
   api_key_env: "DEEPSEEK_API_KEY"
   timeout_s: 120
-  # Vision stages only fall back when a vision-capable remote model is configured.
-  supports_vision: false
-  vision_model: null
+  # deepseek-flash supports image understanding (verified 2026-11-07).
+  # Set false/null when the endpoint is text-only.
+  supports_vision: true
+  vision_model: "deepseek-flash"
 
 fallback:
   # Local 8080 busy/unavailable -> remote. Keep this explicit.

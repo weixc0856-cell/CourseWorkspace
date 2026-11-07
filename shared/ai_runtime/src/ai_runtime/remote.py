@@ -38,14 +38,14 @@ class RemoteConfig:
     enabled: bool = False
     provider: str = "deepseek"
     base_url: str = "https://api.deepseek.com/v1"
-    model: str = "deepseek-chat"
+    model: str = "deepseek-flash"
     api_key_env: str = "DEEPSEEK_API_KEY"
     api_key: str | None = None
     timeout_s: int = 120
     max_tokens: int = 4096
     temperature: float = 0.1
-    supports_vision: bool = False
-    vision_model: str | None = None
+    supports_vision: bool = True
+    vision_model: str | None = "deepseek-flash"
     trust_env: bool = True
     fallback_on: tuple[str, ...] = (
         "busy",
