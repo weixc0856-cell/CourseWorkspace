@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "kind": "render_manifest",
+  "lesson_id": "e6-transformer-attention",
+  "render_id": "e6-transformer-attention-20261107T000000Z-00000000",
+  "run_id": "20261107T000000Z-00000000",
+  "created_at": "2026-11-07T00:00:00Z",
+  "source": null,
+  "output": {
+    "fps": {
+      "fps_num": 30,
+      "fps_den": 1
+    },
+    "width": 1920,
+    "height": 1080,
+    "total_frames": 993,
+    "duration_ms": 33100
+  },
+  "shots": [
+    {
+      "shot_id": "s1",
+      "track": "manim",
+      "start_frame": 0,
+      "duration_frames": 240,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/TokensScene.mp4",
+        "sha256": "2d117e0057ac1e3769e2428e3128da535311ccdb95713b9e879f75813245990e",
+        "bytes": 266713,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      },
+      "evidence": null
+    },
+    {
+      "shot_id": "s2",
+      "track": "manim",
+      "start_frame": 240,
+      "duration_frames": 226,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/QKVScene.mp4",
+        "sha256": "8c3a2e4bf3eaef12ea62e773d554fad687d07ca8262fe69ffd7dd7789d7c7891",
+        "bytes": 264517,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      },
+      "evidence": null
+    },
+    {
+      "shot_id": "s3",
+      "track": "manim",
+      "start_frame": 466,
+      "duration_frames": 290,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/AttentionScene.mp4",
+        "sha256": "aed37eb8222fb3c3f5dc2d1e15aaa22c95ab609bd4a7f5e671c87fa9e7f6cb86",
+        "bytes": 366528,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      },
+      "evidence": null
+    },
+    {
+      "shot_id": "s4",
+      "track": "manim",
+      "start_frame": 756,
+      "duration_frames": 237,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/OutputScene.mp4",
+        "sha256": "aa28e20c1b10e055a13f5a9824362a53962c06b8a2ccd2e57ec45401eef4ffbd",
+        "bytes": 259164,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      },
+      "evidence": null
+    }
+  ],
+  "narration": {
+    "asset": {
+      "path": "build/manim-transformer/e6/narration.wav",
+      "sha256": "de1a4d9c692609ef7965dcbb01c405dd5381f764ce35399d3e54aaccb29a6ad6",
+      "bytes": 3177678,
+      "kind": "audio",
+      "origin": "generated",
+      "version": "voxcpm2"
+    },
+    "duration_ms": 33100,
+    "segments": [
+      {
+        "narration_id": "e6-s1",
+        "start_frame": 0,
+        "duration_frames": 206,
+        "duration_ms": 6880
+      },
+      {
+        "narration_id": "e6-s2",
+        "start_frame": 240,
+        "duration_frames": 168,
+        "duration_ms": 5600
+      },
+      {
+        "narration_id": "e6-s3",
+        "start_frame": 466,
+        "duration_frames": 168,
+        "duration_ms": 5600
+      },
+      {
+        "narration_id": "e6-s4",
+        "start_frame": 756,
+        "duration_frames": 130,
+        "duration_ms": 4320
+      }
+    ]  },
+  "subtitles": {
+    "asset": {
+      "path": "build/manim-transformer/e6/subtitles.srt",
+      "sha256": "f5a03bd5d81aa0cd71089423f5b140e1c765a12797e5941838c2f4bff0660168",
+      "bytes": 391,
+      "kind": "subtitle",
+      "origin": "author",
+      "version": null
+    },
+    "format": "srt",
+    "cues": 4
+  },
+  "video": {
+    "path": "build/manim-transformer/e6/transformer_attention_final.mp4",
+    "sha256": "fa134b46791cf8890081888a956c7cdba1204bdc5a1d6bf6fc2928aee2d861ff",
+    "bytes": 1358667,
+    "kind": "video",
+    "origin": "rendered",
+    "version": "ffmpeg-8"
+  },
+  "checks": [],
+  "tool_versions": {
+    "manim": "0.22.0",
+    "ffmpeg": "8.0",
+    "voxcpm2": "runtime"
+  },
+  "legacy": {
+    "v0_manifest": {
+      "path": "build/manim-transformer/e6/manifest.json",
+      "sha256": "43037d390453d249de072a97cb1751065e6675a7c0a49b02f45c51a3f61469fa",
+      "bytes": 2101,
+      "kind": "json",
+      "origin": "author",
+      "version": "manifest-v0"
+    },
+    "manual_checks": {
+      "scenes": "pass",
+      "narration_fit": "pass",
+      "subtitles": "pass",
+      "audio_stream": "pass",
+      "subtitle_stream": "pass"
+    },
+    "manual_checks_trusted": false,
+    "narration_was_mixed": true,
+    "note": "V0 的 checks 是人工写入，未进入 V1 自动检查；必须重跑后才能写 pass。"
+  }
+}

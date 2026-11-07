@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "kind": "evidence_manifest",
+  "lesson_id": "e4-rust-toolchain",
+  "shot_id": "s3",
+  "session_id": "rust-build",
+  "run_id": "20261107T090000Z-1a2b3c4d",
+  "spec": {
+    "path": "build/e4-rust-toolchain/sessions/rust-build/session.json",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "bytes": 2048,
+    "kind": "json",
+    "origin": "author",
+    "version": null
+  },
+  "environment": {
+    "kind": "host",
+    "image": null,
+    "image_digest": null,
+    "os": "Windows 11 10.0.26300",
+    "tool_versions": {
+      "cargo": "1.97.0",
+      "rustc": "1.97.0",
+      "code": "1.105.0"
+    }
+  },
+  "execution_result": {
+    "path": "build/e4-rust-toolchain/sessions/rust-build/result.json",
+    "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "bytes": 4096,
+    "kind": "json",
+    "origin": "generated",
+    "version": null
+  },
+  "recording_result": {
+    "path": "build/e4-rust-toolchain/sessions/rust-build/recording.json",
+    "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "bytes": 1024,
+    "kind": "json",
+    "origin": "generated",
+    "version": null
+  },
+  "validation_report": {
+    "path": "build/e4-rust-toolchain/sessions/rust-build/validation.json",
+    "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "bytes": 1024,
+    "kind": "json",
+    "origin": "generated",
+    "version": null
+  },
+  "transcript": {
+    "path": "build/e4-rust-toolchain/sessions/rust-build/transcript.txt",
+    "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "bytes": 4096,
+    "kind": "log",
+    "origin": "captured",
+    "version": null
+  },
+  "artifacts": [
+    {
+      "path": "build/e4-rust-toolchain/sessions/rust-build/recording.mp4",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "bytes": 12345678,
+      "kind": "video",
+      "origin": "captured",
+      "version": null
+    },
+    {
+      "path": "build/e4-rust-toolchain/sessions/rust-build/commands.log",
+      "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "bytes": 8192,
+      "kind": "log",
+      "origin": "captured",
+      "version": null
+    }
+  ],
+  "cache_key": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+}

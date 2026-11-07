@@ -27,6 +27,9 @@
 | D-020 | 受限表达式由 `shared/scene_expr` 单实现，禁止 `eval` / `exec` | accepted |
 | D-021 | 代码/终端会话采用三证据链 + Docker 受限执行 + V-23/V-24 | accepted |
 | D-022 | VS Code 会话用 shell integration 执行、PrintWindow 录制 | accepted |
+| D-023 | Python 工具链采用联网演示 + 离线验证；本机以 8899 端口本地 HTTP 索引演示 | accepted |
+| D-024 | Manim 作为动画渲染引擎；FFT 为技术基线，Transformer 为产品基线 | accepted |
+| D-025 | Rust 镜头先用 host VS Code + Git Bash；Docker Rust 镜像受阻再迁移 | accepted |
 
 ---
 
@@ -202,3 +205,43 @@
 **决策**：仓库内 `CourseDemo` 扩展通过 `TerminalShellIntegration.executeCommand` 执行命令，立即消费 `read()`，以 `onDidEndTerminalShellExecution.exitCode` 为退出码（`undefined` 判失败）；录制改用 `PrintWindow` 逐帧 + ffmpeg rawvideo，不再依赖 gdigrab/ddagrab 的区域捕获。
 
 **后果**：执行证据来自被录制的同一终端；录制与执行解耦。VS Code 版本需支持 shell integration（本机 1.145.1 已验证）。
+
+## D-023 Python 工具链与离线验证
+
+**背景**：pip/uv/venv 课程需要展示安装过程，同时证明产物不依赖网络。本机 Docker 容器到 PyPI 的 TLS 被代理/TUN 阻断，真实联网演示暂时不可用。
+
+**决策**：`SessionSpec` 增加 `offline_commands`：在线容器（`network: bridge`）完成 venv 与安装，第二个 `network: none` 容器挂同一 `/work` 执行导入断言，V-25 检查离线结果。联网演示使用本机 8899 的只读 wheelhouse HTTP 索引（容器经 `host.docker.internal` 真实下载），不伪装成公网 PyPI；`trim` 按命令起止时间剪掉等待区间。
+
+**后果**：安装、离线可运行与等待剪辑都有真实证据；真实公网 PyPI 仍受本机代理/TUN 限制，需要时再解决。
+
+## D-024 Manim 动画轨道
+
+**背景**：3Blue1Brown/Reducible 风格需要确定性数学动画，不是录屏。
+
+**决策**：Manim 只作为渲染引擎；FFT 作为技术基线（验证坐标系、曲线、时间轴、输出），Transformer 作为产品基线（复杂概念拆解），最终仍进入 Remotion/FFmpeg 合成。复刻定义为表现手法与结构对齐，不逐帧复制。
+
+**后果**：动画轨道与代码录屏轨道解耦；E5 基线已渲染，E6 尚未开始。
+
+## D-025 Rust 执行环境
+
+**背景**：E4 需要真实 cargo 执行；本机 Docker Hub/镜像加速器 TLS 握手超时，无法拉取 Rust 镜像。
+
+**决策**：E4 先用 host VS Code + Git Bash（Rust 1.97）执行并录制，保留 `SessionSpec` 契约；Docker Rust 镜像可用后切回容器，不改课程镜头。
+
+**后果**：Rust 镜头有真实执行证据，但隔离级别低于 Docker；报告中明确标注 `kind: host`。
+
+## D-026 课程生产统一契约 V1
+
+**背景**：课程、Manim、Session、E6 各自用秒/毫秒/帧描述时间；课程报告、session 证据、E6 manifest 是三套事实。直接统一会重写稳定轨道，继续放任则无法跨轨道验收。
+
+**决策**：新增规范化契约层 V1（`LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest`），作为 `lesson.yaml`、`storyboard.yaml` 之上的只读规范化视图；时间线以整数帧为唯一事实，毫秒只出现在 WAV/SRT/FFmpeg 边界，秒只保留在旧契约并由适配器一次换算；所有素材用 `AssetRef`（路径 + sha256 + bytes + kind + origin + version）；E6 V0 manifest 只读适配，人工 `checks` 不进入 V1 自动检查。V1 不替换作者文件，不重写 Manim/Session/Blender 核心。
+
+**后果**：现有轨道行为不变；V1-B 已实现模型、Schema、整数时间换算与测试（`contracts_v1.py` / `timecode.py`，CourseControl 116 个用例）；V1-C 再迁移 E6 manifest；任何 `skip` 或人工 `pass` 不得写成自动通过。设计稿与示例见 `docs/课程生产统一契约V1.md`、`docs/contracts/examples/`，实施报告见 `docs/V1-B-实施报告.md`。
+
+## D-027 E6 V0 只读适配
+
+**背景**：E6.1–E6.4 已产成片，但只有整段 `narration.wav`、没有 `lesson.yaml` / `storyboard.yaml`，也没有逐段旁白音频。直接生成 `LessonSpec` / `NarrationSpec` / `TimelineSpec` 需要伪造作者文件或音频。
+
+**决策**：新增 `legacy_e6.py` 与 `e6-adapt`：只读 V0 manifest 与媒体，用 ffprobe、sha256、SRT 解析生成 `RenderManifest`；V0 `checks` 只进入 `legacy.manual_checks`，`manual_checks_trusted=false`；`RenderManifest.source=null` 仅允许在提供 `legacy.v0_manifest` 时使用；不修改 V0、不重渲染 E6。
+
+**后果**：E6 产物可被 V1 描述，本地 36 条自动检查为 35 pass + 1 not_applicable；混合旁白与推断的段起点明确记录，不冒充完整规范化课程。后续如需 `NarrationSpec` / `TimelineSpec`，必须重新生成逐段音频或补作者文件后再迁移。

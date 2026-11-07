@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "kind": "narration_spec",
+  "lesson_id": "e6-transformer-attention",
+  "fps": {
+    "fps_num": 30,
+    "fps_den": 1
+  },
+  "voice": {
+    "provider": "voxcpm2",
+    "ref_audio": {
+      "path": "assets/voice/my_voice_clean_v1.wav",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 0,
+      "kind": "audio",
+      "origin": "author",
+      "version": "voxcpm2"
+    },
+    "language": "zh",
+    "speed": 1.0
+  },
+  "segments": [
+    {
+      "narration_id": "e6-s1",
+      "shot_id": "s1",
+      "text": "Transformer 不认识文字，它先要把每个 token 映射成一个连续向量。这个向量叫 embedding。同一句话里的每个 token，都有自己的向量。",
+      "text_sha256": "021652c467221a1f2202a6c50b527c160335376af5dee5adcefc50cfc5c3fd55",
+      "audio": {
+        "path": "build/manim-transformer/e6/narration/s1.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "duration_ms": 6880,
+      "start_frame": 0,
+      "duration_frames": 206,
+      "fit": "underflow"
+    },
+    {
+      "narration_id": "e6-s2",
+      "shot_id": "s2",
+      "text": "接下来，模型用三组不同的权重，把同一个 embedding 投影成 Query、Key 和 Value。Query 负责提问，Key 负责被比较，Value 才是真正被加权求和的内容。",
+      "text_sha256": "a771db35a43de6e776f271ec3924bda3e4e20acf46c4af4e51fdf328715fb44c",
+      "audio": {
+        "path": "build/manim-transformer/e6/narration/s2.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "duration_ms": 5600,
+      "start_frame": 240,
+      "duration_frames": 168,
+      "fit": "underflow"
+    },
+    {
+      "narration_id": "e6-s3",
+      "shot_id": "s3",
+      "text": "对当前 token 的 Query 和每个 Key 做点积，得到相关性分数，再除以维度的平方根。Softmax 把分数变成总和为一的权重。分数越高，这个 token 在上下文里越重要。",
+      "text_sha256": "17d537c7d844b257cd1152df36e0fa1e7bac9aed816e2fe627afa7941b625405",
+      "audio": {
+        "path": "build/manim-transformer/e6/narration/s3.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "duration_ms": 5600,
+      "start_frame": 466,
+      "duration_frames": 168,
+      "fit": "underflow"
+    },
+    {
+      "narration_id": "e6-s4",
+      "shot_id": "s4",
+      "text": "最后，用每个权重去乘对应的 Value，再把所有加权后的 Value 相加，得到 context。这个 context 才是当前 token 交给下一层的表示。Attention 不是对 Key 做平均，而是对 Value 做加权求和。",
+      "text_sha256": "0f7504a1be9f93655c5daa06acbaae5a1f0850a0da5fb0253527b4e81f6b0701",
+      "audio": {
+        "path": "build/manim-transformer/e6/narration/s4.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "duration_ms": 4320,
+      "start_frame": 756,
+      "duration_frames": 130,
+      "fit": "underflow"
+    }
+  ],
+  "total": {
+    "duration_ms": 29533,
+    "total_frames": 886
+  },
+  "generator": {
+    "name": "course-control-narrate",
+    "version": "v1",
+    "generated_at": "2026-11-07T00:00:00Z"
+  }
+}

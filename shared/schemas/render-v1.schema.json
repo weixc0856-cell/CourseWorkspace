@@ -1,0 +1,452 @@
+{
+  "$defs": {
+    "AssetRef": {
+      "additionalProperties": false,
+      "description": "A file reference with content identity and provenance.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "video",
+            "audio",
+            "image",
+            "subtitle",
+            "font",
+            "data",
+            "log",
+            "json"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "author",
+            "rendered",
+            "captured",
+            "generated",
+            "external"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "kind",
+        "origin"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "RationalFPS": {
+      "additionalProperties": false,
+      "description": "Exact frame rate as a rational number, e.g. 30000/1001.",
+      "properties": {
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Fps Den",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fps_num",
+        "fps_den"
+      ],
+      "title": "RationalFPS",
+      "type": "object"
+    },
+    "RenderCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "skipped",
+            "not_run",
+            "not_applicable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "detail": {
+          "default": "",
+          "title": "Detail",
+          "type": "string"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssetRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "status"
+      ],
+      "title": "RenderCheck",
+      "type": "object"
+    },
+    "RenderNarration": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "duration_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/RenderNarrationSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "required": [
+        "asset",
+        "duration_ms"
+      ],
+      "title": "RenderNarration",
+      "type": "object"
+    },
+    "RenderNarrationSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "narration_id": {
+          "title": "Narration Id",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "narration_id",
+        "start_frame",
+        "duration_frames",
+        "duration_ms"
+      ],
+      "title": "RenderNarrationSegment",
+      "type": "object"
+    },
+    "RenderOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "fps": {
+          "$ref": "#/$defs/RationalFPS"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 16384,
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 16384,
+          "title": "Height",
+          "type": "integer"
+        },
+        "total_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Total Frames",
+          "type": "integer"
+        },
+        "duration_ms": {
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fps",
+        "width",
+        "height",
+        "total_frames",
+        "duration_ms"
+      ],
+      "title": "RenderOutput",
+      "type": "object"
+    },
+    "RenderShot": {
+      "additionalProperties": false,
+      "properties": {
+        "shot_id": {
+          "title": "Shot Id",
+          "type": "string"
+        },
+        "track": {
+          "enum": [
+            "slide",
+            "motion_canvas",
+            "manim",
+            "blender",
+            "session",
+            "simulation",
+            "graphics"
+          ],
+          "title": "Track",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssetRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "shot_id",
+        "track",
+        "start_frame",
+        "duration_frames",
+        "asset"
+      ],
+      "title": "RenderShot",
+      "type": "object"
+    },
+    "RenderSource": {
+      "additionalProperties": false,
+      "properties": {
+        "lesson_spec": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "timeline": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "narration": {
+          "$ref": "#/$defs/AssetRef"
+        }
+      },
+      "required": [
+        "lesson_spec",
+        "timeline",
+        "narration"
+      ],
+      "title": "RenderSource",
+      "type": "object"
+    },
+    "RenderSubtitles": {
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "format": {
+          "const": "srt",
+          "default": "srt",
+          "title": "Format",
+          "type": "string"
+        },
+        "cues": {
+          "minimum": 0,
+          "title": "Cues",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "asset",
+        "cues"
+      ],
+      "title": "RenderSubtitles",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "render_manifest",
+      "default": "render_manifest",
+      "title": "Kind",
+      "type": "string"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "render_id": {
+      "title": "Render Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "created_at": {
+      "minLength": 1,
+      "title": "Created At",
+      "type": "string"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RenderSource"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "output": {
+      "$ref": "#/$defs/RenderOutput"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/RenderShot"
+      },
+      "minItems": 1,
+      "title": "Shots",
+      "type": "array"
+    },
+    "narration": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RenderNarration"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "subtitles": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RenderSubtitles"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "video": {
+      "$ref": "#/$defs/AssetRef"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/RenderCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "tool_versions": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Tool Versions",
+      "type": "object"
+    },
+    "legacy": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Legacy"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "render_id",
+    "run_id",
+    "created_at",
+    "output",
+    "shots",
+    "video"
+  ],
+  "title": "RenderManifest",
+  "type": "object"
+}

@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-smoke",
+  "shot_id": "python_001",
+  "session_id": "session-python-001",
+  "environment": {
+    "kind": "docker",
+    "image": "course-tools:e1",
+    "user": "course",
+    "network": "bridge",
+    "workdir": "/work",
+    "cpus": 1.0,
+    "memory": "768m",
+    "pids": 128,
+    "timeout_s": 180
+  },
+  "files": [
+    {
+      "source": "assets/code/python-001/wheels/course_demo_pkg-0.1.0-py3-none-any.whl",
+      "path": "wheels/course_demo_pkg-0.1.0-py3-none-any.whl"
+    },
+    {
+      "source": "assets/code/python-001/online-ok.txt",
+      "path": "online-ok.txt"
+    },
+    {
+      "source": "assets/code/python-001/offline-ok.txt",
+      "path": "offline-ok.txt"
+    },
+    {
+      "source": "assets/code/python-001/venv-ok.txt",
+      "path": "venv-ok.txt"
+    }
+  ],
+  "commands": [
+    {
+      "id": "c1",
+      "run": [
+        "uv",
+        "venv",
+        ".venv"
+      ],
+      "expect": {
+        "exit_code": 0
+      }
+    },
+    {
+      "id": "c1b",
+      "run": [
+        "bash",
+        "-lc",
+        "test -x .venv/bin/python && echo venv-ok"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout": "venv-ok.txt"
+      }
+    },
+    {
+      "id": "c2",
+      "run": [
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        ".venv/bin/python",
+        "--no-index",
+        "--find-links",
+        "wheels",
+        "course-demo-pkg"
+      ],
+      "expect": {
+        "exit_code": 0
+      }
+    },
+    {
+      "id": "c_wait",
+      "run": [
+        "bash",
+        "-lc",
+        "sleep 2; echo waited"
+      ],
+      "expect": {
+        "exit_code": 0
+      },
+      "trim": {
+        "command": "c_wait",
+        "keep_head_s": 0.3,
+        "keep_tail_s": 0.3
+      }
+    },
+    {
+      "id": "c3",
+      "run": [
+        ".venv/bin/python",
+        "-c",
+        "import course_demo_pkg; print(course_demo_pkg.greet())"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout": "online-ok.txt"
+      }
+    }
+  ],
+  "offline_commands": [
+    {
+      "id": "o1",
+      "run": [
+        ".venv/bin/python",
+        "-c",
+        "import course_demo_pkg; print(course_demo_pkg.greet())"
+      ],
+      "expect": {
+        "exit_code": 0,
+        "stdout": "offline-ok.txt"
+      }
+    }
+  ],
+  "record": {
+    "target": "terminal",
+    "capture": "window",
+    "window_title": "CourseDemo",
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 30
+  }
+}

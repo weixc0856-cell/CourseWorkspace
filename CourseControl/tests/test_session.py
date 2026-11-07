@@ -36,6 +36,24 @@ class SessionContractTest(unittest.TestCase):
         self.assertIsNone(spec.environment.image)
         self.assertEqual(spec.record.target, "vscode")
 
+    def test_rust_session_spec_validates(self):
+        spec = load_session_spec(LESSON_DIR / "sessions" / "rust-001.session.json")
+        self.assertEqual(spec.environment.kind, "host")
+        self.assertEqual(spec.record.target, "vscode")
+
+    def test_python_network_session_spec_validates(self):
+        spec = load_session_spec(
+            LESSON_DIR / "sessions" / "python-network-001.session.json"
+        )
+        self.assertEqual(spec.environment.network, "bridge")
+        self.assertEqual(len(spec.offline_commands), 1)
+
+    def test_python_offline_session_spec_validates(self):
+        spec = load_session_spec(LESSON_DIR / "sessions" / "python-001.session.json")
+        self.assertEqual(spec.environment.network, "bridge")
+        self.assertEqual(len(spec.offline_commands), 1)
+        self.assertEqual(spec.offline_commands[0].id, "o1")
+
     def test_duplicate_command_rejected(self):
         data = json.loads(SPEC.read_text(encoding="utf-8"))
         data["commands"].append(dict(data["commands"][0]))

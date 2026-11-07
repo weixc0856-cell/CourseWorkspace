@@ -8,6 +8,7 @@ so that the verifier has a single implementation.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -45,11 +46,23 @@ def main() -> int:
                 transcript.write(f"\n=== {command_id} START ===\n")
                 transcript.flush()
             started = time.monotonic()
+            started_wall = time.time()
             timed_out = False
+            env = os.environ.copy()
+            env.setdefault("UV_CACHE_DIR", "/work/.uv-cache")
+            env.setdefault("UV_PYTHON_INSTALL_DIR", "/work/.uv-python")
+            env.setdefault("HOME", "/work/.home")
+            for directory in (
+                env["UV_CACHE_DIR"],
+                env["UV_PYTHON_INSTALL_DIR"],
+                env["HOME"],
+            ):
+                os.makedirs(directory, exist_ok=True)
             try:
                 process = subprocess.run(
                     argv,
                     cwd=workdir,
+                    env=env,
                     capture_output=True,
                     text=True,
                     encoding="utf-8",
@@ -71,6 +84,7 @@ def main() -> int:
                 stdout = ""
                 stderr = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
             duration_ms = int((time.monotonic() - started) * 1000)
+            finished_wall = time.time()
             _emit(sys.stdout, stdout)
             _emit(sys.stderr, stderr)
             if transcript:
@@ -89,6 +103,8 @@ def main() -> int:
                     "exit_code": exit_code,
                     "timed_out": timed_out,
                     "duration_ms": duration_ms,
+                    "started_at": started_wall,
+                    "finished_at": finished_wall,
                     "stdout": stdout,
                     "stderr": stderr,
                 }

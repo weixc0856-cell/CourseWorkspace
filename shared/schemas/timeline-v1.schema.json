@@ -1,0 +1,317 @@
+{
+  "$defs": {
+    "AssetRef": {
+      "additionalProperties": false,
+      "description": "A file reference with content identity and provenance.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "video",
+            "audio",
+            "image",
+            "subtitle",
+            "font",
+            "data",
+            "log",
+            "json"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "author",
+            "rendered",
+            "captured",
+            "generated",
+            "external"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "kind",
+        "origin"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "RationalFPS": {
+      "additionalProperties": false,
+      "description": "Exact frame rate as a rational number, e.g. 30000/1001.",
+      "properties": {
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Fps Den",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fps_num",
+        "fps_den"
+      ],
+      "title": "RationalFPS",
+      "type": "object"
+    },
+    "SubtitleCue": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "minimum": 1,
+          "title": "Index",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "end_frame": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "index",
+        "start_frame",
+        "end_frame",
+        "text"
+      ],
+      "title": "SubtitleCue",
+      "type": "object"
+    },
+    "SyncRules": {
+      "additionalProperties": false,
+      "properties": {
+        "audio_tolerance_frames": {
+          "default": 1,
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Audio Tolerance Frames",
+          "type": "integer"
+        },
+        "subtitle_tolerance_ms": {
+          "default": 40,
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Subtitle Tolerance Ms",
+          "type": "integer"
+        },
+        "allow_gap_frames": {
+          "default": 1,
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Allow Gap Frames",
+          "type": "integer"
+        }
+      },
+      "title": "SyncRules",
+      "type": "object"
+    },
+    "TimelineAudio": {
+      "additionalProperties": false,
+      "properties": {
+        "narration_id": {
+          "title": "Narration Id",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "gain_db": {
+          "default": 0.0,
+          "maximum": 12.0,
+          "minimum": -60.0,
+          "title": "Gain Db",
+          "type": "number"
+        }
+      },
+      "required": [
+        "narration_id",
+        "start_frame",
+        "duration_frames",
+        "asset"
+      ],
+      "title": "TimelineAudio",
+      "type": "object"
+    },
+    "TimelineVideo": {
+      "additionalProperties": false,
+      "properties": {
+        "shot_id": {
+          "title": "Shot Id",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "role": {
+          "default": "base",
+          "enum": [
+            "base",
+            "overlay"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "z": {
+          "default": 0,
+          "maximum": 100,
+          "minimum": -100,
+          "title": "Z",
+          "type": "integer"
+        },
+        "asset": {
+          "$ref": "#/$defs/AssetRef"
+        }
+      },
+      "required": [
+        "shot_id",
+        "start_frame",
+        "duration_frames",
+        "asset"
+      ],
+      "title": "TimelineVideo",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "timeline_spec",
+      "default": "timeline_spec",
+      "title": "Kind",
+      "type": "string"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "fps": {
+      "$ref": "#/$defs/RationalFPS"
+    },
+    "width": {
+      "exclusiveMinimum": 0,
+      "maximum": 16384,
+      "title": "Width",
+      "type": "integer"
+    },
+    "height": {
+      "exclusiveMinimum": 0,
+      "maximum": 16384,
+      "title": "Height",
+      "type": "integer"
+    },
+    "total_frames": {
+      "exclusiveMinimum": 0,
+      "title": "Total Frames",
+      "type": "integer"
+    },
+    "video": {
+      "items": {
+        "$ref": "#/$defs/TimelineVideo"
+      },
+      "minItems": 1,
+      "title": "Video",
+      "type": "array"
+    },
+    "audio": {
+      "items": {
+        "$ref": "#/$defs/TimelineAudio"
+      },
+      "title": "Audio",
+      "type": "array"
+    },
+    "subtitles": {
+      "items": {
+        "$ref": "#/$defs/SubtitleCue"
+      },
+      "title": "Subtitles",
+      "type": "array"
+    },
+    "sync": {
+      "$ref": "#/$defs/SyncRules",
+      "default": {
+        "audio_tolerance_frames": 1,
+        "subtitle_tolerance_ms": 40,
+        "allow_gap_frames": 1
+      }
+    }
+  },
+  "required": [
+    "lesson_id",
+    "fps",
+    "width",
+    "height",
+    "total_frames",
+    "video"
+  ],
+  "title": "TimelineSpec",
+  "type": "object"
+}

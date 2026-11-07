@@ -1,0 +1,478 @@
+{
+  "$defs": {
+    "AssetRef": {
+      "additionalProperties": false,
+      "description": "A file reference with content identity and provenance.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "video",
+            "audio",
+            "image",
+            "subtitle",
+            "font",
+            "data",
+            "log",
+            "json"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "author",
+            "rendered",
+            "captured",
+            "generated",
+            "external"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "kind",
+        "origin"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "BlenderSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "blender",
+          "title": "Kind",
+          "type": "string"
+        },
+        "task": {
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "task"
+      ],
+      "title": "BlenderSource",
+      "type": "object"
+    },
+    "ExpectedTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_frames": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Frames"
+        },
+        "min_frames": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Frames"
+        },
+        "max_frames": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Frames"
+        }
+      },
+      "title": "ExpectedTiming",
+      "type": "object"
+    },
+    "FrameTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_frame",
+        "duration_frames"
+      ],
+      "title": "FrameTiming",
+      "type": "object"
+    },
+    "GraphicsSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "graphics",
+          "title": "Kind",
+          "type": "string"
+        },
+        "project": {
+          "minLength": 1,
+          "title": "Project",
+          "type": "string"
+        },
+        "entry": {
+          "minLength": 1,
+          "title": "Entry",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "project",
+        "entry"
+      ],
+      "title": "GraphicsSource",
+      "type": "object"
+    },
+    "ManimSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "manim",
+          "title": "Kind",
+          "type": "string"
+        },
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "class": {
+          "minLength": 1,
+          "title": "Class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "file",
+        "class"
+      ],
+      "title": "ManimSource",
+      "type": "object"
+    },
+    "MotionCanvasSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "motion_canvas",
+          "title": "Kind",
+          "type": "string"
+        },
+        "project": {
+          "minLength": 1,
+          "title": "Project",
+          "type": "string"
+        },
+        "scene": {
+          "minLength": 1,
+          "title": "Scene",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "project",
+        "scene"
+      ],
+      "title": "MotionCanvasSource",
+      "type": "object"
+    },
+    "Presentation": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "default": "base",
+          "enum": [
+            "base",
+            "overlay"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "z": {
+          "default": 0,
+          "maximum": 100,
+          "minimum": -100,
+          "title": "Z",
+          "type": "integer"
+        }
+      },
+      "title": "Presentation",
+      "type": "object"
+    },
+    "SessionSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "session",
+          "title": "Kind",
+          "type": "string"
+        },
+        "session_spec": {
+          "minLength": 1,
+          "title": "Session Spec",
+          "type": "string"
+        },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "session_spec",
+        "session_id"
+      ],
+      "title": "SessionSource",
+      "type": "object"
+    },
+    "SimulationSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "simulation",
+          "title": "Kind",
+          "type": "string"
+        },
+        "project": {
+          "minLength": 1,
+          "title": "Project",
+          "type": "string"
+        },
+        "entry": {
+          "minLength": 1,
+          "title": "Entry",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "project",
+        "entry"
+      ],
+      "title": "SimulationSource",
+      "type": "object"
+    },
+    "SlideSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "slide",
+          "title": "Kind",
+          "type": "string"
+        },
+        "slide": {
+          "minimum": 1,
+          "title": "Slide",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "slide"
+      ],
+      "title": "SlideSource",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "shot_spec",
+      "default": "shot_spec",
+      "title": "Kind",
+      "type": "string"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "shot_id": {
+      "title": "Shot Id",
+      "type": "string"
+    },
+    "track": {
+      "enum": [
+        "slide",
+        "motion_canvas",
+        "manim",
+        "blender",
+        "session",
+        "simulation",
+        "graphics"
+      ],
+      "title": "Track",
+      "type": "string"
+    },
+    "source": {
+      "discriminator": {
+        "mapping": {
+          "blender": "#/$defs/BlenderSource",
+          "graphics": "#/$defs/GraphicsSource",
+          "manim": "#/$defs/ManimSource",
+          "motion_canvas": "#/$defs/MotionCanvasSource",
+          "session": "#/$defs/SessionSource",
+          "simulation": "#/$defs/SimulationSource",
+          "slide": "#/$defs/SlideSource"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SlideSource"
+        },
+        {
+          "$ref": "#/$defs/MotionCanvasSource"
+        },
+        {
+          "$ref": "#/$defs/ManimSource"
+        },
+        {
+          "$ref": "#/$defs/BlenderSource"
+        },
+        {
+          "$ref": "#/$defs/SessionSource"
+        },
+        {
+          "$ref": "#/$defs/SimulationSource"
+        },
+        {
+          "$ref": "#/$defs/GraphicsSource"
+        }
+      ],
+      "title": "Source"
+    },
+    "timing": {
+      "$ref": "#/$defs/FrameTiming"
+    },
+    "narration_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Narration Id"
+    },
+    "asset": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AssetRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "expected": {
+      "$ref": "#/$defs/ExpectedTiming",
+      "default": {
+        "duration_frames": null,
+        "min_frames": null,
+        "max_frames": null
+      }
+    },
+    "presentation": {
+      "$ref": "#/$defs/Presentation",
+      "default": {
+        "role": "base",
+        "z": 0
+      }
+    },
+    "metadata": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Metadata"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "shot_id",
+    "track",
+    "source",
+    "timing"
+  ],
+  "title": "ShotSpecV1",
+  "type": "object"
+}

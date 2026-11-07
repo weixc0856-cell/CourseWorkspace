@@ -181,6 +181,7 @@ class SessionSpec(StrictModel):
     environment: SessionEnvironment
     files: list[FileSpec] = Field(default_factory=list)
     commands: list[CommandSpec] = Field(min_length=1)
+    offline_commands: list[CommandSpec] = Field(default_factory=list)
     record: RecordSpec = RecordSpec()
     typing_cps: float | None = Field(None, gt=0.0, le=240.0)
 
@@ -200,7 +201,9 @@ class SessionSpec(StrictModel):
 
     @model_validator(mode="after")
     def _integrity(self):
-        ids = [command.id for command in self.commands]
+        ids = [command.id for command in self.commands] + [
+            command.id for command in self.offline_commands
+        ]
         duplicates = sorted({item for item in ids if ids.count(item) > 1})
         if duplicates:
             raise ValueError(f"duplicate command ids: {duplicates}")

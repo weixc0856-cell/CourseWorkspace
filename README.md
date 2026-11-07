@@ -85,6 +85,21 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 # VS Code 会话（E2；真实窗口 + shell integration）
 .\scripts\check-vscode-session.ps1
 
+# Python 工具链（E3；venv + 离线验证）
+.\scripts\check-python-session.ps1
+
+# Python 工具链（E3；本地 HTTP 索引网络安装）
+.\scripts\check-python-network.ps1
+
+# Rust 镜头（E4；host VS Code + Git Bash）
+.\scripts\check-rust-session.ps1
+
+# Manim 基线（E5 FFT / E6 Transformer）
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-fft/media ManimSandbox/02-fft-baseline/fft_baseline.py FFTBaseline
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-transformer/explainer/media ManimSandbox/04-transformer-explainer/transformer_explainer.py TokensScene
+
 # 三维场景任务（IR v2）
 uv run --project CourseControl course-control scene-validate `
   --task BlenderStudio/tasks/scene-system/demo-scene.json

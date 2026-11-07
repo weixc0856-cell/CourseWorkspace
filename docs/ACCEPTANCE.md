@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.1（2026-11-04）
+- **版本**：v1.2（2026-11-07）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -13,16 +13,28 @@
 # 期望：四套单测 + 课程契约（本地有课程时 5 个，干净克隆时 3 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
-最近一次执行（2026-11-04）：**`check ok`，exit 0**。
+最近一次执行（2026-11-07）：**`check ok`，exit 0**。
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 63 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 129（127 通过 + 2 跳过；含 V1-B/C 新增 63） | 127 通过，2 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **124** 个用例。
+合计 **190** 个用例（188 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+
+### 1.1 V1-B 契约命令
+
+```powershell
+uv run --project CourseControl course-control schemas-v1 --output shared/schemas
+uv run --project CourseControl course-control contract-v1-validate --kind timeline-v1 --file docs/contracts/examples/timeline.spec.json
+uv run --project CourseControl course-control e6-adapt --workspace . --manifest build/manim-transformer/e6/manifest.json --output build/manim-transformer/e6/render.manifest.v1.json
+```
+
+- `schemas-v1`：导出 7 份 V1 JSON Schema。
+- `contract-v1-validate`：按 `kind` 校验单个 V1 文件；非法输入 exit 1，未知 kind exit 2。
+- 时间换算边界测试见 `CourseControl/tests/test_timecode.py`；模型与示例测试见 `CourseControl/tests/test_contracts_v1.py`；E6 V0 只读适配见 `CourseControl/tests/test_legacy_e6.py`。
 
 ---
 
@@ -112,6 +124,63 @@
 - 执行：`executeCommand` + 立即 `read()` + `onDidEndTerminalShellExecution` 的 `exitCode`；`undefined` 判失败。
 - 录制：gdigrab 对 Electron 窗口为黑屏，改用 **PrintWindow** 逐帧 + ffmpeg rawvideo；已抽帧确认终端命令与 `hello from vs code` 输出可见。
 - 证据：`build/lesson-smoke/code/vscode_001/{result.json,vscode-result.json,validation.json,session.mp4}`；V-23/V-24 pass。
+
+### 3.1.2 Python 工具链（E3）
+
+```powershell
+.\scripts\check-python-session.ps1
+```
+
+- 场景：`uv venv` → 本地 wheel 安装 → 导入；随后在 `network: none` 的第二容器中做离线验证。
+- 证据：`build/lesson-smoke/code/python_001/{result.json,offline-result.json,validation.json}`；V-23/V-25 pass。
+- 网络演示：`check-python-network.ps1` 在本机 8899 启一个只读 wheelhouse HTTP 索引，容器经 `host.docker.internal:8899` 真实下载安装；随后仍在 `network: none` 容器做离线验证。真实 PyPI 仍被本机代理/TUN 阻断，未伪装成公网演示。
+- 等待剪辑：`trim` 已实现并验证；`check-python-session.ps1 -Record` 中 `sleep 2` 命令被剪到约 0.6 秒，成片时长从约 5 秒降到 3.27 秒。
+- 证据：`build/lesson-smoke/code/python_network_001/{result.json,offline-result.json,validation.json}`。
+
+### 3.1.3 Manim FFT 技术基线（E5）
+
+```powershell
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-fft/media ManimSandbox/02-fft-baseline/fft_baseline.py FFTBaseline
+```
+
+- 场景：`ManimSandbox/02-fft-baseline/fft_baseline.py`，两条正弦叠加与和波形。
+- 证据：`build/manim-fft/fft_baseline.mp4`（1920×1080，30 fps，7.8 s）；抽帧已确认坐标轴、两条分量与和波形。
+- 未完成：3Blue1Brown Transformer 完整复刻（E6 仅完成技术产品基线）。
+
+### 3.1.5 Transformer 产品基线（E6）
+
+```powershell
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-transformer/media ManimSandbox/03-transformer-baseline/attention_baseline.py AttentionBaseline
+```
+
+- 场景：tokens 行、query 权重柱、注意力热图。
+- 证据：`build/manim-transformer/attention_baseline.mp4`（1920×1080，30 fps，9.1 s）；抽帧已确认。
+- 边界：这是技术产品基线，不等于 3Blue1Brown 的完整风格复刻；镜头编排、旁白与复杂概念拆解仍待 E6 第二阶段。
+
+### 3.1.6 Transformer 三幕讲解（E6 第二阶段视觉）
+
+- 文件：`ManimSandbox/04-transformer-explainer/transformer_explainer.py`
+- 三个 Manim 场景：`TokensScene` / `AttentionScene` / `OutputScene`
+- 合并成片：`build/manim-transformer/transformer_explainer.mp4`（1920×1080，30 fps，22.3 s）
+- 成片：`build/manim-transformer/e6/transformer_attention_final.mp4`，33.1s，含 AAC 旁白与 mov_text 字幕。
+- 镜头：TokensScene / QKVScene / AttentionScene / OutputScene；Q/K/V 投影、scores、softmax 权重、weighted V 合成均有画面。
+- 旁白：4 段 VoxCPM2 中文旁白，逐段塞入对应镜头（6.88 / 5.60 / 5.60 / 4.32s），无溢出。
+- 字幕：`build/manim-transformer/e6/subtitles.srt`，4 条 cue 与镜头对齐。
+- 证据：`build/manim-transformer/e6/manifest.json`（场景/旁白/字幕/成片哈希与时长）。
+- 未完成：E6.5 Multi-Head、E6.6 Transformer Block、3B1B 式逐镜节奏。
+
+### 3.1.4 Rust 镜头（E4）
+
+```powershell
+.\scripts\check-rust-session.ps1
+.\scripts\check-rust-session.ps1 -Record
+```
+
+- 环境：**host VS Code + Git Bash**（Rust 1.97）。Docker Hub 的 Rust 镜像拉取被本机 TLS 阻断，未伪装成容器验证。
+- 场景：`cargo --version` + `cargo run --quiet`。
+- 证据：`build/lesson-smoke/code/rust_001/{result.json,validation.json,session.mp4}`；V-23/V-24 pass；抽帧可见 `hello from rust`。
 
 ---
 
