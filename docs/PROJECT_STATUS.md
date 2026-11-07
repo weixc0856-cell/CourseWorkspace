@@ -2,8 +2,8 @@
 
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8；同日完成全链路基线核实与计数校正）
-- **代码基线**：分支 `feat/p1-teaching-primitives` = `1e3374f`（已推送）；`origin/main` = `c2ad196`（PR #3 合并至 `876d40a`）；本地 `main` = `9ddb23f`（落后 `origin/main` 24 个提交）
-- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 203 个用例（201 通过 + 2 跳过）
+- **代码基线**：`origin/main` = `577501e`；当前分支 `feat/v1-pipeline-remote-fallback` 的功能提交 = `d95d887`（未推送）；本地 `main` 已同步 `origin/main`
+- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 223 个用例（221 通过 + 2 跳过）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -145,30 +145,31 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 ## 1. 基线核实
 
 - 核实日期：2026-11-07；工作树干净；`check.ps1` 实跑 `check ok`。
+- E6.5 的 3 个提交已合并进 `main`；无关的 `django.yml` 已删除并推送。
 
 | 项 | 事实 |
 | --- | --- |
-| 当前分支 | `feat/p1-teaching-primitives` |
-| 本地 HEAD | `1e3374f feat: E6.5 V1 契约适配与统一 RenderManifest` |
-| 远程同名分支 | `origin/feat/p1-teaching-primitives` = `1e3374f`（已推送） |
-| `origin/main` | `c2ad196 Merge pull request #3`；PR #3 合并的是 `876d40a` |
-| 未合并提交 | `919ac93` / `37152ec` / `1e3374f` 只在 feature 分支，尚未进入 `main` |
-| 本地 `main` | `9ddb23f`，落后 `origin/main` 24 个提交，未同步 |
+| 当前分支 | `feat/v1-pipeline-remote-fallback` |
+| 功能提交 | `d95d887 feat: 路径卫生、远程模型回退与 V1-D/E 兼容层`；本文件为随后的基线同步提交 |
+| `origin/main` | `577501e chore: 移除与本项目无关的 Django CI 模板` |
+| 本地 `main` | `577501e`，与 `origin/main` 同步 |
+| 未推送提交 | 当前 feature 分支含功能提交与基线同步提交，尚未推送 |
 | `d53ebd1` | 干净的初始工作流快照（无父提交）；仍是最早基线 |
 | `converge/v1` | `dd1d7f2`，完整收敛历史（含早期课程内容），**仅本地** |
 | `archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |
-| 远程内容 | `origin/main` 358 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
-| 本地 HEAD 内容 | 375 个文件；相对 `origin/main` 新增 18 个（E6.5 与 V1 适配文件），删除 1 个（`django.yml`） |
+| 远程内容 | `origin/main` 375 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
+| 本地 HEAD 内容 | 387 个文件；相对 `origin/main` 新增 12 个（远程回退、V1-D/E、路径检查与配置示例） |
 
-**说明**：`d53ebd1` 是干净快照；当前代码已经过 E0–E6.5 与 V1-B/C/F 增量，不再等同于 `d53ebd1`。
+**说明**：`d53ebd1` 是干净快照；当前代码已经过 E0–E6.5、V1-B/C/D/E 与远程回退增量。
 
 **仓库元数据**：Description 与 9 个 Topics 已通过 `gh repo edit` 写入并回读确认。
 
 **待处理（未擅自修改）**：
 
-1. `origin/main` 仍含 `.github/workflows/django.yml`（GitHub 通用 Django CI 模板，与本项目无关，无 `requirements.txt` / `manage.py`），每次推送都会运行并失败；建议在 GitHub 删除。
-2. 最新 3 个 E6.5 提交已推送到 feature 分支，但尚未合并 `main`；需要 PR/合并。
-3. 本地 `main` 停在 `9ddb23f` 且落后 24 个提交；确定合并策略后再同步，不要直接 `reset --hard`。
+1. 当前 feature 分支尚未推送/合并到 `main`；需要 PR 或直接合并。
+2. V1-D 的 Session runner 原生写 V1、`ShotSpec` 扩展 `session/simulation/graphics` 未做。
+3. V1-E 的 Remotion 直接消费 `TimelineSpec` 未做；目前仍读 `shots.json`。
+4. 真实课程仍缺 8 段 Motion 导出；`01-transformer-demo` 未构建。
 
 ---
 
@@ -251,11 +252,11 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 
 | 编号 | 冲突/偏差 | 证据 | 处理建议 |
 | --- | --- | --- | --- |
-| C-01 | 远程 `main` 含无关的 `django.yml` CI | `origin/main = c2ad196`；工作流引用 `requirements.txt`、`manage.py` | 在 GitHub 删除；如需 CI，另写本项目工作流 |
-| C-02 | 本地 `main` 落后 `origin/main` 24 个提交 | `git rev-list --left-right --count main...origin/main` | 确定合并策略后再同步；不要直接 `reset --hard` |
+| C-01 | 远程 `main` 含无关的 `django.yml` CI | 已删除并推送（`577501e`） | **已解决**；如需 CI，另写本项目工作流 |
+| C-02 | 本地 `main` 落后 `origin/main` | 已快进同步到 `577501e` | **已解决** |
 | C-03 | PRD FR-10 要求“产物存在且**校验通过**才算完成”；`stage_done` 只检查状态 + 文件存在 | `ModelingStudio/src/modeling_studio/job.py::stage_done` | 当前产物为 JSON/Markdown，无独立校验器；建议在 PRD 中把措辞改为“产物存在且可由后续阶段解析”，或补校验 |
 | C-04 | `ManimSandbox/requirements.txt` 与 `pyproject.toml` 重复声明依赖 | 两个文件同时存在 | 保留 `pyproject.toml`，把 `requirements.txt` 降级为可选导出，或删除 |
-| C-05 | 最新 3 个 E6.5 提交只在 feature 分支 | `1e3374f` 不是 `origin/main` 的祖先；`git log 1e3374f..origin/main` 有 4 个提交 | 发起 PR 合并；合并前处理 `django.yml` |
+| C-05 | 最新 E6.5 提交只在 feature 分支 | 已合并进 `origin/main`（`b230306`） | **已解决**；当前新增工作仍需合并 |
 
 ---
 
