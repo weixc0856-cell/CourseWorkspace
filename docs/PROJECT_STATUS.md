@@ -1,9 +1,9 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8；同日完成全链路基线核实与计数校正）
+- **最近更新**：2026-11-08（四后端镜头生成对比、`thinking=disabled` 修复与计数校正）
 - **代码基线**：`origin/main` = `577501e`；当前分支 `feat/v1-pipeline-remote-fallback` 的功能提交 = `d95d887`（未推送）；本地 `main` 已同步 `origin/main`
-- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 240 个用例（238 通过 + 2 跳过）
+- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 328 个用例（326 通过 + 2 跳过）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -131,16 +131,43 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | --- | --- | --- |
 | 本机路径清理 | `e65.py`、`session_runner.py`、`vscode_runner.py`、文档与示例 | 去掉硬编码盘符；本机路径只存在于被忽略的 `config/*.yaml` / `.env` |
 | 路径卫生检查 | `scripts/check_paths.py`、`scripts/check-paths.ps1` | 已接入 `check.ps1`；本轮 `path check ok` |
-| 远程回退 | `shared/ai_runtime/src/ai_runtime/remote.py`、`routing.py` | 本地优先；8080 占用/启动失败/锁超时才按配置回退；任务记录写 `provider` |
+| AI 后端/回退 | `claude_code.py`、`remote.py`、`routing.py` | Claude Code 默认；本地/远程仅在显式允许时回退；任务记录写 `provider` |
 | ModelingStudio 接入 | `config.py`、`server.py`、`llm.py`、四个阶段模块 | 真实值由本地 `.env` / `config/model-routing.yaml` 提供；视觉阶段使用 `deepseek-flash`，不降级到文本模型 |
 | V1-E 兼容层 | `CourseControl/src/course_control/v1_timeline.py` | `shots.json ↔ TimelineSpec` 双向；`collect` 已写 `contracts/timeline.spec.json`；Remotion 仍读旧文件 |
 | V1-D 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py` | 现有 `evidence.json` → `EvidenceManifestV1`；缺失录屏不伪造 |
-| 测试 | 各套新增用例 | 全项目 **240 个用例（238 通过 + 2 跳过）** |
+| 测试 | 各套新增用例 | 全项目 **328 个用例（326 通过 + 2 跳过）** |
 | 远程真实冒烟 | 本地 `.env`、`DeepSeek-API` | 2026-11-07 可达；`deepseek-flash` 文本返回 `OK`，图片返回“红色”；密钥未落盘、未打印 |
 | DeepSeek 模型策略 | `remote.py`、ModelingStudio `config.py`、ContentQA `config.py`、测试 | 所有 DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 在三个配置层均被拒绝 |
 | 环境文件 | 本地 `.env`（忽略）、`.env.example`（跟踪） | 通用 `REMOTE_*` / DeepSeek `DEEPSEEK_*`；key 只从系统环境变量读取，不落盘；仓库只保留不含 key 的参考文件 |
 
 V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩展 `session/simulation/graphics`、Remotion 直接消费 `TimelineSpec`。本轮只做只读适配与兼容桥接，未改 `shots.json` 的消费方。
+
+---
+
+### 0.10 2026-11-07 R1 混合动画与课程生产闭环（进行中）
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| R1-0 基线 | `docs/R1-基线报告.md` | 已完成；`check ok`；240 用例基线 |
+| R1-1 引擎验证 | `ManimSandbox/00-r1-smoke/`、`RemotionStudio/src/compositions/R1Smoke.tsx`、`docs/R1-1-引擎验证报告.md` | Manim 3.8s / Blender Eevee 5s / Remotion 5s 真实出片；Motion Canvas 无 headless CLI |
+| R1-2 性能基准 | `scripts/benchmark_render.py`、`docs/R1-性能基准报告.md`、`build/r1/benchmark/` | Eevee 20.92s / Cycles CPU 346.56s / Cycles oneAPI 291.78s（2s 片段）；Manim final 5.38s；Remotion 19.66s；QSV 5.34s vs libx264 2.91s |
+| 时长契约 | `duration.py`、V-26/V-27 | 已实现；`lesson-authoring` 夹具 |
+| 引擎路由 | `engine_router.py` | 已实现；内容决定引擎 |
+| TimelineSpec 合成 | `CourseTimeline.tsx`、`stage-assets.mjs --timeline`、`adapters/remotion.py` | 已实现；`build/r1/timeline-smoke.mp4` 6.016s 真实合成 |
+| 输入/草稿/批准 | `authoring/`、`CourseControl/prompts/` | 已实现；Transformer 候选已批准并提升 |
+| Transformer 内容 | `lessons/01-transformer-demo/` | 12 页 / 1200s；英文口播 2964 词；5 个动画镜头 |
+| 动画 | `ManimSandbox/01-transformer-demo/`、`BlenderStudio/scenes|tasks/01-transformer-demo/` | 4 个 Manim 已测试渲染；Blender shot 25s 已真实渲染 |
+| 整课旁白 | `narration_course.py`、`scripts/generate_voice_ref.py` | 已实现；已生成英文 voice-design 参考音；3 页英文样片进行中 |
+| 双语字幕 | `subtitles.py`、`authoring/glossary.yaml` | 已实现；计划版 356 cue，4 条临界警告；实测后严格重排 |
+| 双版本成片 | `adapters/burn.py`、V-28 | 已实现；真实 5s ASS 烧录 pass |
+| Code2Video | `CodeVideoStudio/`、`adapters/code_video.py`、`code_video_qc.py` | 生产化目录；30s Canvas 镜头，check_video OK，900/900 帧哈希一致；adapter 真实跑通；QC 门输出 `*.qc.json` + `*.contact.jpg`（`build/code-video-qc2/`） |
+| HyperFrames POC | `CodeVideoStudio/backends/hyperframes/hf-poc/` | 10s HTML/GSAP，check 0 error/0 warning，27.1s 渲染；仅作为可选 HTML 后端 |
+| VideoZero POC | `build/videozero-poc/`（临时） | agent 连接/seek/screenshot 成功；image sequence 自动导出 3007 PNG → ffmpeg 100.2s MP4；FFmpeg exporter 直接导出挂起 |
+| Claude Code 后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`config/claude-code.example.yaml` | 课程文本/字幕/ContentQA/ModelingStudio 文本规划/Code2Video 默认走 Claude Code；文本阶段 `--tools=`；任务记录 `provider=claude_code`；真实 smoke 通过 |
+| 技术雷达 | `docs/技术雷达-视频生产.md`、`docs/课程生产交付物规范.md`、`docs/评估-DeepSeek Harness.md`、`docs/评估-四后端对比.md` | 评分/许可证/硬门槛/交付归档规范；Claude Code/dsh 对比与受控代理决策（不接入运行时） |
+| 测试 | 五套单测 | **328 个用例（326 通过 + 2 跳过）**：CourseControl 216（214+2）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11 |
+
+**暂缓**：具体课件内容、整课 TTS、实测字幕与最终成片（按用户要求先做仓库/接入优化）。**已完成**：Code2Video P2（含 QC 门）、HyperFrames POC、VideoZero POC、技术雷达与交付物规范、DeepSeek Harness CLI 对比、四后端镜头生成对比、Claude Code 全量默认后端接入（authoring/字幕/ContentQA/规划/镜头）。
 
 ---
 
@@ -213,7 +240,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 240 个用例（238 通过 + 2 跳过；138+33+41+17+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 328 个用例（326 通过 + 2 跳过；216+33+50+18+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |

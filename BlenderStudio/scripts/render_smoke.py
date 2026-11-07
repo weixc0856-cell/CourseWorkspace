@@ -31,12 +31,14 @@ def main():
     fps = int(get_arg(argv, "--fps", "30"))
     seconds = float(get_arg(argv, "--seconds", "5"))
     samples = int(get_arg(argv, "--samples", "8"))
+    device = get_arg(argv, "--device", "CPU").upper()
 
     task = {
         "schema_version": 1,
         "lesson": lesson,
         "scene": "procedural_cube",
         "engine": get_arg(argv, "--engine", "BLENDER_EEVEE"),
+        "device": device,
         "resolution": [width, height],
         "fps": fps,
         "frames": max(1, round(seconds * fps)),

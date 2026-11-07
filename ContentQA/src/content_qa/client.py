@@ -6,6 +6,8 @@ import time
 
 import httpx
 
+from ai_runtime import ClaudeCodeError, ClaudeCodeUnavailable, claude_code_complete
+
 from .config import ReviewConfig
 
 
@@ -41,13 +43,15 @@ class OnlineClient:
     files. Requests use ``trust_env=False`` so a local proxy cannot intercept.
     """
 
-    def __init__(self, config: ReviewConfig, api_key: str):
+    def __init__(self, config: ReviewConfig, api_key: str | None = None):
         self.config = config
         self.api_key = api_key
         self.last_raw = ""
         self._json_mode = True
 
     def chat_json(self, messages: list[dict], *, max_tokens: int | None = None) -> tuple[dict, dict]:
+        if self.config.backend == "claude_code":
+            return self._claude_json(messages)
         payload = {
             "model": self.config.model.model,
             "messages": messages,
@@ -70,6 +74,34 @@ class OnlineClient:
                 if attempt + 1 < attempts:
                     time.sleep(2.0 * (attempt + 1))
         raise OnlineError(f"online model request failed after {attempts} attempt(s): {last_error}")
+
+    def _claude_json(self, messages: list[dict]) -> tuple[dict, dict]:
+        cc = self.config.claude_code
+        if cc is None:
+            raise OnlineError("claude-code backend is not configured")
+        system = "\n\n".join(
+            str(item.get("content", "")) for item in messages if item.get("role") == "system"
+        )
+        body = "\n\n".join(
+            f"{str(item.get('role', 'user')).upper()}:\n{item.get('content', '')}"
+            for item in messages
+            if item.get("role") != "system"
+        )
+        body += "\n\nReturn only one JSON object. No markdown fences, no commentary."
+        try:
+            result = claude_code_complete(
+                cc,
+                body,
+                system=system or None,
+                timeout_s=self.config.model.timeout_s,
+                tools=False,
+            )
+        except ClaudeCodeUnavailable as exc:
+            raise OnlineError(str(exc)) from exc
+        except ClaudeCodeError as exc:
+            raise OnlineError(str(exc)) from exc
+        self.last_raw = result.content
+        return extract_json(result.content), dict(result.usage)
 
     def _post(self, payload: dict) -> tuple[dict, dict]:
         if self._json_mode:

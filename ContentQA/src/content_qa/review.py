@@ -154,16 +154,29 @@ def run_review(
         _finish(report, report_path)
         return report, report_path
 
-    api_key = resolve_api_key(config)
-    if not api_key:
-        report = _blocked(
-            lesson,
-            lesson_dir,
-            config,
-            f"missing credentials: set environment variable {config.model.api_key_env}",
-        )
-        _finish(report, report_path)
-        return report, report_path
+    if config.backend == "claude_code":
+        cc = config.claude_code
+        if cc is None or not cc.enabled or not cc.available():
+            detail = (
+                "claude-code is not configured"
+                if cc is None or not cc.enabled
+                else f"claude executable not found: {cc.executable}"
+            )
+            report = _blocked(lesson, lesson_dir, config, detail)
+            _finish(report, report_path)
+            return report, report_path
+        api_key = None
+    else:
+        api_key = resolve_api_key(config)
+        if not api_key:
+            report = _blocked(
+                lesson,
+                lesson_dir,
+                config,
+                f"missing credentials: set environment variable {config.model.api_key_env}",
+            )
+            _finish(report, report_path)
+            return report, report_path
 
     slides_path = lesson_dir / "slides.md"
     notes_path = lesson_dir / "lecture_notes.md"

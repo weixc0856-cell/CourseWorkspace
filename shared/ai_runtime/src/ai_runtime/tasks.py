@@ -69,7 +69,7 @@ class TaskRecord:
             raise ValueError(f"unknown task status: {self.status}")
         if not self.task_id or not self.task_type:
             raise ValueError("task_id and task_type are required")
-        if self.provider not in {"local", "remote"}:
+        if self.provider not in {"local", "remote", "claude_code"}:
             raise ValueError(f"unknown model provider: {self.provider}")
 
     def as_dict(self) -> dict:
@@ -186,7 +186,7 @@ def schema() -> dict:
             "task_id": {"type": "string", "minLength": 1},
             "task_type": {"type": "string", "minLength": 1},
             "assigned_model": {"type": "string", "minLength": 1},
-            "provider": {"enum": ["local", "remote"]},
+            "provider": {"enum": ["local", "remote", "claude_code"]},
             "status": {"enum": list(STATUSES)},
             "input_artifacts": {"type": "array", "items": {"type": "string"}},
             "output_artifacts": {"type": "array", "items": {"type": "string"}},

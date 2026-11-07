@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from ai_runtime import load_env_file
+from ai_runtime import ClaudeCodeConfig, load_env_file
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -148,9 +148,12 @@ class RuntimeConfig(BaseModel):
 
 
 class WorkflowConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     schema_version: Literal[1] = 1
+    backend: Literal["auto", "local_first", "claude_code"] = "auto"
+    claude_code_fallback: Literal["none", "local_first"] = "none"
+    claude_code: ClaudeCodeConfig | None = None
     llm: LLMConfig = LLMConfig()
     remote: RemoteSettings = RemoteSettings()
     server: ServerConfig
@@ -331,6 +334,24 @@ def load_config(path: Path | None = None) -> WorkflowConfig:
         if remote_data:
             data["remote"] = {**remote_data, **(data.get("remote") or {})}
     data["remote"] = _apply_remote_env(dict(data.get("remote") or {}))
+    cc_path = (
+        config_path.parents[2] / "config" / "claude-code.yaml"
+        if len(config_path.parents) >= 3
+        else None
+    )
+    claude_code = None
+    if cc_path is not None and cc_path.is_file():
+        try:
+            cc_data = yaml.safe_load(cc_path.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as exc:
+            raise ConfigError(f"invalid YAML in {cc_path}: {exc}") from exc
+        if isinstance(cc_data, dict):
+            claude_code = ClaudeCodeConfig.from_mapping(cc_data)
+    if str(data.get("backend", "auto")) == "auto":
+        data["backend"] = (
+            "claude_code" if claude_code and claude_code.enabled else "local_first"
+        )
+    data["claude_code"] = claude_code
     try:
         config = WorkflowConfig.model_validate(data)
     except ValidationError as exc:

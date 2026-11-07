@@ -62,4 +62,69 @@ export type ShotsFile = {
   annotations?: Annotation[];
   narration?: {path: string; duration_s: number} | null;
   subtitles?: {path: string; cues: number} | null;
+  captions?: boolean;
+};
+
+export type RationalFPS = {
+  fps_num: number;
+  fps_den: number;
+};
+
+export type TimelineAsset = {
+  path: string;
+  sha256?: string;
+  bytes?: number;
+  kind: string;
+  origin?: string;
+  version?: string | null;
+};
+
+export type TimelineVideo = {
+  shot_id: string;
+  start_frame: number;
+  duration_frames: number;
+  role: 'base' | 'overlay';
+  z?: number;
+  asset: TimelineAsset;
+  track?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+export type TimelineAudio = {
+  narration_id: string;
+  start_frame: number;
+  duration_frames: number;
+  asset: TimelineAsset;
+  gain_db?: number;
+};
+
+export type TimelineCue = {
+  index: number;
+  start_frame: number;
+  end_frame: number;
+  text: string;
+};
+
+export type TimelineSpec = {
+  schema_version: number;
+  kind: 'timeline_spec';
+  lesson_id: string;
+  fps: RationalFPS;
+  width: number;
+  height: number;
+  total_frames: number;
+  video: TimelineVideo[];
+  audio: TimelineAudio[];
+  subtitles: TimelineCue[];
+  sync?: {
+    audio_tolerance_frames?: number;
+    subtitle_tolerance_ms?: number;
+    allow_gap_frames?: number;
+  };
+  metadata?: {
+    annotations?: Annotation[];
+    legacy_annotations?: Annotation[];
+    [key: string]: unknown;
+  } | null;
+  captions?: boolean;
 };

@@ -16,6 +16,13 @@ from .budget import (
     estimate_text_tokens,
     plan_budget,
 )
+from .claude_code import (
+    ClaudeCodeConfig,
+    ClaudeCodeError,
+    ClaudeCodeResult,
+    ClaudeCodeUnavailable,
+    complete as claude_code_complete,
+)
 from .env import load_env_file
 from .locks import FileLock, LockInfo, LockTimeout, pid_alive
 from .remote import (
@@ -58,6 +65,11 @@ __all__ = [
     "LockTimeout",
     "pid_alive",
     "load_env_file",
+    "ClaudeCodeConfig",
+    "ClaudeCodeError",
+    "ClaudeCodeResult",
+    "ClaudeCodeUnavailable",
+    "claude_code_complete",
     "RemoteAuthError",
     "RemoteConfig",
     "RemoteError",

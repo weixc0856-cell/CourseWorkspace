@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 
 from .contracts import Artifact, BuildReport, CheckRecord, StageRecord, Status
+from .duration import resolve
 from .paths import LessonPaths, path_problem
 from .utils import probe_media, run_command, which_command
 
@@ -116,7 +117,7 @@ class ReportBuilder:
     def _applicability_errors(self) -> list[str]:
         errors: list[str] = []
         stages = {stage.name: stage.status for stage in self.stages}
-        for engine in ("motion_canvas", "manim", "blender"):
+        for engine in ("motion_canvas", "manim", "blender", "code_video"):
             name = f"render:{engine}"
             status = stages.get(name)
             if (
@@ -137,6 +138,15 @@ class ReportBuilder:
             errors.append("V-16 must be not_applicable when subtitles are disabled")
         if self.paths.lesson.compose.mode == "deck" and checks.get("V-20") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
             errors.append("V-20 must be not_applicable in deck mode")
+        if resolve(self.paths.lesson) is None and checks.get("V-27") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
+            errors.append("V-27 must be not_applicable when no duration policy is declared")
+        burn_in = self.paths.lesson.subtitles.enabled and self.paths.lesson.subtitles.render == "burn_in"
+        if not burn_in and checks.get("V-28") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
+            errors.append("V-28 must be not_applicable when burn-in is disabled")
+        if not (self.paths.lesson.narration.enabled and self.paths.lesson.narration.timing == "measured") and checks.get("V-30") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
+            errors.append("V-30 must be not_applicable unless measured narration is enabled")
+        if not (self.paths.lesson.subtitles.enabled and self.paths.lesson.subtitles.render == "burn_in") and checks.get("V-31") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
+            errors.append("V-31 must be not_applicable unless burn-in subtitles are enabled")
         return errors
 
     def finalize(self) -> BuildReport:

@@ -124,7 +124,8 @@
           "enum": [
             "motion_canvas",
             "manim",
-            "blender"
+            "blender",
+            "code_video"
           ],
           "title": "Engine",
           "type": "string"
@@ -174,6 +175,44 @@
           ],
           "default": null,
           "title": "Note"
+        },
+        "engine_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Engine Profile"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inputs"
+        },
+        "validation": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Validation"
         }
       },
       "required": [

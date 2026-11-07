@@ -416,6 +416,10 @@ def narrate_command(
     voice_ref: Path | None = typer.Option(None, "--voice-ref"),
     prompt_text: str | None = typer.Option(None, "--prompt-text"),
     prompt_text_file: Path | None = typer.Option(None, "--prompt-text-file"),
+    mode: str = typer.Option("prompt_reference", "--mode"),
+    style: str | None = typer.Option(None, "--style"),
+    reference_wav: Path | None = typer.Option(None, "--reference-wav"),
+    text_frontend: bool = typer.Option(True, "--text-frontend/--no-text-frontend"),
     output: Path | None = typer.Option(None, "--out"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     runtime_dir: Path | None = typer.Option(None, "--runtime-dir"),
@@ -444,21 +448,35 @@ def narrate_command(
             raise typer.Exit(2)
         text = text_file.read_text(encoding="utf-8")
     if voice_ref is None:
-        value = tts.get("voice_ref")
+        value = tts.get("voice_ref_en") or tts.get("voice_ref")
         if not value:
             typer.echo("provide --voice-ref or config tts.voice_ref", err=True)
             raise typer.Exit(2)
         voice_ref = Path(value)
+    reference_wav = reference_wav or voice_ref
     if prompt_text is None:
         if prompt_text_file is not None:
             prompt_text = prompt_text_file.read_text(encoding="utf-8").strip()
         else:
-            prompt_text = str(tts.get("prompt_text") or "").strip() or None
+            default_prompt = (
+                tts.get("prompt_text_en")
+                if tts.get("voice_ref_en")
+                else tts.get("prompt_text")
+            )
+            prompt_text = str(default_prompt or "").strip() or None
     output = output or (
         workspace / "build" / lesson / "narration" / "segments" / f"{segment_id}.wav"
     )
     meta_path = output.with_suffix(".meta.json")
-    key = segment_cache_key(text, voice_ref, prompt_text or "")
+    key = segment_cache_key(
+        text,
+        voice_ref,
+        prompt_text or "",
+        mode=mode,
+        style=style,
+        speed=speed,
+        text_frontend=text_frontend,
+    )
     if not force and output.is_file() and meta_path.is_file():
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         if meta.get("cache_key") == key:
@@ -483,6 +501,10 @@ def narrate_command(
                 prompt_text,
                 output,
                 speed=speed,
+                mode=mode,
+                reference_wav=reference_wav,
+                style=style,
+                text_frontend=text_frontend,
             )
     except TtsError as exc:
         typer.echo(f"TTS error: {exc}", err=True)
@@ -502,6 +524,10 @@ def narrate_command(
         "model": "VoxCPM2",
         "timesteps": 10,
         "speed": speed,
+        "mode": mode,
+        "style": style,
+        "reference_wav": str(reference_wav),
+        "text_frontend": text_frontend,
         "output": str(output),
         **details,
     }
@@ -638,6 +664,391 @@ def scene_run_command(
     typer.echo(f"status: {result.status}")
     typer.echo(f"manifest: {result.manifest_path}")
     raise typer.Exit(0 if result.status == "pass" else 1)
+
+
+@app.command("ingest")
+def ingest_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    source: str = typer.Option(..., "--source"),
+    kind: str = typer.Option("auto", "--kind"),
+    source_id: str | None = typer.Option(None, "--id"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Fetch/copy one source into lessons/<slug>/authoring/sources/."""
+    from .authoring.ingest import IngestError, ingest
+
+    try:
+        entry = ingest(
+            workspace.resolve(),
+            (lesson_dir / lesson).resolve(),
+            source,
+            kind=kind,
+            source_id=source_id,
+        )
+    except IngestError as exc:
+        typer.echo(f"ingest failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"source: {entry.id} ({entry.kind})")
+    typer.echo(f"local: {entry.local_path}")
+    typer.echo(f"sha256: {entry.sha256}")
+
+
+@app.command("digest")
+def digest_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+) -> None:
+    """Build a deterministic source digest with stable citation refs."""
+    from .authoring.digest import build_digest
+
+    try:
+        digest = build_digest((lesson_dir / lesson).resolve())
+    except (FileNotFoundError, ValueError) as exc:
+        typer.echo(f"digest failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"sources: {len(digest.sources)}")
+    typer.echo(f"sections: {len(digest.sections)}")
+    typer.echo(f"digest: {digest.lesson}")
+
+
+def _authoring_client(workspace: Path, start_service: bool, remote_only: bool = False):
+    from .authoring.llm import AuthoringClient, AuthoringConfig
+
+    return AuthoringClient(
+        AuthoringConfig.load(workspace.resolve()),
+        start_service=start_service,
+        remote_only=remote_only,
+    )
+
+
+def _load_authoring(lesson_dir: Path, name: str, model_type):
+    path = lesson_dir.resolve() / "authoring" / name
+    if not path.is_file():
+        typer.echo(f"missing approved artifact: {path}", err=True)
+        raise typer.Exit(1)
+    return model_type.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+def _run_authoring(action) -> None:
+    from .authoring.llm import AuthoringBlocked, AuthoringError
+
+    try:
+        action()
+    except AuthoringBlocked as exc:
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
+    except (AuthoringError, FileNotFoundError, ValueError) as exc:
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command("brief")
+def brief_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
+    remote: bool = typer.Option(False, "--remote"),
+) -> None:
+    """Generate a course brief candidate from the approved source digest."""
+    from .authoring.digest import load_digest
+    from .authoring.pipeline import generate_brief
+
+    def action() -> None:
+        root = (lesson_dir / lesson).resolve()
+        digest = load_digest(root / "authoring" / "source-digest.json")
+        with _authoring_client(workspace, start_service, remote_only=remote) as client:
+            brief = generate_brief(client, workspace.resolve(), root, digest)
+        typer.echo(f"brief: {brief.lesson} ({len(brief.objectives)} objectives)")
+
+    _run_authoring(action)
+
+
+@app.command("outline")
+def outline_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
+    remote: bool = typer.Option(False, "--remote"),
+) -> None:
+    """Generate an outline candidate from the approved brief."""
+    from .authoring.digest import load_digest
+    from .authoring.models import Brief
+    from .authoring.pipeline import generate_outline
+
+    def action() -> None:
+        root = (lesson_dir / lesson).resolve()
+        digest = load_digest(root / "authoring" / "source-digest.json")
+        brief = _load_authoring(root, "brief.json", Brief)
+        with _authoring_client(workspace, start_service, remote_only=remote) as client:
+            outline = generate_outline(client, workspace.resolve(), root, digest, brief)
+        typer.echo(f"outline: {len(outline.pages)} pages")
+
+    _run_authoring(action)
+
+
+@app.command("script")
+def script_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
+    remote: bool = typer.Option(False, "--remote"),
+) -> None:
+    """Generate the English emotional narration script candidate."""
+    from .authoring.digest import load_digest
+    from .authoring.models import Outline
+    from .authoring.pipeline import generate_script
+
+    def action() -> None:
+        root = (lesson_dir / lesson).resolve()
+        digest = load_digest(root / "authoring" / "source-digest.json")
+        outline = _load_authoring(root, "outline.json", Outline)
+        with _authoring_client(workspace, start_service, remote_only=remote) as client:
+            script = generate_script(client, workspace.resolve(), root, digest, outline)
+        typer.echo(f"script: {len(script.pages)} pages")
+
+    _run_authoring(action)
+
+
+@app.command("content-draft")
+def content_draft_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
+    remote: bool = typer.Option(False, "--remote"),
+) -> None:
+    """Generate candidate slides, notes and storyboard from approved outline/script."""
+    from .authoring.digest import load_digest
+    from .authoring.models import NarrationScript, Outline
+    from .authoring.pipeline import generate_content
+
+    def action() -> None:
+        root = (lesson_dir / lesson).resolve()
+        digest = load_digest(root / "authoring" / "source-digest.json")
+        outline = _load_authoring(root, "outline.json", Outline)
+        script = _load_authoring(root, "narration.script.json", NarrationScript)
+        with _authoring_client(workspace, start_service, remote_only=remote) as client:
+            paths = generate_content(
+                client, workspace.resolve(), root, digest, outline, script
+            )
+        for name, path in paths.items():
+            typer.echo(f"{name}: {path}")
+
+    _run_authoring(action)
+
+
+@app.command("author-accept")
+def author_accept_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    kind: str = typer.Option(..., "--kind"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Human gate: promote a candidate artifact and record its sha256."""
+    from .authoring.pipeline import accept_artifact, accept_content
+
+    root = (lesson_dir / lesson).resolve()
+    try:
+        if kind == "content":
+            written = accept_content(workspace.resolve(), root)
+        else:
+            written = accept_artifact(workspace.resolve(), root, kind)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"accept failed: {exc}", err=True)
+        raise typer.Exit(1)
+    for path in written:
+        typer.echo(f"accepted: {path}")
+
+
+@app.command("narration-build")
+def narration_build_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    mode: str | None = typer.Option(None, "--mode"),
+    start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
+    force: bool = typer.Option(False, "--force"),
+    only_segment: str | None = typer.Option(None, "--segment-id"),
+    sample_pages: int = typer.Option(0, "--sample-pages", min=0),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+    wait_timeout_s: int = typer.Option(1800, "--wait-timeout-s"),
+) -> None:
+    """Synthesize the whole course narration and write measured page spans."""
+    from .authoring.models import NarrationScript
+    from .narration_course import (
+        NarrationCourseBlocked,
+        NarrationCourseError,
+        dry_run as estimate,
+        synthesize_course,
+    )
+    from .authoring.pipeline import assert_approved
+
+    workspace = workspace.resolve()
+    root = (lesson_dir / lesson).resolve()
+    try:
+        paths = LessonPaths.load(workspace, root)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    script_relative = (
+        paths.lesson.authoring.script
+        if paths.lesson.authoring and paths.lesson.authoring.script
+        else "authoring/narration.script.json"
+    )
+    script_path = root / script_relative
+    if not script_path.is_file():
+        typer.echo(f"script not found: {script_path}", err=True)
+        raise typer.Exit(1)
+    script = NarrationScript.model_validate(
+        json.loads(script_path.read_text(encoding="utf-8"))
+    )
+    if dry_run:
+        info = estimate(script)
+        for key, value in info.items():
+            typer.echo(f"{key}: {value}")
+        raise typer.Exit(0)
+    try:
+        assert_approved(root, script_relative)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"script is not approved: {exc}", err=True)
+        raise typer.Exit(1)
+    if mode:
+        paths.lesson.narration.mode = mode
+    try:
+        meta = synthesize_course(
+            workspace,
+            paths,
+            script,
+            start_service=start_service,
+            wait_timeout_s=wait_timeout_s,
+            force=force,
+            only_segment=only_segment,
+            sample=sample_pages > 0,
+            page_limit=sample_pages or None,
+        )
+    except NarrationCourseBlocked as exc:
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
+    except (NarrationCourseError, ContractError) as exc:
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"segments: {meta['totals']['segments']} (cache hits: {meta['totals']['cache_hits']})")
+    typer.echo(f"audio: {meta['assembly']['duration_s']} s")
+    if sample_pages:
+        typer.echo(f"sample: {paths.build_root / 'narration' / 'sample' / 'sample.wav'}")
+    else:
+        typer.echo(f"meta: {paths.build_root / 'narration' / 'narration.meta.json'}")
+
+
+@app.command("subtitles-build")
+def subtitles_build_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    glossary: Path | None = typer.Option(None, "--glossary"),
+    planned: bool = typer.Option(False, "--planned"),
+    start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
+    remote: bool = typer.Option(False, "--remote"),
+) -> None:
+    """Build a bilingual subtitle draft from measured narration."""
+    from .authoring.models import NarrationScript
+    from .authoring.pipeline import assert_approved
+    from .subtitles import SubtitleBlocked, SubtitleError, build_subtitles
+
+    workspace = workspace.resolve()
+    root = (lesson_dir / lesson).resolve()
+    try:
+        paths = LessonPaths.load(workspace, root)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    script_relative = (
+        paths.lesson.authoring.script
+        if paths.lesson.authoring and paths.lesson.authoring.script
+        else "authoring/narration.script.json"
+    )
+    script_path = root / script_relative
+    meta_path = paths.build_root / "narration" / "narration.meta.json"
+    if not script_path.is_file() or (not planned and not meta_path.is_file()):
+        typer.echo("approved script and narration.meta.json are required (or use --planned)", err=True)
+        raise typer.Exit(1)
+    script = NarrationScript.model_validate(
+        json.loads(script_path.read_text(encoding="utf-8"))
+    )
+    meta = None if planned else json.loads(meta_path.read_text(encoding="utf-8"))
+    try:
+        if not planned:
+            assert_approved(root, script_relative)
+        with _authoring_client(workspace, start_service, remote_only=remote) as client:
+            draft, srt_path = build_subtitles(
+                workspace, paths, script, meta, client,
+                glossary_path=glossary, strict=not planned,
+            )
+    except SubtitleBlocked as exc:
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
+    except (SubtitleError, Exception) as exc:  # noqa: BLE001
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"cues: {len(draft.cues)}")
+    if draft.counts.get("problems"):
+        typer.echo(f"warnings: {draft.counts['problems']} cue policy issues (planned draft)")
+    typer.echo(f"draft: {srt_path}")
+
+
+@app.command("subtitles-accept")
+def subtitles_accept_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Human gate: promote the bilingual draft into lessons/<slug>/subtitles.srt."""
+    from .subtitles import SubtitleError, accept_subtitles
+
+    workspace = workspace.resolve()
+    root = (lesson_dir / lesson).resolve()
+    try:
+        paths = LessonPaths.load(workspace, root)
+        target = accept_subtitles(workspace, paths)
+    except (ContractError, SubtitleError, Exception) as exc:  # noqa: BLE001
+        typer.echo(f"accept failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"accepted: {target}")
+
+
+@app.command("burn-subs")
+def burn_subs_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    encoder: str = typer.Option("auto", "--encoder"),
+) -> None:
+    """Burn the generated ASS subtitles onto the clean master."""
+    from .adapters.burn import burn_subtitles
+
+    workspace = workspace.resolve()
+    root = (lesson_dir / lesson).resolve()
+    try:
+        paths = LessonPaths.load(workspace, root)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if encoder not in ("auto", "qsv", "libx264"):
+        typer.echo("--encoder must be auto, qsv or libx264", err=True)
+        raise typer.Exit(2)
+    outcome = burn_subtitles(paths, encoder=encoder)
+    for output in outcome.outputs:
+        typer.echo(f"output: {output}")
+    for warning in outcome.warnings:
+        typer.echo(f"warning: {warning}")
+    for error in outcome.errors:
+        typer.echo(f"error: {error}", err=True)
+    typer.echo(f"status: {outcome.status.value}")
+    raise typer.Exit(0 if outcome.status.value == "pass" else 1)
 
 
 if __name__ == "__main__":

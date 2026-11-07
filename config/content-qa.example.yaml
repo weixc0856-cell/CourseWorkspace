@@ -1,5 +1,8 @@
 schema_version: 1
 
+# "claude_code" (default) or "api" for the direct OpenAI-compatible path.
+backend: "claude_code"
+
 # Copy to config/content-qa.yaml (ignored) and fill in a provider.
 # The API key must come from the environment; never commit credentials.
 model:

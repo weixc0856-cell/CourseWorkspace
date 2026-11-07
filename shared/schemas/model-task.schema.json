@@ -34,7 +34,8 @@
     "provider": {
       "enum": [
         "local",
-        "remote"
+        "remote",
+        "claude_code"
       ]
     },
     "status": {

@@ -12,7 +12,7 @@
 
 把**人工撰写的课程内容**稳定、可复现地转换成**带动画与三维场景的成片视频**，并在每一步给出可核验的证据。
 
-产品解决的是“内容已经写好，但排版、动画、三维、合成、验收仍是手工拼接”的问题；不解决“从零生成课程知识”的问题。
+产品解决的是“内容已经写好，但排版、动画、三维、合成、验收仍是手工拼接”的问题；R1 起也支持从用户提供的来源生成课程候选稿，但**不替代人工确认与事实裁决**，也不做无来源的知识生产。
 
 ### 1.1 目标
 
@@ -24,7 +24,9 @@
 
 ### 1.2 非目标（本版本明确不做）
 
-- 自动语音识别（ASR）、自动整课 TTS、自动发布。
+- 自动语音识别（ASR）、自动发布。
+- 无人工确认的整课内容直接落盘（R1 起 AI 只产出候选稿，人工批准后才进入正式课程）。
+- 不部署 Code2Video 27B 权重；不引入第二套课程编排流水线；外部引擎只做镜头级能力。
 - 云端渲染、ComfyUI 图像生成流水线。
 - Motion Canvas headless 自动导出（见 FR-04，人工节点是正式设计）。
 - 让 LLM 直接判定课程事实正确性或替代人工审稿。
@@ -237,11 +239,110 @@
 
 1. 工具链探测；
 2. CourseControl / ModelingStudio / shared / ContentQA 单测；
-3. 5 个课程/夹具契约校验；
+3. 6 个课程/夹具契约校验；
 4. IR v2 契约校验（不渲染）；
 5. 无网络依赖。
 
 **验收**：在干净 shell 中 exit 0 且输出 `check ok`。
+
+### FR-15 输入摄取与来源摘要（R1）
+
+**目标**：把用户提供的网页 / Markdown / TXT 变成可追溯的课程来源。
+
+- 支持 URL、Markdown、TXT；PDF/DOCX 暂不支持。
+- 保存正文到 `lessons/<slug>/authoring/sources/<id>.md`，记录 origin、抓取时间、HTTP 状态、sha256、提取器。
+- 生成稳定引用的来源摘要（如 `S1-3.2`），供大纲、脚本、审查引用。
+- 抓取失败、空正文、非文本内容必须如实失败，不伪造来源。
+
+**验收**：`course-control ingest` / `digest` 有真实来源与摘要；摘要哈希可复算。
+
+### FR-16 课程草稿与人工批准门（R1）
+
+**目标**：AI 生成候选 brief / 大纲 / 英文口播稿 / 幻灯片 / 讲师手册；人工按 sha256 批准后才成为正式课程。
+
+- 候选写入 `build/<slug>/authoring/candidates/`；`author-accept` 提升到 `lessons/<slug>/` 并记录批准。
+- `narration-build` 与 `subtitles-build` 必须验证批准哈希；正文变更后旧批准失效。
+- 脚本必须与 `lecture_notes.md` 的 `逐字口播` 一致；不得把情绪提示写进正文或字幕。
+
+**验收**：批准门有单测；未批准/篡改时 TTS/字幕拒绝执行。
+
+### FR-17 课程时长契约（R1）
+
+**目标**：时长成为课程生产的正式约束，而不是后期估算。
+
+- `lesson.yaml.duration` 声明 profile（standard/short/news）、target/min/max、页面容差。
+- 页面级时间只有一个权威：计划模式读 `lecture_notes.md` 的 `时长预算`；实测模式读 `narration.meta.json` 的页跨度。
+- 最终以成片时间轴为准；不允许用重复、停顿、空镜凑时长。
+
+**验收**：V-26 计划/实测时长检查；V-27 成片时长窗口；越窗失败。
+
+### FR-18 整课旁白（R1）
+
+**目标**：一门课一次 TTS 运行，逐段缓存、可增量重建、实测时长回写时间线。
+
+- 一个 `TtsService` 持 50000 锁跑完整课；逐段 `.meta.json`、48 kHz mono 归一化、拼接与停顿。
+- 默认英文；VoxCPM2 `reference_only` + 句首英文括号情绪提示；`prompt_reference` 为显式回退（忽略情绪提示）。
+- 保留单段 `narrate`；整课命令为 `narration-build`。
+
+**验收**：真实 VoxCPM2 音频；缓存命中；页跨度与 `narration.meta.json` 一致；V-30。
+
+### FR-19 双语字幕与双版本成片（R1）
+
+**目标**：英文在上、简体中文在下；输出 SRT/ASS/VTT；成片同时提供干净版与烧录字幕版。
+
+- 字幕 cue 来自实测音频段边界；段内按文本比例切分。
+- 中文 ≤15 字/行、英文 ≤42 字/行、最多 2 行、1–6 秒/条、相邻 ≥2 帧、中文 CPS ≤9。
+- 翻译逐 cue 编号，条数/顺序不符即 blocked。
+- `final/course-video.mp4` 为干净母版；`final/course-video-captioned.mp4` 为 ffmpeg ASS 烧录版（QSV，失败回退 libx264）。
+- Remotion 合成由 `TimelineSpec` 驱动；旧 `shots.json` 路径保留兼容。
+
+**验收**：V-28/V-31；真实烧录片段；双语字幕草稿与批准 SRT。
+
+### FR-20 代码驱动镜头与 Code2Video Skill（R1）
+
+**目标**：为动效/信息图/HTML-SVG 类镜头提供“写代码 → 逐帧渲染 → Contact Sheet → 验证”的生产能力。
+
+- 镜头类型：`ShotSpec.engine = code_video`；`scene` 指向镜头项目的 `SPEC.md`。
+- 工作流：`SPEC.md` → `window.READY` + `window.seek(t)`（`frame(t)` 纯函数）→ 本地 Playwright/ffmpeg 渲染 → Contact Sheet → `VERIFY.md`。
+- 产物：`build/<slug>/animation/<project>.mp4`；必须通过 `probe_media`，且 `VERIFY.md` 不得含 `| fail |`。
+- 不部署 27B；Agent 默认使用 Claude Code，本地/远程仅在显式配置允许时回退。
+- 不把 Code2Video 作为最终合成层或第二编排层；它只产出镜头级 MP4。
+
+**验收**：真实 30 秒 Canvas 镜头；两次独立渲染帧哈希一致；`check_video.sh` 通过；adapter 单测通过。
+
+### FR-21 外部技术接入与许可评估（技术雷达）
+
+**目标**：外部开源项目先评估后接入，避免“发现即集成”。
+
+- 评估维度：课程适用性 30%、技术成熟度 20%、Agent 适配度 20%、集成成本 15%、商业许可 15%。
+- 硬门槛：许可证不明、无复现案例、特殊硬件不可用、与现有能力重复且无收益 → 不进入生产。
+- 收录：Code2Video、video-production-skill、HyperFrames、VideoZero 及后续项目；记录许可证、POC 结果与决策。
+- 当前决策：Code2Video 接入镜头级；video-production-skill 只吸收规范；HyperFrames 作为可选 HTML 渲染/lint 后端；VideoZero 作为 Motion Canvas 图像序列自动导出的候选。
+
+**验收**：`docs/技术雷达-视频生产.md` 持续更新；每个接入项有许可证与 POC 证据。
+
+### FR-22 交付包、QC 与归档
+
+**目标**：每门课程交付可验证、可归档、可复现的完整包。
+
+- 交付包至少含：干净版、字幕版、SRT/ASS/VTT、`build-report.json`、`burn.json`、旁白 meta、镜头证据、日志。
+- QC 门：抽帧/Contact Sheet、音轨与音画同步、字幕行宽/CPS、时长窗口、编码规格、证据完整性。
+- 归档：最终包复制到仓库外/忽略目录，记录 sha256；唯一副本不得留在临时目录。
+
+**验收**：`docs/课程生产交付物规范.md`；真实课程构建产物满足清单。
+
+### FR-23 Claude Code 作为默认生产后端（R1）
+
+**目标**：把课程文本生产与代码镜头默认交给 Claude Code，同时保留显式回退与可追溯记录。
+
+- 默认走 Claude Code 的环节：brief / outline / script / content-draft、字幕翻译、ContentQA 审查、ModelingStudio 文本规划、Code2Video 镜头。
+- 文本阶段以 `claude -p --tools=` 纯生成模式调用，不开放文件/命令工具；镜头阶段才允许 `Read/Write/Edit/Glob/Grep`，且工作目录必须是 `build/<slug>/agent/` 或镜头目录。
+- 任务记录 `provider=claude_code`，并记录上游模型；Claude Code 的 `total_cost_usd` 只作参考，不当作实际账单。
+- 凭据只从环境变量注入（默认 cc-switch 的 `ANTHROPIC_AUTH_TOKEN`，或直连 DeepSeek 的 `DeepSeek-API`），不写入配置、日志或任务记录。
+- 不可用时必须显式 `blocked`；只有配置 `claude_code_fallback: local_first` 才允许回退本地/远程，禁止静默降级。
+- Vision 阶段（ModelingStudio 图像分析/修订）仍使用本地或远程视觉模型，不交给纯文本 Claude Code。
+
+**验收**：`docs/评估-四后端对比.md`、`docs/DECISIONS.md` D-041/D-042；`claude_code` 后端单测；真实 brief/镜头调用各一次。
 
 ---
 
@@ -321,7 +422,7 @@ validate（程序，任意失败即中止）
 
 1. `scripts/check.ps1` 在 PowerShell 5.1 下 exit 0 并打印 `check ok`。
 2. 全部单测真实通过，数量与 `docs/ACCEPTANCE.md` 一致。
-3. 5 个课程/夹具 validate 通过；11 个 IR v2 夹具结论正确。
+3. 6 个课程/夹具 validate 通过；11 个 IR v2 夹具结论正确。
 4. 夹具 `lesson-smoke` 全链路 `verdict=pass`（真实 Blender + Remotion）。
 5. 真实课程 `01-shell-for-ai-era` 至少完成截图与全部可自动阶段，并如实输出 `incomplete` 及原因（Motion 未导出）。
 6. 本地模型串行有真实多进程测试证据。
@@ -329,6 +430,16 @@ validate（程序，任意失败即中止）
 8. 维度预算测试通过，所有模型调用记录预算。
 9. 失败/取消/阻塞状态均可从任务记录读回。
 10. 文档与代码一致，无 P0 遗留。
+
+R1 增量完成条件：
+
+11. 一门真实课程完成来源 → 候选稿 → 人工批准 → 整课旁白 → 双语字幕 → 干净版 + 字幕版成片。
+12. R1 检查 V-26–V-33 全部有实现与真实证据；`check.ps1` 仍为 `check ok`。
+13. 时长、旁白、字幕、烧录结论以真实产物为准；缺少证据的项写 `PARTIAL` / `NOT_RUN`，不得写成 `pass`。
+14. `code_video` 镜头有真实 30 秒产物，两次渲染帧哈希一致；adapter 与 `VERIFY.md` 门禁通过。
+15. 外部项目（Code2Video / video-production-skill / HyperFrames / VideoZero）均有许可证、POC 结果与接入决策记录。
+16. 课程交付包符合 `docs/课程生产交付物规范.md`；干净版与字幕版都存在且可 probe。
+17. Claude Code 默认后端在 authoring / ContentQA / ModelingStudio 文本规划 / Code2Video 各有一条真实调用或等价 smoke；文本阶段未开放工具；`provider=claude_code` 可读回。
 
 ---
 

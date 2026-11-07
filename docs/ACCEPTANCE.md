@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.3（2026-11-07）
+- **版本**：v1.4（2026-11-08）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -10,20 +10,20 @@
 
 ```powershell
 .\scripts\check.ps1
-# 期望：五套单测 + 课程契约（本地有课程时 5 个，干净克隆时 3 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
+# 期望：五套单测 + 课程契约（本地有课程时 6 个，干净克隆时 4 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
-最近一次执行（2026-11-07）：**`check ok`，exit 0**。
+最近一次执行（2026-11-08）：**`check ok`，exit 0**。
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 138（136 通过 + 2 跳过；含 V1-B/C/D/E 与 E6.5 契约） | 136 通过，2 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 216（214 通过 + 2 跳过；含 R1 + Code2Video POC/QC + Claude Code） | 214 通过，2 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
-| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 41 | 全部通过 |
-| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 17 | 全部通过 |
+| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
+| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
 
-合计 **240** 个用例（238 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **328** 个用例（326 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -280,3 +280,32 @@ python ManimSandbox/05-multi-head/assemble.py
 3. `.\scripts\build-lesson.ps1 -Lesson lesson-smoke -LessonDir CourseControl/tests/fixtures`
 4. `.\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era`（预期 `incomplete`）
 5. `uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era`（预期 `blocked`，exit 3）
+
+---
+
+## 8. R1 增量检查（2026-11-07）
+
+| 编号 | 检查 | 实现 | 适用条件 |
+| --- | --- | --- | --- |
+| V-26 | 时长契约一致性（计划/实测/重复权威） | `validators.py` + `collect.py` | `lesson.yaml.duration` 存在 |
+| V-27 | 成片时长在窗口内 | `verify.py` | duration 存在且成片存在 |
+| V-28 | 字幕版与干净版时长/流/分辨率/帧率一致 | `verify.py` + `adapters/burn.py` | `subtitles.render=burn_in` |
+| V-29 | 脚本与逐字口播一致、style 语法 | `validators.py` | `authoring.script` 存在 |
+| V-30 | 旁白 meta/哈希/页跨度/时间轴一致 | `verify.py` | `narration.timing=measured` |
+| V-31 | 双语字幕条数/完整/行宽/CPS/间隔 | `verify.py` | `subtitles.render=burn_in` |
+| V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
+| V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
+
+R1 测试计数：五套合计 **328 个用例（326 通过 + 2 跳过）**：CourseControl 216（214+2）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11。
+
+R1 真实产物：
+
+- `docs/R1-基线报告.md`、`docs/R1-1-引擎验证报告.md`、`docs/R1-性能基准报告.md`
+- `docs/R1-5-候选稿索引.md`
+- `build/r1/manim/.../SmokeScene.mp4`、`build/r1-smoke/blender/smoke.mp4`、`build/r1/remotion/smoke.mp4`
+- `build/r1/timeline-smoke.mp4`（TimelineSpec 驱动 Remotion 的 6 秒真实片段）
+- `build/01-transformer-demo/blender/stack_explode.mp4`（1920×1080 / 30 fps / 750 帧 / 25 s）
+- `CodeVideoStudio/shots/attention-flow/out/final.mp4`（30s / 900 帧 / 两次渲染 900/900 帧哈希一致）
+- `CodeVideoStudio/backends/hyperframes/hf-poc/out/hf-poc.mp4`（10s / 300 帧 / check 0 error 0 warning / 27.1s）
+- `build/videozero-poc/output/attention-flow.mp4`（Motion Canvas image sequence → ffmpeg，1920×1080 / 30fps / 3007 帧 / 100.2s）
+- `build/01-transformer-demo/narration/audition/s001-p1.wav`、`s001-p2.wav`（VoxCPM2 真实合成）

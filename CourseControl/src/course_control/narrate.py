@@ -94,16 +94,29 @@ def port_owner(port: int) -> dict | None:
     return None
 
 
-def segment_cache_key(text: str, voice_ref: Path, prompt_text: str) -> str:
+def segment_cache_key(
+    text: str,
+    voice_ref: Path,
+    prompt_text: str,
+    *,
+    mode: str = "prompt_reference",
+    style: str | None = None,
+    speed: float = 1.0,
+    timesteps: int = 10,
+    cfg: float = 2.0,
+    text_frontend: bool = True,
+) -> str:
     payload = {
         "text": normalize_stream(text),
         "voice_ref": sha256_text(_hash_file(voice_ref)),
         "prompt_text": prompt_text,
+        "mode": mode,
+        "style": style,
         "model": "VoxCPM2",
-        "timesteps": 10,
-        "cfg": 2.0,
-        "speed": 1.0,
-        "text_frontend": True,
+        "timesteps": timesteps,
+        "cfg": cfg,
+        "speed": speed,
+        "text_frontend": text_frontend,
     }
     return sha256_text(json.dumps(payload, sort_keys=True, ensure_ascii=False))
 
@@ -125,18 +138,38 @@ def synthesize(
     *,
     speed: float = 1.0,
     timeout_s: int = DEFAULT_TIMEOUT_S,
+    mode: str = "prompt_reference",
+    reference_wav: Path | None = None,
+    style: str | None = None,
+    text_frontend: bool = True,
 ) -> dict:
     if not text.strip():
         raise TtsError("text must not be blank")
     if not voice_ref.is_file():
         raise TtsError(f"voice reference not found: {voice_ref}")
-    payload = {
-        "text": text,
-        "prompt_wav": str(voice_ref.resolve()),
-        "prompt_text": prompt_text or "",
-        "speed": speed,
-        "text_frontend": True,
-    }
+    reference_path = reference_wav or voice_ref
+    if not reference_path.is_file():
+        raise TtsError(f"reference audio not found: {reference_path}")
+    style_applied = bool(style and mode == "reference_only")
+    spoken = f"{style} {text}".strip() if style_applied else text
+    if mode == "reference_only":
+        payload = {
+            "text": spoken,
+            "reference_wav": str(reference_path.resolve()),
+            "speed": speed,
+            "text_frontend": text_frontend,
+        }
+    elif mode == "prompt_reference":
+        payload = {
+            "text": spoken,
+            "prompt_wav": str(voice_ref.resolve()),
+            "prompt_text": prompt_text or "",
+            "reference_wav": str(reference_path.resolve()),
+            "speed": speed,
+            "text_frontend": text_frontend,
+        }
+    else:
+        raise TtsError(f"unsupported narration mode: {mode}")
     request = urllib.request.Request(
         base_url.rstrip("/") + "/tts",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -166,6 +199,9 @@ def synthesize(
         "prompt_mode": headers.get("x-prompt-mode"),
         "text_normalize": headers.get("x-text-normalize"),
         "speed_stretch": headers.get("x-speed-stretch"),
+        "mode": mode,
+        "style": style if style_applied else None,
+        "style_applied": style_applied,
     }
 
 

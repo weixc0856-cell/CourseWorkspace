@@ -35,6 +35,8 @@
 
 ---
 
+> **AI 后端（2026-11-08 起）**：brief / outline / script / content、字幕翻译、ContentQA、ModelingStudio 文本规划与 Code2Video 镜头默认使用 Claude Code；文本阶段禁用工具，镜头阶段只写 `build/` 暂存目录。配置见 `config/claude-code.yaml`；不可用时显式 `blocked`，只有 `claude_code_fallback: local_first` 才回退本地/远程。
+
 ## 1. 课程输入与目录组织 `[人工]`
 
 | 项 | 内容 |
@@ -239,3 +241,52 @@ uv run --project CourseControl course-control validate --lesson <slug>
 **合格判定**：`build-report.json` 的 `verdict=pass`，且没有 `skipped` / `not_run` / `fail`。`incomplete` 表示还差人工步骤或渲染产物。
 
 **真实状态**：两门真实课程目前都是 `incomplete`（Motion 未导出）；夹具 `lesson-smoke`、`lesson-blender-only` 为 `pass`。
+
+---
+
+## 13. R1 自动课程生产（2026-11-07）
+
+```text
+[人工] URL / Markdown / TXT
+  → ingest → digest（来源 + 稳定引用）
+  → brief → outline → script → content-draft（候选，写 build/<slug>/authoring/candidates/）
+  → [人工] author-accept（sha256 批准，写 lessons/<slug>/）
+  → narration-build（本地 VoxCPM2，整课或 --sample-pages 样片）
+  → subtitles-build（实测音频；--planned 可先生成计划版草稿）
+  → [人工] subtitles-accept
+  → build（validate → 截图/动画 → collect → TimelineSpec 合成 → ASS 烧录 → verify）
+```
+
+| 阶段 | 命令 | 产物 |
+| --- | --- | --- |
+| 摄取 | `course-control ingest --lesson <slug> --source <url\|md\|txt>` | `lessons/<slug>/authoring/sources/`、`sources.yaml` |
+| 摘要 | `course-control digest --lesson <slug>` | `authoring/source-digest.{json,md}` |
+| 草稿 | `brief` / `outline` / `script` / `content-draft` | `build/<slug>/authoring/candidates/` |
+| 批准 | `author-accept --kind digest\|brief\|outline\|script\|content` | `authoring/approval.json` |
+| 整课旁白 | `narration-build --mode reference_only --timing measured` | `narration/narration.wav`、`narration.meta.json` |
+| 样片 | `narration-build --sample-pages 3` | `narration/sample/sample.wav`、`sample.meta.json` |
+| 字幕 | `subtitles-build [--planned] [--remote]` | `subtitles/bilingual.draft.{json,srt,vtt}` |
+| 字幕批准 | `subtitles-accept` | `lessons/<slug>/subtitles.srt` |
+| 构建 | `build-lesson.ps1` | `final/course-video.mp4` + `final/course-video-captioned.mp4` |
+
+**边界**：`build`/`validate`/`check.ps1` 不调用 8080/50000/网络；TTS 与翻译是显式命令。本地模型默认优先；远程只在 `config/model-routing.yaml` 显式启用且 key 存在时回退，任务记录写 `provider`。`--remote` 是显式远程开关。
+
+---
+
+## 14. Code2Video 镜头（POC，2026-11-07）
+
+```powershell
+# 在 CodeVideoStudio 中准备 SPEC.md / index.html / main.js 后
+node CodeVideoStudio/skills/code-video/scripts/capture.mjs `
+  CodeVideoStudio/shots/<shot> --fps 30 --dur 30 --size 1920x1080 --out out/final.mp4
+PATH="CodeVideoStudio/bin:$PATH" sh CodeVideoStudio/skills/code-video/scripts/check_video.sh `
+  CodeVideoStudio/shots/<shot>/out/final.mp4 1920 1080 30 29.5 30.5 0
+```
+
+- 镜头契约：`SPEC.md` + `window.READY` + `window.seek(t)` + `VERIFY.md`；`frame(t)` 必须可重放。
+- CourseControl 接入：`adapters/code_video.py`；`ShotSpec.engine=code_video`，`scene` 指向 `SPEC.md`。
+- 输出：`build/<slug>/animation/<project>.mp4`，进入现有 collect/compose/verify。
+- 音频仍走 VoxCPM2；不使用 edge-tts / faster-whisper。
+- 生产目录：`CodeVideoStudio/shots/attention-flow/`（30s、900 帧、900/900 帧哈希一致）。
+
+可选后端：`CodeVideoStudio/backends/hyperframes/hf-poc/`（HTML/GSAP，10s，check 通过）；`build/videozero-poc/`（Motion Canvas agent，image sequence + ffmpeg）。

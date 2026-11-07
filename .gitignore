@@ -63,3 +63,13 @@ desktop.ini
 ModelingStudio/workspace/
 ManimSandbox/media/
 MotionStudio/output/
+
+# CodeVideoStudio generated outputs (specs and source stay tracked)
+CodeVideoStudio/shots/*/out/
+CodeVideoStudio/backends/hyperframes/*/out/
+CodeVideoStudio/backends/hyperframes/hf-poc/.hyperframes/
+
+# Course-specific pilot sources (real course content stays local)
+/BlenderStudio/scenes/01-transformer-demo/
+/BlenderStudio/tasks/01-transformer-demo/
+/ManimSandbox/01-transformer-demo/

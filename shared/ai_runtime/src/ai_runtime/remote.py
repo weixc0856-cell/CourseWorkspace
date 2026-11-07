@@ -44,6 +44,7 @@ class RemoteConfig:
     timeout_s: int = 120
     max_tokens: int = 4096
     temperature: float = 0.1
+    thinking: str | None = None
     supports_vision: bool = True
     vision_model: str | None = "deepseek-flash"
     trust_env: bool = True
@@ -87,6 +88,8 @@ class RemoteConfig:
                 value = os.environ.get(env_name)
                 if value:
                     setattr(self, attr, value)
+        if self.thinking not in (None, "enabled", "disabled"):
+            raise ValueError("thinking must be None, 'enabled' or 'disabled'")
         # Project policy: DeepSeek calls are pinned to deepseek-flash.
         # deepseek-v4-pro and other DeepSeek models are disabled. Other
         # OpenAI-compatible providers may use their configured models.
@@ -230,6 +233,7 @@ def chat_completion(
     json_object: bool = False,
     timeout_s: int | None = None,
     vision: bool = False,
+    thinking: str | None = None,
 ) -> RemoteResult:
     """Perform one OpenAI-compatible chat completion.
 
@@ -247,6 +251,11 @@ def chat_completion(
     }
     if json_object:
         payload["response_format"] = {"type": "json_object"}
+    selected_thinking = thinking if thinking is not None else config.thinking
+    if selected_thinking is not None:
+        if selected_thinking not in ("enabled", "disabled"):
+            raise ValueError("thinking must be 'enabled' or 'disabled'")
+        payload["thinking"] = {"type": selected_thinking}
     data = _request(config, "POST", "chat/completions", payload, timeout_s)
     try:
         choice = data["choices"][0]

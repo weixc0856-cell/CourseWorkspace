@@ -6,11 +6,13 @@ All calls go through ``shared.ai_runtime``: one cross-process lock, one server o
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 
 from ai_runtime import (
     FileLock,
     LockTimeout,
+    ModelRoute,
     ModelSpec,
     ServerBusy,
     ServerConfig,
@@ -60,12 +62,38 @@ def probe(config: WorkflowConfig) -> dict:
     payload["lock_stale"] = lock.is_stale(info) if info else False
     return payload
 
+@contextmanager
+def _claude_route(config: WorkflowConfig):
+    cc = config.claude_code
+    yield ModelRoute(
+        provider="claude_code",
+        base_url="",
+        api_key="",
+        model=cc.model if cc else "",
+        mode="claude_code",
+    )
+
+
 def managed_model(config: WorkflowConfig, model_key: str, log_path: Path, *, vision: bool = False):
     """Yield a local route, or an explicit remote route when 8080 is unavailable.
 
-    The caller must write ``route.provider`` and ``route.model`` into the task
-    record and metadata; remote calls are never labelled as local.
+    Text stages use Claude Code when configured; vision stages always use the
+    local/remote multimodal model.
     """
+    cc = config.claude_code
+    if (
+        not vision
+        and config.backend == "claude_code"
+        and cc is not None
+        and cc.enabled
+        and cc.available()
+    ):
+        return _claude_route(config)
+    if not vision and config.backend == "claude_code" and config.claude_code_fallback != "local_first":
+        raise ServerStartError(
+            "claude-code backend is unavailable; set backend=local_first or "
+            "claude_code_fallback=local_first"
+        )
     model: ModelSpec = config.model_spec(model_key)
     server: ServerConfig = config.server_config()
     lock = FileLock(

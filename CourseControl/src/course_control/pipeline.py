@@ -55,7 +55,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
     if not validation.ok:
         _mark_not_run(
             builder,
-            ["capture_slides", "render:motion_canvas", "render:manim", "render:blender", "collect", "compose", "verify"],
+            ["capture_slides", "render:motion_canvas", "render:manim", "render:blender", "render:code_video", "collect", "compose", "verify"],
             "upstream_failed",
         )
         report = builder.finalize()
@@ -71,7 +71,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
         if outcome.status == Status.FAIL:
             _mark_not_run(
                 builder,
-                ["render:motion_canvas", "render:manim", "render:blender", "collect", "compose", "verify"],
+                ["render:motion_canvas", "render:manim", "render:blender", "render:code_video", "collect", "compose", "verify"],
                 "upstream_failed",
             )
             report = builder.finalize()
@@ -82,6 +82,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
         ("motion_canvas", adapters.motion_canvas.run),
         ("manim", adapters.manim.run),
         ("blender", adapters.blender.run),
+        ("code_video", adapters.code_video.run),
     ):
         name = f"render:{engine}"
         if engine not in paths.lesson.engines:
@@ -146,6 +147,14 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
         _mark_not_run(builder, ["verify"], "upstream_failed")
         report = builder.finalize()
         return report, builder.write(report)
+
+    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.render == "burn_in":
+        burn_outcome = adapters.burn.burn_subtitles(paths)
+        builder.add_stage(burn_outcome)
+        if burn_outcome.status == Status.FAIL:
+            builder.add_stage(_stage("verify", Status.NOT_RUN, reason="upstream_failed"))
+            report = builder.finalize()
+            return report, builder.write(report)
 
     started = time.monotonic()
     checks = verify(paths, shots_file)

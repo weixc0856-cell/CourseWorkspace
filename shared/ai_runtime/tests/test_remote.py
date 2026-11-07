@@ -130,6 +130,37 @@ class RemoteProviderTest(unittest.TestCase):
         self.assertTrue(payload["key_present"])
         self.assertNotIn("test-key", json.dumps(payload))
 
+    def test_thinking_disabled_is_sent(self):
+        captured = {}
+
+        def fake(config, method, path, payload=None, timeout_s=None):
+            captured.update(payload or {})
+            return {
+                "model": "remote-model",
+                "choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+            }
+
+        with patch("ai_runtime.remote._request", side_effect=fake):
+            result = chat_completion(
+                remote_config(self.port),
+                [{"role": "user", "content": "x"}],
+                thinking="disabled",
+            )
+        self.assertEqual(captured["thinking"], {"type": "disabled"})
+        self.assertEqual(result.content, "ok")
+
+    def test_bad_thinking_value_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RemoteConfig(provider="mock", thinking="sometimes")
+        with patch("ai_runtime.remote._request") as request:
+            with self.assertRaises(ValueError):
+                chat_completion(
+                    remote_config(self.port),
+                    [{"role": "user", "content": "x"}],
+                    thinking="maybe",
+                )
+            request.assert_not_called()
+
     def test_missing_key_is_unavailable(self):
         config = remote_config(self.port, api_key=None, api_key_env="NO_SUCH_KEY")
         with self.assertRaises(RemoteUnavailable):

@@ -1,0 +1,142 @@
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import time
+from pathlib import Path
+
+from ..code_video_qc import check_video, contact_sheet
+from ..contracts import Status
+from ..paths import LessonPaths
+from ..utils import run_command, which_command
+from .base import StageOutcome
+
+
+def _project_for(paths: LessonPaths, shot) -> Path:
+    scene_path, _ = paths.scene_path(shot)
+    return scene_path.parent
+
+
+def run(paths: LessonPaths) -> StageOutcome:
+    shots = [shot for shot in paths.storyboard.shots if shot.engine == "code_video"]
+    if not shots:
+        return StageOutcome("render:code_video", Status.NOT_APPLICABLE)
+
+    started = time.monotonic()
+    build_root = paths.build_root
+    fps = paths.lesson.outputs.fps
+    width, height = paths.lesson.outputs.resolution
+    skill = paths.engine_root("code_video") / "skills" / "code-video" / "scripts" / "capture.mjs"
+    outputs: list[Path] = []
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    if not skill.is_file():
+        return StageOutcome(
+            "render:code_video",
+            Status.FAIL,
+            errors=[f"Code2Video capture script not found: {skill}"],
+            reason="missing_skill",
+            duration_ms=int((time.monotonic() - started) * 1000),
+        )
+
+    for shot in shots:
+        spec_path, _ = paths.scene_path(shot)
+        project = _project_for(paths, shot)
+        verify = project / "VERIFY.md"
+        if not spec_path.is_file():
+            errors.append(f"{shot.id}: SPEC not found: {spec_path}")
+            continue
+        if not verify.is_file():
+            errors.append(f"{shot.id}: VERIFY.md not found: {verify}")
+            continue
+        verify_text = verify.read_text(encoding="utf-8", errors="replace")
+        if re.search(r"\|\s*fail\s*\|", verify_text, re.I):
+            errors.append(f"{shot.id}: VERIFY.md contains a failing must-have")
+            continue
+
+        temp = build_root / "tmp" / "code-video" / f"{project.name}.mp4"
+        temp.parent.mkdir(parents=True, exist_ok=True)
+        command = [
+            *which_command("node"),
+            str(skill),
+            str(project),
+            "--fps",
+            str(fps),
+            "--size",
+            f"{width}x{height}",
+            "--out",
+            str(temp),
+        ]
+        if shot.expected_duration_s:
+            command.extend(["--dur", str(shot.expected_duration_s)])
+        result = run_command(
+            command,
+            project,
+            timeout=1800,
+            log_path=build_root / "logs" / f"code-video-{shot.id}.log",
+        )
+        if result.exit_code != 0:
+            errors.append(
+                f"{shot.id}: capture exited {result.exit_code}: {result.stderr[-1500:]}"
+            )
+            continue
+        if not temp.is_file():
+            errors.append(f"{shot.id}: capture produced no file: {temp}")
+            continue
+        target = build_root / "animation" / f"{project.name}.mp4"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(temp, target)
+
+        expected = shot.expected_duration_s
+        qc = check_video(
+            target,
+            width=width,
+            height=height,
+            fps=float(fps),
+            min_duration=expected,
+            max_duration=expected,
+            audio="0",
+            workspace=paths.workspace,
+            log_path=build_root / "logs" / f"code-video-{shot.id}-qc.log",
+        )
+        qc_path = target.with_suffix(".qc.json")
+        qc_path.write_text(
+            json.dumps(qc, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        outputs.append(qc_path)
+        warnings.extend(item.get("detail", item["id"]) for item in qc.get("warnings", []))
+        if not qc["ok"]:
+            failed = [item for item in qc["checks"] if item["status"] == "fail"]
+            errors.extend(
+                f"{shot.id}: QC {item['id']} {item.get('actual')} != {item.get('expected')}"
+                for item in failed
+            )
+            continue
+        contact = target.with_suffix(".contact.jpg")
+        try:
+            contact_sheet(target, contact, workspace=paths.workspace)
+            outputs.append(contact)
+        except Exception as exc:  # noqa: BLE001
+            warnings.append(f"{shot.id}: contact sheet failed: {exc}")
+        outputs.append(target)
+
+    duration_ms = int((time.monotonic() - started) * 1000)
+    if errors:
+        return StageOutcome(
+            "render:code_video",
+            Status.FAIL,
+            outputs=outputs,
+            warnings=warnings,
+            errors=errors,
+            duration_ms=duration_ms,
+        )
+    return StageOutcome(
+        "render:code_video",
+        Status.PASS,
+        outputs=outputs,
+        warnings=warnings,
+        duration_ms=duration_ms,
+    )

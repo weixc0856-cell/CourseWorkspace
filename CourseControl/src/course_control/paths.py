@@ -113,6 +113,7 @@ class LessonPaths:
             "motion_canvas": "MotionStudio",
             "manim": "ManimSandbox",
             "blender": "BlenderStudio",
+            "code_video": "CodeVideoStudio",
         }
         try:
             return (self.workspace / roots[engine]).resolve()

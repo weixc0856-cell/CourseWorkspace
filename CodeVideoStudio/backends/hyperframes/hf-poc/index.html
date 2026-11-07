@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root { --ground: #FBFAF7; --ink: #1A1A1A; --muted: #595959; --orange: #EB6100; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+      #root { width: 100%; height: 100%; position: relative; font-family: "Segoe UI", Arial, sans-serif; }
+      #bar { position: absolute; top: 0; left: 0; width: 100%; height: 12px; background: var(--orange); }
+      #title { position: absolute; left: 140px; top: 120px; color: var(--ink); font-size: 84px; font-weight: 700; letter-spacing: -2px; }
+      #subtitle { position: absolute; left: 144px; top: 235px; color: var(--muted); font-size: 32px; }
+      .card { position: absolute; top: 470px; width: 430px; height: 260px; border: 2px solid #D8D4CC; border-radius: 18px; background: #fff; padding: 36px; }
+      .card h2 { font-size: 34px; color: var(--ink); margin-bottom: 18px; }
+      .card p { font-size: 28px; line-height: 1.45; color: var(--muted); }
+      .card:nth-of-type(1) { left: 140px; }
+      .card:nth-of-type(2) { left: 745px; }
+      .card:nth-of-type(3) { left: 1350px; }
+      .accent { color: var(--orange); }
+      #progress { position: absolute; left: 140px; bottom: 100px; width: 1640px; height: 3px; background: #D8D4CC; }
+      #progress-fill { height: 3px; width: 0; background: var(--orange); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1920" data-height="1080">
+      <div id="bar" class="clip" data-start="0" data-duration="10" data-track-index="0"></div>
+      <h1 id="title" class="clip" data-start="0" data-duration="10" data-track-index="0">HTML → MP4</h1>
+      <p id="subtitle" class="clip" data-start="0" data-duration="10" data-track-index="0">Deterministic video from the web stack.</p>
+      <div class="card clip" data-start="0" data-duration="10" data-track-index="0">
+        <h2>HTML</h2><p>Structure and text.</p>
+      </div>
+      <div class="card clip" data-start="0" data-duration="10" data-track-index="0">
+        <h2>CSS</h2><p>Layout and visual language.</p>
+      </div>
+      <div class="card clip" data-start="0" data-duration="10" data-track-index="0">
+        <h2>GSAP</h2><p>Seekable, deterministic motion.</p>
+      </div>
+      <div id="progress" class="clip" data-start="0" data-duration="10" data-track-index="0"><div id="progress-fill"></div></div>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#title", { opacity: 1, y: 28 }, { opacity: 1, y: 0, duration: 1.0, ease: "power3.out" }, 0);
+      tl.fromTo("#subtitle", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 0.35);
+      tl.fromTo(".card", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.25, ease: "power2.out" }, 1.4);
+      tl.fromTo("#progress-fill", { width: 0 }, { width: 1640, duration: 10, ease: "none" }, 0);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

@@ -6,7 +6,13 @@ import time
 from typing import Any, TypeVar
 
 import httpx
-from ai_runtime import ContextBudget, ModelRoute
+from ai_runtime import (
+    ClaudeCodeError,
+    ClaudeCodeUnavailable,
+    ContextBudget,
+    ModelRoute,
+    claude_code_complete,
+)
 from pydantic import BaseModel, ValidationError
 
 from .config import WorkflowConfig
@@ -110,6 +116,10 @@ class LLMClient:
         if self.budget is not None:
             # Re-check on every attempt: retries append messages to the conversation.
             self.budget.check(messages, images=self.images)
+        if route is not None and route.provider == "claude_code":
+            return self._claude_chat(
+                messages, json_object=json_object, max_tokens=max_tokens
+            )
         model = route.model if route else self.config.model(model_key).alias
         payload: dict[str, Any] = {
             "model": model,
@@ -129,6 +139,41 @@ class LLMClient:
         usage["finish_reason"] = choice.get("finish_reason")
         self.last_raw = content or ""
         return self.last_raw, usage
+
+    def _claude_chat(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        json_object: bool,
+        max_tokens: int,
+    ) -> tuple[str, dict]:
+        cc = self.config.claude_code
+        if cc is None:
+            raise LLMError("claude-code backend is not configured")
+        system = "\n\n".join(
+            str(item.get("content", "")) for item in messages if item.get("role") == "system"
+        )
+        body = "\n\n".join(
+            f"{str(item.get('role', 'user')).upper()}:\n{item.get('content', '')}"
+            for item in messages
+            if item.get("role") != "system"
+        )
+        if json_object:
+            body += "\n\nReturn only one JSON object. No markdown fences, no commentary."
+        try:
+            result = claude_code_complete(
+                cc,
+                body,
+                system=system or None,
+                timeout_s=self.config.llm.request_timeout_s,
+                tools=False,
+            )
+        except ClaudeCodeUnavailable as exc:
+            raise LLMError(str(exc)) from exc
+        except ClaudeCodeError as exc:
+            raise LLMError(str(exc)) from exc
+        self.last_raw = result.content
+        return result.content, dict(result.usage)
 
     def chat_json(
         self,

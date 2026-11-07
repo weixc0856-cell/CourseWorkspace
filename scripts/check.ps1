@@ -78,6 +78,7 @@ try {
         @{Lesson = "lesson-smoke"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-blender-only"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-manual"; Dir = "CourseControl/tests/fixtures"}
+        @{Lesson = "lesson-authoring"; Dir = "CourseControl/tests/fixtures"}
     )
     foreach ($lesson in $lessons) {
         $name = $lesson.Lesson

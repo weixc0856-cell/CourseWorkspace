@@ -14,17 +14,20 @@ from .contracts import (
     TextAnnotation,
     Timeline,
 )
+from .duration import resolve, window_problem
 from .paths import ContractError, LessonPaths
 from .utils import count_srt_cues, load_json, page_budgets, probe_audio, probe_media
 
 
 def _scene_stem(paths: LessonPaths, shot) -> str:
     scene_path, _ = paths.scene_path(shot)
+    if shot.engine == "code_video":
+        return scene_path.parent.name
     return scene_path.stem
 
 
 def _animation_source(paths: LessonPaths, shot) -> Path:
-    if shot.engine in ("motion_canvas", "manim"):
+    if shot.engine in ("motion_canvas", "manim", "code_video"):
         return paths.build_root / "animation" / f"{_scene_stem(paths, shot)}.mp4"
     task_path = paths.blend_task_path(shot)
     if task_path is None:
@@ -113,14 +116,116 @@ def _relative_to_build(paths: LessonPaths, path: Path) -> str:
         raise ContractError(f"path is outside build/{paths.slug}: {path}") from exc
 
 
+def _page_timing(
+    paths: LessonPaths, notes_text: str
+) -> tuple[list[float], list[float], str, list[dict]]:
+    """Resolve page durations from exactly one authority.
+
+    ``measured`` reads the narration metadata written by ``narration-build``;
+    otherwise ``lecture_notes.md`` budgets remain the planned authority.
+    """
+    planned = page_budgets(notes_text)
+    timing = paths.lesson.narration.timing
+    if timing != "measured":
+        starts: list[float] = []
+        cursor = 0.0
+        pages: list[dict] = []
+        for index, budget in enumerate(planned):
+            starts.append(cursor)
+            pages.append(
+                {
+                    "slide": index + 1,
+                    "start_s": round(cursor, 3),
+                    "duration_s": round(budget, 3),
+                    "planned_s": round(budget, 3),
+                    "drift_s": 0.0,
+                }
+            )
+            cursor += budget
+        return planned, starts, "planned", pages
+
+    meta_path = paths.build_root / "narration" / "narration.meta.json"
+    if not meta_path.is_file():
+        raise ContractError(
+            f"narration.timing=measured but metadata not found: {meta_path}"
+        )
+    meta = load_json(meta_path)
+    meta_pages = meta.get("pages") or []
+    if len(meta_pages) != len(planned):
+        raise ContractError(
+            f"narration.meta.json has {len(meta_pages)} pages but notes has {len(planned)}"
+        )
+    measured: list[float] = []
+    starts = []
+    pages = []
+    cursor = 0.0
+    for index, entry in enumerate(meta_pages):
+        duration = entry.get("measured_s")
+        if duration is None and entry.get("start_s") is not None and entry.get("end_s") is not None:
+            duration = float(entry["end_s"]) - float(entry["start_s"])
+        try:
+            value = float(duration)
+        except (TypeError, ValueError) as exc:
+            raise ContractError(f"page {index + 1}: measured_s is missing") from exc
+        if value <= 0:
+            raise ContractError(f"page {index + 1}: measured_s must be positive")
+        measured.append(value)
+        starts.append(cursor)
+        pages.append(
+            {
+                "slide": index + 1,
+                "start_s": round(cursor, 3),
+                "duration_s": round(value, 3),
+                "planned_s": round(planned[index], 3),
+                "drift_s": round(value - planned[index], 3),
+            }
+        )
+        cursor += value
+    return measured, starts, "measured", pages
+
+
+def _write_page_plan(
+    paths: LessonPaths,
+    timing: str,
+    pages: list[dict],
+    total: float,
+) -> Path | None:
+    policy = resolve(paths.lesson)
+    if policy is None:
+        return None
+    problem = window_problem(total, policy) if timing == "measured" else None
+    if problem is not None:
+        raise ContractError(f"DURATION_WINDOW: {problem.message}")
+    target = paths.build_root / "timeline" / "page-plan.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "lesson": paths.slug,
+                "timing": timing,
+                "fps": paths.lesson.outputs.fps,
+                "pages": pages,
+                "total_s": round(total, 3),
+                "duration": {
+                    **policy.as_dict(),
+                    "pass": True,
+                    "problem": None,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return target
+
+
 def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
     notes_path = paths.content_path(paths.lesson.content.notes)
-    budgets = page_budgets(notes_path.read_text(encoding="utf-8"))
-    page_starts: list[float] = []
-    cursor = 0.0
-    for budget in budgets:
-        page_starts.append(cursor)
-        cursor += budget
+    notes_text = notes_path.read_text(encoding="utf-8")
+    budgets, page_starts, timing, page_plan_pages = _page_timing(paths, notes_text)
 
     warnings: list[str] = []
     shots: list[Shot] = []
@@ -150,7 +255,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
                     presentation=None,
                 )
             )
-        total_duration = cursor
+        total_duration = sum(budgets)
     else:
         base = paths.base_video_path()
         if base is None or not base.is_file():
@@ -170,6 +275,11 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
             )
         )
         total_duration = info.duration
+
+    if paths.lesson.compose.mode == "deck":
+        plan_path = _write_page_plan(paths, timing, page_plan_pages, total_duration)
+        if plan_path is not None:
+            outputs.append(plan_path)
 
     overlays_by_slide: dict[int, list[tuple[float, float, str]]] = {}
     for spec in paths.storyboard.shots:
@@ -237,6 +347,30 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
         shutil.copy2(subtitle_path, target)
         outputs.append(target)
         subtitles = {"path": "subtitles.srt", "cues": count_srt_cues(target)}
+        if paths.lesson.subtitles.render == "burn_in":
+            from .subtitles import BilingualDraft, write_ass
+
+            draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
+            if not draft_path.is_file():
+                raise ContractError(
+                    "subtitles.render=burn_in requires subtitles/bilingual.draft.json"
+                )
+            draft = BilingualDraft.model_validate(load_json(draft_path))
+            ass_path = paths.build_root / "subtitles.ass"
+            write_ass(
+                [cue.model_dump(mode="json") for cue in draft.cues],
+                ass_path,
+                resolution[0],
+                resolution[1],
+            )
+            outputs.append(ass_path)
+            subtitles.update(
+                {
+                    "ass": "subtitles.ass",
+                    "render": "burn_in",
+                    "languages": draft.languages,
+                }
+            )
 
     colormaps = None
     if any(spec.kind == "legend" for spec in paths.storyboard.annotations):

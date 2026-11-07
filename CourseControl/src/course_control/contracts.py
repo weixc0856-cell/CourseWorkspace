@@ -41,6 +41,7 @@ class Outputs(StrictModel):
 class Compose(StrictModel):
     mode: Literal["deck", "recording"]
     base_video: str | None = None
+    renderer: Literal["timeline", "legacy"] = "timeline"
 
     @model_validator(mode="after")
     def recording_needs_base(self):
@@ -52,10 +53,50 @@ class Compose(StrictModel):
 class Narration(StrictModel):
     enabled: bool = False
     source: str | None = None
+    timing: Literal["planned", "measured"] = "planned"
+    mode: Literal["reference_only", "prompt_reference"] = "reference_only"
+    style_enabled: bool = True
+    text_frontend: bool = True
 
 
 class Subtitles(StrictModel):
     enabled: bool = False
+    render: Literal["remotion", "burn_in"] = "remotion"
+    top_language: str = "en"
+    bottom_language: str = "zh-Hans"
+
+
+class DurationPolicy(StrictModel):
+    """Course-level duration contract (R1-5B)."""
+
+    profile: Literal["standard", "short", "news"] = "standard"
+    target_seconds: float | None = Field(default=None, gt=0)
+    min_seconds: float | None = Field(default=None, ge=0)
+    max_seconds: float | None = Field(default=None, gt=0)
+    page_tolerance_seconds: float = Field(default=1.5, ge=0)
+
+    @model_validator(mode="after")
+    def _window_order(self):
+        if self.min_seconds is not None and self.max_seconds is not None:
+            if self.min_seconds > self.max_seconds:
+                raise ValueError("min_seconds must be <= max_seconds")
+        if self.target_seconds is not None:
+            if self.min_seconds is not None and self.min_seconds > self.target_seconds:
+                raise ValueError("min_seconds must be <= target_seconds")
+            if self.max_seconds is not None and self.max_seconds < self.target_seconds:
+                raise ValueError("max_seconds must be >= target_seconds")
+        return self
+
+
+class Authoring(StrictModel):
+    """Optional paths to AI-drafted, human-approved authoring artifacts."""
+
+    sources: str | None = None
+    digest: str | None = None
+    brief: str | None = None
+    outline: str | None = None
+    script: str | None = None
+    approval: str | None = None
 
 
 class Acceptance(StrictModel):
@@ -75,12 +116,14 @@ class LessonConfig(StrictModel):
     status: Literal["draft", "review", "final"]
     content: Content
     outputs: Outputs
-    engines: list[Literal["motion_canvas", "manim", "blender"]]
+    engines: list[Literal["motion_canvas", "manim", "blender", "code_video"]]
     compose: Compose
     narration: Narration = Narration()
     subtitles: Subtitles = Subtitles()
     acceptance: Acceptance = Acceptance()
     build: BuildOptions = BuildOptions()
+    duration: DurationPolicy | None = None
+    authoring: Authoring | None = None
 
     @field_validator("lesson_id")
     @classmethod
@@ -93,12 +136,15 @@ class LessonConfig(StrictModel):
 class ShotSpec(StrictModel):
     id: str
     slide: int = Field(ge=1)
-    engine: Literal["motion_canvas", "manim", "blender"]
+    engine: Literal["motion_canvas", "manim", "blender", "code_video"]
     scene: str
     cue_seconds: float = Field(ge=0)
     expected_duration_s: float | None = Field(default=None, gt=0)
     blend_task: str | None = None
     note: str | None = None
+    engine_profile: str | None = None
+    inputs: dict | None = None
+    validation: dict | None = None
 
 
 class AnnotationBase(StrictModel):
@@ -260,6 +306,23 @@ class Artifact(StrictModel):
     kind: str
     size_bytes: int
     probe: dict | None = None
+
+
+class RenderArtifact(StrictModel):
+    """Normalized artifact produced by an animation/composition adapter."""
+
+    path: str
+    sha256: str
+    bytes: int = Field(ge=0)
+    kind: Literal["video", "image", "audio", "blend", "script", "other"] = "video"
+    origin: Literal["rendered", "generated", "external", "copied"] = "rendered"
+    engine: str | None = None
+    duration_s: float | None = Field(default=None, ge=0)
+    width: int | None = Field(default=None, gt=0)
+    height: int | None = Field(default=None, gt=0)
+    fps: str | None = None
+    encoder: str | None = None
+    source_sha: str | None = None
 
 
 class BuildReport(StrictModel):

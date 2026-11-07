@@ -54,6 +54,7 @@ with route_model(server, model, lock, log_path, remote=remote) as route:
 
 - 本地 8080 始终先尝试；`busy` / `start_error` / `lock_timeout` / `missing_executable` 才按 `fallback_on` 回退。
 - 远程路由不持有本地锁；`provider=remote` 不得写成 `local`。
+- `RemoteConfig(thinking="disabled")` 或 `chat_completion(..., thinking="disabled")` 会发送 `{"thinking":{"type":"disabled"}}`；DeepSeek flash 默认把 `max_tokens` 全部用于推理，长结构化输出必须关闭，否则可能返回空 `content`。
 - key 只从环境变量读取；`health()` 输出不含密钥。
 - 视觉阶段只有 `supports_vision=true` 且配置 `vision_model` 才回退。
 - 任务记录新增 `provider` 字段（`local` / `remote`）。

@@ -25,6 +25,15 @@
 | V1-D 剩余轨道 | `ShotSpec` 扩展 `session/simulation/graphics`；Session runner 原生写 V1 | 未开始 |
 | V1 统一契约（V1-B/C/F） | `CourseControl/src/course_control/contracts_v1.py`、`timecode.py`、`legacy_e6.py`、`e65.py`；`shared/schemas/*-v1.schema.json`；`course-control schemas-v1` / `contract-v1-validate` / `e6-adapt` / `e65-adapt` | `CourseControl/tests/test_contracts_v1.py`、`test_timecode.py`、`test_legacy_e6.py`、`test_e65_contracts.py` |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
+| FR-15 输入摄取/摘要 | `CourseControl/src/course_control/authoring/ingest.py`、`digest.py` | `test_authoring_ingest.py` |
+| FR-16 课程草稿/批准门 | `authoring/llm.py`、`pipeline.py`、`CourseControl/prompts/` | `test_authoring_gate.py`、`test_authoring_ingest.py` |
+| FR-17 时长契约 | `duration.py`、`validators.py`、`collect.py`、`verify.py` | `test_duration_contract.py`、`test_duration_validation.py`、`test_collect_timing.py` |
+| FR-18 整课旁白 | `narrate.py`、`narration_course.py` | `test_narrate.py`、真实 VoxCPM2 样片 |
+| FR-19 双语字幕/双版本 | `subtitles.py`、`adapters/burn.py`、`pipeline.py`、`RemotionStudio/src/compositions/CourseTimeline.tsx` | `test_subtitles.py`、`test_burnin.py`、`test_staging.py`、真实 6 秒 TimelineSpec 合成 |
+| FR-20 代码驱动镜头 | `CourseControl/src/course_control/adapters/code_video.py`、`code_video_qc.py`、`engine_router.py`、`CodeVideoStudio/` | `test_code_video_adapter.py`、`test_code_video_qc.py`、`test_engine_router.py`、30 秒真实 Canvas 镜头 + 900/900 帧哈希一致 + QC/contact sheet |
+| FR-21 技术雷达 | `docs/技术雷达-视频生产.md`、`docs/评估-Code2Video接入.md` | HyperFrames/VideoZero POC 记录；许可证核查 |
+| FR-22 交付包/QC/归档 | `docs/课程生产交付物规范.md`、`report.py`、`verify.py`、`code_video_qc.py` | 交付清单、`build-report.json`、镜头 QC 证据 |
+| FR-23 Claude Code 默认后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`CourseControl/authoring/llm.py`、`ContentQA/client.py`、`ModelingStudio/server.py`、`config/claude-code.example.yaml` | `test_claude_code.py`、`test_authoring_claude_code.py`、ContentQA/ModelingStudio 后端测试、四后端对比真实验证 |
 
 ## 人工依赖
 

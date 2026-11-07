@@ -18,6 +18,9 @@
 - 前端评估：[docs/FRONTEND_ASSESSMENT.md](docs/FRONTEND_ASSESSMENT.md)
 - 统一契约 V1：[docs/课程生产统一契约V1.md](docs/课程生产统一契约V1.md)
 - E6.5 成片：[docs/E6.5-成片报告.md](docs/E6.5-成片报告.md)
+- 技术雷达与外部项目评估：[docs/技术雷达-视频生产.md](docs/技术雷达-视频生产.md)、[docs/评估-Code2Video接入.md](docs/评估-Code2Video接入.md)、[docs/评估-DeepSeek Harness.md](docs/评估-DeepSeek%20Harness.md)、[docs/评估-四后端对比.md](docs/评估-四后端对比.md)
+- 交付物/QC/归档：[docs/课程生产交付物规范.md](docs/课程生产交付物规范.md)
+- 代码视频镜头：[CodeVideoStudio/README.md](CodeVideoStudio/README.md)
 
 ## 2. 不可突破的硬约束
 
@@ -29,7 +32,8 @@
 6. **工程隔离。** 不全局安装依赖、不改系统 PATH、不写入 `<AI_ROOT>`；产物只写 `build/<slug>/` 与各工程自己的运行时目录。
 7. **不伪造验收。** 不能为了通过而修改测试预期、跳过检查或补写内容。
 8. **远程仓库只放工作流。** `lessons/` 真实课程、`build/`、`runtime/`、模型权重与媒体文件不入库；远程仓库必须保持可克隆、可测试、无课程内容。
-9. **远程回退必须显式。** 8080 被占用或本地启动失败时，只有 `config/model-routing.yaml` 明确启用且 key 环境变量存在才可回退远程 OpenAI 兼容 API；任务记录必须写 `provider`，不得冒充本地；视觉阶段没有 `vision_model` 时不得回退。**所有 DeepSeek 调用固定 `deepseek-flash`，禁用 `deepseek-v4-pro`；配置层会拒绝 pro。API key 只从系统环境变量读取（本机 `DeepSeek-API`），不写入 `.env`、YAML、日志或跟踪文件；仓库只保留不含 key 的 `.env.example`。远程 provider 可为 `deepseek` / `openai-compatible` 等；通用变量为 `REMOTE_*`，DeepSeek 兼容 `DEEPSEEK_*`。**
+9. **Claude Code 默认后端。** 课程文本生产（brief/outline/script/content）、字幕翻译、ContentQA 与 ModelingStudio 文本规划默认走 Claude Code；文本阶段必须禁用工具（`--tools=`），镜头 Agent 阶段只允许写 `build/` 暂存目录。不可用即 `blocked`；只有 `claude_code_fallback: local_first` 才可回退本地/远程，禁止静默降级。
+10. **远程回退必须显式。** 8080 被占用或本地启动失败时，只有 `config/model-routing.yaml` 明确启用且 key 环境变量存在才可回退远程 OpenAI 兼容 API；任务记录必须写 `provider`，不得冒充本地；视觉阶段没有 `vision_model` 时不得回退。**所有 DeepSeek 调用固定 `deepseek-flash`，禁用 `deepseek-v4-pro`；配置层会拒绝 pro。API key 只从系统环境变量读取（本机 `DeepSeek-API`），不写入 `.env`、YAML、日志或跟踪文件；仓库只保留不含 key 的 `.env.example`。远程 provider 可为 `deepseek` / `openai-compatible` 等；通用变量为 `REMOTE_*`，DeepSeek 兼容 `DEEPSEEK_*`。**
 
 ## 3. 常用入口
 
@@ -39,6 +43,7 @@ uv run --project CourseControl course-control validate --lesson <slug>
 .\scripts\build-lesson.ps1 -Lesson <slug>                  # 完整课程构建
 uv run --project ModelingStudio modeling-studio run --image <png>
 uv run --project ContentQA content-qa review --lesson <slug>
+# Code2Video 镜头（可选）：ShotSpec.engine=code_video，scene 指向 CodeVideoStudio/shots/<shot>/SPEC.md
 .\scripts\check-scene-system.ps1                           # IR v2 契约检查
 ```
 

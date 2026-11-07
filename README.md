@@ -17,6 +17,7 @@
 | --- | --- | --- |
 | `CourseControl/`、`CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`BlenderStudio/`、`RemotionStudio/` | 是 | 工作流与渲染入口 |
 | `ModelingStudio/`、`ContentQA/`、`shared/` | 是 | 内部能力与运行时 |
+| `CodeVideoStudio/` | 是 | Code2Video Skill（Apache 2.0）与镜头 POC；不含 27B 权重 |
 | `scripts/`、`config/*.example.yaml`、`docs/` | 是 | 入口、模板与指导 |
 | `lessons/` 真实课程 | **否** | 本地内容，仓库只保留 `lessons/README.md` |
 | `build/`、`runtime/`、`ModelingStudio/workspace/` | 否 | 生成物与运行态 |
@@ -35,6 +36,7 @@ CourseControl validate                 契约与路径检查（V-01~V-09）
         │
         ├─ capture_slides    → build/<slug>/slides/           Reveal 逐页截图 + manifest
         ├─ render:*          → build/<slug>/animation|blender  动画与三维成片
+        ├─ render:code_video → build/<slug>/animation/<project>.mp4  Code2Video 镜头
         ▼
 collect                                → build/<slug>/shots.json
         │
@@ -56,6 +58,7 @@ verify                                 → build/<slug>/final/build-report.json�
 | `CourseSlides/` | Reveal 6 外壳 | 浏览器页面 | 是 |
 | `MotionStudio/` | 结构动画（人工导出） | `animation/<stem>.mp4` | 是（人工） |
 | `ManimSandbox/` | 数学动画备选 | `animation/*.mp4` | 否 |
+| `CodeVideoStudio/` | Code2Video Skill：动效/HTML/SVG 镜头 | `animation/<project>.mp4` + `VERIFY.md` | 是（镜头级） |
 | `BlenderStudio/` | 课程渲染任务（v1）+ 场景系统（v2） | `blender/*.png|mp4|blend` | 是（可选引擎） |
 | `RemotionStudio/` | 截图、staging、合成 | `final/course-video.mp4` | 是 |
 | `ModelingStudio/` | 图片 → Blender 模型 | `workspace/jobs/<job>/` | 否（内部能力） |
@@ -125,18 +128,20 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 
 没有 8082 备用端口。
 
-## 本地模型与远程回退
+## AI 后端：Claude Code 默认，本地/远程回退
 
-- 默认仍走本地 8080；`shared/ai_runtime` 持有跨进程锁，同一时刻只允许一个本地任务。
+- **课程文本生产（brief/outline/script/content）、字幕翻译、ContentQA、ModelingStudio 文本规划与 Code2Video 镜头默认走 Claude Code。** 配置见 `config/claude-code.yaml`（示例：`config/claude-code.example.yaml`）；文本阶段禁用工具，镜头 Agent 阶段只写 `build/` 暂存目录。
+- 本地 8080 仍由 `shared/ai_runtime` 持有跨进程锁，同一时刻只允许一个本地任务；它现在是显式回退/视觉阶段后端，不再是默认文本生成路径。
 - 8080 被占用或本地启动失败时，可按 `config/model-routing.yaml` 回退到远程 OpenAI 兼容 API。`provider` 可为 `deepseek`、`openai-compatible` 或其他兼容实现；参考文件：`config/model-routing.example.yaml`。
 - 当前本机用 DeepSeek：`deepseek-flash` 支持图像理解，视觉阶段也可回退（2026-11-07 实测）。**所有 DeepSeek 调用固定 `deepseek-flash`，`deepseek-v4-pro` 已禁用，配置层会拒绝。**
 - API key 只从系统环境变量读取（本机已有 `DeepSeek-API`），**不要写进 `.env`、YAML、日志或任何文件**。
 - **`.env` 是本地实际配置（git 忽略）；`.env.example` 进远程，只含占位符与配置说明。** 通用变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`；DeepSeek 也可用 `DEEPSEEK_*` 别名。任何文件都不得出现明文 API key。
-- 任务记录新增 `provider`（`local` / `remote`）与实际模型名；远程调用不会冒充本地。视觉阶段只有在配置 `vision_model` 时才回退。
+- 任务记录新增 `provider`（`local` / `remote` / `claude_code`）与实际模型名；任何后端都不会冒充另一个后端。视觉阶段只有在配置 `vision_model` 时才回退。
 - 本机路径只允许出现在被忽略的 `config/*.yaml`、`.env`、`ModelingStudio/config/workflow.yaml`；跟踪文件由 `scripts/check-paths.ps1` 检查。
 
 ```powershell
 Copy-Item config/model-routing.example.yaml config/model-routing.yaml
+Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 # 然后把 api_key_env 改成你实际使用的环境变量名
 ```
 

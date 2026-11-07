@@ -173,7 +173,7 @@ Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output
 
 路径：`build/<slug>/review/review.json`。
 
-字段：`lesson`、`generated_at`、`model`、`status`、`tasks[]`、`findings[]`、`errors[]`。模型任务记录新增 `provider`（`local` / `remote`），远程回退不得写成 `local`。
+字段：`lesson`、`generated_at`、`model`、`status`、`tasks[]`、`findings[]`、`errors[]`。模型任务记录新增 `provider`（`local` / `remote` / `claude_code`），任何后端都不得写成另一个后端。
 单条意见：`id`、`slide`、`claim`、`verdict`（`supported` / `unsupported` / `disputed` / `needs_human_review` / `not_checked`）、`evidence`、`source_refs`。
 
 ### 4.4 状态词表
@@ -225,13 +225,15 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 
 ---
 
-### 5.4 本地优先与远程回退
+### 5.4 AI 后端：Claude Code 默认，本地/远程回退
 
 - 入口仍是 `route_model(server, model, lock, log_path, remote=...)`：先按 §5.2 使用本地 8080。
 - 仅当 `RemoteConfig` 显式启用、API key 环境变量存在、且本地失败原因在 `fallback_on` 中（`busy` / `start_error` / `lock_timeout` / `missing_executable`）时，才切换到远程 OpenAI 兼容端点。`provider` 可为 `deepseek`、`openai-compatible` 或其他兼容实现。
 - 远程调用不持有本地 8080 锁；本地锁在切换前已释放。远程路由返回 `provider="remote"`、实际模型名与 `trust_env`，调用方必须写入任务记录与阶段元数据。
 - 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。**DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 已禁用，`RemoteConfig` / `RemoteSettings` / ContentQA 配置都会拒绝。其他 OpenAI 兼容 provider 使用各自配置的模型。**
 - 远程凭据只从环境变量读取；配置、日志、任务记录、异常与健康输出都不包含密钥。
+- DeepSeek flash 默认把 `max_tokens` 用于 reasoning；长输出/结构化任务必须显式 `thinking=disabled`（`RemoteConfig.thinking` 或 `chat_completion(..., thinking="disabled")`），否则可能返回空 `content`。
+- **课程 AI 默认后端是 Claude Code（D-042）。** 文本阶段用 `claude -p --tools=`（无工具），镜头 Agent 阶段才开放工具且只写 `build/` 暂存目录；任务记录 `provider=claude_code`。Claude Code 不可用时显式 `blocked`，只有 `claude_code_fallback: local_first` 才回退到本地/远程。ModelingStudio 的 vision 阶段仍用本地/远程视觉模型。
 - 配置参考：`config/model-routing.example.yaml`（provider-agnostic，含 DeepSeek / OpenAI-compatible 示例）；本机实际 `.env` 与 `config/model-routing.yaml` 均被 `.gitignore` 忽略。通用环境变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`，DeepSeek 也兼容 `DEEPSEEK_*`。API key 只从系统环境变量读取（本机为 `DeepSeek-API`），不写入 `.env`、YAML、日志或任何文件；仓库只保留不含 key 的 `.env.example`。
 
 ## 6. 环境与端口
@@ -250,7 +252,29 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 
 ---
 
-## 7. 扩展规则
+## 7. R1 增量（2026-11-07）
+
+| 能力 | 模块 / 数据 | 说明 |
+| --- | --- | --- |
+| 输入摄取 | `course_control/authoring/ingest.py` | URL/Markdown/TXT → `authoring/sources/` + `sources.yaml`；stdlib，无新依赖 |
+| 来源摘要 | `authoring/digest.py` | 稳定引用 `S1-3.2`、行号、sha、摘录 |
+| 课程草稿 | `authoring/pipeline.py`、`CourseControl/prompts/` | brief/outline/script/content 候选；Claude Code 默认，本地/远程显式回退 |
+| 人工批准门 | `authoring/pipeline.py`、`authoring/approval.json` | sha256 批准；`author-narration/subtitles-build` 验证 |
+| 时长契约 | `duration.py`、`validators.py`、`collect.py`、`verify.py` | `lesson.yaml.duration`；planned/measured 单向权威；V-26/V-27 |
+| 整课旁白 | `narration_course.py`、`narrate.py` | 单服务、逐段缓存、48 kHz mono、页跨度回写；V-30 |
+| 双语字幕 | `subtitles.py` | 英上中下、SRT/ASS/VTT、逐 cue 翻译；V-31 |
+| 双版本成片 | `adapters/burn.py`、`pipeline.py` | 干净母版 + ASS 烧录版；QSV → libx264；V-28 |
+| TimelineSpec 合成 | `RemotionStudio/src/compositions/CourseTimeline.tsx`、`adapters/remotion.py` | `timeline.spec.json` 驱动；`compose.renderer: legacy` 回退 |
+| 引擎路由 | `engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
+| Code2Video 镜头 | `adapters/code_video.py`、`CodeVideoStudio/` | 镜头级 `SPEC.md` + `frame(t)` + `VERIFY.md`；本地 Playwright/ffmpeg；不部署 27B；Agent 用 Claude Code + DeepSeek |
+| HTML 渲染/lint 备选 | `CodeVideoStudio/backends/hyperframes/` | HyperFrames POC：HTML/GSAP → MP4，`check` 提供首帧/字号/对比度检查；不替换 Remotion |
+| Motion Canvas 自动导出候选 | `build/videozero-poc/`（POC） | VideoZero agent：seek/screenshot/render；image sequence + 外部 ffmpeg；不是纯 headless |
+
+新增路径：`lessons/<slug>/authoring/`（来源、摘要、brief、outline、script、approval）；`build/<slug>/authoring/candidates/`（未批准候选）；`build/<slug>/narration/`；`build/<slug>/subtitles/`；`build/<slug>/timeline/page-plan.json`；`build/<slug>/final/burn.json`。
+
+---
+
+## 8. 扩展规则
 
 1. 新引擎必须实现 `adapters/base.py` 的 `StageOutcome` 契约，并由 `lesson.yaml.engines` 声明。
 2. 新数据文件必须有 Pydantic 模型 + 导出的 JSON Schema + 同步测试。
