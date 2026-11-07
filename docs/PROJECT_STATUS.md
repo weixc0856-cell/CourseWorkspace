@@ -1,8 +1,9 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8）
-- **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
+- **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8；同日完成全链路基线核实与计数校正）
+- **代码基线**：分支 `feat/p1-teaching-primitives` = `1e3374f`（已推送）；`origin/main` = `c2ad196`（PR #3 合并至 `876d40a`）；本地 `main` = `9ddb23f`（落后 `origin/main` 24 个提交）
+- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 203 个用例（201 通过 + 2 跳过）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -128,23 +129,31 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 
 ## 1. 基线核实
 
+- 核实日期：2026-11-07；工作树干净；`check.ps1` 实跑 `check ok`。
+
 | 项 | 事实 |
 | --- | --- |
-| 本地分支 | `main`（跟踪 `origin/main`，落后 1 个提交） |
-| 本地 HEAD | `8e45a68 chore: 移除误跟踪的 __pycache__ 字节码` |
-| 远程 HEAD | `027e64d Create django.yml`（GitHub 网页提交，新增 `.github/workflows/django.yml`） |
-| `d53ebd1` | 干净的初始工作流快照（无父提交）；是当前代码的基线 |
-| 当前运行代码 | `d53ebd1` + `33c68ad`（IR v2 base_blend 校验修复）+ `8e45a68`（移除误跟踪字节码） |
+| 当前分支 | `feat/p1-teaching-primitives` |
+| 本地 HEAD | `1e3374f feat: E6.5 V1 契约适配与统一 RenderManifest` |
+| 远程同名分支 | `origin/feat/p1-teaching-primitives` = `1e3374f`（已推送） |
+| `origin/main` | `c2ad196 Merge pull request #3`；PR #3 合并的是 `876d40a` |
+| 未合并提交 | `919ac93` / `37152ec` / `1e3374f` 只在 feature 分支，尚未进入 `main` |
+| 本地 `main` | `9ddb23f`，落后 `origin/main` 24 个提交，未同步 |
+| `d53ebd1` | 干净的初始工作流快照（无父提交）；仍是最早基线 |
 | `converge/v1` | `dd1d7f2`，完整收敛历史（含早期课程内容），**仅本地** |
 | `archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |
-| 远程内容 | 267 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
-| 本地/远程差异 | 远程新增 `django.yml`，本地未同步；本地无未推送提交 |
+| 远程内容 | `origin/main` 358 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
+| 本地 HEAD 内容 | 375 个文件；相对 `origin/main` 新增 18 个（E6.5 与 V1 适配文件），删除 1 个（`django.yml`） |
 
-**说明**：此前报告中的 `d53ebd1` 与 `8e45a68` 没有记错——前者是干净快照，后者是在其上的第二个修复提交。当前实际代码包含两者。
+**说明**：`d53ebd1` 是干净快照；当前代码已经过 E0–E6.5 与 V1-B/C/F 增量，不再等同于 `d53ebd1`。
 
 **仓库元数据**：Description 与 9 个 Topics 已通过 `gh repo edit` 写入并回读确认。
 
-**待处理（未擅自修改）**：`origin/main` 的 `.github/workflows/django.yml` 是 GitHub 的通用 Django CI 模板，与本项目无关（无 `requirements.txt` / `manage.py`），每次推送都会运行并失败。建议在 GitHub 上删除该工作流，再决定是否用本项目自己的 CI。
+**待处理（未擅自修改）**：
+
+1. `origin/main` 仍含 `.github/workflows/django.yml`（GitHub 通用 Django CI 模板，与本项目无关，无 `requirements.txt` / `manage.py`），每次推送都会运行并失败；建议在 GitHub 删除。
+2. 最新 3 个 E6.5 提交已推送到 feature 分支，但尚未合并 `main`；需要 PR/合并。
+3. 本地 `main` 停在 `9ddb23f` 且落后 24 个提交；确定合并策略后再同步，不要直接 `reset --hard`。
 
 ---
 
@@ -156,7 +165,7 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | FR-02 | V-01~V-09 校验 | `validators.py` | `check.ps1`；V-04 失败单测 | COMPLETED | — |
 | FR-03 | 预览与截图 | `adapters/slides.py` + `capture-slides.mjs` | 真实课程 20/20（`build/01-shell-for-ai-era/slides`） | COMPLETED | — |
 | FR-04 | 动画渲染 | Motion 人工导出；Manim / Blender v1 适配器 | `lesson-manual` 夹具；真实课程 `manual_export_required` | PARTIAL | 8 段 Motion 导出未完成 |
-| FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py`、`shared/scene_expr` | `check-scene-system.ps1 -Render` 8 次真实渲染；51 个 CourseControl 测试（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色、参数化曲面与语义验收） | COMPLETED | — |
+| FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py`、`shared/scene_expr` | `check-scene-system.ps1 -Render` 8 次真实渲染；CourseControl 测试覆盖见 ACCEPTANCE（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色、参数化曲面与语义验收） | COMPLETED | — |
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
 | FR-07 | 时间线收集 | `collect.py`（含 `annotations[]`） | `lesson-smoke` shots.json 通过 verify；V-22 标注检查 | COMPLETED | — |
 | FR-08 | 合成与成片验收 | `verify.py`、`report.py`、`adapters/remotion.py` | `lesson-smoke`、`lesson-blender-only` verdict pass | COMPLETED | — |
@@ -185,7 +194,7 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 127 个用例（66+28+22+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 203 个用例（201 通过 + 2 跳过；131+28+22+11+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
@@ -226,10 +235,11 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 
 | 编号 | 冲突/偏差 | 证据 | 处理建议 |
 | --- | --- | --- | --- |
-| C-01 | 远程 `main` 含无关的 `django.yml` CI | `origin/main = 027e64d`；工作流引用 `requirements.txt`、`manage.py` | 在 GitHub 删除；如需 CI，另写本项目工作流 |
-| C-02 | 本地 `main` 落后 `origin/main` 1 个提交 | `git status -sb` 显示 `[behind 1]` | 决定删除 django.yml 后 `git fetch && git reset --hard origin/main`（需人工确认） |
+| C-01 | 远程 `main` 含无关的 `django.yml` CI | `origin/main = c2ad196`；工作流引用 `requirements.txt`、`manage.py` | 在 GitHub 删除；如需 CI，另写本项目工作流 |
+| C-02 | 本地 `main` 落后 `origin/main` 24 个提交 | `git rev-list --left-right --count main...origin/main` | 确定合并策略后再同步；不要直接 `reset --hard` |
 | C-03 | PRD FR-10 要求“产物存在且**校验通过**才算完成”；`stage_done` 只检查状态 + 文件存在 | `ModelingStudio/src/modeling_studio/job.py::stage_done` | 当前产物为 JSON/Markdown，无独立校验器；建议在 PRD 中把措辞改为“产物存在且可由后续阶段解析”，或补校验 |
 | C-04 | `ManimSandbox/requirements.txt` 与 `pyproject.toml` 重复声明依赖 | 两个文件同时存在 | 保留 `pyproject.toml`，把 `requirements.txt` 降级为可选导出，或删除 |
+| C-05 | 最新 3 个 E6.5 提交只在 feature 分支 | `1e3374f` 不是 `origin/main` 的祖先；`git log 1e3374f..origin/main` 有 4 个提交 | 发起 PR 合并；合并前处理 `django.yml` |
 
 ---
 
