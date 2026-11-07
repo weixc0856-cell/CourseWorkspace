@@ -39,7 +39,7 @@
 | Python 工具链（E3） | `offline_commands`、本地 HTTP 索引、`trim`、`check-python-session.ps1`、`check-python-network.ps1` | `python_001` / `python_network_001`：安装 + 离线验证；V-23/V-25 |
 | Manim FFT 基线（E5） | `ManimSandbox/02-fft-baseline/fft_baseline.py` | `build/manim-fft/fft_baseline.mp4`：1920×1080 / 30fps / 7.8s |
 | Rust 镜头（E4） | `rust-001` fixture、`check-rust-session.ps1` | host VS Code + Git Bash，`cargo run`；V-23/V-24 |
-| Transformer 基线（E6） | `ManimSandbox/03-transformer-baseline/attention_baseline.py` | `build/manim-transformer/attention_baseline.mp4`：1920×1080/30fps/9.1s |
+| Transformer 基线（E6） | `ManimSandbox/03-transformer-baseline/attention_baseline.py`、`04-transformer-explainer/` | `attention_baseline.mp4` 9.1s；`transformer_explainer.mp4` 22.3s（三幕） |
 
 当前计数：CourseControl 66 个单测；全套 127 个；场景契约仍为 9 合法 + 11 非法；8080 未被触碰。
 

@@ -36,6 +36,14 @@ uv run manim render -r 1920,1080 --fps 30 `
 uv run manim render -r 1920,1080 --fps 30 `
   --media_dir ..uild\manim-transformer\media 03-transformer-baseline/attention_baseline.py AttentionBaseline
 
+# Transformer 三幕讲解（tokens → attention → context）
+uv run manim render -r 1920,1080 --fps 30 `
+  --media_dir ..uild\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py TokensScene
+uv run manim render -r 1920,1080 --fps 30 `
+  --media_dir ..uild\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py AttentionScene
+uv run manim render -r 1920,1080 --fps 30 `
+  --media_dir ..uild\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py OutputScene
+
 # 低清预览，-p 渲染完自动播放
 uv run manim -pql 01-transformer-demo/dot_product.py DotProduct
 

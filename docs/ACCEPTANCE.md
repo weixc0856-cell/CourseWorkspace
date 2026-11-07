@@ -147,6 +147,14 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 - 证据：`build/manim-transformer/attention_baseline.mp4`（1920×1080，30 fps，9.1 s）；抽帧已确认。
 - 边界：这是技术产品基线，不等于 3Blue1Brown 的完整风格复刻；镜头编排、旁白与复杂概念拆解仍待 E6 第二阶段。
 
+### 3.1.6 Transformer 三幕讲解（E6 第二阶段视觉）
+
+- 文件：`ManimSandbox/04-transformer-explainer/transformer_explainer.py`
+- 三个 Manim 场景：`TokensScene` / `AttentionScene` / `OutputScene`
+- 合并成片：`build/manim-transformer/transformer_explainer.mp4`（1920×1080，30 fps，22.3 s）
+- 已抽帧确认：token → vector、query 权重、context 合成三段画面。
+- 未完成：旁白、字幕与 3B1B 式逐镜节奏；当前是视觉与结构基线。
+
 ### 3.1.4 Rust 镜头（E4）
 
 ```powershell

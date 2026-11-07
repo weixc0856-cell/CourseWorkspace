@@ -97,6 +97,8 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 # Manim 基线（E5 FFT / E6 Transformer）
 uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
   --media_dir build/manim-fft/media ManimSandbox/02-fft-baseline/fft_baseline.py FFTBaseline
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-transformer/explainer/media ManimSandbox/04-transformer-explainer/transformer_explainer.py TokensScene
 
 # 三维场景任务（IR v2）
 uv run --project CourseControl course-control scene-validate `
