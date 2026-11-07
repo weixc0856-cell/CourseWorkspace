@@ -46,22 +46,23 @@ def _program_files(*parts: str) -> Path | None:
 
 
 def _code_command() -> str:
-    executable = shutil.which("code")
-    if executable:
-        return executable
     candidate = _program_files("Microsoft VS Code", "bin", "code.cmd")
     if candidate is not None and candidate.is_file():
         return str(candidate)
+    executable = shutil.which("code")
+    if executable:
+        return executable
     raise SessionRunError("VS Code code.cmd not found; add VS Code to PATH")
 
 
 def _bash_path() -> str:
-    executable = shutil.which("bash")
-    if executable:
-        return executable
+    # Prefer Git for Windows over a WSL bash that may also be on PATH.
     candidate = _program_files("Git", "bin", "bash.exe")
     if candidate is not None and candidate.is_file():
         return str(candidate)
+    executable = shutil.which("bash")
+    if executable:
+        return executable
     raise SessionRunError("Git Bash not found; add Git Bash to PATH")
 
 
