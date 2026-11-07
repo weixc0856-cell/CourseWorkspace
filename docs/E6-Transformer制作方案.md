@@ -1,6 +1,6 @@
 # E6 Transformer 注意力讲解制作方案
 
-- **状态**：E6.1–E6.4 已完成（四幕 + 旁白 + 字幕 + 33.1s 成片）；E6.5/E6.6 待排期
+- **状态**：E6.1–E6.4 已完成（四幕 + 旁白 + 字幕 + 33.1s 成片）；E6.5 已完成（Multi-Head，86.9s 成片 + V1 契约）；E6.6 待排期
 - **日期**：2026-11-07
 - **目标**：把三幕视觉基线升级为一条讲清 Self-Attention 计算关系的教学视频
 - **边界**：先做 Embedding / QKV / Softmax / Weighted Value；Multi-Head 与完整 Block 留到 E6.5/E6.6
@@ -80,4 +80,4 @@ context = sum_i alpha_i * v_i
 3. 旁白四段生成成功，拼接后与四幕总时长一致（允许 0.5 秒静音余量）。
 4. SRT 与旁白段落同步；成片含音频流与字幕文件。
 5. 证据落盘：`build/manim-transformer/e6/{shots,narration,srt,final,manifest}`。
-6. 不把 Multi-Head/Block 塞进本期；E6.5/E6.6 单独排期。
+6. 不把 Multi-Head/Block 塞进本期；E6.5 已单独完成，E6.6 单独排期。

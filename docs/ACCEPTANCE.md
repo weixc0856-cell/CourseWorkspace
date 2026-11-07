@@ -17,13 +17,13 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 129（127 通过 + 2 跳过；含 V1-B/C 新增 63） | 127 通过，2 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 131（129 通过 + 2 跳过；含 V1-B/C 与 E6.5 契约） | 129 通过，2 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
 
-合计 **201** 个用例（199 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **203** 个用例（201 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -32,6 +32,7 @@ uv run --project CourseControl course-control schemas-v1 --output shared/schemas
 uv run --project CourseControl course-control contract-v1-validate --kind timeline-v1 --file docs/contracts/examples/timeline.spec.json
 uv run --project CourseControl course-control e6-adapt --workspace . --manifest build/manim-transformer/e6/manifest.json --output build/manim-transformer/e6/render.manifest.v1.json
 python ManimSandbox/05-multi-head/verify_math.py --output build/manim-multi-head/e6.5/math-report.json
+uv run --project CourseControl course-control e65-adapt --workspace . --manifest build/manim-multi-head/e6.5/manifest.json
 ```
 
 - `schemas-v1`：导出 7 份 V1 JSON Schema。
@@ -191,7 +192,8 @@ python ManimSandbox/05-multi-head/assemble.py
 - 成片：`build/manim-multi-head/e6.5/final.mp4`，2608 帧，86.929 s，视频+音频+字幕。
 - 检查：`build/manim-multi-head/e6.5/manifest.json` 14 条全 pass。
 - 测试：`ManimSandbox/tests` 11 个（8 数学 + 3 成片/SRT）。
-- 未完成：V1 `RenderManifest`；未并入 `pipeline.py` / `lessons/`。
+- V1 契约：`e65-adapt` 生成 `NarrationSpec` / `TimelineSpec` / `ShotSpec` / `RenderManifest`；`source.lesson_spec=null`。
+- 未完成：未并入 `pipeline.py` / `lessons/`；SRT 未做逐字强制对齐。
 
 ### 3.1.4 Rust 镜头（E4）
 

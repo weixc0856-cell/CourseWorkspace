@@ -289,19 +289,33 @@
       "additionalProperties": false,
       "properties": {
         "lesson_spec": {
-          "$ref": "#/$defs/AssetRef"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssetRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "timeline": {
           "$ref": "#/$defs/AssetRef"
         },
         "narration": {
-          "$ref": "#/$defs/AssetRef"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssetRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
-        "lesson_spec",
-        "timeline",
-        "narration"
+        "timeline"
       ],
       "title": "RenderSource",
       "type": "object"

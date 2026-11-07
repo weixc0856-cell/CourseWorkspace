@@ -1,7 +1,7 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（E6.5 成片，见 §0.7）
+- **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
@@ -50,7 +50,7 @@
 | [架构审查-课程生产统一契约.md](架构审查-课程生产统一契约.md) | 现有课程/模块边界、重复实现、接口缺失、耦合、保留/调整建议 | 已完成审查，未改代码 |
 | [课程生产统一契约V1.md](课程生产统一契约V1.md) | LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest；整数帧时间线；E6 manifest 兼容 | 已评审；V1-B 已实现 |
 | [contracts/examples/](contracts/examples/) | Lesson / Shot / Narration / Timeline / Evidence / Render 示例 + E6 V0 迁移示例 | 示例 JSON，已做语法校验 |
-| [E6.5-MultiHead设计.md](E6.5-MultiHead设计.md) | 两头算例、五 beat 分镜、旁白/字幕草案、维度清单、自动验收 | 设计稿，待评审 |
+| [E6.5-MultiHead设计.md](E6.5-MultiHead设计.md) | 两头算例、五 beat 分镜、旁白/字幕、维度清单、自动验收 | 已完成（见 §0.8） |
 
 本轮只写文档与示例，未修改任何代码；CourseControl 66 个单测通过（2 个集成测试跳过）；E6.1–E6.4 未改动；8080 未触碰。决策记录见 [DECISIONS.md](DECISIONS.md) D-026。
 
@@ -111,6 +111,18 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | 成片报告 | [E6.5-成片报告.md](E6.5-成片报告.md) | 旁白/字幕/mux/检查 |
 
 全项目现为 **201 个用例（199 通过 + 2 跳过）**。TTS 50000 调用前已 ready，本次复用，未启动/停止他人服务；未触碰 8080。
+
+### 0.8 2026-11-07 E6.5 V1 契约
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| E6.5 V1 适配 | `CourseControl/src/course_control/e65.py` | 生成 NarrationSpec / TimelineSpec / ShotSpec / RenderManifest |
+| CLI | `course-control e65-adapt` | 已实现；14 条成片检查全 pass |
+| 生成契约 | `build/manim-multi-head/e6.5/contracts/` | `source.lesson_spec=null`；timeline/narration 非空 |
+| 适配测试 | `CourseControl/tests/test_e65_contracts.py` | 2 个；本地集成测试执行 |
+| 成片报告 | [E6.5-成片报告.md](E6.5-成片报告.md) | V1 契约与复现命令 |
+
+全项目现为 **203 个用例（201 通过 + 2 跳过）**。E6.5 未并入 `pipeline.py` / `lessons/`；未做逐字强制对齐；未改 E6.1–E6.4；未触碰 8080。
 
 ---
 

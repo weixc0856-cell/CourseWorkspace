@@ -20,7 +20,7 @@
 | FR-12 在线审查 | `ContentQA/src/content_qa/` | `ContentQA/tests/test_content_qa.py`、`test_schemas.py` |
 | FR-13 报告 | `CourseControl/src/course_control/report.py`、`blender_runner.py`、`shared/ai_runtime/tasks.py`、`ContentQA/src/content_qa/review.py` | 各报告结构断言 |
 | FR-14 一键回归 | `scripts/check.ps1`、`scripts/check-scene-system.ps1` | 自身执行 |
-| V1 统一契约（V1-B/C） | `CourseControl/src/course_control/contracts_v1.py`、`timecode.py`、`legacy_e6.py`；`shared/schemas/*-v1.schema.json`；`course-control schemas-v1` / `contract-v1-validate` / `e6-adapt` | `CourseControl/tests/test_contracts_v1.py`、`test_timecode.py`、`test_legacy_e6.py` |
+| V1 统一契约（V1-B/C/F） | `CourseControl/src/course_control/contracts_v1.py`、`timecode.py`、`legacy_e6.py`、`e65.py`；`shared/schemas/*-v1.schema.json`；`course-control schemas-v1` / `contract-v1-validate` / `e6-adapt` / `e65-adapt` | `CourseControl/tests/test_contracts_v1.py`、`test_timecode.py`、`test_legacy_e6.py`、`test_e65_contracts.py` |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
 
 ## 人工依赖
