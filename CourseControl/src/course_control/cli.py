@@ -235,6 +235,46 @@ def e6_adapt_command(
     raise typer.Exit(1 if failed else 0)
 
 
+@app.command("e65-adapt")
+def e65_adapt_command(
+    manifest: Path = typer.Option(
+        Path("build/manim-multi-head/e6.5/manifest.json"), "--manifest"
+    ),
+    output_dir: Path | None = typer.Option(None, "--output-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    voice_ref: Path | None = typer.Option(None, "--voice-ref"),
+    run_id: str | None = typer.Option(None, "--run-id"),
+) -> None:
+    """Generate V1 NarrationSpec/TimelineSpec/ShotSpec/RenderManifest for E6.5."""
+    from .e65 import E65Error, adapt_e65
+
+    if not manifest.is_file():
+        typer.echo(f"manifest not found: {manifest}", err=True)
+        raise typer.Exit(2)
+    try:
+        result = adapt_e65(
+            manifest,
+            workspace=workspace,
+            voice_ref=voice_ref,
+            run_id=run_id,
+            output_dir=output_dir,
+        )
+    except E65Error as exc:
+        typer.echo(f"E6.5 adapt failed: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    render = result["manifest"]
+    for key, path in result["paths"].items():
+        if isinstance(path, list):
+            for item in path:
+                typer.echo(f"wrote {item}")
+        else:
+            typer.echo(f"wrote {path}")
+    for check in render.checks:
+        typer.echo(f"[{check.id}] {check.status}: {check.detail}")
+    failed = [check for check in render.checks if check.status == "fail"]
+    raise typer.Exit(1 if failed else 0)
+
+
 @app.command("scene-validate")
 def scene_validate_command(
     task: Path = typer.Option(..., "--task"),

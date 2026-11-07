@@ -642,9 +642,10 @@ class EvidenceManifestV1(V1Model):
 
 
 class RenderSource(V1Model):
-    lesson_spec: AssetRef
+    # Standalone tracks (such as E6.5) may not have an author lesson.yaml.
+    lesson_spec: AssetRef | None = None
     timeline: AssetRef
-    narration: AssetRef
+    narration: AssetRef | None = None
 
 
 class RenderOutput(V1Model):

@@ -139,7 +139,7 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | 代码/终端会话 | 执行、录制、证据 | `shared/schemas/session.schema.json`、`evidence.schema.json` |
 | 模型任务记录 | 任务状态与预算 | `shared/schemas/model-task.schema.json` |
 | 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
-| 规范化运行时 V1（设计/实现中） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
+| 规范化运行时 V1（V1-B/C/F 已实现；V1-D/E 未开始） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
 
 Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output shared/schemas`，V1 用 `course-control schemas-v1 --output shared/schemas`。提交前必须与模型一致（有测试锁定）。V1 是 `lesson.yaml` / `storyboard.yaml` 之上的规范化运行时层，不替换作者文件。
 

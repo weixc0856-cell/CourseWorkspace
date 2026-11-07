@@ -6,7 +6,7 @@
 - **架构与契约**：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **验收与命令**：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
 - **决策记录**：[docs/DECISIONS.md](docs/DECISIONS.md)
-- **实现状态**：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
+- **需求映射**：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - **Claude Code 入口**：[CLAUDE.md](CLAUDE.md)
 
 ## 仓库范围（远程 vs 本地）

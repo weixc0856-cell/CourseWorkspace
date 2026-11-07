@@ -63,6 +63,10 @@ try {
         uv run --project ContentQA python -m unittest discover `
             -s ContentQA/tests -t ContentQA
     }
+    Invoke-Checked "unit tests: ManimSandbox" -Quiet {
+        uv run --project ManimSandbox python -m unittest discover `
+            -s ManimSandbox/tests -t ManimSandbox
+    }
 
     $lessons = @(
         @{Lesson = "01-shell-for-ai-era"; Dir = "lessons"},
