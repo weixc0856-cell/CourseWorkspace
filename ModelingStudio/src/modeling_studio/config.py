@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
+from ai_runtime import load_env_file
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -269,6 +270,9 @@ def load_config(path: Path | None = None) -> WorkflowConfig:
             f"config not found: {config_path}; "
             "copy ModelingStudio/config/workflow.example.yaml to config/workflow.yaml"
         )
+    # Real DeepSeek values live in the workspace .env (git-ignored).
+    if len(config_path.parents) >= 3:
+        load_env_file(config_path.parents[2] / ".env")
     try:
         data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:

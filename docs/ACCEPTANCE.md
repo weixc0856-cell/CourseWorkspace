@@ -19,11 +19,11 @@
 | --- | --- | --- | --- |
 | CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 138（136 通过 + 2 跳过；含 V1-B/C/D/E 与 E6.5 契约） | 136 通过，2 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 32 | 全部通过 |
-| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 36 | 全部通过 |
-| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 14 | 全部通过 |
+| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 40 | 全部通过 |
+| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 16 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
 
-合计 **231** 个用例（229 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **237** 个用例（235 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -248,6 +248,8 @@ python ManimSandbox/05-multi-head/assemble.py
 | 远程真实文本冒烟 | `config/model-routing.yaml` + `DeepSeek-API` | 2026-11-07 可达；`deepseek-flash` 返回 `OK`；未打印密钥 |
 | 远程真实图片冒烟 | 256×256 PNG + `deepseek-flash` | 2026-11-07 返回“红色”；`deepseek-v4-pro` 已禁用 |
 | DeepSeek 模型策略 | `test_remote.py`、`test_remote_routing.py`、`test_model_policy.py` | flash 接受；pro 在 ai_runtime / ModelingStudio / ContentQA 配置层均被拒绝 |
+| 环境变量优先 | `test_env.py`、`test_remote.py::EnvironmentOverrideTest`、`test_env_overrides.py` | `.env` 自动加载；shell env 优先；`DEEPSEEK_*` 覆盖本地 YAML；env 设 pro 仍被拒绝 |
+| 密钥隔离 | 系统环境变量 `DeepSeek-API` | key 不写入 `.env`/YAML/日志/跟踪文件；跟踪文件只含不含 key 的 `.env.example` |
 | 路径卫生 | `scripts/check-paths.ps1` | `path check ok`；跟踪文件中无本机盘符/用户目录绝对路径 |
 | 真实课程无配置 | `content-qa review --lesson 01-shell-for-ai-era` | **blocked，exit 3**；报告写入 `build/01-shell-for-ai-era/review/review.json` |
 

@@ -55,6 +55,17 @@ class RemoteConfig:
     )
 
     def __post_init__(self) -> None:
+        # Environment is authoritative for real DeepSeek settings. The tracked
+        # config/example files only contain safe defaults or placeholders.
+        if self.provider == "deepseek":
+            for attr, env_name in (
+                ("base_url", "DEEPSEEK_BASE_URL"),
+                ("model", "DEEPSEEK_MODEL"),
+                ("vision_model", "DEEPSEEK_VISION_MODEL"),
+            ):
+                value = os.environ.get(env_name)
+                if value:
+                    setattr(self, attr, value)
         # Project policy: DeepSeek calls are pinned to deepseek-flash.
         # deepseek-v4-pro and other DeepSeek models are disabled.
         if self.provider != "deepseek":

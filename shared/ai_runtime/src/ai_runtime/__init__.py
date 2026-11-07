@@ -16,6 +16,7 @@ from .budget import (
     estimate_text_tokens,
     plan_budget,
 )
+from .env import load_env_file
 from .locks import FileLock, LockInfo, LockTimeout, pid_alive
 from .remote import (
     RemoteAuthError,
@@ -56,6 +57,7 @@ __all__ = [
     "LockInfo",
     "LockTimeout",
     "pid_alive",
+    "load_env_file",
     "RemoteAuthError",
     "RemoteConfig",
     "RemoteError",

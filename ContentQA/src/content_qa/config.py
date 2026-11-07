@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
+from ai_runtime import load_env_file
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -51,10 +52,25 @@ def load_config(path: Path | None = None) -> ReviewConfig | None:
     target = path or DEFAULT_CONFIG
     if not target.is_file():
         return None
+    # Real DeepSeek values live in the workspace .env (git-ignored).
+    load_env_file(target.parent.parent / ".env")
     try:
         data = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
         raise ConfigError(f"invalid YAML in {target}: {exc}") from exc
+    # Real DeepSeek endpoint/model live in the local environment. The YAML
+    # config only needs a provider shape and a non-secret fallback.
+    model_data = data.get("model")
+    if isinstance(model_data, dict):
+        env_base = os.environ.get("DEEPSEEK_BASE_URL")
+        env_model = os.environ.get("DEEPSEEK_MODEL")
+        current_base = str(model_data.get("base_url") or "")
+        if env_base or env_model:
+            if "deepseek" in current_base.lower() or "deepseek" in (env_base or "").lower():
+                if env_base:
+                    model_data["base_url"] = env_base
+                if env_model:
+                    model_data["model"] = env_model
     try:
         return ReviewConfig.model_validate(data)
     except ValidationError as exc:

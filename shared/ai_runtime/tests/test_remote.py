@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import socket
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -260,6 +262,27 @@ class RoutingTest(unittest.TestCase):
         ) as route:
             self.assertEqual(route.provider, "remote")
             self.assertEqual(route.model, "vision-model")
+
+
+class EnvironmentOverrideTest(unittest.TestCase):
+    def test_env_overrides_deepseek_settings(self):
+        with patch.dict(
+            os.environ,
+            {
+                "DEEPSEEK_BASE_URL": "https://example.test/v1",
+                "DEEPSEEK_MODEL": "deepseek-flash",
+                "DEEPSEEK_VISION_MODEL": "deepseek-flash",
+            },
+        ):
+            config = RemoteConfig(provider="deepseek")
+        self.assertEqual(config.base_url, "https://example.test/v1")
+        self.assertEqual(config.model, "deepseek-flash")
+        self.assertEqual(config.vision_model, "deepseek-flash")
+
+    def test_env_pro_is_rejected(self):
+        with patch.dict(os.environ, {"DEEPSEEK_MODEL": "deepseek-v4-pro"}):
+            with self.assertRaises(ValueError):
+                RemoteConfig(provider="deepseek")
 
 
 class TaskProviderTest(unittest.TestCase):
