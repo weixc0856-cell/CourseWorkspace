@@ -105,11 +105,11 @@
 
 | 套件 | 结果 |
 | --- | --- |
-| CourseControl | **116 个用例，OK（skipped=2）** |
+| CourseControl | **116 个用例（114 通过 + 2 跳过）** |
 | ModelingStudio | 28 个用例，OK |
 | shared/ai_runtime | 22 个用例，OK |
 | ContentQA | 11 个用例，OK |
-| 合计 | **177 个用例，OK** |
+| 合计 | **177 个用例（175 通过 + 2 跳过）** |
 
 新增 50 个用例：
 

@@ -17,12 +17,12 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 116（含 V1-B 新增 50；skipped=2） | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 116（114 通过 + 2 跳过；含 V1-B 新增 50） | 114 通过，2 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **177** 个用例；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **177** 个用例（175 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
