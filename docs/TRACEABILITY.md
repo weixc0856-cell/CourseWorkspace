@@ -14,13 +14,15 @@
 | FR-06 本地建模 | `ModelingStudio/src/modeling_studio/` | `ModelingStudio/tests/` |
 | FR-07 时间线 | `CourseControl/src/course_control/collect.py`、`contracts.py`（annotations）、`utils.py`；`shared/colormaps.json` | `test_contracts.py`、`test_staging.py` |
 | FR-08 合成与验收 | `CourseControl/src/course_control/verify.py`、`report.py`、`adapters/remotion.py`；`RemotionStudio/src/compositions/CourseVideo.tsx`、`overlays/Annotations.tsx` | `test_staging.py`、夹具构建、真实 Remotion still |
-| FR-09 本地模型串行 | `shared/ai_runtime/src/ai_runtime/locks.py`、`service.py`；`ModelingStudio/server.py` | `shared/ai_runtime/tests/test_concurrency.py`、`test_service.py`、`test_lifecycle.py` |
+| FR-09 本地模型串行与远程回退 | `shared/ai_runtime/src/ai_runtime/locks.py`、`service.py`、`remote.py`、`routing.py`；`ModelingStudio/server.py`、`llm.py` | `test_concurrency.py`、`test_service.py`、`test_lifecycle.py`、`test_remote.py`、`ModelingStudio/tests/test_remote_routing.py` |
 | FR-10 任务状态 | `shared/ai_runtime/src/ai_runtime/tasks.py`；`ModelingStudio/src/modeling_studio/job.py` | `test_runtime.py`、`ModelingStudio/tests/test_job_state.py` |
 | FR-11 上下文预算 | `shared/ai_runtime/src/ai_runtime/budget.py`；`ModelingStudio/src/modeling_studio/config.py`、`llm.py` | `test_runtime.py`、`ModelingStudio/tests/test_budget.py`、`ContentQA/tests/test_content_qa.py` |
 | FR-12 在线审查 | `ContentQA/src/content_qa/` | `ContentQA/tests/test_content_qa.py`、`test_schemas.py` |
 | FR-13 报告 | `CourseControl/src/course_control/report.py`、`blender_runner.py`、`shared/ai_runtime/tasks.py`、`ContentQA/src/content_qa/review.py` | 各报告结构断言 |
-| FR-14 一键回归 | `scripts/check.ps1`、`scripts/check-scene-system.ps1` | 自身执行 |
-| V1 轨道接入（V1-D/E，未开始） | 计划：`ShotSpec` 扩展 `session/simulation/graphics`；`TimelineSpec → shots.json` 兼容层 | 暂无实现；见 [课程生产统一契约V1.md](课程生产统一契约V1.md) §16 |
+| FR-14 一键回归 | `scripts/check.ps1`、`scripts/check-scene-system.ps1`、`scripts/check_paths.py` | 自身执行 |
+| V1-E 时间线兼容层 | `CourseControl/src/course_control/v1_timeline.py`；`collect` 写 `contracts/timeline.spec.json`；CLI `timeline-v1` | `CourseControl/tests/test_v1_timeline.py`；lesson-smoke 实跑 |
+| V1-D Session 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |
+| V1-D 剩余轨道 | `ShotSpec` 扩展 `session/simulation/graphics`；Session runner 原生写 V1 | 未开始 |
 | V1 统一契约（V1-B/C/F） | `CourseControl/src/course_control/contracts_v1.py`、`timecode.py`、`legacy_e6.py`、`e65.py`；`shared/schemas/*-v1.schema.json`；`course-control schemas-v1` / `contract-v1-validate` / `e6-adapt` / `e65-adapt` | `CourseControl/tests/test_contracts_v1.py`、`test_timecode.py`、`test_legacy_e6.py`、`test_e65_contracts.py` |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
 

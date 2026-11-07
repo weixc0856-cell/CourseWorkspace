@@ -1,0 +1,18 @@
+schema_version: 1
+
+# Copy to config/model-routing.yaml (ignored) and set the environment variable
+# named below. Never put the API key in this file.
+remote:
+  enabled: true
+  provider: "deepseek"
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  api_key_env: "DEEPSEEK_API_KEY"
+  timeout_s: 120
+  # Vision stages only fall back when a vision-capable remote model is configured.
+  supports_vision: false
+  vision_model: null
+
+fallback:
+  # Local 8080 busy/unavailable -> remote. Keep this explicit.
+  on: ["busy", "start_error", "lock_timeout", "missing_executable"]

@@ -17,13 +17,13 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 131（129 通过 + 2 跳过；含 V1-B/C 与 E6.5 契约） | 129 通过，2 跳过 |
-| ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
-| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 138（136 通过 + 2 跳过；含 V1-B/C/D/E 与 E6.5 契约） | 136 通过，2 跳过 |
+| ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 30 | 全部通过 |
+| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 33 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
 
-合计 **203** 个用例（201 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **223** 个用例（221 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -38,6 +38,8 @@ uv run --project CourseControl course-control e65-adapt --workspace . --manifest
 - `schemas-v1`：导出 7 份 V1 JSON Schema。
 - `contract-v1-validate`：按 `kind` 校验单个 V1 文件；非法输入 exit 1，未知 kind exit 2。
 - 时间换算边界测试见 `CourseControl/tests/test_timecode.py`；模型与示例测试见 `CourseControl/tests/test_contracts_v1.py`；E6 V0 只读适配见 `CourseControl/tests/test_legacy_e6.py`。
+- V1-E：`course-control timeline-v1 --lesson <slug>` 从现有 `shots.json` 写 `build/<slug>/contracts/timeline.spec.json`；`collect` 已自动写出。
+- V1-D：`course-control session-evidence-v1 --spec <session.json> --workspace .` 把现有 `evidence.json` 升级为 `EvidenceManifestV1`。
 
 ---
 
@@ -241,6 +243,10 @@ python ManimSandbox/05-multi-head/assemble.py
 | 在线请求超时 | 同上（slow） | failed，任务记录终态 |
 | 只读边界 | 同上 | 课程文件字节不变；未生成 shots.json / build-report.json |
 | 无凭据 | 同上 | blocked |
+| 远程回退（mock） | `test_remote.py` | 本地繁忙 → `provider=remote`；本地正常不切换；无远程/无 key/无 vision 模型均不伪造 |
+| 远程凭据隔离 | `test_remote.py`、`test_remote_routing.py` | key 只从环境变量读取；健康输出不含 key；任务记录 `provider` 可追溯 |
+| 远程真实端点冒烟 | `config/model-routing.yaml` + `DeepSeek-API` | 2026-11-07 可达；`deepseek-chat` 返回 `OK`（服务端模型名 `deepseek-flash`）；未打印密钥 |
+| 路径卫生 | `scripts/check-paths.ps1` | `path check ok`；跟踪文件中无本机盘符/用户目录绝对路径 |
 | 真实课程无配置 | `content-qa review --lesson 01-shell-for-ai-era` | **blocked，exit 3**；报告写入 `build/01-shell-for-ai-era/review/review.json` |
 
 本地模型的真实作业证据（历史记录，本轮未重跑）：`ModelingStudio/workspace/jobs/sample-001` 六阶段 completed；`sample-002` 停在 generate；`fallback-test` build+validate 通过。
@@ -257,6 +263,11 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |
 | VoxCPM2 / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
+| V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成 | 新 session 不会自动产出 `EvidenceManifestV1` |
+| V1-E Remotion 切换 | Remotion 仍读 `shots.json`；V1 时间线是并列视图 | 尚未用 V1 直接驱动合成 |
+| 远程视觉回退 | `vision_model` 未配置 | 图片分析/修正阶段在 8080 不可用时仍失败，不降级到文本模型 |
+| 远程真实视觉调用 | 未配置视觉远程模型 | 只验证了文本 DeepSeek 端点 |
+| 远程回退的完整 ModelingStudio 作业 | 需构造 8080 占用场景并消耗远程额度 | 仅有 routing 单测与文本冒烟 |
 
 ---
 

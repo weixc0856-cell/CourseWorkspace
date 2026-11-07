@@ -275,6 +275,71 @@ def e65_adapt_command(
     raise typer.Exit(1 if failed else 0)
 
 
+@app.command("timeline-v1")
+def timeline_v1_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    output: Path | None = typer.Option(None, "--output"),
+) -> None:
+    """Write a V1 TimelineSpec from an existing build/<slug>/shots.json."""
+    from .contracts import ShotsFile
+    from .v1_timeline import V1TimelineError, write_timeline_contract
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    shots_path = paths.build_root / "shots.json"
+    if not shots_path.is_file():
+        typer.echo(f"shots.json missing: {shots_path}", err=True)
+        raise typer.Exit(2)
+    shots = ShotsFile.model_validate_json(shots_path.read_text(encoding="utf-8"))
+    try:
+        target, timeline = write_timeline_contract(shots, paths, output=output)
+    except V1TimelineError as exc:
+        typer.echo(f"timeline-v1 failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(
+        f"wrote {target} ({timeline.total_frames} frames, "
+        f"{len(timeline.video)} video entries)"
+    )
+
+
+@app.command("session-evidence-v1")
+def session_evidence_v1_command(
+    spec: Path = typer.Option(..., "--spec"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    output: Path | None = typer.Option(None, "--output"),
+    run_id: str | None = typer.Option(None, "--run-id"),
+) -> None:
+    """Upgrade an existing session evidence.json to V1 EvidenceManifest."""
+    from .session import SessionContractError, load_session_spec
+    from .session_evidence_v1 import V1EvidenceError, adapt_session_evidence
+
+    workspace = workspace.resolve()
+    try:
+        manifest = adapt_session_evidence(
+            spec, workspace, run_id=run_id
+        )
+    except (V1EvidenceError, SessionContractError) as exc:
+        typer.echo(f"session-evidence-v1 failed: {exc}", err=True)
+        raise typer.Exit(1)
+    session = load_session_spec(spec)
+    target = output or (
+        workspace
+        / "build"
+        / session.lesson
+        / "code"
+        / session.shot_id
+        / "evidence.v1.json"
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(manifest.model_dump_json(indent=2) + chr(10), encoding="utf-8")
+    typer.echo(f"wrote {target}")
+
+
 @app.command("scene-validate")
 def scene_validate_command(
     task: Path = typer.Option(..., "--task"),

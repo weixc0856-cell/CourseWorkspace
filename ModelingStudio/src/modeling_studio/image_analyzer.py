@@ -7,9 +7,9 @@ from PIL import Image
 
 from .config import PROJECT_ROOT, WorkflowConfig
 from .contracts import VisualAnalysis
-from .job import Job, stage_task, update_metadata, write_json
+from .job import Job, save_task, stage_task, update_metadata, write_json
 from .llm import LLMClient
-from .server import managed_server
+from .server import managed_model
 
 PROMPT = PROJECT_ROOT / "prompts" / "image_analysis.md"
 
@@ -54,10 +54,15 @@ def analyze_image(config: WorkflowConfig, job: Job) -> VisualAnalysis:
             output_artifacts=["visual_analysis.json"],
             context_budget=budget_report.as_dict(),
             timeout_s=config.llm.request_timeout_s,
-        ):
-            with managed_server(config, "vision", job.logs_dir / "server-vision.log") as mode:
+        ) as record:
+            with managed_model(
+                config, "vision", job.logs_dir / "server-vision.log", vision=True
+            ) as route:
+                record.assigned_model = route.model
+                record.provider = route.provider
+                save_task(config, job, record)
                 analysis, usage = client.chat_json(
-                    messages, "vision", VisualAnalysis, max_tokens=1600
+                    messages, "vision", VisualAnalysis, max_tokens=1600, route=route
                 )
     except Exception:
         if client.last_raw:
@@ -70,8 +75,9 @@ def analyze_image(config: WorkflowConfig, job: Job) -> VisualAnalysis:
         job,
         stage="analyze",
         status="pass",
-        model=config.model("vision").alias,
-        server=mode,
+        model=route.model,
+        provider=route.provider,
+        server=route.mode,
         usage=usage,
         parts=len(analysis.parts),
     )

@@ -223,6 +223,41 @@
         },
         "asset": {
           "$ref": "#/$defs/AssetRef"
+        },
+        "track": {
+          "anyOf": [
+            {
+              "enum": [
+                "slide",
+                "motion_canvas",
+                "manim",
+                "blender",
+                "session",
+                "simulation",
+                "graphics",
+                "recording"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata"
         }
       },
       "required": [
@@ -302,6 +337,19 @@
         "subtitle_tolerance_ms": 40,
         "allow_gap_frames": 1
       }
+    },
+    "metadata": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Metadata"
     }
   },
   "required": [

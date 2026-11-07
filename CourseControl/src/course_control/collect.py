@@ -270,4 +270,11 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
         encoding="utf-8",
     )
     outputs.append(output_path)
+
+    # V1-E compatibility view: write the integer-frame TimelineSpec alongside
+    # shots.json. The old file remains the Remotion input until the cutover.
+    from .v1_timeline import write_timeline_contract
+
+    v1_path, _timeline = write_timeline_contract(shots_file, paths)
+    outputs.append(v1_path)
     return shots_file, warnings, outputs

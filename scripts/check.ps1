@@ -47,6 +47,10 @@ try {
         uv run --project CourseControl course-control audit --workspace .
     }
 
+    Invoke-Checked "path hygiene" {
+        & (Join-Path $PSScriptRoot "check-paths.ps1")
+    }
+
     Invoke-Checked "unit tests: CourseControl" -Quiet {
         uv run --project CourseControl python -m unittest discover `
             -s CourseControl/tests -t CourseControl

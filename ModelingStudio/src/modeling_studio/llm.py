@@ -6,7 +6,7 @@ import time
 from typing import Any, TypeVar
 
 import httpx
-from ai_runtime import ContextBudget
+from ai_runtime import ContextBudget, ModelRoute
 from pydantic import BaseModel, ValidationError
 
 from .config import WorkflowConfig
@@ -56,19 +56,23 @@ class LLMClient:
         self.last_raw = ""
         self.last_error = ""
 
-    def _post(self, payload: dict) -> dict:
+    def _post(self, payload: dict, route: ModelRoute | None = None) -> dict:
+        base_url = route.base_url if route else self.config.llm.base_url
+        api_key = route.api_key if route else self.config.llm.api_key
+        trust_env = route.trust_env if route else False
+        provider = route.provider if route else "local"
         last_error: Exception | None = None
         attempts = 1 + self.config.llm.max_retries
         for attempt in range(attempts):
             try:
                 with httpx.Client(
-                    base_url=self.config.llm.base_url,
-                    trust_env=False,
+                    base_url=base_url,
+                    trust_env=trust_env,
                     timeout=self.config.llm.request_timeout_s,
                 ) as client:
                     response = client.post(
                         "/chat/completions",
-                        headers={"Authorization": f"Bearer {self.config.llm.api_key}"},
+                        headers={"Authorization": f"Bearer {api_key}"},
                         json=payload,
                     )
                     if response.status_code in (400, 422) and payload.get("response_format"):
@@ -76,7 +80,7 @@ class LLMClient:
                         payload = {k: v for k, v in payload.items() if k != "response_format"}
                         response = client.post(
                             "/chat/completions",
-                            headers={"Authorization": f"Bearer {self.config.llm.api_key}"},
+                            headers={"Authorization": f"Bearer {api_key}"},
                             json=payload,
                         )
                     if response.status_code >= 500:
@@ -91,7 +95,7 @@ class LLMClient:
                 last_error = exc
                 if attempt + 1 < attempts:
                     time.sleep(2.0 * (attempt + 1))
-        raise LLMError(f"local model request failed after {attempts} attempt(s): {last_error}")
+        raise LLMError(f"{provider} model request failed after {attempts} attempt(s): {last_error}")
 
     def chat(
         self,
@@ -101,20 +105,21 @@ class LLMClient:
         max_tokens: int = 2048,
         temperature: float = 0.1,
         json_object: bool = False,
+        route: ModelRoute | None = None,
     ) -> tuple[str, dict]:
         if self.budget is not None:
             # Re-check on every attempt: retries append messages to the conversation.
             self.budget.check(messages, images=self.images)
-        model = self.config.model(model_key)
+        model = route.model if route else self.config.model(model_key).alias
         payload: dict[str, Any] = {
-            "model": model.alias,
+            "model": model,
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
         if json_object and self._json_object_supported:
             payload["response_format"] = {"type": "json_object"}
-        data = self._post(payload)
+        data = self._post(payload, route)
         try:
             choice = data["choices"][0]
             content = choice["message"]["content"]
@@ -134,6 +139,7 @@ class LLMClient:
         max_tokens: int = 2048,
         temperature: float = 0.1,
         attempts: int = 2,
+        route: ModelRoute | None = None,
     ) -> tuple[T, dict]:
         conversation = list(messages)
         last_error = ""
@@ -144,6 +150,7 @@ class LLMClient:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 json_object=True,
+                route=route,
             )
             schema_echo = False
             try:

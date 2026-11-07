@@ -139,7 +139,7 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | 代码/终端会话 | 执行、录制、证据 | `shared/schemas/session.schema.json`、`evidence.schema.json` |
 | 模型任务记录 | 任务状态与预算 | `shared/schemas/model-task.schema.json` |
 | 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
-| 规范化运行时 V1（V1-B/C/F 已实现；V1-D/E 未开始） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
+| 规范化运行时 V1（V1-B/C/F 已实现；V1-D 证据适配器、V1-E 兼容层已实现；Remotion/Session 原生切换未完成） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
 
 Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output shared/schemas`，V1 用 `course-control schemas-v1 --output shared/schemas`。提交前必须与模型一致（有测试锁定）。V1 是 `lesson.yaml` / `storyboard.yaml` 之上的规范化运行时层，不替换作者文件。
 
@@ -173,7 +173,7 @@ Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output
 
 路径：`build/<slug>/review/review.json`。
 
-字段：`lesson`、`generated_at`、`model`、`status`、`tasks[]`、`findings[]`、`errors[]`。
+字段：`lesson`、`generated_at`、`model`、`status`、`tasks[]`、`findings[]`、`errors[]`。模型任务记录新增 `provider`（`local` / `remote`），远程回退不得写成 `local`。
 单条意见：`id`、`slide`、`claim`、`verdict`（`supported` / `unsupported` / `disputed` / `needs_human_review` / `not_checked`）、`evidence`、`source_refs`。
 
 ### 4.4 状态词表
@@ -224,6 +224,15 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 分档：`basic=16384`、`complex=32768`、`hard=65536`。64K 不是默认值。
 
 ---
+
+### 5.4 本地优先与远程回退
+
+- 入口仍是 `route_model(server, model, lock, log_path, remote=...)`：先按 §5.2 使用本地 8080。
+- 仅当 `RemoteConfig` 显式启用、API key 环境变量存在、且本地失败原因在 `fallback_on` 中（`busy` / `start_error` / `lock_timeout` / `missing_executable`）时，才切换到远程 OpenAI 兼容端点。
+- 远程调用不持有本地 8080 锁；本地锁在切换前已释放。远程路由返回 `provider="remote"`、实际模型名与 `trust_env`，调用方必须写入任务记录与阶段元数据。
+- 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。
+- 远程凭据只从环境变量读取；配置、日志、任务记录、异常与健康输出都不包含密钥。
+- 配置参考：`config/model-routing.example.yaml`；本机实际文件 `config/model-routing.yaml` 被 `.gitignore` 忽略。
 
 ## 6. 环境与端口
 

@@ -4,11 +4,11 @@ import json
 
 from .config import PROJECT_ROOT, WorkflowConfig
 from .contracts import ModelPlan
-from .job import Job, read_json, stage_task, update_metadata
+from .job import Job, read_json, save_task, stage_task, update_metadata
 from .llm import LLMClient
 from .script_fallback import fallback_script
 from .script_guard import ScriptRejected, extract_code, guard_script, write_script
-from .server import managed_server
+from .server import managed_model
 
 PROMPT = PROJECT_ROOT / "prompts" / "script_generation.md"
 
@@ -31,6 +31,7 @@ def generate_script(config: WorkflowConfig, job: Job, *, attempts: int = 3) -> s
     client = LLMClient(config, budget=budget)
     rejection = ""
     code = ""
+    route = None
     with stage_task(
         job,
         config,
@@ -41,11 +42,14 @@ def generate_script(config: WorkflowConfig, job: Job, *, attempts: int = 3) -> s
         output_artifacts=["build_model.py"],
         context_budget=budget_report.as_dict(),
         timeout_s=config.llm.request_timeout_s,
-    ):
-        with managed_server(config, "coder", job.logs_dir / "server-coder.log") as mode:
+    ) as record:
+        with managed_model(config, "coder", job.logs_dir / "server-coder.log") as route:
+            record.assigned_model = route.model
+            record.provider = route.provider
+            save_task(config, job, record)
             for attempt in range(attempts):
                 content, usage = client.chat(
-                    messages, "coder", max_tokens=6000, temperature=0.05
+                    messages, "coder", max_tokens=6000, temperature=0.05, route=route
                 )
                 code = extract_code(content)
                 try:
@@ -55,8 +59,9 @@ def generate_script(config: WorkflowConfig, job: Job, *, attempts: int = 3) -> s
                         job,
                         stage="generate",
                         status="pass",
-                        model=config.model("coder").alias,
-                        server=mode,
+                        model=route.model,
+                        provider=route.provider,
+                        server=route.mode,
                         usage=usage,
                         attempts=attempt + 1,
                         lines=code.count("\n") + 1,
@@ -84,7 +89,8 @@ def generate_script(config: WorkflowConfig, job: Job, *, attempts: int = 3) -> s
         stage="generate",
         status="fallback",
         model="fallback",
-        server=mode,
+        provider=route.provider if route else "local",
+        server=route.mode if route else "fallback",
         error=rejection,
     )
     return code

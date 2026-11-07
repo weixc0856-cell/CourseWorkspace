@@ -279,9 +279,11 @@ def _mintty() -> str:
     executable = shutil.which("mintty")
     if executable:
         return executable
-    candidate = Path(os.environ.get("ProgramFiles", r"C:/Program Files")) / "Git/usr/bin/mintty.exe"
-    if candidate.is_file():
-        return str(candidate)
+    program_files = os.environ.get("ProgramFiles")
+    if program_files:
+        candidate = Path(program_files) / "Git/usr/bin/mintty.exe"
+        if candidate.is_file():
+            return str(candidate)
     raise SessionRunError("mintty not found; install Git for Windows or add mintty to PATH")
 
 

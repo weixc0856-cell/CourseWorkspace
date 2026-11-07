@@ -31,6 +31,12 @@
       "type": "string",
       "minLength": 1
     },
+    "provider": {
+      "enum": [
+        "local",
+        "remote"
+      ]
+    },
     "status": {
       "enum": [
         "pending",

@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
+import yaml
+
 from pydantic import Field, ValidationError
 
 from .contracts import StrictModel
@@ -51,7 +53,6 @@ from .timecode import frame_to_ms, ms_to_frame
 BEATS = ("b1", "b2", "b3", "b4", "b5")
 LESSON = "e65-multi-head"
 SCENE_FILE = "ManimSandbox/05-multi-head/multi_head.py"
-DEFAULT_VOICE = Path("D:/Local-Drama-Studio/assets/audio/prompts/my_voice_clean_v1.wav")
 TEXT_DIR = Path("ManimSandbox/05-multi-head/narration")
 
 
@@ -153,6 +154,21 @@ def _beat_frames(manifest: E65Manifest, total_frames: int) -> list[tuple[str, in
     return result
 
 
+def _default_voice(workspace: Path) -> Path:
+    """Resolve the reference voice from local config; never hard-code a machine path."""
+    config_path = workspace / "config" / "local-paths.yaml"
+    if config_path.is_file():
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        value = (data.get("tts") or {}).get("voice_ref")
+        if value:
+            path = Path(value)
+            return path if path.is_absolute() else (workspace / path)
+    raise E65Error(
+        "voice reference not provided; pass --voice-ref or set tts.voice_ref "
+        "in config/local-paths.yaml"
+    )
+
+
 def adapt_e65(
     manifest_path: Path,
     workspace: Path | None = None,
@@ -167,7 +183,7 @@ def adapt_e65(
     base = manifest_path.parent
     output_dir = (output_dir or (base / "contracts")).resolve()
     manifest = _load(manifest_path)
-    voice_ref = (voice_ref or DEFAULT_VOICE).resolve()
+    voice_ref = (voice_ref or _default_voice(workspace)).resolve()
     if not voice_ref.is_file():
         raise E65Error(f"voice reference not found: {voice_ref}")
 

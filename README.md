@@ -125,6 +125,19 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 
 没有 8082 备用端口。
 
+## 本地模型与远程回退
+
+- 默认仍走本地 8080；`shared/ai_runtime` 持有跨进程锁，同一时刻只允许一个本地任务。
+- 8080 被占用或本地启动失败时，可按 `config/model-routing.yaml` 回退到远程 OpenAI 兼容 API（例如 DeepSeek）。参考文件：`config/model-routing.example.yaml`。
+- API key 只从环境变量读取。DeepSeek 支持 `DEEPSEEK_API_KEY` 或已有的 `DeepSeek-API`；不要把 key 写进配置。
+- 任务记录新增 `provider`（`local` / `remote`）与实际模型名；远程调用不会冒充本地。视觉阶段只有在配置 `vision_model` 时才回退。
+- 本机路径只允许出现在被忽略的 `config/*.yaml`、`.env`、`ModelingStudio/config/workflow.yaml`；跟踪文件由 `scripts/check-paths.ps1` 检查。
+
+```powershell
+Copy-Item config/model-routing.example.yaml config/model-routing.yaml
+# 然后把 api_key_env 改成你实际使用的环境变量名
+```
+
 ## 边界
 
 - 课程正文归作者所有；自动化只做格式与路径处理。

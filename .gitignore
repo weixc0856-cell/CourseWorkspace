@@ -31,6 +31,12 @@ RemotionStudio/public/staging/
 
 # ---------------------------------------------------------------------------
 # 本机配置（凭据与本机绝对路径）
+config/*.yaml
+!config/*.example.yaml
+# 环境变量文件
+.env
+.env.*
+!.env.example
 # ---------------------------------------------------------------------------
 config/tools.yaml
 config/local-paths.yaml

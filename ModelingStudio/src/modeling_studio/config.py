@@ -38,6 +38,52 @@ class LLMConfig(BaseModel):
     max_retries: int = Field(1, ge=0, le=3)
 
 
+class RemoteSettings(BaseModel):
+    """Optional remote fallback when the local 8080 service is unavailable."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    provider: str = "deepseek"
+    base_url: str = "https://api.deepseek.com/v1"
+    model: str = "deepseek-chat"
+    api_key_env: str = "DEEPSEEK_API_KEY"
+    timeout_s: int = Field(120, ge=10, le=3600)
+    max_tokens: int = Field(4096, ge=1, le=131072)
+    temperature: float = Field(0.1, ge=0.0, le=2.0)
+    supports_vision: bool = False
+    vision_model: str | None = None
+    trust_env: bool = True
+    fallback_on: list[
+        Literal["busy", "start_error", "lock_timeout", "missing_executable"]
+    ] = Field(
+        default_factory=lambda: [
+            "busy",
+            "start_error",
+            "lock_timeout",
+            "missing_executable",
+        ]
+    )
+
+    def runtime(self):
+        from ai_runtime import RemoteConfig
+
+        return RemoteConfig(
+            enabled=self.enabled,
+            provider=self.provider,
+            base_url=self.base_url,
+            model=self.model,
+            api_key_env=self.api_key_env,
+            timeout_s=self.timeout_s,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            supports_vision=self.supports_vision,
+            vision_model=self.vision_model,
+            trust_env=self.trust_env,
+            fallback_on=tuple(self.fallback_on),
+        )
+
+
 class ServerConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -90,6 +136,7 @@ class WorkflowConfig(BaseModel):
 
     schema_version: Literal[1] = 1
     llm: LLMConfig = LLMConfig()
+    remote: RemoteSettings = RemoteSettings()
     server: ServerConfig
     models: dict[str, ModelConfig]
     blender: BlenderConfig
@@ -209,9 +256,27 @@ def load_config(path: Path | None = None) -> WorkflowConfig:
             "copy ModelingStudio/config/workflow.example.yaml to config/workflow.yaml"
         )
     try:
-        data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
         raise ConfigError(f"invalid YAML in {config_path}: {exc}") from exc
+    # Remote routing is workspace-level (config/model-routing.yaml), so the
+    # same provider/key configuration is shared by every project.
+    routing_path = (
+        config_path.parents[2] / "config" / "model-routing.yaml"
+        if len(config_path.parents) >= 3
+        else None
+    )
+    if routing_path is not None and routing_path.is_file():
+        try:
+            routing = yaml.safe_load(routing_path.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as exc:
+            raise ConfigError(f"invalid YAML in {routing_path}: {exc}") from exc
+        remote_data = dict(routing.get("remote") or {})
+        fallback = routing.get("fallback") or {}
+        if fallback.get("on"):
+            remote_data["fallback_on"] = fallback["on"]
+        if remote_data:
+            data["remote"] = {**remote_data, **(data.get("remote") or {})}
     try:
         config = WorkflowConfig.model_validate(data)
     except ValidationError as exc:

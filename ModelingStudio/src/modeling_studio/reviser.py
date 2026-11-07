@@ -7,9 +7,9 @@ from PIL import Image
 
 from .config import PROJECT_ROOT, WorkflowConfig
 from .contracts import Revision
-from .job import Job, stage_task, update_metadata, write_json
+from .job import Job, save_task, stage_task, update_metadata, write_json
 from .llm import LLMClient
-from .server import managed_server
+from .server import managed_model
 
 PROMPT = PROJECT_ROOT / "prompts" / "visual_revision.md"
 MIME = {
@@ -71,16 +71,24 @@ def revise(config: WorkflowConfig, job: Job) -> Revision:
         output_artifacts=["revision.json"],
         context_budget=budget_report.as_dict(),
         timeout_s=config.llm.request_timeout_s,
-    ):
-        with managed_server(config, "vision", job.logs_dir / "server-revision.log") as mode:
-            revision, usage = client.chat_json(messages, "vision", Revision, max_tokens=1200)
+    ) as record:
+        with managed_model(
+            config, "vision", job.logs_dir / "server-revision.log", vision=True
+        ) as route:
+            record.assigned_model = route.model
+            record.provider = route.provider
+            save_task(config, job, record)
+            revision, usage = client.chat_json(
+                messages, "vision", Revision, max_tokens=1200, route=route
+            )
     write_json(job.revision, revision)
     update_metadata(
         job,
         stage="revise",
         status="pass",
-        model=config.model("vision").alias,
-        server=mode,
+        model=route.model,
+        provider=route.provider,
+        server=route.mode,
         usage=usage,
         differences=len(revision.differences),
     )

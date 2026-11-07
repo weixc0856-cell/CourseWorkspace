@@ -30,6 +30,9 @@
 | D-023 | Python 工具链采用联网演示 + 离线验证；本机以 8899 端口本地 HTTP 索引演示 | accepted |
 | D-024 | Manim 作为动画渲染引擎；FFT 为技术基线，Transformer 为产品基线 | accepted |
 | D-025 | Rust 镜头先用 host VS Code + Git Bash；Docker Rust 镜像受阻再迁移 | accepted |
+| D-028 | 本地 8080 优先；显式配置远程 OpenAI 兼容 API 时可在 busy/启动失败/锁超时后回退 | accepted |
+| D-029 | 跟踪文件禁止本机绝对路径；本机路径只留在忽略的 `config/*.yaml` / `.env`，并维护 `.example` | accepted |
+| D-030 | V1-D/E 先做只读适配与双向兼容层，不重写 Session runner 或 Remotion | accepted |
 
 ---
 
@@ -245,3 +248,27 @@
 **决策**：新增 `legacy_e6.py` 与 `e6-adapt`：只读 V0 manifest 与媒体，用 ffprobe、sha256、SRT 解析生成 `RenderManifest`；V0 `checks` 只进入 `legacy.manual_checks`，`manual_checks_trusted=false`；`RenderManifest.source=null` 仅允许在提供 `legacy.v0_manifest` 时使用；不修改 V0、不重渲染 E6。
 
 **后果**：E6 产物可被 V1 描述，本地 36 条自动检查为 35 pass + 1 not_applicable；混合旁白与推断的段起点明确记录，不冒充完整规范化课程。后续如需 `NarrationSpec` / `TimelineSpec`，必须重新生成逐段音频或补作者文件后再迁移。
+
+## D-028 本地优先、远程回退
+
+**背景**：8080 同一时间只允许一个本地模型实例；用户其他项目或 `start_server.bat` 占用时，ModelingStudio 的完整流程会被阻塞。用户已有 DeepSeek API 环境变量，可作为 8080 被占用时的远端回退。
+
+**决策**：在 `shared/ai_runtime` 增加 `remote.py` / `routing.py`。本地 8080 始终先尝试；仅当 `config/model-routing.yaml` 显式启用、key 环境变量存在、且失败原因属于 `busy` / `start_error` / `lock_timeout` / `missing_executable` 时切换到远程 OpenAI 兼容端点。远程路由不持有 8080 锁；任务记录新增 `provider=local|remote`，并写实际模型。视觉阶段只有配置 `vision_model` 且 `supports_vision=true` 才回退，不把图片交给文本模型。密钥只从环境变量读取，不进入配置、日志、异常或健康输出。
+
+**后果**：本地仍严格串行；远程调用可并行，但不冒充本地。远程不可达或无凭据时仍按 `blocked`/失败处理，不静默降级。配置参考 `config/model-routing.example.yaml`，本机文件被 `.gitignore` 忽略。
+
+## D-029 路径卫生与环境配置
+
+**背景**：代码和文档中曾出现本机盘符与 Program Files 的绝对路径；虽然运行配置已忽略，但跟踪文件仍会暴露机器信息。
+
+**决策**：跟踪文件只使用相对路径或 `<AI_ROOT>` / `<VOICE_REF_WAV>` 等占位符；本机路径只允许出现在被忽略的 `config/*.yaml`、`.env`、`ModelingStudio/config/workflow.yaml`。新增 `config/model-routing.example.yaml`、`.env.example`；`.gitignore` 改为忽略 `config/*.yaml`（保留 `*.example.yaml`）与 `.env*`。新增 `scripts/check_paths.py` / `check-paths.ps1` 并接入 `check.ps1`。
+
+**后果**：干净克隆不包含本机路径；新增检查会在提交前拦截盘符或用户目录绝对路径。代码中的 Program Files 固定回退改为 `shutil.which` + `ProgramFiles` 环境变量，缺失时明确报错。
+
+## D-030 V1-D/E 兼容层
+
+**背景**：V1 模型已存在，但主链仍用秒制 `shots.json`，Session runner 仍写旧 `evidence.json`。直接替换消费者会重写 Remotion 与 runner。
+
+**决策**：V1-E 新增 `v1_timeline.py`，在 `collect` 后写 `contracts/timeline.spec.json`，并提供 `shots_from_timeline` 回写；`TimelineVideo` 增加可选 `track` / `metadata`，`TimelineSpec` 增加可选 `metadata` 承载旧二维标注。V1-D 新增 `session_evidence_v1.py`，把现有 `evidence.json` 升级为 `EvidenceManifestV1`；缺失录屏不伪造，存在 `recording.json` + `session.mp4` 时记录 `recording_result_inferred=true`。
+
+**后果**：V1 时间线与证据可被查询和校验，Remotion/Session runner 行为不变。`shots_from_timeline` 只支持整数帧率回写；V1 原生 Session/SessionSpec 与 Remotion 切换仍待后续评审。

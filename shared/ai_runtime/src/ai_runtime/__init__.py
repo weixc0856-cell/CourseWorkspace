@@ -17,6 +17,17 @@ from .budget import (
     plan_budget,
 )
 from .locks import FileLock, LockInfo, LockTimeout, pid_alive
+from .remote import (
+    RemoteAuthError,
+    RemoteConfig,
+    RemoteError,
+    RemoteResponseError,
+    RemoteResult,
+    RemoteUnavailable,
+    chat_completion,
+    health as remote_health,
+)
+from .routing import ModelRoute, route_model
 from .service import (
     ModelSpec,
     ServerBusy,
@@ -45,6 +56,16 @@ __all__ = [
     "LockInfo",
     "LockTimeout",
     "pid_alive",
+    "RemoteAuthError",
+    "RemoteConfig",
+    "RemoteError",
+    "RemoteResponseError",
+    "RemoteResult",
+    "RemoteUnavailable",
+    "chat_completion",
+    "remote_health",
+    "ModelRoute",
+    "route_model",
     "ModelSpec",
     "ServerBusy",
     "ServerConfig",

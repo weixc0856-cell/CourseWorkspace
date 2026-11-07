@@ -14,7 +14,7 @@
 ```python
 from ai_runtime import ContextBudget, FileLock, ModelSpec, ServerConfig, model_service
 
-server = ServerConfig(executable=r"D:/AI/bin-sycl/llama-server.exe", port=8080)
+server = ServerConfig(executable=r"<AI_ROOT>/bin-sycl/llama-server.exe", port=8080)
 model = ModelSpec(key="planner", alias="Qwen3-30B-A3B-Instruct-2507", args=[...], context=32768)
 lock = FileLock(workspace / "runtime/locks/llama-8080.lock", task_id="my-task", timeout_s=3600)
 
@@ -32,6 +32,29 @@ store = TaskStore(workspace / "runtime/tasks")
 record = TaskRecord(task_id="t1", task_type="modeling.plan", assigned_model="qwen3")
 store.run(record, lambda: {"output_artifacts": ["model_plan.json"]})
 ```
+
+## 本地优先与远程回退
+
+```python
+from ai_runtime import FileLock, ModelSpec, RemoteConfig, ServerConfig, route_model
+
+remote = RemoteConfig(
+    enabled=True,
+    provider="deepseek",
+    base_url="https://api.deepseek.com/v1",
+    model="deepseek-chat",
+    api_key_env="DEEPSEEK_API_KEY",
+)
+with route_model(server, model, lock, log_path, remote=remote) as route:
+    print(route.provider, route.model)   # local / remote，实际模型
+    # 把 route.provider 与 route.model 写入任务记录
+```
+
+- 本地 8080 始终先尝试；`busy` / `start_error` / `lock_timeout` / `missing_executable` 才按 `fallback_on` 回退。
+- 远程路由不持有本地锁；`provider=remote` 不得写成 `local`。
+- key 只从环境变量读取；`health()` 输出不含密钥。
+- 视觉阶段只有 `supports_vision=true` 且配置 `vision_model` 才回退。
+- 任务记录新增 `provider` 字段（`local` / `remote`）。
 
 ## 锁语义
 
@@ -73,4 +96,4 @@ uv run --project shared/ai_runtime ai-runtime schema
 uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime
 ```
 
-包含真实多进程串行测试（两个子进程竞争同一把锁）与 mock HTTP 服务测试。
+包含真实多进程串行测试（两个子进程竞争同一把锁）、mock HTTP 服务测试，以及本地繁忙 → 远程回退测试。

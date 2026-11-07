@@ -19,6 +19,7 @@ from ai_runtime import (
     model_ids,
     model_service,
     port_in_use,
+    route_model,
 )
 
 from .config import WorkflowConfig
@@ -31,6 +32,7 @@ __all__ = [
     "model_ids",
     "port_in_use",
     "managed_server",
+    "managed_model",
     "probe",
 ]
 
@@ -57,3 +59,26 @@ def probe(config: WorkflowConfig) -> dict:
     payload["lock"] = info.to_dict() if info else None
     payload["lock_stale"] = lock.is_stale(info) if info else False
     return payload
+
+def managed_model(config: WorkflowConfig, model_key: str, log_path: Path, *, vision: bool = False):
+    """Yield a local route, or an explicit remote route when 8080 is unavailable.
+
+    The caller must write ``route.provider`` and ``route.model`` into the task
+    record and metadata; remote calls are never labelled as local.
+    """
+    model: ModelSpec = config.model_spec(model_key)
+    server: ServerConfig = config.server_config()
+    lock = FileLock(
+        config.runtime.lock_path_resolved,
+        task_id=f"modeling:{model_key}",
+        timeout_s=config.runtime.lock_timeout_s,
+        stale_after_s=config.runtime.stale_after_s,
+    )
+    return route_model(
+        server,
+        model,
+        lock,
+        Path(log_path),
+        remote=config.remote.runtime(),
+        vision=vision,
+    )
