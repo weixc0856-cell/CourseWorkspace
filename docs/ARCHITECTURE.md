@@ -228,11 +228,11 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 ### 5.4 本地优先与远程回退
 
 - 入口仍是 `route_model(server, model, lock, log_path, remote=...)`：先按 §5.2 使用本地 8080。
-- 仅当 `RemoteConfig` 显式启用、API key 环境变量存在、且本地失败原因在 `fallback_on` 中（`busy` / `start_error` / `lock_timeout` / `missing_executable`）时，才切换到远程 OpenAI 兼容端点。
+- 仅当 `RemoteConfig` 显式启用、API key 环境变量存在、且本地失败原因在 `fallback_on` 中（`busy` / `start_error` / `lock_timeout` / `missing_executable`）时，才切换到远程 OpenAI 兼容端点。`provider` 可为 `deepseek`、`openai-compatible` 或其他兼容实现。
 - 远程调用不持有本地 8080 锁；本地锁在切换前已释放。远程路由返回 `provider="remote"`、实际模型名与 `trust_env`，调用方必须写入任务记录与阶段元数据。
-- 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。默认远程模型 `deepseek-flash` 满足这两个条件。**DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 已禁用，`RemoteConfig` / `RemoteSettings` / ContentQA 配置都会拒绝。**
+- 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。**DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 已禁用，`RemoteConfig` / `RemoteSettings` / ContentQA 配置都会拒绝。其他 OpenAI 兼容 provider 使用各自配置的模型。**
 - 远程凭据只从环境变量读取；配置、日志、任务记录、异常与健康输出都不包含密钥。
-- 配置参考：`config/model-routing.example.yaml`；本机实际文件 `config/model-routing.yaml` 被 `.gitignore` 忽略。API key 只从系统环境变量读取（本机为 `DeepSeek-API`），不写入 `.env`、YAML、日志或任何文件；仓库只保留不含 key 的 `.env.example`。
+- 配置参考：`config/model-routing.example.yaml`（provider-agnostic，含 DeepSeek / OpenAI-compatible 示例）；本机实际 `.env` 与 `config/model-routing.yaml` 均被 `.gitignore` 忽略。通用环境变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`，DeepSeek 也兼容 `DEEPSEEK_*`。API key 只从系统环境变量读取（本机为 `DeepSeek-API`），不写入 `.env`、YAML、日志或任何文件；仓库只保留不含 key 的 `.env.example`。
 
 ## 6. 环境与端口
 

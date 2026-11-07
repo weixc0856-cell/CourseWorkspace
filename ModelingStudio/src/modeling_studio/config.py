@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -263,6 +264,40 @@ def _require_path(value: str, label: str) -> str:
     return str(path)
 
 
+def _apply_remote_env(remote: dict) -> dict:
+    """Apply generic REMOTE_* settings (any OpenAI-compatible provider)."""
+    mapping = (
+        ("enabled", "REMOTE_ENABLED"),
+        ("provider", "REMOTE_PROVIDER"),
+        ("base_url", "REMOTE_BASE_URL"),
+        ("model", "REMOTE_MODEL"),
+        ("vision_model", "REMOTE_VISION_MODEL"),
+        ("api_key_env", "REMOTE_API_KEY_ENV"),
+    )
+    from_generic: set[str] = set()
+    for field, env_name in mapping:
+        value = os.environ.get(env_name)
+        if value is None:
+            continue
+        from_generic.add(field)
+        if field == "enabled":
+            remote[field] = value.strip().lower() in {"1", "true", "yes", "on"}
+        else:
+            remote[field] = value
+    if str(remote.get("provider") or "deepseek") == "deepseek":
+        for field, env_name in (
+            ("base_url", "DEEPSEEK_BASE_URL"),
+            ("model", "DEEPSEEK_MODEL"),
+            ("vision_model", "DEEPSEEK_VISION_MODEL"),
+        ):
+            if field in from_generic:
+                continue
+            value = os.environ.get(env_name)
+            if value:
+                remote[field] = value
+    return remote
+
+
 def load_config(path: Path | None = None) -> WorkflowConfig:
     config_path = path or DEFAULT_CONFIG
     if not config_path.is_file():
@@ -295,6 +330,7 @@ def load_config(path: Path | None = None) -> WorkflowConfig:
             remote_data["fallback_on"] = fallback["on"]
         if remote_data:
             data["remote"] = {**remote_data, **(data.get("remote") or {})}
+    data["remote"] = _apply_remote_env(dict(data.get("remote") or {}))
     try:
         config = WorkflowConfig.model_validate(data)
     except ValidationError as exc:

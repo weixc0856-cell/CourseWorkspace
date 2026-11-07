@@ -47,6 +47,26 @@ class ContentQAEnvOverrideTest(unittest.TestCase):
         self.assertIsNotNone(config)
         self.assertEqual(config.model.model, "deepseek-flash")
 
+    def test_generic_remote_env_overrides(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "content-qa.yaml"
+            path.write_text(
+                yaml.safe_dump(_config("deepseek-v4-pro"), allow_unicode=True),
+                encoding="utf-8",
+            )
+            with patch.dict(
+                os.environ,
+                {
+                    "REMOTE_BASE_URL": "https://api.deepseek.com/v1",
+                    "REMOTE_MODEL": "deepseek-flash",
+                    "REMOTE_API_KEY_ENV": "DeepSeek-API",
+                },
+            ):
+                config = load_config(path)
+        self.assertEqual(config.model.base_url, "https://api.deepseek.com/v1")
+        self.assertEqual(config.model.model, "deepseek-flash")
+        self.assertEqual(config.model.api_key_env, "DeepSeek-API")
+
     def test_env_pro_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "content-qa.yaml"

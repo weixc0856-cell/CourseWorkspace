@@ -253,7 +253,7 @@
 
 **背景**：8080 同一时间只允许一个本地模型实例；用户其他项目或 `start_server.bat` 占用时，ModelingStudio 的完整流程会被阻塞。用户已有 DeepSeek API 环境变量，可作为 8080 被占用时的远端回退。
 
-**决策**：在 `shared/ai_runtime` 增加 `remote.py` / `routing.py`。本地 8080 始终先尝试；仅当 `config/model-routing.yaml` 显式启用、key 环境变量存在、且失败原因属于 `busy` / `start_error` / `lock_timeout` / `missing_executable` 时切换到远程 OpenAI 兼容端点。远程路由不持有 8080 锁；任务记录新增 `provider=local|remote`，并写实际模型。视觉阶段只有配置 `vision_model` 且 `supports_vision=true` 才回退，不把图片交给文本模型。密钥只从环境变量读取，不进入配置、日志、异常或健康输出。
+**决策**：在 `shared/ai_runtime` 增加 `remote.py` / `routing.py`。远程端点按 **OpenAI 兼容协议**实现，`provider` 可配置（DeepSeek 只是当前实例，也可是 openai-compatible 或其他实现）。本地 8080 始终先尝试；仅当 `config/model-routing.yaml` / `.env` 显式启用、key 环境变量存在、且失败原因属于 `busy` / `start_error` / `lock_timeout` / `missing_executable` 时切换。通用变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`，DeepSeek 兼容 `DEEPSEEK_*`。远程路由不持有 8080 锁；任务记录新增 `provider=local|remote`，并写实际模型。视觉阶段只有配置 `vision_model` 且 `supports_vision=true` 才回退，不把图片交给文本模型。密钥只从环境变量读取，不进入配置、日志、异常或健康输出。
 
 **后果**：本地仍严格串行；远程调用可并行，但不冒充本地。远程不可达或无凭据时仍按 `blocked`/失败处理，不静默降级。默认远程模型为 `deepseek-flash`；该模型支持图像理解，视觉阶段也可回退。所有 DeepSeek 调用固定 `deepseek-flash`，`deepseek-v4-pro` 已禁用，配置层会拒绝。配置参考 `config/model-routing.example.yaml`，本机文件被 `.gitignore` 忽略。
 

@@ -62,15 +62,19 @@ def load_config(path: Path | None = None) -> ReviewConfig | None:
     # config only needs a provider shape and a non-secret fallback.
     model_data = data.get("model")
     if isinstance(model_data, dict):
-        env_base = os.environ.get("DEEPSEEK_BASE_URL")
-        env_model = os.environ.get("DEEPSEEK_MODEL")
+        env_base = os.environ.get("REMOTE_BASE_URL")
+        env_model = os.environ.get("REMOTE_MODEL")
+        env_key_env = os.environ.get("REMOTE_API_KEY_ENV")
         current_base = str(model_data.get("base_url") or "")
-        if env_base or env_model:
-            if "deepseek" in current_base.lower() or "deepseek" in (env_base or "").lower():
-                if env_base:
-                    model_data["base_url"] = env_base
-                if env_model:
-                    model_data["model"] = env_model
+        if "deepseek" in current_base.lower() or "deepseek" in (env_base or "").lower():
+            env_base = env_base or os.environ.get("DEEPSEEK_BASE_URL")
+            env_model = env_model or os.environ.get("DEEPSEEK_MODEL")
+        if env_base:
+            model_data["base_url"] = env_base
+        if env_model:
+            model_data["model"] = env_model
+        if env_key_env:
+            model_data["api_key_env"] = env_key_env
     try:
         return ReviewConfig.model_validate(data)
     except ValidationError as exc:

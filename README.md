@@ -128,10 +128,10 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 ## 本地模型与远程回退
 
 - 默认仍走本地 8080；`shared/ai_runtime` 持有跨进程锁，同一时刻只允许一个本地任务。
-- 8080 被占用或本地启动失败时，可按 `config/model-routing.yaml` 回退到远程 OpenAI 兼容 API（例如 DeepSeek）。参考文件：`config/model-routing.example.yaml`。
-- 默认远程模型为 `deepseek-flash`；它支持图像理解，视觉阶段也可回退（2026-11-07 实测）。**所有 DeepSeek 调用固定 `deepseek-flash`，`deepseek-v4-pro` 已禁用，配置层会拒绝。**
+- 8080 被占用或本地启动失败时，可按 `config/model-routing.yaml` 回退到远程 OpenAI 兼容 API。`provider` 可为 `deepseek`、`openai-compatible` 或其他兼容实现；参考文件：`config/model-routing.example.yaml`。
+- 当前本机用 DeepSeek：`deepseek-flash` 支持图像理解，视觉阶段也可回退（2026-11-07 实测）。**所有 DeepSeek 调用固定 `deepseek-flash`，`deepseek-v4-pro` 已禁用，配置层会拒绝。**
 - API key 只从系统环境变量读取（本机已有 `DeepSeek-API`），**不要写进 `.env`、YAML、日志或任何文件**。
-- 仓库只保留 `.env.example`（不含 key）；非敏感设置 `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` / `DEEPSEEK_VISION_MODEL` 可放环境或本地忽略配置。
+- **`.env` 是本地实际配置（git 忽略）；`.env.example` 进远程，只含占位符与配置说明。** 通用变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`；DeepSeek 也可用 `DEEPSEEK_*` 别名。任何文件都不得出现明文 API key。
 - 任务记录新增 `provider`（`local` / `remote`）与实际模型名；远程调用不会冒充本地。视觉阶段只有在配置 `vision_model` 时才回退。
 - 本机路径只允许出现在被忽略的 `config/*.yaml`、`.env`、`ModelingStudio/config/workflow.yaml`；跟踪文件由 `scripts/check-paths.ps1` 检查。
 

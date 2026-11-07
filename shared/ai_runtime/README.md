@@ -57,7 +57,8 @@ with route_model(server, model, lock, log_path, remote=remote) as route:
 - key 只从环境变量读取；`health()` 输出不含密钥。
 - 视觉阶段只有 `supports_vision=true` 且配置 `vision_model` 才回退。
 - 任务记录新增 `provider` 字段（`local` / `remote`）。
-- **DeepSeek 固定 `deepseek-flash`；`deepseek-v4-pro` 在 `RemoteConfig` 构造时直接拒绝。**
+- 通用环境变量：`REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`；DeepSeek 兼容 `DEEPSEEK_*`。
+- **DeepSeek 固定 `deepseek-flash`；`deepseek-v4-pro` 在 `RemoteConfig` 构造时直接拒绝。其他 OpenAI 兼容 provider 使用各自配置的模型。**
 
 ## 锁语义
 

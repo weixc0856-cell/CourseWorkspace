@@ -55,19 +55,41 @@ class RemoteConfig:
     )
 
     def __post_init__(self) -> None:
-        # Environment is authoritative for real DeepSeek settings. The tracked
-        # config/example files only contain safe defaults or placeholders.
+        # Environment is authoritative. Generic REMOTE_* names describe any
+        # OpenAI-compatible provider; DeepSeek-specific names remain aliases.
+        # The tracked config/example files only contain safe defaults.
+        generic = (
+            ("enabled", "REMOTE_ENABLED"),
+            ("provider", "REMOTE_PROVIDER"),
+            ("base_url", "REMOTE_BASE_URL"),
+            ("model", "REMOTE_MODEL"),
+            ("vision_model", "REMOTE_VISION_MODEL"),
+            ("api_key_env", "REMOTE_API_KEY_ENV"),
+        )
+        from_generic: set[str] = set()
+        for attr, env_name in generic:
+            value = os.environ.get(env_name)
+            if value is None:
+                continue
+            from_generic.add(attr)
+            if attr == "enabled":
+                self.enabled = value.strip().lower() in {"1", "true", "yes", "on"}
+            else:
+                setattr(self, attr, value)
         if self.provider == "deepseek":
             for attr, env_name in (
                 ("base_url", "DEEPSEEK_BASE_URL"),
                 ("model", "DEEPSEEK_MODEL"),
                 ("vision_model", "DEEPSEEK_VISION_MODEL"),
             ):
+                if attr in from_generic:
+                    continue
                 value = os.environ.get(env_name)
                 if value:
                     setattr(self, attr, value)
         # Project policy: DeepSeek calls are pinned to deepseek-flash.
-        # deepseek-v4-pro and other DeepSeek models are disabled.
+        # deepseek-v4-pro and other DeepSeek models are disabled. Other
+        # OpenAI-compatible providers may use their configured models.
         if self.provider != "deepseek":
             return
         for label, value in (("model", self.model), ("vision_model", self.vision_model)):

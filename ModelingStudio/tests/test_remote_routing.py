@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import json
+import os
 import threading
 import unittest
+from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
 from ai_runtime import ModelRoute
 
-from modeling_studio.config import RemoteSettings
+from modeling_studio.config import RemoteSettings, _apply_remote_env
 from modeling_studio.llm import LLMClient
 
 
@@ -95,6 +97,22 @@ class RemoteRouteTest(unittest.TestCase):
         self.assertEqual(runtime.model, "deepseek-flash")
         self.assertTrue(runtime.supports_vision)
         self.assertEqual(runtime.vision_model, "deepseek-flash")
+
+    def test_generic_remote_env_helper(self):
+        with patch.dict(
+            os.environ,
+            {
+                "REMOTE_PROVIDER": "openai-compatible",
+                "REMOTE_BASE_URL": "https://generic.test/v1",
+                "REMOTE_MODEL": "generic-model",
+                "REMOTE_API_KEY_ENV": "GENERIC_KEY",
+            },
+        ):
+            data = _apply_remote_env({})
+        self.assertEqual(data["provider"], "openai-compatible")
+        self.assertEqual(data["base_url"], "https://generic.test/v1")
+        self.assertEqual(data["model"], "generic-model")
+        self.assertEqual(data["api_key_env"], "GENERIC_KEY")
 
     def test_deepseek_pro_is_rejected(self):
         with self.assertRaises(ValueError):

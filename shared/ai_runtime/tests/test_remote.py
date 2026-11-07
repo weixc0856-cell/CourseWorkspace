@@ -279,6 +279,23 @@ class EnvironmentOverrideTest(unittest.TestCase):
         self.assertEqual(config.model, "deepseek-flash")
         self.assertEqual(config.vision_model, "deepseek-flash")
 
+    def test_generic_remote_env_supports_any_provider(self):
+        with patch.dict(
+            os.environ,
+            {
+                "REMOTE_PROVIDER": "openai-compatible",
+                "REMOTE_BASE_URL": "https://generic.test/v1",
+                "REMOTE_MODEL": "generic-model",
+                "REMOTE_VISION_MODEL": "generic-vision",
+                "REMOTE_API_KEY_ENV": "GENERIC_KEY",
+            },
+        ):
+            config = RemoteConfig()
+        self.assertEqual(config.provider, "openai-compatible")
+        self.assertEqual(config.base_url, "https://generic.test/v1")
+        self.assertEqual(config.model, "generic-model")
+        self.assertEqual(config.model_for(vision=True), "generic-vision")
+
     def test_env_pro_is_rejected(self):
         with patch.dict(os.environ, {"DEEPSEEK_MODEL": "deepseek-v4-pro"}):
             with self.assertRaises(ValueError):
