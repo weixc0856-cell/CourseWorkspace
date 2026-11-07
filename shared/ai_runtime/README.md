@@ -57,6 +57,7 @@ with route_model(server, model, lock, log_path, remote=remote) as route:
 - key 只从环境变量读取；`health()` 输出不含密钥。
 - 视觉阶段只有 `supports_vision=true` 且配置 `vision_model` 才回退。
 - 任务记录新增 `provider` 字段（`local` / `remote`）。
+- **DeepSeek 固定 `deepseek-flash`；`deepseek-v4-pro` 在 `RemoteConfig` 构造时直接拒绝。**
 
 ## 锁语义
 

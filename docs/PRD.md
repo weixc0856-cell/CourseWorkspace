@@ -181,7 +181,7 @@
 - 8080 被其他模型占用时：等待（有超时）或明确 `blocked`，不得杀死他人进程。
 - 模型切换顺序：停止旧实例 → 等待端口释放 → 启动新实例 → 健康且别名匹配。
 - 不改变用户既有启动方式与硬件配置（`start_server.bat` 仍可用）。
-- **远程回退（可选）**：仅当 `config/model-routing.yaml` 显式启用且配置了 API key 环境变量时，本地 8080 因占用、启动失败或锁超时才可切换到远程 OpenAI 兼容 API。任务记录必须写 `provider=remote` 与实际模型；远程无凭据/不可达时仍为 `blocked`，不得冒充本地。视觉阶段只有在配置 `vision_model` 时才允许回退；默认 `deepseek-flash` 支持图像，`deepseek-v4-pro` 不支持。
+- **远程回退（可选）**：仅当 `config/model-routing.yaml` 显式启用且配置了 API key 环境变量时，本地 8080 因占用、启动失败或锁超时才可切换到远程 OpenAI 兼容 API。任务记录必须写 `provider=remote` 与实际模型；远程无凭据/不可达时仍为 `blocked`，不得冒充本地。视觉阶段只有在配置 `vision_model` 时才允许回退；默认 `deepseek-flash` 支持图像。**所有 DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 已禁用，配置层会拒绝。**
 
 **验收**：多进程竞争测试（两个进程同时申请，必须串行）；超时释放测试；他人占用时 `blocked` 测试；本地繁忙时 mock 远程回退测试；真实远程端点连通性冒烟（凭据缺失时如实 `blocked`）。
 

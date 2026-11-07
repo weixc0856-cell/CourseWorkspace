@@ -129,7 +129,7 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 
 - 默认仍走本地 8080；`shared/ai_runtime` 持有跨进程锁，同一时刻只允许一个本地任务。
 - 8080 被占用或本地启动失败时，可按 `config/model-routing.yaml` 回退到远程 OpenAI 兼容 API（例如 DeepSeek）。参考文件：`config/model-routing.example.yaml`。
-- 默认远程模型为 `deepseek-flash`；它支持图像理解，视觉阶段也可回退（2026-11-07 实测）。`deepseek-v4-pro` 不支持图片。
+- 默认远程模型为 `deepseek-flash`；它支持图像理解，视觉阶段也可回退（2026-11-07 实测）。**所有 DeepSeek 调用固定 `deepseek-flash`，`deepseek-v4-pro` 已禁用，配置层会拒绝。**
 - API key 只从环境变量读取。DeepSeek 支持 `DEEPSEEK_API_KEY` 或已有的 `DeepSeek-API`；不要把 key 写进配置。
 - 任务记录新增 `provider`（`local` / `remote`）与实际模型名；远程调用不会冒充本地。视觉阶段只有在配置 `vision_model` 时才回退。
 - 本机路径只允许出现在被忽略的 `config/*.yaml`、`.env`、`ModelingStudio/config/workflow.yaml`；跟踪文件由 `scripts/check-paths.ps1` 检查。

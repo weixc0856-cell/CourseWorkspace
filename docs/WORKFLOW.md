@@ -208,7 +208,7 @@
 | 跨进程锁 | `runtime/locks/llama-8080.lock`，原子创建 + PID + 陈旧回收 |
 | 服务生命周期 | 健康且别名匹配则复用；否则启动；只停止自己启动的实例 |
 | 模型切换 | 阶段结束停止自有实例 → 端口释放 → 下一阶段启动新模型 |
-| 远程回退 | 本地 8080 busy/启动失败/锁超时 → 按 `config/model-routing.yaml` 切远程；任务记录写 `provider=remote` |
+| 远程回退 | 本地 8080 busy/启动失败/锁超时 → 按 `config/model-routing.yaml` 切远程；DeepSeek 固定 `deepseek-flash`，pro 禁用；任务记录写 `provider=remote` |
 | 任务状态 | `runtime/tasks/<task_id>.json` + 作业内副本；失败/阻塞落盘 |
 | 上下文预算 | 16K 默认 / 32K 复杂 / 64K 硬上限；每次请求前检查 |
 | 证据 | 33 个 ai_runtime 测试（含远程回退与任务 provider） |

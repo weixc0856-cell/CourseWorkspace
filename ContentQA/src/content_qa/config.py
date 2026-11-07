@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = PROJECT_ROOT.parent / "config" / "content-qa.yaml"
@@ -26,6 +26,15 @@ class ModelConfig(BaseModel):
     max_tokens: int = Field(2048, ge=256, le=32000)
     temperature: float = Field(0.0, ge=0.0, le=2.0)
     retries: int = Field(1, ge=0, le=5)
+
+    @model_validator(mode="after")
+    def _deepseek_flash_only(self):
+        if "deepseek" in self.base_url.lower() and self.model != "deepseek-flash":
+            raise ValueError(
+                "DeepSeek reviews are pinned to deepseek-flash; "
+                f"model={self.model!r} is disabled"
+            )
+        return self
 
 
 class ReviewConfig(BaseModel):

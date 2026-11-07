@@ -92,7 +92,7 @@ def serve(alias="local-alias", expected_key="test-key", fail_status=0):
 def remote_config(port: int, **overrides) -> RemoteConfig:
     values = dict(
         enabled=True,
-        provider="deepseek",
+        provider="mock",
         base_url=f"http://127.0.0.1:{port}/v1",
         model="remote-model",
         api_key="test-key",
@@ -143,6 +143,17 @@ class RemoteProviderTest(unittest.TestCase):
         config = remote_config(self.port)
         with self.assertRaises(RemoteUnavailable):
             chat_completion(config, [{"role": "user", "content": "x"}], vision=True)
+
+    def test_deepseek_pro_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RemoteConfig(provider="deepseek", model="deepseek-v4-pro")
+        with self.assertRaises(ValueError):
+            RemoteConfig(
+                provider="deepseek",
+                model="deepseek-flash",
+                supports_vision=True,
+                vision_model="deepseek-v4-pro",
+            )
 
     def test_vision_uses_configured_vision_model(self):
         config = remote_config(

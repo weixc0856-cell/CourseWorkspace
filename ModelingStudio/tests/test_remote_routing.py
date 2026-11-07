@@ -96,16 +96,22 @@ class RemoteRouteTest(unittest.TestCase):
         self.assertTrue(runtime.supports_vision)
         self.assertEqual(runtime.vision_model, "deepseek-flash")
 
+    def test_deepseek_pro_is_rejected(self):
+        with self.assertRaises(ValueError):
+            RemoteSettings(model="deepseek-v4-pro")
+        with self.assertRaises(ValueError):
+            RemoteSettings(vision_model="deepseek-v4-pro")
+
     def test_remote_settings_convert_to_runtime_config(self):
         settings = RemoteSettings(
             enabled=True,
-            model="deepseek-chat",
+            model="deepseek-flash",
             api_key_env="NO_SUCH_KEY",
             fallback_on=["busy", "start_error"],
         )
         runtime = settings.runtime()
         self.assertTrue(runtime.enabled)
-        self.assertEqual(runtime.model, "deepseek-chat")
+        self.assertEqual(runtime.model, "deepseek-flash")
         self.assertEqual(runtime.fallback_on, ("busy", "start_error"))
 
 

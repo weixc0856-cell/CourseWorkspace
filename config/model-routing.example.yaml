@@ -9,6 +9,7 @@ remote:
   model: "deepseek-flash"
   api_key_env: "DEEPSEEK_API_KEY"
   timeout_s: 120
+  # DeepSeek is pinned to deepseek-flash; deepseek-v4-pro is disabled.
   # deepseek-flash supports image understanding (verified 2026-11-07).
   # Set false/null when the endpoint is text-only.
   supports_vision: true

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "workflow.yaml"
@@ -64,6 +64,20 @@ class RemoteSettings(BaseModel):
             "missing_executable",
         ]
     )
+
+    @model_validator(mode="after")
+    def _deepseek_flash_only(self):
+        if self.provider == "deepseek":
+            for label, value in (
+                ("model", self.model),
+                ("vision_model", self.vision_model),
+            ):
+                if value and value != "deepseek-flash":
+                    raise ValueError(
+                        "DeepSeek is pinned to deepseek-flash; "
+                        f"{label}={value!r} is disabled"
+                    )
+        return self
 
     def runtime(self):
         from ai_runtime import RemoteConfig

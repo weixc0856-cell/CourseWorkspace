@@ -54,6 +54,17 @@ class RemoteConfig:
         "missing_executable",
     )
 
+    def __post_init__(self) -> None:
+        # Project policy: DeepSeek calls are pinned to deepseek-flash.
+        # deepseek-v4-pro and other DeepSeek models are disabled.
+        if self.provider != "deepseek":
+            return
+        for label, value in (("model", self.model), ("vision_model", self.vision_model)):
+            if value and value != "deepseek-flash":
+                raise ValueError(
+                    f"DeepSeek is pinned to deepseek-flash; {label}={value!r} is disabled"
+                )
+
     def resolved_key(self) -> str | None:
         if self.api_key:
             return self.api_key
