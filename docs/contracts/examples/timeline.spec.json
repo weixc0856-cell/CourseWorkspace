@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "kind": "timeline_spec",
+  "lesson_id": "e6-transformer-attention",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "total_frames": 993,
+  "video": [
+    {
+      "shot_id": "s1",
+      "start_frame": 0,
+      "duration_frames": 240,
+      "role": "base",
+      "z": 0,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/TokensScene.mp4",
+        "sha256": "2d117e0057ac1e3769e2428e3128da535311ccdb95713b9e879f75813245990e",
+        "bytes": 266713,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      }
+    },
+    {
+      "shot_id": "s2",
+      "start_frame": 240,
+      "duration_frames": 226,
+      "role": "base",
+      "z": 0,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/QKVScene.mp4",
+        "sha256": "8c3a2e4bf3eaef12ea62e773d554fad687d07ca8262fe69ffd7dd7789d7c7891",
+        "bytes": 264517,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      }
+    },
+    {
+      "shot_id": "s3",
+      "start_frame": 466,
+      "duration_frames": 290,
+      "role": "base",
+      "z": 0,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/AttentionScene.mp4",
+        "sha256": "aed37eb8222fb3c3f5dc2d1e15aaa22c95ab609bd4a7f5e671c87fa9e7f6cb86",
+        "bytes": 366528,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      }
+    },
+    {
+      "shot_id": "s4",
+      "start_frame": 756,
+      "duration_frames": 237,
+      "role": "base",
+      "z": 0,
+      "asset": {
+        "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/OutputScene.mp4",
+        "sha256": "aa28e20c1b10e055a13f5a9824362a53962c06b8a2ccd2e57ec45401eef4ffbd",
+        "bytes": 259164,
+        "kind": "video",
+        "origin": "rendered",
+        "version": "manim-0.22.0"
+      }
+    }
+  ],
+  "audio": [
+    {
+      "narration_id": "e6-s1",
+      "start_frame": 0,
+      "duration_frames": 206,
+      "asset": {
+        "path": "build/manim-transformer/e6/narration/s1.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "gain_db": 0.0
+    },
+    {
+      "narration_id": "e6-s2",
+      "start_frame": 240,
+      "duration_frames": 168,
+      "asset": {
+        "path": "build/manim-transformer/e6/narration/s2.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "gain_db": 0.0
+    },
+    {
+      "narration_id": "e6-s3",
+      "start_frame": 466,
+      "duration_frames": 168,
+      "asset": {
+        "path": "build/manim-transformer/e6/narration/s3.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "gain_db": 0.0
+    },
+    {
+      "narration_id": "e6-s4",
+      "start_frame": 756,
+      "duration_frames": 130,
+      "asset": {
+        "path": "build/manim-transformer/e6/narration/s4.wav",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "bytes": 0,
+        "kind": "audio",
+        "origin": "generated",
+        "version": "voxcpm2"
+      },
+      "gain_db": 0.0
+    }
+  ],
+  "subtitles": [
+    {
+      "index": 1,
+      "start_frame": 15,
+      "end_frame": 219,
+      "text": "Transformer 先把每个 token 映射成连续向量，这就是 embedding。"
+    },
+    {
+      "index": 2,
+      "start_frame": 255,
+      "end_frame": 420,
+      "text": "同一个 embedding 经过三组权重，变成 Query、Key 和 Value。"
+    },
+    {
+      "index": 3,
+      "start_frame": 480,
+      "end_frame": 645,
+      "text": "Query 和 Key 点积、缩放，再由 softmax 变成权重。"
+    },
+    {
+      "index": 4,
+      "start_frame": 771,
+      "end_frame": 900,
+      "text": "权重乘 Value 再求和，得到 context。"
+    }
+  ],
+  "sync": {
+    "audio_tolerance_frames": 1,
+    "subtitle_tolerance_ms": 40,
+    "allow_gap_frames": 1
+  }
+}

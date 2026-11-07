@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "kind": "lesson_spec",
+  "lesson_id": "e6-transformer-attention",
+  "title": "Transformer 注意力机制",
+  "status": "in_progress",
+  "source": {
+    "lesson_yaml": {
+      "path": "lessons/e6-transformer-attention/lesson.yaml",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 0,
+      "kind": "data",
+      "origin": "author",
+      "version": null
+    },
+    "storyboard": {
+      "path": "lessons/e6-transformer-attention/storyboard.yaml",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 0,
+      "kind": "data",
+      "origin": "author",
+      "version": null
+    }
+  },
+  "output": {
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "audio": {
+      "sample_rate": 48000,
+      "channels": 1
+    }
+  },
+  "tracks": ["manim"],
+  "assets": [],
+  "narration": {
+    "enabled": true,
+    "spec": {
+      "path": "build/e6-transformer-attention/contracts/narration.spec.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 0,
+      "kind": "json",
+      "origin": "generated",
+      "version": null
+    }
+  },
+  "subtitles": {
+    "enabled": true,
+    "format": "srt",
+    "spec": {
+      "path": "build/e6-transformer-attention/contracts/timeline.spec.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 0,
+      "kind": "json",
+      "origin": "generated",
+      "version": null
+    }
+  },
+  "acceptance": {
+    "min_duration_frames": 900,
+    "max_duration_frames": 1200,
+    "required_checks": ["media_probe", "narration_fit", "subtitle_sync"]
+  },
+  "metadata": {
+    "note": "结构示例：E6 尚未并入 lessons/；source 哈希为占位值。",
+    "author": "Wayne"
+  }
+}

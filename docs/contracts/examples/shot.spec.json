@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "kind": "shot_spec",
+  "lesson_id": "e6-transformer-attention",
+  "shot_id": "s2",
+  "track": "manim",
+  "source": {
+    "kind": "manim",
+    "file": "ManimSandbox/04-transformer-explainer/transformer_explainer.py",
+    "class": "QKVScene"
+  },
+  "timing": {
+    "start_frame": 240,
+    "duration_frames": 226
+  },
+  "narration_id": "e6-s2",
+  "asset": {
+    "path": "build/manim-transformer/e6/media/videos/transformer_explainer/1080p30/QKVScene.mp4",
+    "sha256": "8c3a2e4bf3eaef12ea62e773d554fad687d07ca8262fe69ffd7dd7789d7c7891",
+    "bytes": 264517,
+    "kind": "video",
+    "origin": "rendered",
+    "version": "manim-0.22.0"
+  },
+  "expected": {
+    "duration_frames": 226
+  },
+  "presentation": {
+    "role": "base",
+    "z": 0
+  },
+  "metadata": {
+    "title": "Q / K / V 三组投影",
+    "note": "时长 7.533 s 在 30 fps 下换算为 226 帧。"
+  }
+}

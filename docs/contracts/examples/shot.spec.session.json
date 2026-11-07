@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "kind": "shot_spec",
+  "lesson_id": "e4-rust-toolchain",
+  "shot_id": "s3",
+  "track": "session",
+  "source": {
+    "kind": "session",
+    "session_spec": "build/e4-rust-toolchain/sessions/rust-build/session.json",
+    "session_id": "rust-build"
+  },
+  "timing": {
+    "start_frame": 480,
+    "duration_frames": 900
+  },
+  "narration_id": "e4-s3",
+  "asset": null,
+  "expected": {
+    "min_frames": 780,
+    "max_frames": 1050
+  },
+  "presentation": {
+    "role": "base",
+    "z": 0
+  },
+  "metadata": {
+    "title": "cargo build 成功与测试通过",
+    "note": "asset 在录制完成后回填；证据见 EvidenceManifest。"
+  }
+}

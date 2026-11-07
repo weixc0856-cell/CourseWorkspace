@@ -1,7 +1,7 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-06（E0/E1/V1 代码会话增量，见 §0.1）
+- **最近更新**：2026-11-07（统一契约设计增量，见 §0.2）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
@@ -42,6 +42,17 @@
 | Transformer 基线（E6） | `ManimSandbox/03-transformer-baseline/attention_baseline.py`、`04-transformer-explainer/`、`docs/E6-Transformer制作方案.md` | 四幕成片 33.1s（旁白 + 字幕 + manifest）；E6.1–E6.4 完成 |
 
 当前计数：CourseControl 66 个单测；全套 127 个；场景契约仍为 9 合法 + 11 非法；8080 未被触碰。
+
+### 0.2 2026-11-07 统一契约设计增量
+
+| 文档 | 内容 | 状态 |
+| --- | --- | --- |
+| [架构审查-课程生产统一契约.md](架构审查-课程生产统一契约.md) | 现有课程/模块边界、重复实现、接口缺失、耦合、保留/调整建议 | 已完成审查，未改代码 |
+| [课程生产统一契约V1.md](课程生产统一契约V1.md) | LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest；整数帧时间线；E6 manifest 兼容 | 设计稿，待评审 |
+| [contracts/examples/](contracts/examples/) | Lesson / Shot / Narration / Timeline / Evidence / Render 示例 + E6 V0 迁移示例 | 示例 JSON，已做语法校验 |
+| [E6.5-MultiHead设计.md](E6.5-MultiHead设计.md) | 两头算例、五 beat 分镜、旁白/字幕草案、维度清单、自动验收 | 设计稿，待评审 |
+
+本轮只写文档与示例，未修改任何代码；CourseControl 66 个单测通过（2 个集成测试跳过）；E6.1–E6.4 未改动；8080 未触碰。决策记录见 [DECISIONS.md](DECISIONS.md) D-026。
 
 ---
 
