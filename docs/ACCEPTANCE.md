@@ -21,9 +21,9 @@
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
-| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 8 | 全部通过 |
+| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
 
-合计 **198** 个用例（196 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **201** 个用例（199 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -171,7 +171,27 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 - 旁白：4 段 VoxCPM2 中文旁白，逐段塞入对应镜头（6.88 / 5.60 / 5.60 / 4.32s），无溢出。
 - 字幕：`build/manim-transformer/e6/subtitles.srt`，4 条 cue 与镜头对齐。
 - 证据：`build/manim-transformer/e6/manifest.json`（场景/旁白/字幕/成片哈希与时长）。
-- 未完成：E6.5 Multi-Head、E6.6 Transformer Block、3B1B 式逐镜节奏。
+- 未完成：E6.6 Transformer Block、3B1B 式逐镜节奏（E6.5 已完成，见 §3.1.7）。
+
+### 3.1.7 E6.5 Multi-Head
+
+```powershell
+python ManimSandbox/05-multi-head/verify_math.py `
+  --output build/manim-multi-head/e6.5/math-report.json
+uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
+  --media_dir build/manim-multi-head/e6.5/media `
+  ManimSandbox/05-multi-head/multi_head.py MultiHeadScene
+python ManimSandbox/05-multi-head/assemble.py
+```
+
+- 数学：`multi_head_math.py` 为唯一数据源；30 条检查全 pass。
+- 视觉：`MultiHeadScene` 五 beat，1920×1080 / 30 fps。
+- 旁白：5 段 VoxCPM2 中文旁白，48 kHz mono；按 beat 起点放置。
+- 字幕：`build/manim-multi-head/e6.5/subtitles.srt`，10 条，均在 beat 内。
+- 成片：`build/manim-multi-head/e6.5/final.mp4`，2608 帧，86.929 s，视频+音频+字幕。
+- 检查：`build/manim-multi-head/e6.5/manifest.json` 14 条全 pass。
+- 测试：`ManimSandbox/tests` 11 个（8 数学 + 3 成片/SRT）。
+- 未完成：V1 `RenderManifest`；未并入 `pipeline.py` / `lessons/`。
 
 ### 3.1.4 Rust 镜头（E4）
 

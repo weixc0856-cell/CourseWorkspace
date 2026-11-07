@@ -5,6 +5,9 @@ All numbers come from ``multi_head_math.py``; this file only lays them out.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from manim import *
 
 from multi_head_math import (
@@ -26,6 +29,16 @@ HEAD2 = TEAL
 CONCAT = PURPLE_B
 OUTPUT = ORANGE
 VALUE_FONT = 15
+
+# Measured from the five VoxCPM2 narration segments + ~0.8 s breathing room.
+# Keep in sync with docs/E6.5-成片报告.md when narration changes.
+BEAT_TARGETS = {
+    "b1": 16.0,
+    "b2": 20.0,
+    "b3": 20.3,
+    "b4": 11.2,
+    "b5": 17.9,
+}
 
 
 def format_value(value: float) -> str:
@@ -169,6 +182,8 @@ def head_panel(name: str, color) -> VGroup:
 class MultiHeadScene(Scene):
     def construct(self):
         self.camera.background_color = "#0b0f14"
+        self._timing = {}
+        self._mark("start")
         result = compute()
         head1 = result["heads"][0]
         head2 = result["heads"][1]
@@ -178,6 +193,23 @@ class MultiHeadScene(Scene):
         self.beat4(result)
         self.beat5(result)
         self.wait(1.5)
+        self._mark("end")
+
+    def _pad_beat(self, beat: str) -> None:
+        start = self._timing.get(f"{beat}_start", 0.0)
+        elapsed = self.time - start
+        target = BEAT_TARGETS[beat]
+        if elapsed < target:
+            self.wait(target - elapsed)
+
+    def _mark(self, name: str) -> None:
+        self._timing[name] = round(self.time, 3)
+        path = Path("build/manim-multi-head/e6.5/timing.json")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(self._timing, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
 
     def title(self, text: str) -> Text:
         title = Text(text, font="Arial", font_size=34, color=WHITE).to_edge(
@@ -199,6 +231,7 @@ class MultiHeadScene(Scene):
         self.clear()
 
     def beat1(self):
+        self._mark("b1_start")
         self.next_section("B1")
         self.title("Multi-Head: one input, two heads")
         x_grid = matrix_grid(
@@ -238,8 +271,11 @@ class MultiHeadScene(Scene):
         self.play(GrowArrow(arrow1), GrowArrow(arrow2), run_time=0.8)
         self.play(FadeIn(note))
         self.wait(1.6)
+        self._pad_beat("b1")
+        self._mark("b1_end")
 
     def beat2(self, head1):
+        self._mark("b2_start")
         self.next_section("B2")
         self.clear_all()
         self.title("Head 1: its own Q, K and V")
@@ -292,8 +328,11 @@ class MultiHeadScene(Scene):
         self.play(FadeIn(focus))
         self.formula("α1 = softmax(Q1·K1ᵀ / √d_k)     context1 = α1·V1", HEAD1)
         self.wait(1.5)
+        self._pad_beat("b2")
+        self._mark("b2_end")
 
     def beat3(self, head1, head2):
+        self._mark("b3_start")
         self.next_section("B3")
         self.clear_all()
         self.title("Head 2: another projection, another focus")
@@ -352,8 +391,11 @@ class MultiHeadScene(Scene):
         compare.to_edge(DOWN, buff=1.1)
         self.play(FadeIn(compare), run_time=0.8)
         self.wait(2.0)
+        self._pad_beat("b3")
+        self._mark("b3_end")
 
     def beat4(self, result):
+        self._mark("b4_start")
         self.next_section("B4")
         self.clear_all()
         self.title("Concatenate the two heads")
@@ -394,8 +436,11 @@ class MultiHeadScene(Scene):
         self.play(Create(highlight), run_time=0.6)
         self.formula("concat = [ head1 | head2 ]     4 = 2 + 2", CONCAT)
         self.wait(2.0)
+        self._pad_beat("b4")
+        self._mark("b4_end")
 
     def beat5(self, result):
+        self._mark("b5_start")
         self.next_section("B5")
         self.clear_all()
         self.title("Output projection returns to d_model")
@@ -429,3 +474,5 @@ class MultiHeadScene(Scene):
         ).to_edge(DOWN, buff=1.05)
         self.play(FadeIn(dims))
         self.wait(2.2)
+        self._pad_beat("b5")
+        self._mark("b5_end")

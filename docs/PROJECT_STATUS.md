@@ -1,7 +1,7 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（E6.5 视觉渲染，见 §0.6）
+- **最近更新**：2026-11-07（E6.5 成片，见 §0.7）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
@@ -98,6 +98,19 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | 渲染报告 | [E6.5-视觉渲染报告.md](E6.5-视觉渲染报告.md) | 五 beat、抽帧核对、未做旁白/字幕 |
 
 场景从 `multi_head_math.py` 读取全部矩阵，未另写算例。E6.1–E6.4 未改；8080 未触碰。
+
+### 0.7 2026-11-07 E6.5 旁白、字幕与成片
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| 5 段中文旁白 | `build/manim-multi-head/e6.5/narration/segments/e65-b*.wav` | VoxCPM2 真实合成；48 kHz mono |
+| 混合旁白 | `build/manim-multi-head/e6.5/narration.wav` | 86.929 s；按 beat 起点放置 |
+| SRT | `build/manim-multi-head/e6.5/subtitles.srt` | 10 条；均在 beat 内 |
+| 最终成片 | `build/manim-multi-head/e6.5/final.mp4` | 1920×1080 / 30fps / 2608 帧 / 86.929s；视频+音频+字幕 |
+| 自动检查 | `build/manim-multi-head/e6.5/manifest.json` | 14 条全 pass；`all_ok: true` |
+| 成片报告 | [E6.5-成片报告.md](E6.5-成片报告.md) | 旁白/字幕/mux/检查 |
+
+全项目现为 **201 个用例（199 通过 + 2 跳过）**。TTS 50000 调用前已 ready，本次复用，未启动/停止他人服务；未触碰 8080。
 
 ---
 
