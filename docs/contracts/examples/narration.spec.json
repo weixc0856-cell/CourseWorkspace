@@ -97,8 +97,5 @@
     "name": "course-control-narrate",
     "version": "v1",
     "generated_at": "2026-11-07T00:00:00Z"
-  },
-  "metadata": {
-    "note": "结构示例。E6 当前只有混合后的 narration.wav（33100 ms），分段 WAV 为规划路径；分段时长来自现有 manifest。"
   }
 }
