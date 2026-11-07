@@ -152,8 +152,12 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 - 文件：`ManimSandbox/04-transformer-explainer/transformer_explainer.py`
 - 三个 Manim 场景：`TokensScene` / `AttentionScene` / `OutputScene`
 - 合并成片：`build/manim-transformer/transformer_explainer.mp4`（1920×1080，30 fps，22.3 s）
-- 已抽帧确认：token → vector、query 权重、context 合成三段画面。
-- 未完成：旁白、字幕与 3B1B 式逐镜节奏；当前是视觉与结构基线。
+- 成片：`build/manim-transformer/e6/transformer_attention_final.mp4`，33.1s，含 AAC 旁白与 mov_text 字幕。
+- 镜头：TokensScene / QKVScene / AttentionScene / OutputScene；Q/K/V 投影、scores、softmax 权重、weighted V 合成均有画面。
+- 旁白：4 段 VoxCPM2 中文旁白，逐段塞入对应镜头（6.88 / 5.60 / 5.60 / 4.32s），无溢出。
+- 字幕：`build/manim-transformer/e6/subtitles.srt`，4 条 cue 与镜头对齐。
+- 证据：`build/manim-transformer/e6/manifest.json`（场景/旁白/字幕/成片哈希与时长）。
+- 未完成：E6.5 Multi-Head、E6.6 Transformer Block、3B1B 式逐镜节奏。
 
 ### 3.1.4 Rust 镜头（E4）
 
