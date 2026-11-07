@@ -2,6 +2,10 @@
   "schema_version": 1,
   "kind": "narration_spec",
   "lesson_id": "e6-transformer-attention",
+  "fps": {
+    "fps_num": 30,
+    "fps_den": 1
+  },
   "voice": {
     "provider": "voxcpm2",
     "ref_audio": {

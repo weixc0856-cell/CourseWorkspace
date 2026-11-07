@@ -1,7 +1,7 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（统一契约设计增量，见 §0.2）
+- **最近更新**：2026-11-07（V1-B 契约模型与时间换算实现，见 §0.3）
 - **代码基线**：本地 `main` = `8e45a68`；`origin/main` = `027e64d`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
@@ -48,11 +48,23 @@
 | 文档 | 内容 | 状态 |
 | --- | --- | --- |
 | [架构审查-课程生产统一契约.md](架构审查-课程生产统一契约.md) | 现有课程/模块边界、重复实现、接口缺失、耦合、保留/调整建议 | 已完成审查，未改代码 |
-| [课程生产统一契约V1.md](课程生产统一契约V1.md) | LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest；整数帧时间线；E6 manifest 兼容 | 设计稿，待评审 |
+| [课程生产统一契约V1.md](课程生产统一契约V1.md) | LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest；整数帧时间线；E6 manifest 兼容 | 已评审；V1-B 已实现 |
 | [contracts/examples/](contracts/examples/) | Lesson / Shot / Narration / Timeline / Evidence / Render 示例 + E6 V0 迁移示例 | 示例 JSON，已做语法校验 |
 | [E6.5-MultiHead设计.md](E6.5-MultiHead设计.md) | 两头算例、五 beat 分镜、旁白/字幕草案、维度清单、自动验收 | 设计稿，待评审 |
 
 本轮只写文档与示例，未修改任何代码；CourseControl 66 个单测通过（2 个集成测试跳过）；E6.1–E6.4 未改动；8080 未触碰。决策记录见 [DECISIONS.md](DECISIONS.md) D-026。
+
+### 0.3 2026-11-07 V1-B 实施增量
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| 有理数帧率与整数时间换算 | `CourseControl/src/course_control/timecode.py` | 已实现；10 个测试 |
+| V1 契约模型 | `CourseControl/src/course_control/contracts_v1.py` | 已实现；40 个测试 |
+| V1 JSON Schema | `shared/schemas/*-v1.schema.json` | 7 份；与模型逐份比对 |
+| V1 CLI | `schemas-v1`、`contract-v1-validate` | 已实现 |
+| 实施报告 | [V1-B-实施报告.md](V1-B-实施报告.md) | 测试与兼容性说明 |
+
+CourseControl 现为 **116 个用例，OK（skipped=2）**；全项目合计 177 个用例通过；跳过的 2 个不计为通过。未迁移 E6 manifest，未改 E6.1–E6.4，未触碰 8080。
 
 ---
 

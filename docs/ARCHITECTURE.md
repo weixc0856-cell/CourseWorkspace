@@ -139,8 +139,9 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | 代码/终端会话 | 执行、录制、证据 | `shared/schemas/session.schema.json`、`evidence.schema.json` |
 | 模型任务记录 | 任务状态与预算 | `shared/schemas/model-task.schema.json` |
 | 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
+| 规范化运行时 V1（设计/实现中） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
 
-Schema 由 Pydantic 模型导出：`course-control schemas --output shared/schemas`。提交前必须与模型一致（有测试锁定）。
+Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output shared/schemas`，V1 用 `course-control schemas-v1 --output shared/schemas`。提交前必须与模型一致（有测试锁定）。V1 是 `lesson.yaml` / `storyboard.yaml` 之上的规范化运行时层，不替换作者文件。
 
 `shots.json` 的 `annotations[]` 是二维标注的正式通道：`storyboard.yaml` 的可选 `annotations` 由 `collect` 按页面预算与 `cue_seconds` 解析成绝对时间；Remotion 只渲染该字段，不读取课程内容。标注分 `text` 与 `legend` 两类，`legend` 的色标 `stops` 由 `collect` 从 `shared/colormaps.json` 解析后写入，Blender 科学着色读同一份定义。
 

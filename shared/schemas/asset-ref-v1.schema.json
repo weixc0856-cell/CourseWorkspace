@@ -1,0 +1,66 @@
+{
+  "additionalProperties": false,
+  "description": "A file reference with content identity and provenance.",
+  "properties": {
+    "path": {
+      "minLength": 1,
+      "title": "Path",
+      "type": "string"
+    },
+    "sha256": {
+      "title": "Sha256",
+      "type": "string"
+    },
+    "bytes": {
+      "minimum": 0,
+      "title": "Bytes",
+      "type": "integer"
+    },
+    "kind": {
+      "enum": [
+        "video",
+        "audio",
+        "image",
+        "subtitle",
+        "font",
+        "data",
+        "log",
+        "json"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "origin": {
+      "enum": [
+        "author",
+        "rendered",
+        "captured",
+        "generated",
+        "external"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Version"
+    }
+  },
+  "required": [
+    "path",
+    "sha256",
+    "bytes",
+    "kind",
+    "origin"
+  ],
+  "title": "AssetRef",
+  "type": "object"
+}

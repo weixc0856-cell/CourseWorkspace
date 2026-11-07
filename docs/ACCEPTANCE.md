@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.1（2026-11-04）
+- **版本**：v1.2（2026-11-07）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -13,16 +13,27 @@
 # 期望：四套单测 + 课程契约（本地有课程时 5 个，干净克隆时 3 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
-最近一次执行（2026-11-04）：**`check ok`，exit 0**。
+最近一次执行（2026-11-07）：**`check ok`，exit 0**。
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 66 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 116（含 V1-B 新增 50；skipped=2） | 全部通过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
 
-合计 **127** 个用例。
+合计 **177** 个用例；跳过的 2 个 Docker/录制集成测试不计为通过。
+
+### 1.1 V1-B 契约命令
+
+```powershell
+uv run --project CourseControl course-control schemas-v1 --output shared/schemas
+uv run --project CourseControl course-control contract-v1-validate --kind timeline-v1 --file docs/contracts/examples/timeline.spec.json
+```
+
+- `schemas-v1`：导出 7 份 V1 JSON Schema。
+- `contract-v1-validate`：按 `kind` 校验单个 V1 文件；非法输入 exit 1，未知 kind exit 2。
+- 时间换算边界测试见 `CourseControl/tests/test_timecode.py`；模型与示例测试见 `CourseControl/tests/test_contracts_v1.py`。
 
 ---
 

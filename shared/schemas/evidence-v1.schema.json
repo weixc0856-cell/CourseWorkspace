@@ -1,0 +1,235 @@
+{
+  "$defs": {
+    "AssetRef": {
+      "additionalProperties": false,
+      "description": "A file reference with content identity and provenance.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "video",
+            "audio",
+            "image",
+            "subtitle",
+            "font",
+            "data",
+            "log",
+            "json"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "author",
+            "rendered",
+            "captured",
+            "generated",
+            "external"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "kind",
+        "origin"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "EvidenceEnvironment": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "docker",
+            "wsl",
+            "host"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image"
+        },
+        "image_digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Digest"
+        },
+        "os": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Os"
+        },
+        "tool_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Tool Versions",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "EvidenceEnvironment",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "evidence_manifest",
+      "default": "evidence_manifest",
+      "title": "Kind",
+      "type": "string"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "shot_id": {
+      "title": "Shot Id",
+      "type": "string"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "spec": {
+      "$ref": "#/$defs/AssetRef"
+    },
+    "environment": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EvidenceEnvironment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "execution_result": {
+      "$ref": "#/$defs/AssetRef"
+    },
+    "recording_result": {
+      "$ref": "#/$defs/AssetRef"
+    },
+    "validation_report": {
+      "$ref": "#/$defs/AssetRef"
+    },
+    "transcript": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AssetRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/AssetRef"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "cache_key": {
+      "minLength": 1,
+      "title": "Cache Key",
+      "type": "string"
+    },
+    "legacy": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Legacy"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "shot_id",
+    "session_id",
+    "run_id",
+    "spec",
+    "execution_result",
+    "recording_result",
+    "validation_report",
+    "cache_key"
+  ],
+  "title": "EvidenceManifestV1",
+  "type": "object"
+}

@@ -142,6 +142,59 @@ def schemas_command(
         typer.echo(f"wrote {target}")
 
 
+@app.command("schemas-v1")
+def schemas_v1_command(
+    output: Path = typer.Option(Path("shared/schemas"), "--output"),
+) -> None:
+    """Export JSON Schema files for normalized contracts V1."""
+    from .contracts_v1 import V1_MODELS
+
+    output.mkdir(parents=True, exist_ok=True)
+    for name, model in V1_MODELS.items():
+        target = output / f"{name}.schema.json"
+        payload = json.dumps(model.model_json_schema(), ensure_ascii=False, indent=2) + chr(10)
+        target.write_text(payload, encoding="utf-8")
+        typer.echo(f"wrote {target}")
+
+
+@app.command("contract-v1-validate")
+def contract_v1_validate_command(
+    kind: str = typer.Option(
+        ...,
+        "--kind",
+        help=(
+            "asset-ref-v1 / lesson-v1 / shot-v1 / narration-v1 / "
+            "timeline-v1 / evidence-v1 / render-v1"
+        ),
+    ),
+    file: Path = typer.Option(..., "--file"),
+) -> None:
+    """Validate one normalized contract V1 file and print field-level errors."""
+    from pydantic import ValidationError
+
+    from .contracts_v1 import V1_MODELS
+    from .paths import format_validation_error
+
+    model = V1_MODELS.get(kind)
+    if model is None:
+        typer.echo(f"unknown contract kind: {kind}", err=True)
+        raise typer.Exit(2)
+    if not file.is_file():
+        typer.echo(f"file not found: {file}", err=True)
+        raise typer.Exit(2)
+    try:
+        payload = json.loads(file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        typer.echo(f"invalid JSON in {file}: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    try:
+        model.model_validate(payload)
+    except ValidationError as exc:
+        typer.echo(format_validation_error(exc, str(file)), err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(f"{kind}: ok")
+
+
 @app.command("scene-validate")
 def scene_validate_command(
     task: Path = typer.Option(..., "--task"),

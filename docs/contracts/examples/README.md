@@ -3,6 +3,7 @@
 本目录是 `docs/课程生产统一契约V1.md` 的结构示例，**不是验收证据**。
 
 - 所有示例只用于说明字段、类型与关系，尚未接入运行时。
+- `fps` 一律是 `{fps_num, fps_den}` 有理数；示例使用 30/1，但契约不写死 30。
 - 标为 `0000…`、`1111…` 的哈希与 `bytes: 0` 是占位值；不要当作真实文件校验结果。
 - `render.manifest.json` 的 `checks` 故意写成 `not_run`，表示“设计示例，不是通过记录”。
 - `e6.render.manifest.v1.json` 使用 `build/manim-transformer/e6/` 的真实媒体哈希，但 `checks` 为空；V0 `manifest.json` 的人工 `checks` 只放在 `legacy.manual_checks`，且 `manual_checks_trusted: false`。

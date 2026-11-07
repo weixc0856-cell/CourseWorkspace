@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "AssetRef": {
+      "additionalProperties": false,
+      "description": "A file reference with content identity and provenance.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "video",
+            "audio",
+            "image",
+            "subtitle",
+            "font",
+            "data",
+            "log",
+            "json"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "author",
+            "rendered",
+            "captured",
+            "generated",
+            "external"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "kind",
+        "origin"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "NarrationGenerator": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "generated_at": {
+          "minLength": 1,
+          "title": "Generated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "generated_at"
+      ],
+      "title": "NarrationGenerator",
+      "type": "object"
+    },
+    "NarrationSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "narration_id": {
+          "title": "Narration Id",
+          "type": "string"
+        },
+        "shot_id": {
+          "title": "Shot Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "text_sha256": {
+          "title": "Text Sha256",
+          "type": "string"
+        },
+        "audio": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "duration_ms": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "fit": {
+          "enum": [
+            "ok",
+            "underflow",
+            "overflow",
+            "mismatch"
+          ],
+          "title": "Fit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "narration_id",
+        "shot_id",
+        "text",
+        "text_sha256",
+        "audio",
+        "duration_ms",
+        "start_frame",
+        "duration_frames",
+        "fit"
+      ],
+      "title": "NarrationSegment",
+      "type": "object"
+    },
+    "NarrationTotal": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ms": {
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "total_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Total Frames",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "duration_ms",
+        "total_frames"
+      ],
+      "title": "NarrationTotal",
+      "type": "object"
+    },
+    "NarrationVoice": {
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "const": "voxcpm2",
+          "title": "Provider",
+          "type": "string"
+        },
+        "ref_audio": {
+          "$ref": "#/$defs/AssetRef"
+        },
+        "language": {
+          "default": "zh",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "title": "Language",
+          "type": "string"
+        },
+        "speed": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "title": "Speed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "provider",
+        "ref_audio"
+      ],
+      "title": "NarrationVoice",
+      "type": "object"
+    },
+    "RationalFPS": {
+      "additionalProperties": false,
+      "description": "Exact frame rate as a rational number, e.g. 30000/1001.",
+      "properties": {
+        "fps_num": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Fps Num",
+          "type": "integer"
+        },
+        "fps_den": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Fps Den",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fps_num",
+        "fps_den"
+      ],
+      "title": "RationalFPS",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "narration_spec",
+      "default": "narration_spec",
+      "title": "Kind",
+      "type": "string"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "fps": {
+      "$ref": "#/$defs/RationalFPS"
+    },
+    "voice": {
+      "$ref": "#/$defs/NarrationVoice"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/NarrationSegment"
+      },
+      "minItems": 1,
+      "title": "Segments",
+      "type": "array"
+    },
+    "total": {
+      "$ref": "#/$defs/NarrationTotal"
+    },
+    "generator": {
+      "$ref": "#/$defs/NarrationGenerator"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "fps",
+    "voice",
+    "segments",
+    "total",
+    "generator"
+  ],
+  "title": "NarrationSpec",
+  "type": "object"
+}

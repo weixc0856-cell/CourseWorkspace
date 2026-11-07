@@ -32,7 +32,10 @@
     }
   },
   "output": {
-    "fps": 30,
+    "fps": {
+      "fps_num": 30,
+      "fps_den": 1
+    },
     "width": 1920,
     "height": 1080,
     "total_frames": 993,
