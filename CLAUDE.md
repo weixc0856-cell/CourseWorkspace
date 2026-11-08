@@ -8,6 +8,7 @@
 
 - 主产品：`lessons/` → 校验 → 截图/动画/三维渲染 → 时间线 → Remotion 合成 → 验收。
 - 三维能力（`BlenderStudio` IR v2、`ModelingStudio`）服务于课程内容，不是与课程并列的第二产品。
+- 文档索引：[docs/README.md](docs/README.md)
 - 唯一产品基线：[docs/PRD.md](docs/PRD.md)
 - 系统结构与数据契约：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 验收与命令：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
