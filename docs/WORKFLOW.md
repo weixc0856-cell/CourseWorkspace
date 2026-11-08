@@ -265,6 +265,8 @@ uv run --project CourseControl course-control validate --lesson <slug>
 | 摘要 | `course-control digest --lesson <slug>` | `authoring/source-digest.{json,md}` |
 | 草稿 | `brief` / `outline` / `script` / `content-draft` | `build/<slug>/authoring/candidates/` |
 | 批准 | `author-accept --kind digest\|brief\|outline\|script\|content` | `authoring/approval.json` |
+| 静帧运镜 | `lesson.yaml.motion`（ken_burns/static） | `TimelineSpec` 元数据 → Remotion MotionImage |
+| 版式校验 | `layout-templates` / `layout-validate --template process_flow` | 8 个模板与容量检查 |
 | 导演计划 | `director-plan --lesson <slug>` | `build/<slug>/director/{director_plan.json,storyboard.director.yaml,directions/,shot_specs/,director_review.md}` |
 | 制片 | `producer-order` / `producer-run` / `producer-status` / `producer-affected` / `producer-rebuild` | `build/<slug>/{production/order.json,production/state.json,delivery/manifest.json,delivery/README.md}` |
 | 局部重渲染 | `producer-rebuild [--execute] [--compose]` | `build/<slug>/animation/<scene>.mp4`，state 指纹刷新 |

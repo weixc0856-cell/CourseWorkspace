@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "Region": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "title",
+            "main_visual",
+            "explanation",
+            "caption",
+            "footer",
+            "subtitle"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        },
+        "w": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "W",
+          "type": "number"
+        },
+        "h": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "H",
+          "type": "number"
+        }
+      },
+      "required": [
+        "role",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "Region",
+      "type": "object"
+    },
+    "TemplateConstraints": {
+      "additionalProperties": false,
+      "properties": {
+        "min_main_visual_area": {
+          "default": 0.25,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Min Main Visual Area",
+          "type": "number"
+        },
+        "min_title_height": {
+          "default": 0.08,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Min Title Height",
+          "type": "number"
+        },
+        "subtitle_band": {
+          "default": 0.08,
+          "maximum": 0.3,
+          "minimum": 0,
+          "title": "Subtitle Band",
+          "type": "number"
+        },
+        "max_title_chars": {
+          "default": 90,
+          "exclusiveMinimum": 0,
+          "title": "Max Title Chars",
+          "type": "integer"
+        },
+        "max_body_chars": {
+          "default": 420,
+          "exclusiveMinimum": 0,
+          "title": "Max Body Chars",
+          "type": "integer"
+        }
+      },
+      "title": "TemplateConstraints",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "pattern": "^[a-z][a-z0-9_]{2,40}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "content_type": {
+      "minLength": 1,
+      "title": "Content Type",
+      "type": "string"
+    },
+    "typography": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Typography",
+      "type": "object"
+    },
+    "regions": {
+      "items": {
+        "$ref": "#/$defs/Region"
+      },
+      "minItems": 1,
+      "title": "Regions",
+      "type": "array"
+    },
+    "constraints": {
+      "$ref": "#/$defs/TemplateConstraints"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "content_type",
+    "regions"
+  ],
+  "title": "LayoutTemplate",
+  "type": "object"
+}

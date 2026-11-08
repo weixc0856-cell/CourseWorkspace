@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 
 from .inputs import DirectorInputs
+from ..layout import get_template, validate_content, validate_template
 from .planners import VisualDecision, resolve_scene, scene_classes
 from .schema import DirectorCheck, DirectorPlan
 
@@ -218,6 +219,21 @@ def _contextual(plan: DirectorPlan, inputs: DirectorInputs, decisions: dict[int,
 
     if not any(shot.readiness == "ready" for shot in plan.shots):
         checks.add("execution.no_ready_shot", "error", "no shot is renderable; a POC needs at least one ready shot")
+
+    seen_layouts: set[str] = set()
+    for shot in plan.shots:
+        if shot.layout_template in seen_layouts:
+            continue
+        seen_layouts.add(shot.layout_template)
+        try:
+            template = get_template(shot.layout_template)
+        except KeyError:
+            checks.add("layout.unknown_template", "error", f"unknown layout {shot.layout_template!r}", shot_id=shot.id)
+            continue
+        for check in validate_template(template):
+            checks.add(check.id, check.level, f"{shot.id} {template.id}: {check.message}", shot_id=shot.id)
+        for check in validate_content(template, title_chars=len(shot.title)):
+            checks.add(check.id, check.level, f"{shot.id} {template.id}: {check.message}", shot_id=shot.id)
 
     narration_by_shot: dict[str, float] = {}
     for segment in plan.narration:

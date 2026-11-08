@@ -429,3 +429,35 @@
 **决策**：新增 `CourseControl/src/course_control/producer/`。订单声明受众、时长、必须覆盖、授权与限额；`producer-run` 只自动执行 validate → director → package → state，不触发渲染、TTS、发布；交付包按文件存在性与 sha256 判定，全部 present 且订单人工批准才是 `delivered`。每个镜头保存内容/旁白/场景/方向四类指纹，`producer-affected` 输出受影响镜头与动作。
 
 **后果**：交付状态可核查，missing 明确；制片层不读密钥；局部重渲染还需 build 支持 storyboard override，当前只到“指出受影响镜头”。
+
+## D-050 版式作为导演职责，先模板后场景
+
+**背景**：动画方向已经可用，但画面主体偏小、留白平均分散、说明文字偏淡；逐页改场景不可复用，也容易风格漂移。
+
+**决策**：新增 `CourseControl/src/course_control/layout/`：`DesignSystem`（画布/安全边距/颜色/字号）、8 个 `LayoutTemplate`（归一化区域）、`LayoutValidator`（安全区/重叠/主视觉面积/容量/字幕保留带）。导演计划为每个镜头写模板与区域，引擎只能在区域内作画；Manim 场景共用 `ManimSandbox/common/design_system.py` 的 token。模板由规则映射选择，不让模型自由生成坐标。
+
+**后果**：版式可校验、可复用；CrossAttention 与 Loss 先按 `process_flow` 重做并出前后对比；动画过程中的碰撞/遮挡仍未自动检测，留待下一轮。
+
+## D-051 全局采用明亮科技编辑配色，语义色只表达对象
+
+**背景**：课程需要知识讲解的可信感；暗黑科技风、荧光色与发光效果会降低可读性，也让不同课程风格漂移。麦肯锡与 Claude 报告的共同点是浅底、克制结构、少量强调色。
+
+**决策**：默认主题为暖白纸面 `#FBFAF7` + 石墨 `#252A31/#2E3338` + 橙色重点 `#E8733B`；语义色固定为输入蓝 `#4A82B8`、处理青 `#42A69A`、输出紫 `#7A6FB0`、误差红 `#C75B55`。禁止深色默认背景、荧光色、发光/粒子、卡片套卡片。颜色写入 `DesignSystem` 与 Manim token，由 `test_color_system.py` 校验对比度与同步。
+
+**后果**：三个新镜头与配色页已按新色重做；4 个旧黑底镜头待统一。语义色到图元级别的自动校验尚未实现。
+
+## D-052 借鉴纪录片运镜：静帧慢推/平移，不引入音乐与生图
+
+**背景**：参考片的核心质感来自静帧慢推、强编辑排版与声音；课程现有静态截图是硬切、无运动。音乐与生图是另外两块短板，不应混入本轮。
+
+**决策**：新增 `MotionPolicy`（`lesson.yaml.motion`）与确定性 `slide_motion`；`collect` 写 `legacy_motion` 到时间线，Remotion `MotionImage` 执行缩放/平移。只作用于 slide 底图，缩放 ≥1.04、平移 ≤1.2%。音乐/音效、AI 生图、章节卡、dissolve 明确不纳入本轮。
+
+**后果**：静态页面获得稳定的轻运镜；可直接用 `slides: static` 关闭。下一步才是音频床/ducking（需授权曲库）与生图模块。
+
+## D-053 长序列模拟用 Three.js/CodeVideo，Blender 只做 hero 镜头
+
+**背景**：Primer 用 Godot 做实时模拟；我们的 Blender POC 在 720p30、91 个 agent 下约 0.8 s/帧，30 秒要 12 分钟。按此外推，15 分钟 1080p30 约 13 小时/遍，1440p60 约 20–40 小时/遍，返工不可接受。CodeVideoStudio 已有 Three.js + `window.seek(t)` 的确定性捕获，且验证过 900/900 帧哈希一致。
+
+**决策**：`SimulationSpec` 固化模拟输入；长序列用 Three.js / CodeVideoStudio 渲染，Blender 负责 hero 镜头、材质、灯光与特写；不引入 Godot。Blender 侧只保留“数据 → 场景”的任务。
+
+**后果**：Three.js 镜头模板已落地（`CodeVideoStudio/shots/primer-rps`）：同一 30 秒 900 帧 **45.7 秒**、双次 capture sha256 一致；Blender 约 12 分钟。Blender 场景脚本继续作为高质感备选，模拟数据与引擎解耦。

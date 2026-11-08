@@ -12,8 +12,10 @@ from course_control.contracts import BuildReport, LessonConfig, ShotsFile, Story
 from course_control.contracts_v1 import V1_MODELS
 from course_control.director.schema import DirectorPlan
 from course_control.formulas import FormulaSpec
+from course_control.layout.schema import LayoutTemplate
 from course_control.producer.schema import DeliveryManifest, ProductionOrder, ProductionState
 from course_control.session import EvidenceManifest, SessionSpec
+from course_control.simulation import SimulationSpec
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 
@@ -31,6 +33,8 @@ SCHEMAS = {
     "production-order": ProductionOrder,
     "production-state": ProductionState,
     "delivery-manifest": DeliveryManifest,
+    "layout-template": LayoutTemplate,
+    "simulation-spec": SimulationSpec,
     **V1_MODELS,
 }
 

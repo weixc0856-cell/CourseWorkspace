@@ -67,6 +67,7 @@ def build_fingerprints(plan: DirectorPlan, paths: LessonPaths, director_dir: Pat
             "engine": shot.engine,
             "scene": shot.scene,
             "blend_task": shot.blend_task,
+            "layout_template": shot.layout_template,
         }
         narration_payload = {sid: narration.get(sid, "") for sid in shot.narration_ids}
         content_hash = sha256_text(canonical_json(content))

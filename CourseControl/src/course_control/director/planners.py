@@ -14,6 +14,7 @@ from pathlib import Path
 from ..authoring.models import NarrationScript, Outline, OutlineChapter, OutlinePage
 from ..contracts import ShotSpec
 from ..engine_router import VisualRequirement, route_engine
+from ..layout import choose_template, get_template
 from ..paths import LessonPaths
 from .inputs import DirectorInputs
 from .schema import (
@@ -87,12 +88,12 @@ SPEECH_WORDS_PER_SECOND = 2.5
 
 def default_style() -> VisualStyle:
     return VisualStyle(
-        background="#FFFFFF",
-        ink="#14213D",
-        muted="#5C677D",
-        accent="#0077B6",
-        warm="#E76F51",
-        green="#2A9D8F",
+        background="#FBFAF7",
+        ink="#252A31",
+        muted="#6B7280",
+        accent="#E8733B",
+        warm="#C75B55",
+        green="#42A69A",
         typography=Typography(
             heading_px=56,
             body_px=32,
@@ -101,11 +102,16 @@ def default_style() -> VisualStyle:
             body_font="Inter",
         ),
         color_semantics={
-            "query": "#0077B6",
-            "key": "#E76F51",
-            "value": "#2A9D8F",
-            "result": "#14213D",
-            "mask": "#5C677D",
+            "query": "#4A82B8",
+            "key": "#42A69A",
+            "value": "#7A6FB0",
+            "result": "#7A6FB0",
+            "mask": "#6B7280",
+            "attention": "#E8733B",
+            "loss": "#C75B55",
+            "input": "#4A82B8",
+            "process": "#42A69A",
+            "output": "#7A6FB0",
         },
         consistency_required=True,
     )
@@ -338,6 +344,8 @@ def build_shots(
             cursor += page.target_seconds
             existing = storyboard_shots.get(page.slide)
             cue = existing.cue_seconds if existing is not None else min(30.0, max(0.0, page.target_seconds / 3))
+            layout_id = choose_template(page.visual_kind, page.animation)
+            layout = get_template(layout_id)
             narration_ids = [
                 segment.id for segment in script_by_slide[page.slide].segments
             ] if page.slide in script_by_slide else []
@@ -362,6 +370,11 @@ def build_shots(
                     cue_seconds=round(cue, 3),
                     target_seconds=round(page.target_seconds, 3),
                     transition=transition,
+                    layout_template=layout_id,
+                    layout_regions={
+                        region.role: [region.x, region.y, region.w, region.h]
+                        for region in layout.regions
+                    },
                     shot_size=decision.shot_size,
                     learning_intent=page.claim,
                     visual_metaphor=page.visual,

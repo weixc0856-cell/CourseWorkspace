@@ -22,6 +22,7 @@ from pydantic import TypeAdapter
 
 from .contracts import (
     Annotation,
+    MotionPolicy,
     LegendAnnotation,
     Shot,
     ShotsFile,
@@ -35,6 +36,7 @@ from .contracts_v1 import (
     TimelineSpec,
     TimelineVideo,
 )
+from .motion import slide_motion
 from .legacy_e6 import LegacyE6Error, asset_ref, parse_srt, seconds_to_ms
 from .paths import ContractError, LessonPaths
 from .timecode import frame_to_ms, ms_to_frame
@@ -85,6 +87,7 @@ def timeline_from_shots(
     build_root: Path,
     *,
     lesson_id: str | None = None,
+    motion: MotionPolicy | None = None,
 ) -> TimelineSpec:
     """Build a V1 TimelineSpec from the legacy shots.json object."""
     workspace = workspace.resolve()
@@ -97,6 +100,16 @@ def timeline_from_shots(
     videos: list[TimelineVideo] = []
     for shot in shots.shots:
         start, duration = _frames(shot.start_s, shot.duration_s, fps_num, fps_den)
+        metadata: dict = {
+            "legacy_kind": shot.kind,
+            "legacy_engine": shot.engine,
+            "legacy_slide": shot.slide,
+            "legacy_presentation": shot.presentation,
+        }
+        if motion is not None and shot.kind == "slide":
+            spec = slide_motion(shot.slide or 0, motion)
+            if spec is not None:
+                metadata["legacy_motion"] = spec
         videos.append(
             TimelineVideo(
                 shot_id=shot.id,
@@ -105,12 +118,7 @@ def timeline_from_shots(
                 role=shot.timeline_role,
                 asset=_asset_for(shot, workspace, build_root),
                 track=_shot_track(shot),
-                metadata={
-                    "legacy_kind": shot.kind,
-                    "legacy_engine": shot.engine,
-                    "legacy_slide": shot.slide,
-                    "legacy_presentation": shot.presentation,
-                },
+                metadata=metadata,
             )
         )
 
@@ -309,7 +317,11 @@ def write_timeline_contract(
 ) -> tuple[Path, TimelineSpec]:
     """Write ``build/<slug>/contracts/timeline.spec.json`` and return it."""
     timeline = timeline_from_shots(
-        shots, paths.workspace, paths.build_root, lesson_id=paths.slug
+        shots,
+        paths.workspace,
+        paths.build_root,
+        lesson_id=paths.slug,
+        motion=getattr(getattr(paths, "lesson", None), "motion", None),
     )
     target = output or (paths.build_root / "contracts" / "timeline.spec.json")
     target.parent.mkdir(parents=True, exist_ok=True)

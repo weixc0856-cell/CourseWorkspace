@@ -15,3 +15,9 @@
 ## FFmpeg
 
 - External executable; license depends on the installed build.
+
+## Three.js
+
+- Source: https://github.com/mrdoob/three.js
+- Vendored: `shots/primer-rps/three.module.js` (r160)
+- License: MIT.

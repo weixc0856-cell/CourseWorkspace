@@ -525,4 +525,51 @@ R1 增量完成条件：
 - 每个镜头保存内容/旁白/场景/方向指纹，`producer-affected` 给出 redesign / re-render / re-narrate / recompose。
 - 不读密钥；授权只记录能力布尔值与模型后端。
 
-**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 7 项）与增量检测实测。
+**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 4 项）与增量检测实测。
+
+### FR-30 版式系统
+
+**目标**：把版式作为导演职责，而不是动画完成后的美化；每页先选受控模板，再交给引擎执行。
+
+- `DesignSystem`：画布、96 px 安全边距、颜色角色、字号阶。
+- `LayoutLibrary`：8 个模板（title_intro / two_column / process_flow / principle_diagram / formula_derivation / data_chart / code_demo / summary），区域用归一化坐标。
+- `LayoutValidator`：安全区、重叠、主视觉面积、标题高度、字幕保留带、字号阶、标题/正文容量、项目符号。
+- 导演计划的每个镜头写 `layout_template` 与 `layout_regions`；direction 文件带 `style.layout`。
+- `layout-templates` / `layout-validate` 可独立检查模板与内容容量。
+
+**验收**：`docs/版式系统.md`、`test_layout.py`、`01-transformer-demo` 全镜头模板分配、CrossAttention/Loss 前后对比合辑。
+
+### FR-31 配色系统
+
+**目标**：建立明亮、可读、可复用的课程配色，不用暗黑科技风或荧光色。
+
+- `DesignSystem` 统一 paper / surface / ink / body / muted / border / orange / blue / teal / purple / red / navy / flow 与字号阶。
+- 语义色固定：输入蓝、处理青、输出紫、重点橙、误差红；正文只用 ink / body / muted。
+- 对比度测试：ink/body/muted 在纸面上 ≥ 4.5；语义色用于图形与大字，≥ 2.7。
+- 禁止大面积深色背景、荧光色、无意义发光/粒子、卡片套卡片、超过两个语义色。
+- 导演 `color_semantics` 与 Manim token 由测试保持一致。
+
+**验收**：`docs/配色规范.md`、`test_color_system.py`、`palette-system.mp4`（色卡 + 三个应用镜头）。
+
+### FR-32 静帧运镜与剪辑
+
+**目标**：借鉴纪录片式静帧运镜，在不改课程内容的前提下提升静态页面的质感。
+
+- `MotionPolicy`：`slides: ken_burns|static`、`scale`、`pan_percent`，写在 `lesson.yaml.motion`。
+- `slide_motion` 生成 4 种确定性路径；缩放 ≥1.04、平移 ≤1.2%，不露画布边缘。
+- `TimelineSpec.video[].metadata.legacy_motion` 只出现在 slide 底图；视频与 Manim 插入不受影响。
+- Remotion `MotionImage` 按镜头时长做平移/缩放；`static` 时回到原状。
+- 不引入音乐/生图；章节卡与 dissolve 留待后续。
+
+**验收**：`docs/运镜与剪辑.md`、`test_motion.py`、Remotion `tsc --noEmit`、01-transformer-demo 时间线元数据。
+
+### FR-33 模拟数据契约与引擎分工
+
+**目标**：模拟类内容有确定的输入/输出契约，Blender 与 CodeVideoStudio 共用同一份数据。
+
+- `SimulationSpec`：seed、hex radius、3 个物种、3×3 收益矩阵、mutation、updates_per_frame、frames、fps。
+- `simulation-run` 输出 `SimulationData`（cells、每帧 species、fractions），同 seed 同结果。
+- 长序列模拟用 Three.js / CodeVideoStudio 的 `frame(t)` 捕获；Blender 负责 hero 镜头、材质与灯光；不引入 Godot。
+- 30 秒 POC 已跑通（Python → Blender Eevee → Remotion）；Three.js 版同数据 900 帧 45.7 秒、双次哈希一致。
+
+**验收**：`docs/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。
