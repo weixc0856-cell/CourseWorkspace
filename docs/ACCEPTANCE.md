@@ -267,8 +267,8 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |
 | VoxCPM2 / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
-| V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成 | 新 session 不会自动产出 `EvidenceManifestV1` |
-| V1-E Remotion 切换 | Remotion 仍读 `shots.json`；V1 时间线是并列视图 | 尚未用 V1 直接驱动合成 |
+| V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成；`ShotSpec` 已支持 `simulation`，`session/graphics` 未做 | 新 session 不会自动产出 `EvidenceManifestV1` |
+| V1-E Remotion 切换 | adapter 已按 `compose.renderer=timeline` 选择 `CourseTimeline`；真实课程尚未完成全链路构建 | 需要在真实课程上验证 |
 | 远程完整作业 | 只验证了单轮文本/图片；未跑完整 ModelingStudio 远程作业 | 远程回退的路由与协议已测，作业级证据待补 |
 
 ---

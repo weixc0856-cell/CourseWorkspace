@@ -101,7 +101,7 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | 单元测试 | `ManimSandbox/tests/test_multi_head_math.py` | 8 个用例 |
 | 验证报告 | [E6.5-数学验证报告.md](E6.5-数学验证报告.md) | 形状、alpha 行和、头差异、concat、W_O |
 
-全项目现为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数学算例已验证，可进入 `MultiHeadScene` 视觉编码；尚未生成旁白/字幕/成片。
+E6.5 当时全项目为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数学算例已验证，可进入 `MultiHeadScene` 视觉编码；尚未生成旁白/字幕/成片。
 
 ### 0.6 2026-11-07 E6.5 视觉场景
 
@@ -205,7 +205,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 功能提交 | `d95d887 feat: 路径卫生、远程模型回退与 V1-D/E 兼容层`；本文件为随后的基线同步提交 |
 | `origin/main` | `577501e chore: 移除与本项目无关的 Django CI 模板` |
 | 本地 `main` | `577501e`，与 `origin/main` 同步 |
-| 未推送提交 | 当前 feature 分支的提交尚未推送（见 `git log origin/main..HEAD`） |
+| 远程状态 | feature 分支已推送至 `d97d0af`；尚未合并 `main` |
 | `d53ebd1` | 干净的初始工作流快照（无父提交）；仍是最早基线 |
 | `converge/v1` | `dd1d7f2`，完整收敛历史（含早期课程内容），**仅本地** |
 | `archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |
@@ -218,9 +218,9 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 
 **待处理（未擅自修改）**：
 
-1. 当前 feature 分支尚未推送/合并到 `main`；需要 PR 或直接合并。
-2. V1-D 的 Session runner 原生写 V1、`ShotSpec` 扩展 `session/simulation/graphics` 未做。
-3. V1-E 的 Remotion 直接消费 `TimelineSpec` 未做；目前仍读 `shots.json`。
+1. 当前 feature 分支已推送、尚未合并到 `main`；需要 PR 或直接合并。
+2. V1-D 的 Session runner 原生写 V1、`ShotSpec` 扩展 `session/graphics` 未做；`simulation` 已加入。
+3. Remotion adapter 已按 `compose.renderer=timeline` 选择 `CourseTimeline`；真实课程尚未跑完整构建。
 4. 真实课程仍缺 8 段 Motion 导出；`01-transformer-demo` 未构建。
 
 ---
