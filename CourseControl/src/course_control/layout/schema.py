@@ -19,14 +19,19 @@ class DesignSystem(StrictModel):
     canvas_height: int = Field(default=1080, gt=0)
     safe_margin_px: int = Field(default=96, ge=0)
     spacing_px: int = Field(default=8, gt=0)
-    background: str = "#FFFFFF"
-    ink: str = "#14213D"
-    body: str = "#252525"
-    muted: str = "#5C677D"
-    accent: str = "#0077B6"
-    warm: str = "#E76F51"
-    green: str = "#2A9D8F"
-    divider: str = "#E8E8E8"
+    background: str = "#FBFAF7"
+    surface: str = "#F3F1EA"
+    ink: str = "#252A31"
+    body: str = "#2E3338"
+    muted: str = "#6B7280"
+    accent: str = "#E8733B"
+    navy: str = "#12324A"
+    blue: str = "#4A82B8"
+    teal: str = "#42A69A"
+    purple: str = "#7A6FB0"
+    red: str = "#C75B55"
+    flow: str = "#A8C6DE"
+    divider: str = "#E3E0D7"
     typography: dict[str, int] = Field(
         default_factory=lambda: {
             "display": 60,

@@ -27,15 +27,17 @@ from manim import (
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common.design_system import (  # noqa: E402
-    ACCENT,
     BG,
     BODY,
     DIVIDER,
-    GREEN,
+    BLUE,
     INK,
     MUTED,
+    ORANGE,
+    PURPLE,
+    RED,
+    TEAL,
     TYPE,
-    WARM,
     x_at,
     y_at,
 )
@@ -68,8 +70,8 @@ class LossBackpropScene(Scene):
         z1_kicker = kicker("01  input + model", -5.55)
         source = box("merci", 1.6, 0.9, INK, 22).move_to([-5.6, 0.7, 0])
         stack = box("encoder → decoder", 2.8, 1.1, INK, 21).move_to([-3.05, 0.7, 0])
-        a1 = Arrow([-4.78, 0.7, 0], [-4.48, 0.7, 0], buff=0.03, color=INK, stroke_width=2.6)
-        a2 = Arrow([-1.62, 0.7, 0], [-1.05, 0.7, 0], buff=0.03, color=INK, stroke_width=2.6)
+        a1 = Arrow([-4.78, 0.7, 0], [-4.48, 0.7, 0], buff=0.03, color=BLUE, stroke_width=2.6)
+        a2 = Arrow([-1.62, 0.7, 0], [-1.05, 0.7, 0], buff=0.03, color=BLUE, stroke_width=2.6)
         zone1 = VGroup(z1_kicker, source, stack, a1, a2)
         self.play(FadeIn(zone1, shift=0.08 * UP), run_time=1.0)
 
@@ -83,64 +85,64 @@ class LossBackpropScene(Scene):
         bar_labels = VGroup()
         for name, height, x in zip(names, heights, xs):
             bar = Rectangle(
-                width=0.58, height=height, stroke_width=0, fill_color=ACCENT, fill_opacity=0.9
+                width=0.58, height=height, stroke_width=0, fill_color=PURPLE, fill_opacity=0.9
             )
             bar.move_to([x, base_y + height / 2, 0])
             bars.add(bar)
             bar_labels.add(label(name, 18, MUTED).move_to([x, base_y - 0.32, 0]))
         target = Rectangle(
-            width=0.62, height=2.5, stroke_color=GREEN, stroke_width=2.6, fill_opacity=0
+            width=0.62, height=2.5, stroke_color=TEAL, stroke_width=2.6, fill_opacity=0
         ).move_to([xs[0], base_y + 1.25, 0])
-        target_label = label("target: thanks = 1", 18, GREEN).move_to([1.05, 1.3, 0])
+        target_label = label("target: thanks = 1", 18, TEAL).move_to([1.05, 1.3, 0])
         gap = VGroup(
             Line(
                 [xs[0] - 0.42, base_y + heights[0], 0],
                 [xs[0] - 0.42, base_y + 2.5, 0],
-                color=WARM,
+                color=RED,
                 stroke_width=2.2,
             ),
             Line(
                 [xs[0] - 0.5, base_y + heights[0], 0],
                 [xs[0] - 0.34, base_y + heights[0], 0],
-                color=WARM,
+                color=RED,
                 stroke_width=2.2,
             ),
             Line(
                 [xs[0] - 0.5, base_y + 2.5, 0],
                 [xs[0] - 0.34, base_y + 2.5, 0],
-                color=WARM,
+                color=RED,
                 stroke_width=2.2,
             ),
         )
-        gap_label = label("gap", 18, WARM).move_to([xs[0] - 0.35, base_y + 2.72, 0])
+        gap_label = label("gap", 18, RED).move_to([xs[0] - 0.35, base_y + 2.72, 0])
         zone2 = VGroup(z2_kicker, bars, bar_labels, target_label)
         self.play(FadeIn(zone2, shift=0.08 * UP), run_time=0.9)
         self.play(Create(target), Create(gap), FadeIn(gap_label), run_time=1.0)
 
         # 03 loss
         z3_kicker = kicker("03  loss", 4.1)
-        loss = label("loss = 2.3", 40, WARM).move_to([5.0, 0.6, 0])
+        loss = label("loss = 2.3", 40, RED).move_to([5.0, 0.6, 0])
         zone3 = VGroup(z3_kicker, loss)
         self.play(FadeIn(zone3, shift=0.08 * UP), run_time=0.8)
-        self.play(Indicate(loss, color=WARM, scale_factor=1.06), run_time=0.6)
+        self.play(Indicate(loss, color=RED, scale_factor=1.06), run_time=0.6)
 
         # backprop below the visual band
-        down = DashedLine([4.2, -0.2, 0], [4.2, -2.15, 0], color=WARM, stroke_width=2.2, dash_length=0.12)
+        down = DashedLine([4.2, -0.2, 0], [4.2, -2.15, 0], color=RED, stroke_width=2.2, dash_length=0.12)
         across = DashedLine(
-            [4.2, -2.15, 0], [-3.0, -2.15, 0], color=WARM, stroke_width=2.2, dash_length=0.12
+            [4.2, -2.15, 0], [-3.0, -2.15, 0], color=RED, stroke_width=2.2, dash_length=0.12
         )
         into = Arrow(
             [-3.0, -2.15, 0],
             [-3.0, -0.25, 0],
             buff=0,
-            color=WARM,
+            color=RED,
             stroke_width=2.4,
             max_tip_length_to_length_ratio=0.1,
         )
-        update = label("update weights", TYPE["body"], WARM).move_to([0.6, -2.45, 0])
+        update = label("update weights", TYPE["body"], RED).move_to([0.6, -2.45, 0])
         self.play(Create(down), Create(across), run_time=0.8)
         self.play(Create(into), FadeIn(update), run_time=0.6)
-        self.play(Indicate(stack, color=WARM, scale_factor=1.04), run_time=0.7)
+        self.play(Indicate(stack, color=RED, scale_factor=1.04), run_time=0.7)
 
         divider = Line([x_at(0.06), -2.72, 0], [x_at(0.94), -2.72, 0], color=DIVIDER, stroke_width=1.5)
         caption = label(

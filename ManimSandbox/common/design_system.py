@@ -6,14 +6,24 @@ CourseControl/src/course_control/layout/library.py.
 """
 from __future__ import annotations
 
-BG = "#FFFFFF"
-INK = "#14213D"
-BODY = "#252525"
-MUTED = "#5C677D"
-ACCENT = "#0077B6"
-WARM = "#E76F51"
-GREEN = "#2A9D8F"
-DIVIDER = "#E8E8E8"
+BG = "#FBFAF7"
+SURFACE = "#F3F1EA"
+INK = "#252A31"
+BODY = "#2E3338"
+MUTED = "#6B7280"
+DIVIDER = "#E3E0D7"
+ORANGE = "#E8733B"
+NAVY = "#12324A"
+BLUE = "#4A82B8"
+TEAL = "#42A69A"
+PURPLE = "#7A6FB0"
+RED = "#C75B55"
+FLOW = "#A8C6DE"
+
+# Backwards-compatible aliases used by existing scenes.
+ACCENT = ORANGE
+WARM = RED
+GREEN = TEAL
 
 CANVAS_W = 1920
 CANVAS_H = 1080

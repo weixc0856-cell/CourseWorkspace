@@ -53,7 +53,7 @@ class FormulaSpec(StrictModel):
     source: FormulaSource
     validation: FormulaValidation = Field(default_factory=FormulaValidation)
     font_size: int = Field(default=48, ge=12, le=160)
-    color: str = "#14213D"
+    color: str = "#252A31"
 
 
 class FormulaIssue(StrictModel):

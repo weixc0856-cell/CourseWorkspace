@@ -538,3 +538,15 @@ R1 增量完成条件：
 - `layout-templates` / `layout-validate` 可独立检查模板与内容容量。
 
 **验收**：`docs/版式系统.md`、`test_layout.py`、`01-transformer-demo` 全镜头模板分配、CrossAttention/Loss 前后对比合辑。
+
+### FR-31 配色系统
+
+**目标**：建立明亮、可读、可复用的课程配色，不用暗黑科技风或荧光色。
+
+- `DesignSystem` 统一 paper / surface / ink / body / muted / border / orange / blue / teal / purple / red / navy / flow 与字号阶。
+- 语义色固定：输入蓝、处理青、输出紫、重点橙、误差红；正文只用 ink / body / muted。
+- 对比度测试：ink/body/muted 在纸面上 ≥ 4.5；语义色用于图形与大字，≥ 2.7。
+- 禁止大面积深色背景、荧光色、无意义发光/粒子、卡片套卡片、超过两个语义色。
+- 导演 `color_semantics` 与 Manim token 由测试保持一致。
+
+**验收**：`docs/配色规范.md`、`test_color_system.py`、`palette-system.mp4`（色卡 + 三个应用镜头）。

@@ -26,13 +26,14 @@ from manim import (
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common.design_system import (  # noqa: E402
-    ACCENT,
     BG,
     BODY,
     DIVIDER,
-    GREEN,
     INK,
     MUTED,
+    ORANGE,
+    PURPLE,
+    TEAL,
     TYPE,
     x_at,
     y_at,
@@ -77,7 +78,7 @@ class CrossAttentionFlowScene(Scene):
         for block_y in (0.9, -1.2):
             for offset, text, color in (
                 (0.6, "masked self-attention", INK),
-                (0.0, "cross-attention", ACCENT),
+                (0.0, "cross-attention", ORANGE),
                 (-0.6, "feed-forward", INK),
             ):
                 cell = strip(text, 3.6, 0.5, color).move_to([dec_x, block_y + offset, 0])
@@ -86,14 +87,14 @@ class CrossAttentionFlowScene(Scene):
                     highlights.add(cell)
         dec_tag = label("decoder", TYPE["body"], MUTED).move_to([dec_x, 2.02, 0])
         self.play(FadeIn(decoder, shift=0.1 * UP), FadeIn(dec_tag), run_time=1.0)
-        self.play(Indicate(highlights, color=ACCENT, scale_factor=1.03), run_time=0.9)
+        self.play(Indicate(highlights, color=ORANGE, scale_factor=1.03), run_time=0.9)
 
         bridge = VGroup(
             CurvedArrow(
                 [-2.35, 1.05, 0],
                 [0.95, 1.5, 0],
                 angle=-0.55,
-                color=ACCENT,
+                color=TEAL,
                 stroke_width=3.0,
                 tip_length=0.16,
             ),
@@ -101,23 +102,23 @@ class CrossAttentionFlowScene(Scene):
                 [-2.35, 0.6, 0],
                 [0.95, -1.2, 0],
                 angle=-0.28,
-                color=ACCENT,
+                color=TEAL,
                 stroke_width=3.0,
                 tip_length=0.16,
             ),
         )
-        kv = label("K, V from the source", TYPE["body"], ACCENT).move_to([-0.55, 1.92, 0])
+        kv = label("K, V from the source", TYPE["body"], TEAL).move_to([-0.55, 1.92, 0])
         self.play(Create(bridge[0]), Create(bridge[1]), FadeIn(kv), run_time=1.5)
 
         out_arrow = CurvedArrow(
             [4.65, 0.9, 0],
             [5.65, 0.9, 0],
             angle=0.0,
-            color=GREEN,
+            color=PURPLE,
             stroke_width=2.8,
             tip_length=0.16,
         )
-        out = label("thanks", TYPE["body"], GREEN).move_to([5.85, 0.9, 0], aligned_edge=LEFT)
+        out = label("thanks", TYPE["body"], PURPLE).move_to([5.85, 0.9, 0], aligned_edge=LEFT)
         self.play(Create(out_arrow), FadeIn(out), run_time=0.8)
 
         divider = Line([x_at(0.06), -2.62, 0], [x_at(0.94), -2.62, 0], color=DIVIDER, stroke_width=1.5)
@@ -125,5 +126,5 @@ class CrossAttentionFlowScene(Scene):
             "each new token looks back at the whole input", TYPE["caption"], BODY
         ).move_to([x_at(0.06), -2.95, 0], aligned_edge=LEFT)
         self.play(Create(divider), FadeIn(caption), run_time=0.6)
-        self.play(Indicate(highlights, color=ACCENT, scale_factor=1.03), run_time=0.8)
+        self.play(Indicate(highlights, color=ORANGE, scale_factor=1.03), run_time=0.8)
         self.wait(1.0)

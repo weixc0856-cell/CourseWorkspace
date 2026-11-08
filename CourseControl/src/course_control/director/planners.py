@@ -88,12 +88,12 @@ SPEECH_WORDS_PER_SECOND = 2.5
 
 def default_style() -> VisualStyle:
     return VisualStyle(
-        background="#FFFFFF",
-        ink="#14213D",
-        muted="#5C677D",
-        accent="#0077B6",
-        warm="#E76F51",
-        green="#2A9D8F",
+        background="#FBFAF7",
+        ink="#252A31",
+        muted="#6B7280",
+        accent="#E8733B",
+        warm="#C75B55",
+        green="#42A69A",
         typography=Typography(
             heading_px=56,
             body_px=32,
@@ -102,11 +102,16 @@ def default_style() -> VisualStyle:
             body_font="Inter",
         ),
         color_semantics={
-            "query": "#0077B6",
-            "key": "#E76F51",
-            "value": "#2A9D8F",
-            "result": "#14213D",
-            "mask": "#5C677D",
+            "query": "#4A82B8",
+            "key": "#42A69A",
+            "value": "#7A6FB0",
+            "result": "#7A6FB0",
+            "mask": "#6B7280",
+            "attention": "#E8733B",
+            "loss": "#C75B55",
+            "input": "#4A82B8",
+            "process": "#42A69A",
+            "output": "#7A6FB0",
         },
         consistency_required=True,
     )

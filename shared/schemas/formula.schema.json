@@ -163,7 +163,7 @@
       "type": "integer"
     },
     "color": {
-      "default": "#14213D",
+      "default": "#252A31",
       "title": "Color",
       "type": "string"
     }
