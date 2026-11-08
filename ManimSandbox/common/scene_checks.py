@@ -38,14 +38,25 @@ def _overlap(first, second, pad: float = 0.01) -> bool:
     )
 
 
-def scene_issues(scene, safe_margin: float = 0.5) -> list[str]:
+def scene_issues(scene, safe_margin: float = 0.5, object_margin: float = 0.2) -> list[str]:
     frame_left = -config.frame_width / 2 + safe_margin
     frame_right = config.frame_width / 2 - safe_margin
     frame_bottom = -config.frame_height / 2 + safe_margin
     frame_top = config.frame_height / 2 - safe_margin
+    object_left = -config.frame_width / 2 + object_margin
+    object_right = config.frame_width / 2 - object_margin
+    object_bottom = -config.frame_height / 2 + object_margin
+    object_top = config.frame_height / 2 - object_margin
 
     texts = list(dict.fromkeys(text for mob in scene.mobjects for text in _texts(mob)))
     issues: list[str] = []
+    for mob in scene.mobjects:
+        x0, y0, x1, y1 = _bounds(mob)
+        if x0 < object_left or x1 > object_right or y0 < object_bottom or y1 > object_top:
+            issues.append(
+                f"object outside frame: {type(mob).__name__} "
+                f"({x0:.2f}, {y0:.2f})..({x1:.2f}, {y1:.2f})"
+            )
     for text in texts:
         x0, y0, x1, y1 = _bounds(text)
         if x0 < frame_left or x1 > frame_right or y0 < frame_bottom or y1 > frame_top:
@@ -59,8 +70,8 @@ def scene_issues(scene, safe_margin: float = 0.5) -> list[str]:
     return issues
 
 
-def enforce(scene, safe_margin: float = 0.5) -> None:
-    issues = scene_issues(scene, safe_margin=safe_margin)
+def enforce(scene, safe_margin: float = 0.5, object_margin: float = 0.2) -> None:
+    issues = scene_issues(scene, safe_margin=safe_margin, object_margin=object_margin)
     for issue in issues:
         print(f"[layout] {issue}", flush=True)
     if issues and os.environ.get("STRICT_LAYOUT") == "1":

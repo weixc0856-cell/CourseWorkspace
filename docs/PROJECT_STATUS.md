@@ -15,7 +15,7 @@
 
 | 能力 | 契约 / 代码 | 证据 | 状态 |
 | --- | --- | --- | --- |
-| FR-28 导演层 | `CourseControl/src/course_control/director/`、`docs/导演层.md` | 01-transformer-demo：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 9 warning；5 个真实渲染镜头 | COMPLETED（POC） |
+| FR-28 导演层 | `CourseControl/src/course_control/director/`、`docs/导演层.md` | 01-transformer-demo：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 5 warning；5 个真实渲染镜头 | COMPLETED（POC） |
 | FR-33 模拟契约 | `simulation.py`、`primer-poc/`、POC 文档 | SimulationSpec + 30s POC；Three.js 900 帧 45.7 s；adapter + 导演计划 PASS | COMPLETED（POC） |
 | FR-32 静帧运镜 | `motion.py`、`MotionImage.tsx`、`docs/运镜与剪辑.md` | ken_burns 元数据 + Remotion 组件；tsc 通过 | COMPLETED（POC） |
 | FR-31 配色系统 | `layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | 浅色主题 + 语义色；palette-review 合辑 | COMPLETED（POC） |
@@ -193,7 +193,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 汽车空气动力学课 | `lessons/02-car-aerodynamics/`（本地，不入库） | 12 页 / 2,835 词 / 4 个 Manim 镜头；13 条来源；22:00 成片；clean + captioned；V-26..V-31 pass |
 | Claude Code 后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`config/claude-code.example.yaml` | 课程文本/字幕/ContentQA/ModelingStudio 文本规划/Code2Video 默认走 Claude Code；文本阶段 `--tools=`；任务记录 `provider=claude_code`；真实 smoke 通过 |
 | 动画视觉导演 | `AnimationDirection`、`direction-validate`、`ManimSandbox/03-vector-intro/` | 90 秒竖切片 1920×1080/30fps；分镜字段与视觉门 |
-| 导演层 | `director/`、`director-plan`、`director-validate` | 12 镜头 / 1200 s / 0 error / 9 warning；storyboard、directions、shot_specs、review |
+| 导演层 | `director/`、`director-plan`、`director-validate` | 12 镜头 / 1200 s / 0 error / 5 warning；storyboard、directions、shot_specs、review |
 | 制片层 | `producer/`、`producer-order/run/status/affected` | 七项交付清单 blocked（4 项缺失）；订单、限额、指纹与增量 |
 | 版式系统 | `layout/`、`layout-templates`、`layout-validate` | 8 模板、安全区/重叠/容量闸门；CrossAttention/Loss 重做 |
 | 配色系统 | `DesignSystem`、`design_system.py` | 暖白/石墨/橙 + 输入蓝/处理青/输出紫/误差红；对比度测试 |
