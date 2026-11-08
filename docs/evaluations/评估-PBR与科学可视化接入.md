@@ -11,13 +11,13 @@
 
 ## 1. 结论
 
-1. **提案的核心架构判断是对的，但 CourseWorkspace 已经在做同一件事。** “AI 只产出结构化配置、Python/Blender 只执行白名单字段”就是 IR v2（FR-05）本身，不是新增能力。参见 [Blender场景任务IR-v2.md §1](Blender场景任务IR-v2.md) 的执行链路与 §11 的 AI 输出约束。**不需要技术体系重构，也不需要新建工程。**
+1. **提案的核心架构判断是对的，但 CourseWorkspace 已经在做同一件事。** “AI 只产出结构化配置、Python/Blender 只执行白名单字段”就是 IR v2（FR-05）本身，不是新增能力。参见 [Blender场景任务IR-v2.md §1](../Blender场景任务IR-v2.md) 的执行链路与 §11 的 AI 输出约束。**不需要技术体系重构，也不需要新建工程。**
 2. **基础材质已覆盖大部分子项，缺口集中在贴图链路、折射、次表面与预设**（逐项计数见 §3.1，不再使用无依据的百分比概数）。
 3. **Level 2（程序化 + 科学可视化）当前为 0**，而它恰好是数学 / 物理 / CFD / 汽车课程真正缺的部分。
 4. **Level 3（各向异性金属、皮肤、织物、Toon）不建议建设**；对教学片而言，教学辅助表现（线框、剖切、X-ray、高亮）的性价比远高于高级 PBR。
 5. **比材质更靠前的缺口是“教学表达基元”**：文字、曲线、正交相机。IR v2 目前只有 9 种图元 + EMPTY，无法在三维画面里标注单位、公式或部件名。该缺口已进入实施计划（P1），不再是“建议优先”的口号。
 6. **Blender 与 Remotion 的职责必须写死**（§4）：三维与三维锚定标注归 Blender，二维图例、排版、字幕、合成归 Remotion。二者之间新增任何数据，都要走契约，不是“顺手加个组件”。
-7. **提案建议的目录骨架（`BlenderStudio/geometry/`、`materials/`、`shaders/`…）与现有实现冲突**，且违反 [ARCHITECTURE.md §7](ARCHITECTURE.md) 第 5 条“不新增平行实现”。应改为在 `BlenderStudio/scripts/scene_system/` 内部拆分。
+7. **提案建议的目录骨架（`BlenderStudio/geometry/`、`materials/`、`shaders/`…）与现有实现冲突**，且违反 [ARCHITECTURE.md §7](../ARCHITECTURE.md) 第 5 条“不新增平行实现”。应改为在 `BlenderStudio/scripts/scene_system/` 内部拆分。
 8. **不承诺“所有阶段都保持 `schema_version: 2`”**。每个阶段实施前单独做兼容性评估（§7.3），再决定增量字段、枚举增补还是新版本号。
 
 ---
@@ -41,7 +41,7 @@
 
 ### 2.2 代码证据（P1a 实施前基线，行号以当前工作树为准）
 
-> 下表记录的是 **P1a 实施前** 的基线，用于支撑阶段判断。TEXT / CURVE / ORTHO 三项已由 P1a 改变，当前契约以 [Blender场景任务IR-v2.md](Blender场景任务IR-v2.md) §5.1.1、§6 为准。
+> 下表记录的是 **P1a 实施前** 的基线，用于支撑阶段判断。TEXT / CURVE / ORTHO 三项已由 P1a 改变，当前契约以 [Blender场景任务IR-v2.md](../Blender场景任务IR-v2.md) §5.1.1、§6 为准。
 
 | 事实 | 位置 |
 | --- | --- |

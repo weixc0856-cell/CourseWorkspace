@@ -51,7 +51,7 @@ npx remotion render src/index.ts CourseTimeline `
 
 ## 素材访问（S-R3-1 结论）
 
-**必须使用 staging。** Remotion 会把绝对路径规范化为 `file://`，Chromium 拒绝从页面加载本地文件；`file://` 直接传入同样失败。实测与结论见 [决策记录](../docs/决策记录-Remotion素材访问.md)。
+**必须使用 staging。** Remotion 会把绝对路径规范化为 `file://`，Chromium 拒绝从页面加载本地文件；`file://` 直接传入同样失败。实测与结论见 [DECISIONS.md](../docs/DECISIONS.md) D-005。
 
 规则：
 

@@ -31,7 +31,7 @@ OUTPUT = ORANGE
 VALUE_FONT = 15
 
 # Measured from the five VoxCPM2 narration segments + ~0.8 s breathing room.
-# Keep in sync with docs/E6.5-成片报告.md when narration changes.
+# Keep in sync with the local archive docs/archive/E6.5/E6.5-成片报告.md when narration changes.
 BEAT_TARGETS = {
     "b1": 16.0,
     "b2": 20.0,

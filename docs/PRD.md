@@ -320,7 +320,7 @@
 - 收录：Code2Video、video-production-skill、HyperFrames、VideoZero 及后续项目；记录许可证、POC 结果与决策。
 - 当前决策：Code2Video 接入镜头级；video-production-skill 只吸收规范；HyperFrames 作为可选 HTML 渲染/lint 后端；VideoZero 作为 Motion Canvas 图像序列自动导出的候选。
 
-**验收**：`docs/技术雷达-视频生产.md` 持续更新；每个接入项有许可证与 POC 证据。
+**验收**：`docs/evaluations/技术雷达-视频生产.md` 持续更新；每个接入项有许可证与 POC 证据。
 
 ### FR-22 交付包、QC 与归档
 
@@ -343,7 +343,7 @@
 - 不可用时必须显式 `blocked`；只有配置 `claude_code_fallback: local_first` 才允许回退本地/远程，禁止静默降级。
 - Vision 阶段（ModelingStudio 图像分析/修订）仍使用本地或远程视觉模型，不交给纯文本 Claude Code。
 
-**验收**：`docs/评估-四后端对比.md`、`docs/DECISIONS.md` D-041/D-042；`claude_code` 后端单测；真实 brief/镜头调用各一次。
+**验收**：`docs/evaluations/评估-四后端对比.md`、`docs/DECISIONS.md` D-041/D-042；`claude_code` 后端单测；真实 brief/镜头调用各一次。
 
 ---
 
@@ -488,7 +488,7 @@ R1 增量完成条件：
 - Plotly/Seaborn 暂缓；不引入交互式运行时。
 - 图表必须有数据/参数/脚本来源；最终成片检查字号/线宽/图例/公式清晰度（必要时定位单帧）。
 
-**验收**：`docs/科学图形与图表接入评估.md`；`continuity_figure.py` 真实输出 SVG/PDF/PNG。
+**验收**：`docs/evaluations/科学图形与图表接入评估.md`；`continuity_figure.py` 真实输出 SVG/PDF/PNG。
 
 ### FR-27 动画视觉导演层
 
@@ -575,4 +575,4 @@ R1 增量完成条件：
 - `ShotSpec.engine=code_video` 且 `inputs.simulation_spec` 时，adapter 自动生成 `simulation.json`、capture 并 QC。
 - 导演层 `visual_kind: simulation` 路由 code_video，并在计划中携带/校验 `inputs.simulation_spec`。
 
-**验收**：`docs/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。
+**验收**：`docs/evaluations/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。
