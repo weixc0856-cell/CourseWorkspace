@@ -500,3 +500,15 @@
 5. 质量状态保持五维独立；`BUILD_PASS`、`QUALITY_PASS`、`RELEASE_APPROVED` 三层分离，最后一层必须有人工批准文件。叙事结构通过只把 Q2 记为 WARN，不证明教学有效。
 
 **后果**：5 分钟校准课可以跑通旁白、字幕、两种动画、BGM、全片 QC 与质量报告；ASR/强制对齐仍未接入，因此“字幕与语音一致”保持 INCOMPLETE。Shorts 不通过裁切长视频生成，后续单独建课。
+
+## D-057 校准课改为动画驱动的 scene 模式；deck 模式不再用于机制解释
+
+**背景**：5 分钟校准课首版使用 `compose.mode: deck`，3 页幻灯片占 94% 时长，只有两段 8–10 秒的 Manim cutaway。实测音轨与 `narration.wav` 零偏移、字幕与 ASR 覆盖 0.992，说明时间轴没有漂移；问题在视觉契约：静态 PPT 无法承担机制解释，动画内容与旁白段落也没有语义对齐。
+
+**决策**：
+1. 新增 292 秒连续 Manim 动画 `ManimSandbox/05-transformer-5min/attention_5min.py`，按 12 段旁白实测时间编排 12 个 beat；每个 beat 的动画、停顿与转场相加等于该段旁白时长。
+2. 校准课切到 `compose.mode: scene`，`scenes/manifest.json` 的 `base_file` 指向 `animation/attention_5min.mp4`；`collect` 在 scene + base_file 模式下不再把 storyboard 镜头当覆盖层叠加。
+3. Manim 适配器增加缓存：目标 MP4 比源场景新时直接复用，避免重建时重复渲染 5 分钟动画。
+4. 机制解释类课程默认用 scene/动画作为底；deck 模式只用于以静态图文为主、允许逐页阅读的内容。
+
+**后果**：5 分钟课从“幻灯片 + 两段短片”变为连续动画；字幕/旁白时间轴沿用 ASR 对齐结果。代价是 Manim 渲染时间显著增加，因此加入缓存并要求后续 scene 模式课程先做低分辨率预渲染。

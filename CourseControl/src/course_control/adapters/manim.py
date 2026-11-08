@@ -26,6 +26,15 @@ def run(paths: LessonPaths) -> StageOutcome:
         if not class_name:
             errors.append(f"{shot.id}: manim scene must use <file>.py::<ClassName>")
             continue
+        target = paths.build_root / "animation" / f"{scene_path.stem}.mp4"
+        if target.is_file() and target.stat().st_mtime >= scene_path.stat().st_mtime:
+            try:
+                probe_media(target)
+            except Exception:  # noqa: BLE001 - invalid cache is re-rendered
+                target.unlink(missing_ok=True)
+            else:
+                outputs.append(target)
+                continue
         relative_scene = scene_path.relative_to(paths.engine_root("manim"))
         command = [
             *which_command("uv"),
