@@ -1,6 +1,7 @@
 import React from 'react';
 import {Composition} from 'remotion';
 import {AccessProbe} from './compositions/AccessProbe';
+import {ChapterCard, chapterCardDefaults} from './compositions/ChapterCard';
 import {CourseTimeline} from './compositions/CourseTimeline';
 import {CourseVideo} from './compositions/CourseVideo';
 import {R1Smoke} from './compositions/R1Smoke';
@@ -63,6 +64,15 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={{src: '', kind: 'image' as const}}
+      />
+      <Composition
+        id="ChapterCard"
+        component={ChapterCard}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={chapterCardDefaults}
       />
       <Composition
         id="PrimerPoc"

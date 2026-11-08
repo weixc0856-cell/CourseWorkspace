@@ -35,6 +35,8 @@
 | 运行时版式检查 | `ManimSandbox/common/scene_checks.py` | 文本安全区/重叠检查；`STRICT_LAYOUT=1` 下 5 个旧镜头全部 clean |
 | 4K60 渲染基准 | `build/01-transformer-demo/final/motion-4k60.mp4` | 3840×2160 / 60fps / 60 帧；slides capture 已按课程分辨率参数化 |
 | AudioPlan | `CourseControl/src/course_control/audio_plan.py`、`audio-plan` CLI | 内容类型/许可/署名/电平闸门；6 个单测；输出 `build/<slug>/audio/audio_plan.json` |
+| 章节卡 | `RemotionStudio/src/compositions/ChapterCard.tsx` | 真实 still 渲染；尚未自动插入时间线 |
+| 全量 Manim 镜头 | `build/01-transformer-demo/animation/*.mp4` | 7 个镜头 1080p30 全部渲染并通过 adapter |
 | ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
 | 路径与文档 | 全部 README、`docs/` | `path check ok`；清除控制字符与个人路径；补全 `VOICE_REF_WAV`、junction、配色说明 |
 

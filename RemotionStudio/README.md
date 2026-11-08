@@ -39,6 +39,10 @@ npx remotion render src/index.ts CourseVideo `
   ../build/01-shell-for-ai-era/final/preview-remotion.mp4 `
   --props=../build/01-shell-for-ai-era/shots.json
 
+# 章节卡（独立渲染，尚未自动插入时间线）
+npx remotion render src/index.ts ChapterCard ../build/<lesson>/final/chapter-01.mp4 `
+  --props=../build/<lesson>/contracts/chapter-01.json
+
 # 渲染 V1 时间线（含 Ken Burns / TimelineSpec）
 npx remotion render src/index.ts CourseTimeline `
   ../build/01-shell-for-ai-era/final/preview-timeline.mp4 `
@@ -74,6 +78,7 @@ npx remotion render src/index.ts CourseTimeline `
 - `src/components/MotionImage.tsx` 只对图片资产应用平移/缩放，视频不受影响；
 - 参数来自 `lesson.yaml.motion`：`slides: ken_burns|static`、`scale`、`pan_percent`；
 - `PrimerPoc` 是 30 秒模拟样片合成：世界视频 + 三元图 + payoff 表。
+- `ChapterCard` 是独立的章节卡（章节号、标题、副标题、纸白底）；当前只支持手工渲染，尚未由导演计划自动插入。
 
 ## 旁白与字幕
 

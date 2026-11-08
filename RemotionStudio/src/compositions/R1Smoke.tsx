@@ -22,7 +22,7 @@ export const R1Smoke: React.FC = () => {
   });
 
   return (
-    <AbsoluteFill style={{backgroundColor: COLORS.white, opacity: fade}}>
+    <AbsoluteFill style={{backgroundColor: COLORS.paper, opacity: fade}}>
       <div
         style={{
           position: 'absolute',
