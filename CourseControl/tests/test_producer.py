@@ -57,6 +57,8 @@ class ProducerRunTest(unittest.TestCase):
         self.assertEqual(self.result.state.stages["director"], "ready")
         self.assertEqual(self.result.state.stages["render"], "missing")
         self.assertEqual(self.result.state.stages["audio"], "missing")
+        self.assertEqual(self.result.state.stages["audio_policy"], "ready")
+        self.assertTrue(self.result.paths["audio_plan"].is_file())
         self.assertGreater(self.result.state.usage.wall_seconds, 0)
         self.assertGreaterEqual(self.result.state.usage.disk_gb, 0)
 

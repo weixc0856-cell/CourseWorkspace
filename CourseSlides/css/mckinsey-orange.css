@@ -3,13 +3,13 @@
    ========================================================================== */
 
 :root {
-  --mk-white: #FFFFFF;
-  --mk-text: #1A1A1A;
-  --mk-text-muted: #595959;
-  --mk-orange: #EB6100;
-  --mk-orange-soft: #FFF5F0;
-  --mk-border: #E5E5E5;
-  --mk-code-bg: #FAFAFA;
+  --mk-white: #FBFAF7;
+  --mk-text: #252A31;
+  --mk-text-muted: #6B7280;
+  --mk-orange: #E8733B;
+  --mk-orange-soft: #FBEEE6;
+  --mk-border: #E3E0D7;
+  --mk-code-bg: #F3F1EA;
   --mk-font-sans: "Helvetica Neue", Aptos, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --mk-font-mono: "Cascadia Mono", "SFMono-Regular", Consolas,
@@ -68,7 +68,7 @@ body {
 .reveal a:visited {
   color: var(--mk-orange);
   text-decoration: none;
-  border-bottom: 1px solid rgba(235, 97, 0, 0.45);
+  border-bottom: 1px solid rgba(232, 115, 59, 0.45);
   transition: border-color 160ms ease;
 }
 
