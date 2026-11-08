@@ -75,3 +75,7 @@ CodeVideoStudio/backends/hyperframes/hf-poc/.hyperframes/
 /ManimSandbox/01-transformer-demo/
 /ManimSandbox/02-car-aerodynamics/
 ScientificFigures/output/
+
+# Local archive: finished project reports stay out of the remote
+/docs/archive/*
+!/docs/archive/README.md

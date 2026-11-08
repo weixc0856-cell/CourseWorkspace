@@ -26,7 +26,7 @@
 | FR-18 整课旁白 | `narrate.py`、`narration_course.py` | `test_narrate.py`、真实 VoxCPM2 样片 |
 | FR-19 双语字幕/双版本 | `subtitles.py`、`adapters/burn.py`、`pipeline.py`、`RemotionStudio/src/compositions/CourseTimeline.tsx` | `test_subtitles.py`、`test_burnin.py`、`test_staging.py`、真实 6 秒 TimelineSpec 合成 |
 | FR-20 代码驱动镜头 | `CourseControl/src/course_control/adapters/code_video.py`、`code_video_qc.py`、`engine_router.py`、`CodeVideoStudio/` | `test_code_video_adapter.py`、`test_code_video_qc.py`、`test_engine_router.py`、30 秒真实 Canvas 镜头 + 900/900 帧哈希一致 + QC/contact sheet |
-| FR-21 技术雷达 | `docs/技术雷达-视频生产.md`、`docs/评估-Code2Video接入.md` | HyperFrames/VideoZero POC 记录；许可证核查 |
+| FR-21 技术雷达 | `docs/evaluations/技术雷达-视频生产.md`、`docs/evaluations/评估-Code2Video接入.md` | HyperFrames/VideoZero POC 记录；许可证核查 |
 | FR-22 交付包/QC/归档 | `docs/课程生产交付物规范.md`、`report.py`、`verify.py`、`code_video_qc.py` | 交付清单、`build-report.json`、镜头 QC 证据 |
 | FR-23 Claude Code 默认后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`CourseControl/authoring/llm.py`、`ContentQA/client.py`、`ModelingStudio/server.py`、`config/claude-code.example.yaml` | `test_claude_code.py`、`test_authoring_claude_code.py`、ContentQA/ModelingStudio 后端测试、四后端对比真实验证 |
 | FR-24 Scene-first 合成 | `CourseControl/collect.py`、`RemotionStudio/src/compositions/ScenePage.tsx`、`lesson.yaml.compose.mode` | scene 模式 collect 单测；汽车空气动力学 scene 版真实构建 |
@@ -38,7 +38,7 @@
 | FR-30 版式系统 | `CourseControl/src/course_control/layout/`、`ManimSandbox/common/design_system.py`、`docs/版式系统.md` | `test_layout.py`、12 镜头模板分配、CrossAttention/Loss 前后对比 |
 | FR-31 配色系统 | `CourseControl/src/course_control/layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | `test_color_system.py`、palette-review 合辑 |
 | FR-32 静帧运镜 | `CourseControl/src/course_control/motion.py`、`RemotionStudio/src/components/MotionImage.tsx`、`docs/运镜与剪辑.md` | `test_motion.py`、`tsc --noEmit`、timeline metadata |
-| FR-33 模拟契约 | `CourseControl/src/course_control/simulation.py`、`BlenderStudio/scenes/primer-poc/`、`docs/评估-Primer模拟视频POC.md` | `test_simulation.py`、`test_simulation_director.py`、adapter PASS、30 秒 POC |
+| FR-33 模拟契约 | `CourseControl/src/course_control/simulation.py`、`BlenderStudio/scenes/primer-poc/`、`docs/evaluations/评估-Primer模拟视频POC.md` | `test_simulation.py`、`test_simulation_director.py`、adapter PASS、30 秒 POC |
 | 音频策略（内容类型/BGM） | `CourseControl/src/course_control/audio_plan.py`；`contracts.py`（`AudioPolicy`）；`audio-plan` CLI；`producer/delivery.py` | `test_audio_plan.py`；交付包在配置 BGM 时要求 `audio_plan.json` |
 | V1-E 时间线兼容层 | `CourseControl/src/course_control/v1_timeline.py`；`collect` 写 `contracts/timeline.spec.json`；CLI `timeline-v1` | `CourseControl/tests/test_v1_timeline.py`；lesson-smoke 实跑 |
 | V1-D Session 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |

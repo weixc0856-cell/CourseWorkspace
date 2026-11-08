@@ -2,6 +2,7 @@
 
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
+- **文档索引**：[docs/README.md](docs/README.md)
 - **唯一产品基线**：[docs/PRD.md](docs/PRD.md)
 - **架构与契约**：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **验收与命令**：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
@@ -16,7 +17,9 @@
 | 内容 | 是否进远程 | 说明 |
 | --- | --- | --- |
 | `CourseControl/`、`CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`BlenderStudio/`、`RemotionStudio/` | 是 | 工作流与渲染入口 |
-| `ModelingStudio/`、`ContentQA/`、`shared/` | 是 | 内部能力与运行时 |
+| `ModelingStudio/`、`ContentQA/`、`CourseDemo/`、`shared/` | 是 | 内部能力、会话录制与运行时 |
+| `ScientificFigures/` | 是 | SymPy/LaTeX + Matplotlib/SciencePlots 科学图表 POC；`output/` 忽略 |
+| `index.html` | 是 | 根入口：把 `/?lesson=<slug>` 重定向到 Reveal 外壳 |
 | `CodeVideoStudio/` | 是 | Code2Video Skill（Apache 2.0）与镜头 POC；不含 27B 权重 |
 | `scripts/`、`config/*.example.yaml`、`docs/` | 是 | 入口、模板与指导 |
 | `lessons/` 真实课程 | **否** | 本地内容，仓库只保留 `lessons/README.md` |
@@ -70,6 +73,8 @@ verify                                 → build/<slug>/final/build-report.json�
 | `BlenderStudio/` | 课程渲染任务（v1）+ 场景系统（v2） | `blender/*.png|mp4|blend` | 是（可选引擎） |
 | `RemotionStudio/` | 截图、staging、合成 | `final/course-video.mp4` | 是 |
 | `ModelingStudio/` | 图片 → Blender 模型 | `workspace/jobs/<job>/` | 否（内部能力） |
+| `ScientificFigures/` | 科学图表 POC：SymPy/Matplotlib/SciencePlots | `ScientificFigures/output/*.svg|pdf|png`（忽略） | 否（POC/按需） |
+| `index.html` | 根入口重定向到 `CourseSlides/template/` | 浏览器入口 | 支撑 |
 | `ContentQA/` | 内容审查（默认 Claude Code，API 可选） | `build/<slug>/review/` | 否（内部能力） |
 | `CourseDemo/` | VS Code 会话驱动扩展 | `vscode-result.json` | 否（内部能力） |
 | `shared/ai_runtime/` | 跨进程锁、服务生命周期、任务记录、上下文预算 | `runtime/` | 支撑 |
@@ -79,6 +84,8 @@ verify                                 → build/<slug>/final/build-report.json�
 | `docs/` | 权威文档；`docs/archive/` 为历史 | — | — |
 
 ## 快速开始
+
+本地预览入口：`http://localhost:8081/?lesson=<slug>`；根目录 `index.html` 会重定向到 `CourseSlides/template/`。
 
 ```powershell
 .\scripts\setup.ps1                       # 首次：生成 config/tools.yaml、安装依赖
@@ -129,7 +136,10 @@ uv run --project CourseControl course-control scene-run `
 # 本地自动建模
 uv run --project ModelingStudio modeling-studio run --image tests/fixtures/sample-assembly.png
 
-# 在线内容审查（未配置凭据时返回 blocked，退出码 3）
+# 科学图表 POC
+uv run --project ScientificFigures python ScientificFigures/figures/continuity_figure.py
+
+# 内容审查（默认 Claude Code；不可用或 API 无凭据时 blocked，退出码 3）
 uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 ```
 
@@ -162,6 +172,14 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 # 然后把 api_key_env 改成你实际使用的环境变量名
 ```
 
+## License
+
+- 本仓库代码采用 **AGPL-3.0-or-later**，全文见 [LICENSE](LICENSE)。
+- **商业双许可**：如要在闭源产品或商业服务中内嵌本仓库代码、且不愿承担 AGPL 的源码公开义务，需向仓库所有者取得单独的商业授权。
+- 第三方组件保留原许可：CodeVideoStudio Skill 为 Apache-2.0，Three.js 为 MIT，Noto Sans SC 为 OFL，HyperFrames 为 ISC；完整清单见 [NOTICE](NOTICE)。这些组件不会被重新标为 AGPL。
+- `lessons/` 课程正文、`build/` 成片与仓库外音频/模型资产不在 AGPL 范围内，除非文件另有声明。
+- 贡献前需按 [CONTRIBUTING.md](CONTRIBUTING.md) 完成 CLA；这是维持双许可的前提。
+
 ## 边界
 
 - 课程正文归作者所有；自动化只做格式与路径处理。
@@ -179,7 +197,7 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 - 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
 - 导演/制片：[导演层](docs/导演层.md) · [制片层](docs/制片层.md)
 - 版式/配色/运镜：[版式系统](docs/版式系统.md) · [配色规范](docs/配色规范.md) · [运镜与剪辑](docs/运镜与剪辑.md)
-- 模拟/音频：[Primer 式模拟 POC](docs/评估-Primer模拟视频POC.md) · [音乐资产盘点](docs/音乐资产盘点.md) · [内容类型与音频策略](docs/内容类型与音频策略.md)
+- 模拟/音频：[Primer 式模拟 POC](docs/evaluations/评估-Primer模拟视频POC.md) · [音乐资产盘点](docs/音乐资产盘点.md) · [内容类型与音频策略](docs/内容类型与音频策略.md)
 - 项目差距：[项目差距清单](docs/项目差距清单.md)
-- 产品决策：[前端必要性评估](docs/FRONTEND_ASSESSMENT.md)
+- 产品决策：[前端必要性评估](docs/evaluations/FRONTEND_ASSESSMENT.md)
 - 历史：[docs/archive/](docs/archive/README.md)

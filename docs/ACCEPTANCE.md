@@ -315,8 +315,7 @@ R1 测试计数：五套合计 **416 个用例（410 通过 + 6 跳过）**：Co
 
 R1 真实产物：
 
-- `docs/R1-基线报告.md`、`docs/R1-1-引擎验证报告.md`、`docs/R1-性能基准报告.md`
-- `docs/R1-5-候选稿索引.md`
+- 本地归档：`docs/archive/R1/R1-基线报告.md`、`R1-1-引擎验证报告.md`、`R1-性能基准报告.md`、`R1-5-候选稿索引.md`（不入库）
 - `build/r1/manim/.../SmokeScene.mp4`、`build/r1-smoke/blender/smoke.mp4`、`build/r1/remotion/smoke.mp4`
 - `build/r1/timeline-smoke.mp4`（TimelineSpec 驱动 Remotion 的 6 秒真实片段）
 - `build/01-transformer-demo/blender/stack_explode.mp4`（1920×1080 / 30 fps / 750 帧 / 25 s）

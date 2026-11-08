@@ -1,6 +1,7 @@
 [project]
 name = "content-qa"
 version = "0.1.0"
+license = {text = "AGPL-3.0-or-later"}
 description = "Online-model content review for CourseWorkspace (read-only)"
 requires-python = ">=3.12,<3.13"
 dependencies = [

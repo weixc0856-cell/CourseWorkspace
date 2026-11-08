@@ -1,13 +1,35 @@
-# 归档文档
+# 归档文档（本地，不入远程）
 
-这里的文件**不再作为任何开发依据**，只保留历史决策与证据。当前基线见 [../PRD.md](../PRD.md)。
+本目录保存**已完成项目**的历史报告、验收快照与被取代的设计稿，不再作为开发依据。
 
-| 文件 | 原用途 | 归档原因 | 仍然有效的部分 |
-| --- | --- | --- | --- |
-| `CourseWorkspace-R0-R5改造PRD.md` | R0–R5 改造规格 | R1–R5 已全部落地；文件中“未执行”“R4/R5 未提交”等状态已过期 | 状态语义 `skip ≠ pass`、路径规则、V-01~V-21 已迁入 [../PRD.md](../PRD.md) 与 [../ACCEPTANCE.md](../ACCEPTANCE.md) |
-| `R5-验收矩阵.md` | R5 阶段的验收证据快照 | 测试数量、HEAD、提交状态均已过期 | 故障注入场景与结论已提炼到 [../ACCEPTANCE.md](../ACCEPTANCE.md) |
-| `ContentQA_实施评估.md` | 完整 ContentQA 设计稿 | 本期只交付审查内核；TTS/ASR/公式验证/证据语料未实现 | 审查状态词、只读边界、凭据策略已实现于 `ContentQA/`，见 [../PRD.md](../PRD.md) FR-12 |
-| `AI-Blender落地路线图.md` | P0–P9 实施状态 | 状态快照与当前实现不一致 | 已实现能力见 [../TRACEABILITY.md](../TRACEABILITY.md) |
-| `AI-Blender自动化三维内容生产技术方案.md` | 通用技术提案 | 包含大量未实现设想，不能作为需求基线 | 已实现的 IR v2 契约见 [../Blender场景任务IR-v2.md](../Blender场景任务IR-v2.md) |
+- 当前基线：[PRD.md](../PRD.md) · [ARCHITECTURE.md](../ARCHITECTURE.md) · [ACCEPTANCE.md](../ACCEPTANCE.md) · [DECISIONS.md](../DECISIONS.md)
+- `.gitignore` 只保留本 README；`docs/archive/**` 下的其他文件**不进入远程仓库**。
+- 归档文件不修改、不续写；新结论写进 `DECISIONS.md` 或对应现行文档。
 
-原则：归档文件不修改、不续写；新决策写进 [../DECISIONS.md](../DECISIONS.md)。
+## 目录
+
+| 目录 | 内容 | 状态 |
+| --- | --- | --- |
+| `legacy/` | R0–R5 改造 PRD、R5 验收矩阵、ContentQA/AI-Blender 早期方案 | 历史 |
+| `E6/` | E6 Transformer 四幕基线制作方案 | 已完成 |
+| `E6.5/` | Multi-head 设计、数学验证、视觉渲染、成片报告 | 已完成 |
+| `R1/` | 基线、引擎验证、性能基准、候选稿索引 | 已完成 |
+| `V1/` | V1-B/V1-C 实施报告 | 已完成，结论已并入现行契约 |
+| `reviews/` | 向量加法动画评审、统一契约架构审查 | 已完成 |
+| `decisions/` | Motion Canvas 导出、Remotion staging 的早期决策记录 | 已提炼为 `DECISIONS.md` D-004/D-005 |
+
+## 仍然有效的结论去向
+
+| 归档内容 | 现行位置 |
+| --- | --- |
+| `skip ≠ pass`、路径规则、V-01~V-21 | [PRD.md](../PRD.md)、[ACCEPTANCE.md](../ACCEPTANCE.md) |
+| E6/E6.5 成片与测试结论 | [PROJECT_STATUS.md](../PROJECT_STATUS.md) 历史增量、[TRACEABILITY.md](../TRACEABILITY.md) |
+| R1 引擎验证与性能基准 | [DECISIONS.md](../DECISIONS.md) D-053、[PROJECT_STATUS.md](../PROJECT_STATUS.md) |
+| V1-B/V1-C 契约 | [课程生产统一契约V1.md](../课程生产统一契约V1.md) |
+| Motion Canvas 人工导出 | [DECISIONS.md](../DECISIONS.md) D-004 |
+| Remotion staging | [DECISIONS.md](../DECISIONS.md) D-005 |
+
+## 说明
+
+- 归档文件只在本地可读；干净克隆中不存在这些路径，因此现行文档只用代码路径标注“本地归档”，不提供链接。
+- 需要把某份归档重新纳入主线时，先复制回 `docs/`、更新引用，再按现行契约评审。

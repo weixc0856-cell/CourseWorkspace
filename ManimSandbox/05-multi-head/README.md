@@ -24,7 +24,7 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 ## 旁白与成片
 
 ```powershell
-# 每段一次；完整命令见 docs/E6.5-成片报告.md
+# 每段一次；完整命令见本地归档 docs/archive/E6.5/E6.5-成片报告.md（不入库）
 uv run --project CourseControl course-control narrate --workspace . `
   --lesson e6.5-multi-head --segment-id e65-b1 `
   --text-file ManimSandbox/05-multi-head/narration/b1.txt `

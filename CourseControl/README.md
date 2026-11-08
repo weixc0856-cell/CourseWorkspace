@@ -153,7 +153,7 @@ build/<slug>/animation/<scene-stem>.mp4
 
 例如 `MotionStudio/src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/01-shell-for-ai-era/animation/gui_vs_cli_paths.mp4`。
 
-导出后重新运行 `build`，`render:motion_canvas` 会从 `skipped` 变为 `pass`。详见 [决策记录](../docs/决策记录-MotionCanvas渲染.md)。
+导出后重新运行 `build`，`render:motion_canvas` 会从 `skipped` 变为 `pass`。详见 [DECISIONS.md](../docs/DECISIONS.md) D-004。
 
 ## 夹具
 

@@ -58,7 +58,7 @@ CourseControl 的 `render:motion_canvas` 采用“人工导出 + 控制层校验
 - `allow_manual_animation_export: true` → 阶段 `skipped`（`manual_export_required`），最终 `incomplete`；
 - 为 `false` → `fail`。
 
-不会用截图拼帧或伪造文件冒充导出结果。原因与升级路径见 [决策记录](../docs/决策记录-MotionCanvas渲染.md)。
+不会用截图拼帧或伪造文件冒充导出结果。原因与升级路径见 [DECISIONS.md](../docs/DECISIONS.md) D-004。
 
 ## 目录结构
 

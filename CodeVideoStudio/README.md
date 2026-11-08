@@ -2,7 +2,7 @@
 
 镜头级代码视频生产目录（R1 P2/P3）。
 
-- **上游 Skill**：`skills/code-video/`，来自 [SenseNova-6.8-Code2Video](https://github.com/OpenSenseNova/SenseNova-6.8-Code2Video)，Apache 2.0（`LICENSE.code-video`）。
+- **上游 Skill**：`skills/code-video/`，来自 [SenseNova-6.8-Code2Video](https://github.com/OpenSenseNova/SenseNova-6.8-Code2Video)，Apache 2.0（`LICENSE.code-video`）。该目录保留 Apache-2.0；仓库其余部分为 AGPL-3.0-or-later，见根目录 `LICENSE` / `NOTICE`。
 - **不包含**：27B 模型权重。Agent 使用 Claude Code + cc-switch + DeepSeek；渲染在本地 Playwright/ffmpeg。
 - **Agent 配置**：默认 Claude Code（`config/claude-code.yaml`）。镜头阶段才开放 `Read/Write/Edit/Glob/Grep`，cwd 必须是 `CodeVideoStudio/shots/<shot>/` 或 `build/` 暂存目录；文本阶段用 `--tools=`。
 - **不接管**：整课编排与最终合成。CourseControl 仍是唯一调度层；产物是镜头 MP4。

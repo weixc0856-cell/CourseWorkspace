@@ -5,7 +5,7 @@
 - 场景源码：`attention.py`（Manim CE 0.22，`AttentionScene`）
 - 旁白：`narration/s01..s11.txt`，本地 VoxCPM2 合成；参考音色默认取 `lessons/02-car-aerodynamics/assets/voice/my_voice_en_ref_norm.wav`，可用 `VOICE_REF_WAV=<wav>` 覆盖
 - 成片：`build/attention-3b1b/attention.mp4`（1920×1080 / 60 fps / 约 2 分钟）
-- 差距分析：`docs/样片-注意力-3B1B差距与路线.md`
+- 差距分析：`docs/evaluations/样片-注意力-3B1B差距与路线.md`
 
 ## 重建
 

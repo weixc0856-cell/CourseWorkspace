@@ -1,6 +1,7 @@
 [project]
 name = "ai-runtime"
 version = "0.1.0"
+license = {text = "AGPL-3.0-or-later"}
 description = "Shared local-model runtime: cross-process lock, service lifecycle, task records, context budget"
 requires-python = ">=3.12,<3.13"
 dependencies = []
