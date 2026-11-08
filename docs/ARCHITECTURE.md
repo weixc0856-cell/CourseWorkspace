@@ -18,7 +18,7 @@ CourseWorkspace/
 ├── BlenderStudio/      三维层：Blender 5.2 + 场景系统 + 渲染脚本
 ├── RemotionStudio/     合成层：截图采集、staging、Remotion 合成（Node）
 ├── ModelingStudio/     三维内部能力：图片 → Blender（Python）
-├── ContentQA/          审查内部能力：在线模型内容审查（Python）
+├── ContentQA/          审查内部能力：Claude Code 默认 / API 可选（Python）
 ├── shared/
 │   ├── ai_runtime/     AI 运行时：跨进程锁、服务生命周期、任务状态、上下文预算
 │   ├── scene_expr/     受限表达式：AST 白名单 + 解释器（控制层与 Blender 共用）
@@ -59,7 +59,7 @@ CourseWorkspace/
 | `BlenderStudio` | v1 课程渲染任务、v2 场景系统、GN 资产、场景验收 | 不读取 `lesson.yaml` |
 | `RemotionStudio` | 截图、staging、合成、字幕/旁白渲染 | 不做时间线推导 |
 | `ModelingStudio` | 图片→分析→规划→脚本→Blender→验收 | 不写 `lessons/` 与课程 `build/` |
-| `ContentQA` | 在线审查候选意见与报告 | 不改课程、不影响 verdict |
+| `ContentQA` | 审查候选意见与报告（默认 Claude Code） | 不改课程、不影响 verdict |
 | `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 
@@ -120,7 +120,7 @@ modeling-studio run
 content-qa review
   ├─ 读取 lessons/<slug>/slides.md、lecture_notes.md、sources.yaml（可选）
   ├─ 按页拆分 + 预算
-  ├─ 在线模型（OpenAI 兼容）逐任务调用
+  ├─ Claude Code 默认；显式 API 时走 OpenAI 兼容接口
   ├─ 结构校验（Pydantic）
   └─ build/<slug>/review/review.json + review.md
 ```

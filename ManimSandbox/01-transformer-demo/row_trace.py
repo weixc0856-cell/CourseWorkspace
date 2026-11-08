@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
 from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
 
 config.background_color = BG
@@ -88,6 +89,7 @@ class RowTraceScene(Scene):
         note = VGroup(
             label("row i of X  →  row i of Q", 30, MUTED),
             label("the weights change the representation, not the order", 26, MUTED),
-        ).arrange(DOWN, buff=0.2).to_edge(DOWN, buff=0.45)
+        ).arrange(DOWN, buff=0.2).to_edge(DOWN, buff=0.62)
         self.play(FadeIn(note), run_time=0.6)
         self.wait(2.0)
+        enforce(self)

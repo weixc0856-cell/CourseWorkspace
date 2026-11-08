@@ -32,6 +32,8 @@
 | 残差镜头核对 | `residual_bypass.py` | 垂直栈、旁路、括号与标签在安全区内；末帧渲染核对 |
 | 导演层回归 | `test_director.py` | Golden plan 不再期望 `style.background_mismatch` |
 | Ken Burns 真实核对 | `build/01-transformer-demo/slides/`、`build/01-transformer-demo/final/motion-test.mp4` | 12 页真实截图；150 帧 CourseTimeline；首末帧可见推近与 1.2% 平移 |
+| 运行时版式检查 | `ManimSandbox/common/scene_checks.py` | 文本安全区/重叠检查；`STRICT_LAYOUT=1` 下 5 个旧镜头全部 clean |
+| 4K60 渲染基准 | `build/01-transformer-demo/final/motion-4k60.mp4` | 3840×2160 / 60fps / 60 帧；slides capture 已按课程分辨率参数化 |
 | ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
 | 路径与文档 | 全部 README、`docs/` | `path check ok`；清除控制字符与个人路径；补全 `VOICE_REF_WAV`、junction、配色说明 |
 

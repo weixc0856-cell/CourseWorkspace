@@ -25,6 +25,7 @@ from manim import (
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
 from common.design_system import BG, INK, MUTED, ORANGE, TEAL  # noqa: E402
 
 config.background_color = BG
@@ -93,3 +94,4 @@ class ResidualBypassScene(Scene):
         tag = label("repeat in every block", 22, TEAL).next_to(bracket, RIGHT, buff=0.15)
         self.play(Create(bracket), FadeIn(tag), run_time=1.0)
         self.wait(1.4)
+        enforce(self)

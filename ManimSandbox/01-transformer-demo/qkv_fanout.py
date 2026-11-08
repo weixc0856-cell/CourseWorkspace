@@ -23,6 +23,7 @@ from manim import (
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
 from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
 
 config.background_color = BG
@@ -115,6 +116,7 @@ class QkvFanoutScene(Scene):
         summary = VGroup(
             label("Q · K decide where to look", 28, MUTED),
             label("V is what gets passed back", 28, MUTED),
-        ).arrange(DOWN, buff=0.18).to_edge(DOWN, buff=0.45)
+        ).arrange(DOWN, buff=0.18).to_edge(DOWN, buff=0.62)
         self.play(FadeIn(summary), run_time=0.6)
         self.wait(2.0)
+        enforce(self)

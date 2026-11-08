@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
 from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
 
 config.background_color = BG
@@ -42,7 +43,7 @@ class PositionAddScene(Scene):
 
         words = ["The", "animal", "didn't", "cross", "street"]
         heights = [1.0, 1.8, 0.8, 1.5, 1.1]
-        baseline = -1.8
+        baseline = -1.5
         x_step = 0.95
         embeddings = VGroup()
         output = VGroup()
@@ -91,9 +92,10 @@ class PositionAddScene(Scene):
         self.play(LaggedStart(*[FadeIn(item) for item in output], lag_ratio=0.1), run_time=0.9)
 
         summary = VGroup(
-            label("embedding × word meaning", 24, MUTED),
-            label("+ position signature", 24, ORANGE),
-            label("= input the layer can order", 24, INK),
-        ).arrange(DOWN, buff=0.15).to_edge(DOWN, buff=0.35)
+            label("embedding × word meaning", 22, MUTED),
+            label("+ position signature", 22, ORANGE),
+            label("= input the layer can order", 22, INK),
+        ).arrange(DOWN, buff=0.15).to_edge(DOWN, buff=0.62)
         self.play(LaggedStart(*[FadeIn(line) for line in summary], lag_ratio=0.2), run_time=0.9)
         self.wait(2.0)
+        enforce(self)

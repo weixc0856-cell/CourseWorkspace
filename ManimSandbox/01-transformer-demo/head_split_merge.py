@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
 from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
 
 config.background_color = BG
@@ -90,6 +91,7 @@ class HeadSplitMergeScene(Scene):
         self.play(FadeIn(mix), Create(Arrow(concat.get_right(), mix.get_left(), buff=0.1, stroke_width=3, color=ORANGE)), run_time=0.6)
         self.play(FadeIn(output), Create(Arrow(mix.get_right(), output.get_left(), buff=0.1, stroke_width=3, color=ORANGE)), run_time=0.6)
 
-        note = label("each head keeps its own learned projections", 26, MUTED).to_edge(DOWN, buff=0.45)
+        note = label("each head keeps its own learned projections", 26, MUTED).to_edge(DOWN, buff=0.62)
         self.play(FadeIn(note), run_time=0.5)
         self.wait(2.0)
+        enforce(self)

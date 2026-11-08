@@ -211,15 +211,16 @@
 
 **验收**：预算单测（文本、CJK、图片、超限拆分）；ModelingStudio 每次请求记录估算值与上限。
 
-### FR-12 在线内容审查（ContentQA）
+### FR-12 内容审查（ContentQA）
 
-**目标**：让在线模型成为正式工作流的一部分，负责事实与一致性核查的**候选**意见。
+**目标**：默认由 Claude Code 负责事实与一致性核查的**候选**意见；可显式切换到 OpenAI 兼容 API。
 
 - 输入：`lessons/<slug>/` 的 `slides.md`、`lecture_notes.md`、可选 `sources.yaml`。
 - 按页/按段拆分，逐任务调用，任务级上下文预算。
+- 后端：`backend: claude_code`（默认）或 `backend: api`；任务记录写实际 `provider`，不得冒充。
 - 输出：`build/<slug>/review/review.json` + `review.md`（人工可读）。
 - 结论状态：`completed` / `blocked` / `failed`；单条意见：`supported` / `unsupported` / `disputed` / `needs_human_review` / `not_checked`。
-- **凭据**：只从环境变量或本机忽略配置读取；缺失时 `blocked`，退出码 3，绝不静默改用本地模型。
+- **凭据**：仅 API 后端需要；只从环境变量或本机忽略配置读取。Claude Code 不可用或 API 缺凭据时 `blocked`，退出码 3，绝不静默改用其他后端。
 - **只读**：不得修改 `lessons/`、`shots.json`、`build-report.json`，不得影响构建 `verdict`。
 - 在线模型不可用时明确标记，不降级冒充同等质量。
 
