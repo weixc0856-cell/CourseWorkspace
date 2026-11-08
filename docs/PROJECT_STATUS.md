@@ -3,7 +3,7 @@
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-08（旧 Manim 镜头统一、ContentQA 默认后端、文档/路径卫生）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `37b0716` + 2026-11-08 未提交改动
-- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 420 个用例（414 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
+- **基线核实**：2026-11-08 五套单测 420 个用例（414 通过 + 6 跳过）直接运行通过；`check-paths.ps1` = `path check ok`；整课旁白占用 `course-control.exe` 时 `check.ps1` 待补跑
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 

@@ -66,7 +66,7 @@ def _render_once(
     return True, ""
 
 
-def _verify(target: Path, paths: LessonPaths) -> tuple[MediaInfo, list[str]]:
+def _verify(target: Path, paths: LessonPaths, expected_duration_s: float | None = None) -> tuple[MediaInfo, list[str]]:
     info = probe_media(target)
     warnings: list[str] = []
     width, height = paths.lesson.outputs.animation_canvas
@@ -78,6 +78,10 @@ def _verify(target: Path, paths: LessonPaths) -> tuple[MediaInfo, list[str]]:
         raise ValueError(f"fps {info.fps} does not match {paths.lesson.outputs.fps}")
     if info.duration is None or info.duration <= 0:
         raise ValueError("duration is missing or zero")
+    if expected_duration_s and info.duration < expected_duration_s * 0.5:
+        raise ValueError(
+            f"duration {info.duration:.2f}s is less than half of expected {expected_duration_s:.2f}s"
+        )
     return info, warnings
 
 
@@ -103,7 +107,7 @@ def run(paths: LessonPaths) -> StageOutcome:
         # Reuse a valid, newer-than-source render. Otherwise render headlessly.
         if target.is_file() and target.stat().st_mtime >= scene_path.stat().st_mtime:
             try:
-                info, shot_warnings = _verify(target, paths)
+                info, shot_warnings = _verify(target, paths, shot.expected_duration_s)
                 warnings.extend(f"{shot.id}: {item}" for item in shot_warnings)
                 if shot.expected_duration_s and info.duration:
                     delta = abs(info.duration - shot.expected_duration_s)
@@ -126,7 +130,7 @@ def run(paths: LessonPaths) -> StageOutcome:
                 warnings.append(f"{shot.id}: attempt {attempt} failed")
                 continue
             try:
-                info, shot_warnings = _verify(target, paths)
+                info, shot_warnings = _verify(target, paths, shot.expected_duration_s)
             except Exception as exc:  # noqa: BLE001
                 last_error = str(exc)
                 target.unlink(missing_ok=True)
