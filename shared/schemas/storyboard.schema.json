@@ -213,6 +213,13 @@
           ],
           "default": null,
           "title": "Validation"
+        },
+        "formula_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Formula Ids",
+          "type": "array"
         }
       },
       "required": [

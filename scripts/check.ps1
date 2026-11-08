@@ -92,6 +92,14 @@ try {
         }
     }
 
+    if (Test-Path "lessons/01-transformer-demo") {
+        Invoke-Checked "director plan 01-transformer-demo" {
+            uv run --project CourseControl course-control director-plan `
+                --lesson 01-transformer-demo --workspace . `
+                --out build/01-transformer-demo/director 2>&1 | Out-Null
+        }
+    }
+
     $validTasks = @(
         "demo-scene",
         "demo-animation",

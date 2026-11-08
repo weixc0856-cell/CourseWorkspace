@@ -221,9 +221,6 @@ def validate(paths: LessonPaths) -> ValidationResult:
         _check_path(result, f"shot {shot.id}.scene", scene)
         _check_path(result, f"shot {shot.id}.blend_task", shot.blend_task)
 
-    if result.errors:
-        return result
-
     slides_text = required["slides"].read_text(encoding="utf-8")
     notes_text = required["notes"].read_text(encoding="utf-8")
     pages = _page_count(slides_text)
@@ -324,4 +321,50 @@ def validate(paths: LessonPaths) -> ValidationResult:
                     f"motion scene '{stem}' is not registered in src/project.ts",
                 )
 
+    _check_formula_bindings(paths, result)
     return result
+
+
+def formula_binding_problems(shots, formula_dir: Path) -> list[str]:
+    """Check that shot formula_ids resolve to unique FormulaSpec files."""
+    if not formula_dir.is_dir():
+        return []
+    from .formulas import FormulaSpec, source_problems
+
+    specs: dict[str, FormulaSpec] = {}
+    problems: list[str] = []
+    for path in sorted(formula_dir.glob("*.json")):
+        try:
+            spec = FormulaSpec.model_validate(json.loads(path.read_text(encoding="utf-8")))
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"{path.name}: invalid FormulaSpec: {exc}")
+            continue
+        if spec.formula_id in specs:
+            problems.append(f"{path.name}: duplicate formula_id {spec.formula_id}")
+            continue
+        specs[spec.formula_id] = spec
+        for issue in source_problems(spec):
+            if issue.level == "error":
+                problems.append(f"{spec.formula_id}: {issue.message}")
+        if spec.validation.latex_compile == "fail":
+            problems.append(f"{spec.formula_id}: latex_compile is fail")
+    referenced: set[str] = set()
+    for shot in shots:
+        for formula_id in getattr(shot, "formula_ids", []) or []:
+            referenced.add(formula_id)
+            if formula_id not in specs:
+                problems.append(f"shot {shot.id}: unknown formula_id {formula_id}")
+    for formula_id in sorted(set(specs) - referenced):
+        problems.append(f"formula {formula_id} is not referenced by any shot")
+    return problems
+
+
+def _check_formula_bindings(paths, result) -> None:
+    lesson_dir = getattr(paths, "lesson_dir", None)
+    if lesson_dir is None:
+        return
+    problems = formula_binding_problems(
+        paths.storyboard.shots, Path(lesson_dir) / "authoring" / "formulas"
+    )
+    for problem in problems:
+        result.add("V-34", "error", problem)

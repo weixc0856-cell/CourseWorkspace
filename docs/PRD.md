@@ -326,7 +326,7 @@
 **目标**：每门课程交付可验证、可归档、可复现的完整包。
 
 - 交付包至少含：干净版、字幕版、SRT/ASS/VTT、`build-report.json`、`burn.json`、旁白 meta、镜头证据、日志。
-- QC 门：抽帧/Contact Sheet、音轨与音画同步、字幕行宽/CPS、时长窗口、编码规格、证据完整性。
+- QC 门：抽帧/Contact Sheet（Code2Video 自动证据，不是人工抽帧关卡）、音轨与音画同步、字幕行宽/CPS、时长窗口、编码规格、证据完整性。
 - 归档：最终包复制到仓库外/忽略目录，记录 sha256；唯一副本不得留在临时目录。
 
 **验收**：`docs/课程生产交付物规范.md`；真实课程构建产物满足清单。
@@ -453,3 +453,76 @@ R1 增量完成条件：
 | OPEN-04 | Manim 是否接入课程 | 保持可选，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式验证/证据语料） | 本期只交付审查内核 |
 | OPEN-06 | 多课程并行构建 | 不设计；构建串行即可 |
+
+### FR-24 Scene-first 合成模式（R1）
+
+**目标**：课程不再以幻灯片为每页底图，而是以全屏镜头作为 base，解决“PPT 展示”问题。
+
+- `compose.mode` 支持 `deck` / `scene` / `recording`；scene 模式跳过 `capture_slides`。
+- 每页 scene 视频来自 `build/<slug>/scenes/manifest.json`，由 Remotion `ScenePage` 渲染；Manim/Blender 镜头作为 overlay。
+- ScenePage 使用逐句大字、公式/章节标识、流动线背景；底部保留字幕安全区。
+- 字幕、旁白、时长与 QC 契约不变。
+- **验收**：同一课程的 scene 版与 deck 版都可通过 V-26..V-31；scene 版每页 base 为全屏视频而非幻灯片截图。
+
+### FR-25 公式质量模块（Formula Pipeline）
+
+**目标**：公式作为一等资产，统一 LaTeX 源，静态/动态渲染分工，数学与视觉分别验收。
+
+- `FormulaSpec`：`formula_id`、`latex`、`display`、`meaning`、`symbols`、`source`、四类 `validation`。
+- 静态公式：KaTeX → HTML + PNG；Remotion `Formula` 组件合成。
+- 动态公式：Manim `MathTex`，源与 FormulaSpec 一致。
+- 自动检查：未转义 `%`、括号、`$` 定界符、全文档命令、KaTeX 编译、PNG 非空。
+- 半自动：SymPy 恒等检查只作辅助；`mathematical_review` / `dimensional_check` 保持 `pending`，不得自动 pass。
+- 最终成片必须检查实际编码帧（必要时按时间点定位单帧）；公式错误不得进入成片。
+
+**验收**：`docs/公式排版规范.md`；`test_formulas.py`；KaTeX/Remotion/Manim 三路冒烟。
+
+### FR-26 科学图形资产（ScientificFigures）
+
+**目标**：公式与数据图分开生产；静态科学图由 Python 科学栈生成，Manim 只做动画。
+
+- 独立环境 `ScientificFigures/.venv`，依赖 SymPy、Matplotlib、SciencePlots。
+- 图脚本是唯一源；输出 SVG/PDF/PNG（≥2K），由 Remotion 引用。
+- SciencePlots 默认 `["science","no-latex"]`；开启 LaTeX 必须显式记录依赖。
+- Plotly/Seaborn 暂缓；不引入交互式运行时。
+- 图表必须有数据/参数/脚本来源；最终成片检查字号/线宽/图例/公式清晰度（必要时定位单帧）。
+
+**验收**：`docs/科学图形与图表接入评估.md`；`continuity_figure.py` 真实输出 SVG/PDF/PNG。
+
+### FR-27 动画视觉导演层
+
+**目标**：动画先设计、再渲染；不以“渲染成功”代替视觉验收。
+
+- `AnimationDirection`：每个镜头记录学习意图、视觉隐喻、构图、焦点、镜头、运动、连续性、参考与验收。
+- `direction-validate` 校验时间连续、总时长、必填意图/参考/验收。
+- 动画原语限定：draw/grow、trace、transform、camera、hold、highlight；禁止用淡入替换冒充变换。
+- 90 秒竖切片验证通过后，才扩展长课程。
+- 视觉验收：直接观看最终成片，检查构图、标签、公式、连续性与节奏；不以抽帧/关键帧评审代替看片。
+
+**验收**：`docs/动画视觉导演规范.md`；`direction.json` 与 90 秒切片。
+
+### FR-28 导演层
+
+**目标**：把已批准的 brief / outline / narration script / storyboard 收敛成一份可执行、可校验的制作计划，再交给引擎执行。
+
+- `director-plan` 输出 `director_plan.json`、`storyboard.director.yaml`、`directions/*.json`、`director_review.md`。
+- 输入必须通过 `authoring/approval.json` 的 sha256 校验；不匹配只生成 draft 并告警。
+- 硬闸门：时长窗口、章节与镜头时间轴连续、slide 覆盖、引擎与 3D 路由、scene 存在、旁白覆盖与页面预算、至少一个可渲染镜头。
+- 不写场景代码、不直接调用渲染引擎；复用 `engine_router` 与 `AnimationDirection`。
+- `build --storyboard` / `--shots` 可显式加载 handoff 并按镜头过滤渲染；不自动替换课程 storyboard。
+- 视觉验收仍为看完成片，不设抽帧关卡（D-047）。
+
+**验收**：`docs/导演层.md`、`test_director.py`、`01-transformer-demo` 真实计划（12 镜头 / 1200 s / 12 ready）与 5 个真实渲染镜头。
+
+### FR-29 制片层
+
+**目标**：以出品人订单为输入，管理资源授权、用量、阶段状态、交付包和增量重建，不替代人工验收。
+
+- `ProductionOrder`：受众、语言、时长、必须覆盖/禁止内容、风格、授权与限额；人工批准字段。
+- `producer-run` 自动执行 validate → director plan → delivery package → state；不触发渲染、TTS 或发布。
+- `producer-rebuild` 把受影响镜头映射为 `build --storyboard --shots`；默认只打印，`--execute` 需 `allow_render`。
+- 七项交付物按文件存在性与 sha256 判定；`skip` 不写成 `pass`；全部 present 且订单已批准才是 `delivered`。
+- 每个镜头保存内容/旁白/场景/方向指纹，`producer-affected` 给出 redesign / re-render / re-narrate / recompose。
+- 不读密钥；授权只记录能力布尔值与模型后端。
+
+**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 7 项）与增量检测实测。

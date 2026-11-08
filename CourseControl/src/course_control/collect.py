@@ -233,7 +233,44 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
     fps = paths.lesson.outputs.fps
     resolution = paths.lesson.outputs.resolution
 
-    if paths.lesson.compose.mode == "deck":
+    if paths.lesson.compose.mode == "scene":
+        manifest_path = paths.build_root / "scenes" / "manifest.json"
+        manifest = load_json(manifest_path)
+        pages = manifest.get("pages", [])
+        if len(pages) < len(budgets):
+            raise ContractError(
+                f"scene manifest has {len(pages)} pages but notes has {len(budgets)}"
+            )
+        total_duration = sum(budgets)
+        base_file = manifest.get("base_file")
+        if base_file:
+            shots.append(
+                Shot(
+                    id="scene_base",
+                    kind="animation",
+                    source=str(base_file),
+                    start_s=0.0,
+                    duration_s=round(total_duration, 3),
+                    timeline_role="base",
+                    presentation=None,
+                )
+            )
+        else:
+            for index, budget in enumerate(budgets):
+                entry = pages[index]
+                shots.append(
+                    Shot(
+                        id=f"scene_{index + 1:03d}",
+                        kind="animation",
+                        slide=index + 1,
+                        source=str(entry["file"]),
+                        start_s=round(page_starts[index], 3),
+                        duration_s=round(budget, 3),
+                        timeline_role="base",
+                        presentation=None,
+                    )
+                )
+    elif paths.lesson.compose.mode == "deck":
         manifest_path = paths.build_root / "slides" / "capture-manifest.json"
         manifest = load_json(manifest_path)
         pages = manifest.get("pages", [])
@@ -276,7 +313,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
         )
         total_duration = info.duration
 
-    if paths.lesson.compose.mode == "deck":
+    if paths.lesson.compose.mode in {"deck", "scene"}:
         plan_path = _write_page_plan(paths, timing, page_plan_pages, total_duration)
         if plan_path is not None:
             outputs.append(plan_path)

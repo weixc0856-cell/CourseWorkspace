@@ -251,6 +251,8 @@ uv run --project CourseControl course-control validate --lesson <slug>
   → ingest → digest（来源 + 稳定引用）
   → brief → outline → script → content-draft（候选，写 build/<slug>/authoring/candidates/）
   → [人工] author-accept（sha256 批准，写 lessons/<slug>/）
+  → director-plan（章节/镜头/引擎/旁白/连续性；写 build/<slug>/director/）
+  → producer-run（内部含 director-plan：订单 → 校验 → 导演计划 → 交付清单 → 状态；写 build/<slug>/{production,delivery}/）
   → narration-build（本地 VoxCPM2，整课或 --sample-pages 样片）
   → subtitles-build（实测音频；--planned 可先生成计划版草稿）
   → [人工] subtitles-accept
@@ -263,11 +265,14 @@ uv run --project CourseControl course-control validate --lesson <slug>
 | 摘要 | `course-control digest --lesson <slug>` | `authoring/source-digest.{json,md}` |
 | 草稿 | `brief` / `outline` / `script` / `content-draft` | `build/<slug>/authoring/candidates/` |
 | 批准 | `author-accept --kind digest\|brief\|outline\|script\|content` | `authoring/approval.json` |
+| 导演计划 | `director-plan --lesson <slug>` | `build/<slug>/director/{director_plan.json,storyboard.director.yaml,directions/,shot_specs/,director_review.md}` |
+| 制片 | `producer-order` / `producer-run` / `producer-status` / `producer-affected` / `producer-rebuild` | `build/<slug>/{production/order.json,production/state.json,delivery/manifest.json,delivery/README.md}` |
+| 局部重渲染 | `producer-rebuild [--execute] [--compose]` | `build/<slug>/animation/<scene>.mp4`，state 指纹刷新 |
 | 整课旁白 | `narration-build --mode reference_only --timing measured` | `narration/narration.wav`、`narration.meta.json` |
 | 样片 | `narration-build --sample-pages 3` | `narration/sample/sample.wav`、`sample.meta.json` |
 | 字幕 | `subtitles-build [--planned] [--remote]` | `subtitles/bilingual.draft.{json,srt,vtt}` |
 | 字幕批准 | `subtitles-accept` | `lessons/<slug>/subtitles.srt` |
-| 构建 | `build-lesson.ps1` | `final/course-video.mp4` + `final/course-video-captioned.mp4` |
+| 构建 | `build-lesson.ps1`；可选 `build --storyboard <path> [--shots shot_007]` | `final/course-video.mp4` + `final/course-video-captioned.mp4` |
 
 **边界**：`build`/`validate`/`check.ps1` 不调用 8080/50000/网络；TTS 与翻译是显式命令。本地模型默认优先；远程只在 `config/model-routing.yaml` 显式启用且 key 存在时回退，任务记录写 `provider`。`--remote` 是显式远程开关。
 

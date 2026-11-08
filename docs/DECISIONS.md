@@ -373,3 +373,59 @@
 - ModelingStudio 的 vision 阶段（图像分析/修订）继续用本地/远程视觉模型，不交给纯文本 Claude Code。
 
 **后果**：课程生产默认依赖 Claude Code CLI 与 cc-switch（或直连端点）；本地模型/纯 API 从“默认”降为“显式回退”。需要维护 `claude_code` 适配层与相应测试；Claude Code 的计价字段不可用于账务。
+
+## D-043 Scene-first 合成模式（compose.mode=scene）
+
+**背景**：deck 模式本质是“幻灯片 + 动画插入”，观众始终看到页面框架和项目符号，与 3B1B/Reducible 的镜头级叙事差距明显。
+
+**决策**：新增 `compose.mode=scene`。每页先渲染一条全屏 ScenePage 视频（深色背景、逐句大字、公式/章节标识、无幻灯片框架），作为时间线 base；Manim/Blender 镜头作为 overlay 叠加。`capture_slides` 在 scene 模式下跳过，`collect` 从 `build/<slug>/scenes/manifest.json` 读取每页视频与时长。scene 页面仍由同一 `NarrationSpec` 驱动，字幕/音频/QC 不变。
+
+**后果**：课程不再是 PPT 录屏；仍需后续补连续图解动画、音乐/音效和逐句 forced alignment，才能达到 3B1B 级。
+
+## D-044 公式采用 LaTeX 单一源 + KaTeX/Manim 分工
+
+**背景**：公式错误可能来自源、渲染、字体或最终合成；普通视频文字无法保证数学排版。
+
+**决策**：公式统一保存为 `FormulaSpec.latex`；静态渲染用 KaTeX（HTML/PNG），数学动画用 Manim MathTex，Remotion 统一合成；不生成公式图片作为源。建立 `formula-validate` / `formula-render` / `formula-audit`，把源检查、编译、数学辅助检查、视觉抽帧分开记录。数学正确性与量纲仍由人工/来源确认，不能以编译成功代替。
+
+**后果**：公式可追溯、可复现、可抽帧验收；新增 KaTeX/SymPy/antlr 本地依赖；Manim 仍需系统 LaTeX。
+
+## D-045 科学图形先接入 SymPy + Matplotlib + SciencePlots
+
+**背景**：公式/图表常同时出现；Manim 擅长动画但不应承担所有静态科学图。Plotly/Seaborn 对最终视频收益有限。
+
+**决策**：新增独立 `ScientificFigures` 环境，用 SymPy 做符号/公式辅助，Matplotlib 做静态图，SciencePlots 提供论文样式（默认 `science` + `no-latex`，避免 Windows 强制 LaTeX）。产物为 SVG/PDF/PNG，由 Remotion 合成。Plotly/Seaborn 暂缓，Manim 沿用。
+
+**后果**：新增一个独立 Python 环境与依赖；不增加第二套编排；静态图与公式资产分离，便于复用和抽帧 QC。
+
+## D-046 动画先建立视觉导演层，不继续扩充工具链
+
+**背景**：Manim/Blender/Remotion 已具备，但“讲稿→视觉设计→动画执行”缺少设计层，导致动画只是基础淡入/移动。
+
+**决策**：新增 `AnimationDirection` 契约与 `docs/动画视觉导演规范.md`。每个镜头先写学习意图、视觉隐喻、构图、焦点、镜头、运动、连续性、参考与验收，`direction-validate` 通过后才写渲染代码。90 秒向量竖切片按此执行；3 分钟基础版保留。本轮不引入新动画库。
+
+**后果**：动画设计可评审、可追溯；渲染成功不再等于视觉验收通过。验收以观看最终成片为准，不设抽帧评审关卡（见 D-047）。
+
+## D-047 取消抽帧/关键帧评审关卡
+
+**背景**：R2 曾用“六帧关键帧评审（Gate 1）+ 成片抽帧（Gate 2）”作为动画验收门槛。静态帧无法反映运镜、缓动、节奏与音画同步，评审通过也不保证成片可用；反复抽帧、拼 Contact Sheet、写逐帧意见消耗的时间远大于收益。
+
+**决策**：删除 `docs/评审-向量加法关键帧.md` 与只服务于该关卡的 `ManimSandbox/03-vector-intro/keyframes.py`；不再设 Gate 1/Gate 2 抽帧关卡。验收改为直接观看最终成片，按镜头整体判断；发现具体问题再定位到时间点修正。范围仅限动画/设计层的评审关卡；Code2Video 的 contact sheet、公式与科学图的成片检查属于自动证据，不在此列。
+
+**后果**：动画验收回归“看成片”；FR-27 的证据改为成片切片与测试，不再引用关键帧评审。
+
+## D-048 导演层作为独立设计层，先 handoff 不接 build
+
+**背景**：教学结构在 brief/outline，视觉路由在 `engine_router`，镜头方向在 `animation_direction`，但缺少一层把批准输入收敛为可执行计划并做硬校验的模块。
+
+**决策**：新增 `CourseControl/src/course_control/director/`。教学、视觉、分镜、旁白、连续性五个环节用确定性规则从批准输入生成计划；错误阻断，警告进入评审；输入 hash 不匹配只出 draft。复用现有契约与路由，不新增依赖。暂不接入 `pipeline.py`，先输出 `storyboard.director.yaml` 作为 handoff。
+
+**后果**：计划可校验、可追溯；页面预算与 10 秒插入镜头的差距被 `asset_seconds`/`insert.short` 显式记录；下一步才决定用同一 ShotSpec 契约接 build，还是先补齐 slide 7/8/10 的场景。
+
+## D-049 制片层独立于导演层，交付以证据为准
+
+**背景**：导演层解决“怎么拍”，但缺少订单、资源授权、用量、交付清单与增量重建；把这些塞进导演会让创作决策和制片管理混在一起。
+
+**决策**：新增 `CourseControl/src/course_control/producer/`。订单声明受众、时长、必须覆盖、授权与限额；`producer-run` 只自动执行 validate → director → package → state，不触发渲染、TTS、发布；交付包按文件存在性与 sha256 判定，全部 present 且订单人工批准才是 `delivered`。每个镜头保存内容/旁白/场景/方向四类指纹，`producer-affected` 输出受影响镜头与动作。
+
+**后果**：交付状态可核查，missing 明确；制片层不读密钥；局部重渲染还需 build 支持 storyboard override，当前只到“指出受影响镜头”。

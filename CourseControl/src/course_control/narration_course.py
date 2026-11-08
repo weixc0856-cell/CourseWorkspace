@@ -214,6 +214,7 @@ def synthesize_course(
     voice_ref, prompt_text, mode = _voice_config(lesson, tts)
     style_enabled = bool(lesson.narration.style_enabled)
     text_frontend = bool(lesson.narration.text_frontend)
+    speed = float(lesson.narration.speed)
 
     narration_dir = paths.build_root / "narration"
     target_dir = narration_dir / "sample" if sample else narration_dir
@@ -292,6 +293,7 @@ def synthesize_course(
                     prompt_text or "",
                     mode=mode,
                     style=style,
+                    speed=speed,
                     text_frontend=text_frontend,
                 )
                 raw = segments_dir / f"{segment.id}.wav"
@@ -315,6 +317,7 @@ def synthesize_course(
                             mode=mode,
                             reference_wav=voice_ref,
                             style=style,
+                            speed=speed,
                             text_frontend=text_frontend,
                         )
                     except TtsError as exc:
@@ -336,6 +339,7 @@ def synthesize_course(
                         "mode": mode,
                         "style": style,
                         "style_applied": bool(style),
+                        "speed": speed,
                         "text_frontend": text_frontend,
                         "pause_after_ms": segment.pause_after_ms,
                         "model": "VoxCPM2",
@@ -418,7 +422,7 @@ def synthesize_course(
         "pages": page_records,
         "segments": segment_records,
         "assembly": {
-            "file": "sample.wav" if sample else "narration.wav",
+            "file": "narration/sample/sample.wav" if sample else "narration/narration.wav",
             "duration_s": round(total_duration, 3),
             "timeline_duration_s": round(total_duration, 3),
             "tail_pad_s": 0.0,

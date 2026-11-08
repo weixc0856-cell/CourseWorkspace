@@ -1,0 +1,195 @@
+{
+  "$defs": {
+    "Authorizations": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_network": {
+          "default": false,
+          "title": "Allow Network",
+          "type": "boolean"
+        },
+        "allow_new_dependencies": {
+          "default": false,
+          "title": "Allow New Dependencies",
+          "type": "boolean"
+        },
+        "allow_publish": {
+          "default": false,
+          "title": "Allow Publish",
+          "type": "boolean"
+        },
+        "allow_render": {
+          "default": true,
+          "title": "Allow Render",
+          "type": "boolean"
+        },
+        "model_backends": {
+          "items": {
+            "enum": [
+              "claude_code",
+              "local_llama",
+              "voxcpm2",
+              "remote"
+            ],
+            "type": "string"
+          },
+          "title": "Model Backends",
+          "type": "array"
+        },
+        "api_providers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Api Providers",
+          "type": "array"
+        }
+      },
+      "title": "Authorizations",
+      "type": "object"
+    },
+    "ResourceLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_wall_seconds": {
+          "default": 14400.0,
+          "exclusiveMinimum": 0,
+          "title": "Max Wall Seconds",
+          "type": "number"
+        },
+        "max_api_cost_usd": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Max Api Cost Usd",
+          "type": "number"
+        },
+        "max_local_model_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Local Model Calls",
+          "type": "integer"
+        },
+        "max_disk_gb": {
+          "default": 20.0,
+          "exclusiveMinimum": 0,
+          "title": "Max Disk Gb",
+          "type": "number"
+        }
+      },
+      "title": "ResourceLimits",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "order_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{2,79}$",
+      "title": "Order Id",
+      "type": "string"
+    },
+    "lesson_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "audience": {
+      "minLength": 1,
+      "title": "Audience",
+      "type": "string"
+    },
+    "language": {
+      "maxLength": 16,
+      "minLength": 2,
+      "title": "Language",
+      "type": "string"
+    },
+    "target_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Target Seconds",
+      "type": "number"
+    },
+    "style": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Style",
+      "type": "object"
+    },
+    "must_cover": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Must Cover",
+      "type": "array"
+    },
+    "must_not": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Must Not",
+      "type": "array"
+    },
+    "authorizations": {
+      "$ref": "#/$defs/Authorizations"
+    },
+    "limits": {
+      "$ref": "#/$defs/ResourceLimits"
+    },
+    "approved_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved By"
+    },
+    "approved_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved At"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "note": {
+      "default": "",
+      "title": "Note",
+      "type": "string"
+    }
+  },
+  "required": [
+    "order_id",
+    "lesson_id",
+    "title",
+    "audience",
+    "language",
+    "target_seconds",
+    "must_cover",
+    "created_at"
+  ],
+  "title": "ProductionOrder",
+  "type": "object"
+}

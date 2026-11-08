@@ -1,0 +1,1 @@
+A transformer reads a sentence one word at a time. So when it reaches the word it, how does it know what it refers to?

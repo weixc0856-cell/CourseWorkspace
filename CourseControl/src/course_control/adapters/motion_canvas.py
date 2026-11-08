@@ -6,7 +6,7 @@ from pathlib import Path
 from ..contracts import Status
 from ..paths import LessonPaths
 from ..utils import probe_media
-from .base import StageOutcome
+from .base import StageOutcome, selected
 
 
 def expected_output(paths: LessonPaths, scene_path: Path) -> Path:
@@ -14,7 +14,7 @@ def expected_output(paths: LessonPaths, scene_path: Path) -> Path:
 
 
 def run(paths: LessonPaths) -> StageOutcome:
-    shots = [shot for shot in paths.storyboard.shots if shot.engine == "motion_canvas"]
+    shots = [shot for shot in paths.storyboard.shots if selected(paths, shot.id) and shot.engine == "motion_canvas"]
     if not shots:
         return StageOutcome("render:motion_canvas", Status.NOT_APPLICABLE)
 

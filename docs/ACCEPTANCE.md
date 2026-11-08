@@ -17,13 +17,13 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 216（214 通过 + 2 跳过；含 R1 + Code2Video POC/QC + Claude Code） | 214 通过，2 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 271（266 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 266 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
-| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
+| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11（10 通过 + 1 跳过） | 10 通过，1 跳过 |
 
-合计 **328** 个用例（326 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **383** 个用例（377 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -273,6 +273,21 @@ python ManimSandbox/05-multi-head/assemble.py
 
 ---
 
+## 6.9 导演层与制片层（2026-11-08）
+
+| 检查 | 命令 | 预期 |
+| --- | --- | --- |
+| 导演计划 | `course-control director-plan --lesson 01-transformer-demo --workspace .` | `status: ready`；12 镜头 / 5 章 / 1200 s；0 error，9 warning |
+| 结构校验 | `course-control director-validate --plan build/01-transformer-demo/director/director_plan.json` | `no issues` |
+| 交付清单 | `course-control producer-run --lesson 01-transformer-demo --workspace .` | exit 1；`blocked`；4 项缺失（成片、旁白、字幕、build-report） |
+| 增量检测 | `course-control producer-affected --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots` |
+| 增量命令 | `course-control producer-rebuild --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots`；有修改时打印 `--shots` 命令与 `allow_render` 授权 |
+| 旁白样片 | `course-control narration-build --lesson 01-transformer-demo --workspace . --sample-pages 1` | 第 1 页 43.92 s（计划 45 s，drift -1.08 s），`style_applied=true`，服务自动停止 |
+
+边界：这两层是设计与制片校验，不是成片验收；不设抽帧关卡（D-047），渲染与 TTS 仍需显式命令。`build --storyboard` / `--shots` 已接入，可在已有构建上手动局部重渲染。
+
+---
+
 ## 7. 复现顺序建议
 
 1. `.\scripts\check.ps1`
@@ -296,7 +311,7 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
 | V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
 
-R1 测试计数：五套合计 **328 个用例（326 通过 + 2 跳过）**：CourseControl 216（214+2）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11。
+R1 测试计数：五套合计 **383 个用例（377 通过 + 6 跳过）**：CourseControl 271（266+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
 
 R1 真实产物：
 

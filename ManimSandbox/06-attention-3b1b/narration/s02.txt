@@ -1,0 +1,1 @@
+Every word is represented by a vector. Not a number. A direction, in a space with thousands of dimensions.

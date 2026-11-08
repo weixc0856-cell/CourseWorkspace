@@ -201,9 +201,11 @@ def _wrap_zh(text: str, max_chars: int, max_lines: int) -> list[str]:
 
 def _best_split_en(text: str) -> int:
     midpoint = len(text) // 2
+    lower = max(8, len(text) // 4)
+    upper = min(len(text) - 8, (3 * len(text)) // 4)
     punctuation = [
         index for index, char in enumerate(text)
-        if char in ",;:—" and 8 <= index <= len(text) - 8
+        if char in ",;:—" and lower <= index <= upper
     ]
     if punctuation:
         return min(punctuation, key=lambda index: abs(index - midpoint)) + 1
@@ -503,7 +505,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Bilingual,Arial,44,&H001A1A1A,&H001A1A1A,&H00FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,3,1,2,80,80,60,1
+Style: Bilingual,Arial,34,&H001A1A1A,&H001A1A1A,&H00FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,3,1,2,80,80,200,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -512,7 +514,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     for cue in cues:
         en = "\\N".join(_ass_escape(line) for line in cue["en_lines"])
         zh = "\\N".join(_ass_escape(line) for line in cue["zh_lines"])
-        text = f"{en}\\N{{\\fnMicrosoft YaHei\\fs40}}{zh}"
+        text = (
+            f"{{\\an2\\pos({width // 2},{height - 190})}}"
+            f"{en}\\N{{\\fnMicrosoft YaHei\\fs30}}{zh}"
+        )
         lines.append(
             f"Dialogue: 0,{_ts_ass(cue['start_ms'])},{_ts_ass(cue['end_ms'])},Bilingual,,0,0,0,,{text}"
         )

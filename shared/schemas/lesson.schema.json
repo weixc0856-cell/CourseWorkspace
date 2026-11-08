@@ -122,6 +122,7 @@
         "mode": {
           "enum": [
             "deck",
+            "scene",
             "recording"
           ],
           "title": "Mode",
@@ -318,6 +319,13 @@
           "default": true,
           "title": "Text Frontend",
           "type": "boolean"
+        },
+        "speed": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.5,
+          "maximum": 2.0,
+          "title": "Speed",
+          "type": "number"
         }
       },
       "title": "Narration",
@@ -479,7 +487,8 @@
         "timing": "planned",
         "mode": "reference_only",
         "style_enabled": true,
-        "text_frontend": true
+        "text_frontend": true,
+        "speed": 1.0
       }
     },
     "subtitles": {

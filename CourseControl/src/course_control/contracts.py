@@ -39,7 +39,7 @@ class Outputs(StrictModel):
 
 
 class Compose(StrictModel):
-    mode: Literal["deck", "recording"]
+    mode: Literal["deck", "scene", "recording"]
     base_video: str | None = None
     renderer: Literal["timeline", "legacy"] = "timeline"
 
@@ -57,6 +57,7 @@ class Narration(StrictModel):
     mode: Literal["reference_only", "prompt_reference"] = "reference_only"
     style_enabled: bool = True
     text_frontend: bool = True
+    speed: float = Field(default=1.0, gt=0.5, le=2.0)
 
 
 class Subtitles(StrictModel):
@@ -145,6 +146,7 @@ class ShotSpec(StrictModel):
     engine_profile: str | None = None
     inputs: dict | None = None
     validation: dict | None = None
+    formula_ids: list[str] = Field(default_factory=list)
 
 
 class AnnotationBase(StrictModel):

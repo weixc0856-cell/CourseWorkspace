@@ -274,7 +274,7 @@ def main() -> int:
         ("ffmpeg-libx264", ["-c:v", "libx264", "-crf", "18", "-preset", "slow", "-pix_fmt", "yuv420p"]),
     ):
         out = OUT / f"{encoder}.mp4"
-        # Windows: the colon in D:/... would be parsed as an option separator.
+        # Windows: the colon in <WORKSPACE>/... would be parsed as an option separator.
         ass_filter = "ass='" + ass.as_posix().replace(":", "\\:") + "'"
         command = ["ffmpeg", "-y", "-i", str(smoke), "-vf", ass_filter,
                    *args, "-c:a", "copy", "-movflags", "+faststart", str(out)]

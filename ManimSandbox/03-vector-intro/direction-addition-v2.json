@@ -1,0 +1,452 @@
+{
+  "schema_version": 1,
+  "lesson_id": "vector-addition-v2",
+  "title": "Vector addition, directed",
+  "total_seconds": 80,
+  "style": {
+    "palette": {
+      "bg": "#0B1220",
+      "ink": "#E8EEF7",
+      "muted": "#8494A8",
+      "a": "#4CC2FF",
+      "b": "#FF8A5B",
+      "result": "#5BE3B0",
+      "score": "#FFD166"
+    },
+    "grammar": [
+      "grow",
+      "ghost",
+      "translate",
+      "trail",
+      "resultant",
+      "endpoint pulse",
+      "formula reveal"
+    ]
+  },
+  "shots": [
+    {
+      "shot_id": "v1_problem",
+      "start_s": 0,
+      "end_s": 8,
+      "learning_intent": "Two displacements share an origin; the viewer needs a way to combine them.",
+      "visual_metaphor": "Two arrows open from one point; the sum is visibly missing.",
+      "composition": "Left copy column: kicker, two-line question, one-line setup. Diagram in the right two-thirds. A faint dashed diagonal and a large ? mark the missing sum; a compact given card sits lower right.",
+      "focus": "a and b as a pair, not one arrow.",
+      "camera": "Wide, locked-off; only a 2% push at the end.",
+      "shot_size": "wide",
+      "camera_anchor": "origin",
+      "motion": [
+        "grid fade",
+        "a grows",
+        "b grows",
+        "question reveals"
+      ],
+      "motion_beats": [
+        {
+          "name": "a growth",
+          "start_s": 0.0,
+          "duration_s": 1.2,
+          "easing": "ease_out_cubic",
+          "target": "a"
+        },
+        {
+          "name": "b growth",
+          "start_s": 1.0,
+          "duration_s": 1.2,
+          "easing": "ease_out_cubic",
+          "target": "b"
+        },
+        {
+          "name": "question reveal",
+          "start_s": 4.0,
+          "duration_s": 1.0,
+          "easing": "ease_out_quad",
+          "target": "question"
+        }
+      ],
+      "label_lifecycle": [
+        {
+          "label": "a",
+          "appears_s": 2.0,
+          "follows": "a",
+          "disappears_s": 8.0
+        },
+        {
+          "label": "b",
+          "appears_s": 2.0,
+          "follows": "b",
+          "disappears_s": 8.0
+        }
+      ],
+      "object_state": {
+        "a": "visible",
+        "b": "visible",
+        "ghost_b": "absent",
+        "result": "absent"
+      },
+      "transition": "continuous move into shot 2",
+      "end_state": "a and b at rest; question on screen; grid stable",
+      "on_screen_text": [
+        "How do we add two vectors?",
+        "tail to tail, for now",
+        "given: a=(3,2), b=(1,3)",
+        "?"
+      ],
+      "reference": "3Blue1Brown: pose the visual question before the operation",
+      "acceptance": [
+        "no title clipping",
+        "left text column keeps 5% safe margin",
+        "two arrows are the first focal pair",
+        "question does not compete with arrows",
+        "unknown diagonal reads as missing, not as a third vector"
+      ],
+      "continuity": "same grid and origin; question persists until the move begins"
+    },
+    {
+      "shot_id": "v2_translate",
+      "start_s": 8,
+      "end_s": 32,
+      "learning_intent": "Moving b does not change its direction or length; only its tail position changes.",
+      "visual_metaphor": "A translucent b stays behind; a copy slides along a visible rail to the tip of a.",
+      "composition": "Ghost b at origin. A full-strength copy of b slides along a rail offset from a. Copy tag upper right; rule card in the right margin; left column stays text-only.",
+      "focus": "The moving b copy, then the joined tail-tip point.",
+      "camera": "Medium; follow the copy, then push 8% toward the join.",
+      "shot_size": "medium",
+      "camera_anchor": "join",
+      "motion": [
+        "ghost b appears",
+        "copy translates",
+        "trail draws",
+        "arrival pause"
+      ],
+      "motion_beats": [
+        {
+          "name": "ghost b",
+          "start_s": 0.0,
+          "duration_s": 0.6,
+          "easing": "ease_out_quad",
+          "target": "b"
+        },
+        {
+          "name": "translate copy",
+          "start_s": 1.0,
+          "duration_s": 3.0,
+          "easing": "ease_in_out_cubic",
+          "target": "b_copy"
+        },
+        {
+          "name": "trail",
+          "start_s": 1.0,
+          "duration_s": 3.0,
+          "easing": "linear",
+          "target": "b_copy_tail"
+        },
+        {
+          "name": "arrival hold",
+          "start_s": 4.0,
+          "duration_s": 2.0,
+          "easing": "hold",
+          "target": "join"
+        }
+      ],
+      "label_lifecycle": [
+        {
+          "label": "b copy",
+          "appears_s": 9.0,
+          "follows": "b_copy",
+          "disappears_s": 30.0
+        },
+        {
+          "label": "tail-to-tip",
+          "appears_s": 28.0,
+          "follows": "join",
+          "disappears_s": 32.0
+        }
+      ],
+      "object_state": {
+        "a": "visible",
+        "b": "visible",
+        "ghost_b": "visible-low-alpha",
+        "b_copy": "visible",
+        "trail": "visible",
+        "result": "absent"
+      },
+      "transition": "continuous; result begins from the same join",
+      "end_state": "b copy tail at tip of a; original b ghosted; labels clear of arrows",
+      "on_screen_text": [
+        "Slide a copy of b to the tip",
+        "length and direction are preserved",
+        "b copy",
+        "same length, same direction"
+      ],
+      "reference": "3Blue1Brown vector addition: motion carries the proof",
+      "acceptance": [
+        "copy identity clear",
+        "ghost visible but subordinate",
+        "offset rail does not sit on the a shaft",
+        "join point readable",
+        "no label on top of arrow"
+      ],
+      "continuity": "original b stays as ghost; a fixed; the join point persists into the result"
+    },
+    {
+      "shot_id": "v3_result",
+      "start_s": 32,
+      "end_s": 52,
+      "learning_intent": "The resultant joins the original start to the final tip.",
+      "visual_metaphor": "A green arrow grows from the shared origin to the open corner.",
+      "composition": "Green diagonal is the brightest object. Endpoint ring at the final tip. Ghost b copy is a thin line, never a second arrowhead. Formula card right of the tip; two faint parallelogram edges.",
+      "focus": "Green resultant and its endpoint.",
+      "camera": "Push to the endpoint, then settle wide enough to include origin and formula.",
+      "shot_size": "medium",
+      "camera_anchor": "result_tip",
+      "motion": [
+        "resultant grows",
+        "parallelogram ghosts",
+        "endpoint pulse",
+        "formula reveals"
+      ],
+      "motion_beats": [
+        {
+          "name": "resultant grow",
+          "start_s": 0.0,
+          "duration_s": 1.6,
+          "easing": "ease_out_cubic",
+          "target": "result"
+        },
+        {
+          "name": "parallelogram",
+          "start_s": 1.2,
+          "duration_s": 1.0,
+          "easing": "ease_out_quad",
+          "target": "parallelogram"
+        },
+        {
+          "name": "endpoint pulse",
+          "start_s": 3.0,
+          "duration_s": 0.8,
+          "easing": "ease_in_out_quad",
+          "target": "result_tip"
+        },
+        {
+          "name": "formula reveal",
+          "start_s": 4.0,
+          "duration_s": 1.2,
+          "easing": "ease_out_quad",
+          "target": "formula"
+        }
+      ],
+      "label_lifecycle": [
+        {
+          "label": "a+b=(4,5)",
+          "appears_s": 36.0,
+          "follows": null,
+          "disappears_s": 52.0
+        },
+        {
+          "label": "=(3+1,2+3)",
+          "appears_s": 38.0,
+          "follows": null,
+          "disappears_s": 52.0
+        }
+      ],
+      "object_state": {
+        "result": "visible",
+        "a": "visible",
+        "b": "visible",
+        "ghost_b": "visible-low-alpha",
+        "b_copy": "visible-low-alpha",
+        "formula": "visible"
+      },
+      "transition": "hold; next shot keeps endpoint",
+      "end_state": "resultant and formula at rest",
+      "on_screen_text": [
+        "Close the triangle",
+        "the diagonal is the sum",
+        "a+b=(4,5)",
+        "=(3+1, 2+3)",
+        "a new vector, not a number"
+      ],
+      "reference": "3Blue1Brown: result is a spatial closure, formula follows",
+      "acceptance": [
+        "result brightest",
+        "formula not on top of arrow",
+        "origin and tip both in frame"
+      ],
+      "continuity": "result grows from the same origin; b copy and ghosts remain"
+    },
+    {
+      "shot_id": "v4_commute",
+      "start_s": 52,
+      "end_s": 70,
+      "learning_intent": "Swapping the travel order reaches the same endpoint.",
+      "visual_metaphor": "Path 1 dims to a reference; path 2 travels the other order; the shared endpoint pulses.",
+      "composition": "Both routes visible at once. Left column holds a two-row legend (Route 1: b then a; Route 2: a then b) instead of floating numbers. Shared endpoint ring; formula lower left.",
+      "focus": "Shared endpoint and the two distinguishable routes.",
+      "camera": "Wide enough for both paths; no rotation.",
+      "shot_size": "wide",
+      "camera_anchor": "result_tip",
+      "motion": [
+        "path1 dims",
+        "a copy translates",
+        "result redraws",
+        "endpoint double pulse",
+        "formula reveals"
+      ],
+      "motion_beats": [
+        {
+          "name": "path1 dim",
+          "start_s": 0.0,
+          "duration_s": 0.6,
+          "easing": "ease_out_quad",
+          "target": "path1"
+        },
+        {
+          "name": "a translate",
+          "start_s": 0.8,
+          "duration_s": 2.6,
+          "easing": "ease_in_out_cubic",
+          "target": "a_copy"
+        },
+        {
+          "name": "second resultant",
+          "start_s": 3.4,
+          "duration_s": 1.0,
+          "easing": "ease_out_cubic",
+          "target": "result2"
+        },
+        {
+          "name": "endpoint pulses",
+          "start_s": 4.8,
+          "duration_s": 1.2,
+          "easing": "ease_in_out_quad",
+          "target": "result_tip"
+        },
+        {
+          "name": "formula",
+          "start_s": 6.0,
+          "duration_s": 1.0,
+          "easing": "ease_out_quad",
+          "target": "formula"
+        }
+      ],
+      "label_lifecycle": [
+        {
+          "label": "1",
+          "appears_s": 52.5,
+          "follows": "path1",
+          "disappears_s": 70.0
+        },
+        {
+          "label": "2",
+          "appears_s": 54.0,
+          "follows": "path2",
+          "disappears_s": 70.0
+        },
+        {
+          "label": "a+b=b+a",
+          "appears_s": 58.0,
+          "follows": null,
+          "disappears_s": 70.0
+        }
+      ],
+      "object_state": {
+        "path1": "visible-low-alpha",
+        "path2": "visible",
+        "result": "visible",
+        "endpoint": "highlighted"
+      },
+      "transition": "continuous; final shot reuses the full picture",
+      "end_state": "both paths and shared endpoint visible",
+      "on_screen_text": [
+        "Same sum, different order",
+        "Route 1: b, then a",
+        "Route 2: a, then b",
+        "a+b=b+a"
+      ],
+      "reference": "3Blue1Brown: two constructions, one endpoint",
+      "acceptance": [
+        "paths distinguishable at a glance",
+        "same endpoint visually identical",
+        "no floating numbers",
+        "formula last",
+        "safe margins on legend and formula"
+      ],
+      "continuity": "path 1 dims but stays as reference; endpoint fixed"
+    },
+    {
+      "shot_id": "v5_conclusion",
+      "start_s": 70,
+      "end_s": 80,
+      "learning_intent": "The complete relation: two paths, one result, one formula.",
+      "visual_metaphor": "The camera settles on a poster-like composition.",
+      "composition": "Left column: three numbered facts. Right: original a/b ghosts, green result, both path ghosts, endpoint ring, and the two formula cards.",
+      "focus": "Whole composition.",
+      "camera": "Slow pull-back to wide; then hold.",
+      "shot_size": "wide",
+      "camera_anchor": "center",
+      "motion": [
+        "pull back",
+        "bullets appear one per beat",
+        "formula cards settle",
+        "hold"
+      ],
+      "motion_beats": [
+        {
+          "name": "pull back",
+          "start_s": 0.0,
+          "duration_s": 3.0,
+          "easing": "ease_in_out_cubic",
+          "target": "camera"
+        },
+        {
+          "name": "hold",
+          "start_s": 3.0,
+          "duration_s": 7.0,
+          "easing": "hold",
+          "target": "frame"
+        }
+      ],
+      "label_lifecycle": [
+        {
+          "label": "a+b=(4,5)",
+          "appears_s": 70.0,
+          "follows": null,
+          "disappears_s": 80.0
+        },
+        {
+          "label": "a+b=b+a",
+          "appears_s": 70.0,
+          "follows": null,
+          "disappears_s": 80.0
+        }
+      ],
+      "object_state": {
+        "a": "visible",
+        "b": "visible",
+        "result": "visible",
+        "path1": "visible-low-alpha",
+        "path2": "visible-low-alpha",
+        "formulas": "visible"
+      },
+      "transition": "end",
+      "end_state": "poster frame; hold 4 s",
+      "on_screen_text": [
+        "One picture, three facts",
+        "1  Tip-to-tail adds vectors",
+        "2  The diagonal is the sum",
+        "3  Order does not change it",
+        "a+b=(4,5)",
+        "a+b=b+a"
+      ],
+      "reference": "3Blue1Brown: final frame is a complete visual summary",
+      "acceptance": [
+        "balanced composition",
+        "no clipping",
+        "bullets stay in the left column",
+        "last frame works as cover"
+      ],
+      "continuity": "all objects at rest; formulas and paths complete"
+    }
+  ]
+}

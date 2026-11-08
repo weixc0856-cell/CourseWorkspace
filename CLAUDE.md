@@ -19,6 +19,14 @@
 - 统一契约 V1：[docs/课程生产统一契约V1.md](docs/课程生产统一契约V1.md)
 - E6.5 成片：[docs/E6.5-成片报告.md](docs/E6.5-成片报告.md)
 - 技术雷达与外部项目评估：[docs/技术雷达-视频生产.md](docs/技术雷达-视频生产.md)、[docs/评估-Code2Video接入.md](docs/评估-Code2Video接入.md)、[docs/评估-DeepSeek Harness.md](docs/评估-DeepSeek%20Harness.md)、[docs/评估-四后端对比.md](docs/评估-四后端对比.md)
+- 课程复刻差距与视觉规范：[docs/课程复刻差距与稳定工作流.md](docs/课程复刻差距与稳定工作流.md)、[docs/课程视觉风格指南.md](docs/课程视觉风格指南.md)
+- 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
+- 科学计算/绘图接入：[docs/科学图形与图表接入评估.md](docs/科学图形与图表接入评估.md)
+- 动画视觉导演规范：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md)
+- 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
+- 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
+- Attention 两分钟样片与 3B1B 差距：[docs/样片-注意力-3B1B差距与路线.md](docs/样片-注意力-3B1B差距与路线.md)
+- 动画/音频/口播整合：[docs/评估-动画音频口播-整合.md](docs/评估-动画音频口播-整合.md)
 - 交付物/QC/归档：[docs/课程生产交付物规范.md](docs/课程生产交付物规范.md)
 - 代码视频镜头：[CodeVideoStudio/README.md](CodeVideoStudio/README.md)
 
@@ -42,6 +50,9 @@
 uv run --project CourseControl course-control validate --lesson <slug>
 .\scripts\build-lesson.ps1 -Lesson <slug>                  # 完整课程构建
 uv run --project ModelingStudio modeling-studio run --image <png>
+uv run --project CourseControl course-control director-plan --lesson <slug>   # 导演计划 + 校验
+uv run --project CourseControl course-control producer-run --lesson <slug>     # 订单 → 计划 → 交付清单
+uv run --project CourseControl course-control producer-rebuild --lesson <slug> # 受影响镜头局部重渲染
 uv run --project ContentQA content-qa review --lesson <slug>
 # Code2Video 镜头（可选）：ShotSpec.engine=code_video，scene 指向 CodeVideoStudio/shots/<shot>/SPEC.md
 .\scripts\check-scene-system.ps1                           # IR v2 契约检查

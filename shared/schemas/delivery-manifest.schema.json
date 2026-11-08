@@ -1,0 +1,154 @@
+{
+  "$defs": {
+    "ArtifactRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bytes"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "present",
+            "missing",
+            "not_applicable"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "status"
+      ],
+      "title": "ArtifactRecord",
+      "type": "object"
+    },
+    "DeliveryItem": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[0-9]{2}_[a-z0-9_]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "present",
+            "partial",
+            "blocked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRecord"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "note": {
+          "default": "",
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "status"
+      ],
+      "title": "DeliveryItem",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "order_id": {
+      "title": "Order Id",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "delivered",
+        "awaiting_approval",
+        "blocked"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/DeliveryItem"
+      },
+      "minItems": 1,
+      "title": "Items",
+      "type": "array"
+    },
+    "missing": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing",
+      "type": "array"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "order_id",
+    "generated_at",
+    "status",
+    "items"
+  ],
+  "title": "DeliveryManifest",
+  "type": "object"
+}

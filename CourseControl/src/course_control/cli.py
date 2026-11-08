@@ -63,13 +63,22 @@ def build_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     skip_render: bool = typer.Option(False, "--skip-render"),
     skip_compose: bool = typer.Option(False, "--skip-compose"),
+    storyboard: Path | None = typer.Option(None, "--storyboard"),
+    shots: list[str] | None = typer.Option(None, "--shots"),
+    build_root: Path | None = typer.Option(None, "--build-root"),
 ) -> None:
     """Run the applicable stages for a lesson."""
     try:
         report, report_path = run_build(
             workspace.resolve(),
             (lesson_dir / lesson).resolve(),
-            BuildOptions(skip_render=skip_render, skip_compose=skip_compose),
+            BuildOptions(
+                skip_render=skip_render,
+                skip_compose=skip_compose,
+                storyboard=storyboard,
+                shots=shots,
+                build_root=build_root,
+            ),
         )
     except ContractError as exc:
         typer.echo(str(exc), err=True)
@@ -123,6 +132,10 @@ def schemas_command(
     """Export JSON Schema files for all contracts."""
     from .blender_scene import BlenderSceneTask
     from .contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
+    from .animation_direction import AnimationDirection
+    from .director.schema import DirectorPlan
+    from .producer.schema import DeliveryManifest, ProductionOrder, ProductionState
+    from .formulas import FormulaSpec
     from .session import EvidenceManifest, SessionSpec
 
     output.mkdir(parents=True, exist_ok=True)
@@ -134,6 +147,12 @@ def schemas_command(
         "blender-scene-task": BlenderSceneTask,
         "session": SessionSpec,
         "evidence": EvidenceManifest,
+        "formula": FormulaSpec,
+        "animation-direction": AnimationDirection,
+        "director-plan": DirectorPlan,
+        "production-order": ProductionOrder,
+        "production-state": ProductionState,
+        "delivery-manifest": DeliveryManifest,
     }
     for name, model in models.items():
         target = output / f"{name}.schema.json"
@@ -951,6 +970,7 @@ def subtitles_build_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     glossary: Path | None = typer.Option(None, "--glossary"),
     planned: bool = typer.Option(False, "--planned"),
+    strict: bool = typer.Option(True, "--strict/--no-strict"),
     start_service: bool = typer.Option(True, "--start-service/--no-start-service"),
     remote: bool = typer.Option(False, "--remote"),
 ) -> None:
@@ -986,7 +1006,7 @@ def subtitles_build_command(
         with _authoring_client(workspace, start_service, remote_only=remote) as client:
             draft, srt_path = build_subtitles(
                 workspace, paths, script, meta, client,
-                glossary_path=glossary, strict=not planned,
+                glossary_path=glossary, strict=(strict and not planned),
             )
     except SubtitleBlocked as exc:
         typer.echo(f"blocked: {exc}", err=True)
@@ -1053,3 +1073,377 @@ def burn_subs_command(
 
 if __name__ == "__main__":
     app()
+
+
+@app.command("formula-validate")
+def formula_validate_command(
+    spec: Path = typer.Option(..., "--spec"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Validate one FormulaSpec without rendering."""
+    from .animation_direction import AnimationDirection
+    from .formulas import FormulaSpec, load_spec, source_problems
+
+    try:
+        formula = load_spec(spec)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"invalid formula spec: {exc}", err=True)
+        raise typer.Exit(2)
+    issues = source_problems(formula)
+    for issue in issues:
+        typer.echo(f"[{issue.stage}/{issue.level}] {issue.message}")
+    if not issues:
+        typer.echo("no issues")
+    raise typer.Exit(0 if not any(issue.level == "error" for issue in issues) else 1)
+
+
+@app.command("formula-render")
+def formula_render_command(
+    spec: Path = typer.Option(..., "--spec"),
+    out: Path = typer.Option(..., "--out"),
+    engine: str | None = typer.Option(None, "--engine", help="katex|mathjax"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Render one FormulaSpec with KaTeX (HTML/PNG) or MathJax (SVG/PNG)."""
+    from .formulas import load_spec, render_formula
+
+    try:
+        formula = load_spec(spec)
+        payload = render_formula(formula, out.resolve(), workspace.resolve(), engine=engine)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"formula render failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"png: {payload['png']}")
+    typer.echo(f"size: {payload['width']}x{payload['height']}")
+
+
+@app.command("formula-video-qc")
+def formula_video_qc_command(
+    spec: Path = typer.Option(..., "--spec"),
+    video: Path = typer.Option(..., "--video"),
+    timestamp: float = typer.Option(..., "--timestamp"),
+    bbox: str = typer.Option(..., "--bbox", help="x,y,w,h"),
+    out: Path = typer.Option(..., "--out"),
+    threshold: float = typer.Option(0.45, "--threshold"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Check a formula region in the final encoded video by edge similarity."""
+    from .formula_video_qc import check_formula_video, load_bbox
+    from .formulas import load_spec
+
+    try:
+        formula = load_spec(spec)
+        result = check_formula_video(
+            formula,
+            video.resolve(),
+            timestamp,
+            load_bbox(bbox),
+            out.resolve(),
+            workspace.resolve(),
+            threshold=threshold,
+        )
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"formula video QC failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"edge similarity: {result['edge_similarity']} (threshold {threshold})")
+    typer.echo(f"result: {out / 'formula.video.json'}")
+    raise typer.Exit(0 if result["pass"] else 1)
+
+
+@app.command("direction-validate")
+def direction_validate_command(spec: Path = typer.Option(..., "--spec")) -> None:
+    """Validate an AnimationDirection shot list before writing renderer code."""
+    from .animation_direction import AnimationDirection
+
+    try:
+        direction = AnimationDirection.model_validate_json(spec.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"invalid animation direction: {exc}", err=True)
+        raise typer.Exit(2)
+    problems = direction.problems()
+    for problem in problems:
+        typer.echo(problem)
+    if not problems:
+        typer.echo(f"direction ok: {len(direction.shots)} shots / {direction.total_seconds:g}s")
+    raise typer.Exit(0 if not problems else 1)
+
+
+@app.command("formula-audit")
+def formula_audit_command(
+    spec: Path = typer.Option(..., "--spec"),
+    out: Path = typer.Option(..., "--out"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Run source, KaTeX compile, optional symbolic and visual checks."""
+    from .formulas import audit_formula, load_spec
+
+    try:
+        formula = load_spec(spec)
+        audit = audit_formula(formula, out.resolve(), workspace.resolve())
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"formula audit failed: {exc}", err=True)
+        raise typer.Exit(1)
+    for issue in audit.issues:
+        typer.echo(f"[{issue.stage}/{issue.level}] {issue.message}")
+    if not audit.issues:
+        typer.echo("no issues")
+    typer.echo(f"audit: {out / 'formula.audit.json'}")
+    raise typer.Exit(0 if audit.ok else 1)
+
+
+@app.command("director-plan")
+def director_plan_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    out: Path | None = typer.Option(None, "--out"),
+    strict: bool = typer.Option(False, "--strict"),
+) -> None:
+    """Build and validate the director plan for one lesson."""
+    from .director import build
+
+    try:
+        plan, paths = build(
+            workspace.resolve(),
+            (lesson_dir / lesson).resolve(),
+            out.resolve() if out is not None else None,
+        )
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    typer.echo(f"status: {plan.status}")
+    typer.echo(
+        f"shots: {plan.summary.shots} ({plan.summary.ready_shots} ready, "
+        f"{plan.summary.planned_shots} planned) / chapters: {plan.summary.chapters}"
+    )
+    typer.echo(
+        f"narration: {plan.summary.narration_segments} segments / "
+        f"duration: {plan.duration.planned_seconds:g}s of {plan.duration.target_seconds:g}s"
+    )
+    typer.echo(f"errors: {plan.summary.errors}, warnings: {plan.summary.warnings}")
+    for check in plan.checks:
+        if check.level == "info":
+            continue
+        target = check.shot_id or check.chapter_id or ""
+        typer.echo(f"  [{check.level}] {check.rule} {target}: {check.message}".rstrip())
+    for name, path in paths.items():
+        typer.echo(f"{name}: {path}")
+    failed = plan.status == "blocked" or (strict and plan.summary.warnings > 0)
+    raise typer.Exit(1 if failed else 0)
+
+
+@app.command("director-validate")
+def director_validate_command(
+    plan: Path = typer.Option(..., "--plan"),
+) -> None:
+    """Re-run the structural gates on an existing director_plan.json."""
+    from .director import validate_file
+
+    if not plan.is_file():
+        typer.echo(f"plan not found: {plan}", err=True)
+        raise typer.Exit(2)
+    try:
+        parsed = validate_file(plan)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"invalid director plan: {exc}", err=True)
+        raise typer.Exit(2)
+    for check in parsed.checks:
+        target = check.shot_id or check.chapter_id or ""
+        typer.echo(f"[{check.level}] {check.rule} {target}: {check.message}".rstrip())
+    if not parsed.checks:
+        typer.echo("no issues")
+    typer.echo(f"status: {parsed.status}")
+    raise typer.Exit(1 if parsed.summary.errors else 0)
+
+
+@app.command("producer-order")
+def producer_order_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    force: bool = typer.Option(False, "--force"),
+    approve_by: str | None = typer.Option(None, "--approve"),
+    audience: str | None = typer.Option(None, "--audience"),
+    language: str | None = typer.Option(None, "--language"),
+    target_seconds: float | None = typer.Option(None, "--target-seconds"),
+    must_cover: list[str] | None = typer.Option(None, "--must-cover"),
+    must_not: list[str] | None = typer.Option(None, "--must-not"),
+    allow_network: bool = typer.Option(False, "--allow-network"),
+    allow_new_dependencies: bool = typer.Option(False, "--allow-new-dependencies"),
+    allow_publish: bool = typer.Option(False, "--allow-publish"),
+    max_wall_seconds: float | None = typer.Option(None, "--max-wall-seconds"),
+    max_api_cost_usd: float | None = typer.Option(None, "--max-api-cost-usd"),
+    max_local_model_calls: int | None = typer.Option(None, "--max-local-model-calls"),
+) -> None:
+    """Create or load the production order for one lesson."""
+    from .director.inputs import load_inputs
+    from .producer.order import OrderOverrides, approve, ensure_order, load_order, order_path, save_order
+
+    try:
+        inputs = load_inputs(workspace.resolve(), (lesson_dir / lesson).resolve())
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    overrides = OrderOverrides(
+        audience=audience,
+        language=language,
+        target_seconds=target_seconds,
+        must_cover=must_cover,
+        must_not=must_not,
+        allow_network=allow_network,
+        allow_new_dependencies=allow_new_dependencies,
+        allow_publish=allow_publish,
+        max_wall_seconds=max_wall_seconds,
+        max_api_cost_usd=max_api_cost_usd,
+        max_local_model_calls=max_local_model_calls,
+    )
+    try:
+        order, path = ensure_order(inputs, inputs.paths.build_root, overrides, force)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"cannot create order: {exc}", err=True)
+        raise typer.Exit(1)
+    if approve_by:
+        approve(order, approve_by)
+        save_order(order, path)
+    typer.echo(f"order: {path}")
+    typer.echo(f"id: {order.order_id} / {order.target_seconds:g}s / {order.language}")
+    typer.echo(f"must cover: {len(order.must_cover)} items")
+    typer.echo(f"approved by: {order.approved_by or 'pending'}")
+
+
+@app.command("producer-run")
+def producer_run_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    force_order: bool = typer.Option(False, "--force-order"),
+    approve: str | None = typer.Option(None, "--approve"),
+) -> None:
+    """Run the automated portion: validate, director plan, delivery package, state."""
+    from .producer.orchestrator import run
+
+    try:
+        result = run(
+            workspace.resolve(),
+            (lesson_dir / lesson).resolve(),
+            force_order=force_order,
+            approve_by=approve,
+        )
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    typer.echo(f"state: {result.state.status} / delivery: {result.manifest.status}")
+    typer.echo(f"director: {result.plan.status} ({result.plan.summary.shots} shots)")
+    for item in result.manifest.items:
+        present = sum(1 for record in item.files if record.status == "present")
+        typer.echo(f"  {item.id}: {item.status} ({present}/{len(item.files)} files)")
+    for entry in result.manifest.missing:
+        typer.echo(f"  missing: {entry}")
+    for problem in result.limits:
+        typer.echo(f"  limit: {problem}")
+    for name, path in result.paths.items():
+        typer.echo(f"{name}: {path}")
+    raise typer.Exit(1 if result.state.status == "blocked" else 0)
+
+
+@app.command("producer-status")
+def producer_status_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Show the production order, state and delivery status."""
+    from .producer.orchestrator import status
+
+    try:
+        data = status(workspace.resolve(), (lesson_dir / lesson).resolve())
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    order, state, manifest = data["order"], data["state"], data["manifest"]
+    typer.echo(f"order: {order.order_id} / approved by: {order.approved_by or 'pending'}")
+    typer.echo(f"state: {state.status}")
+    typer.echo(f"usage: {state.usage.wall_seconds:g}s wall / ${state.usage.api_cost_usd:g} / {state.usage.local_model_calls} calls")
+    for name, value in state.stages.items():
+        typer.echo(f"  {name}: {value}")
+    if manifest is not None:
+        typer.echo(f"delivery: {manifest.status} / missing: {len(manifest.missing)}")
+        for entry in manifest.missing:
+            typer.echo(f"  missing: {entry}")
+    raise typer.Exit(0 if state.status != "blocked" else 1)
+
+
+@app.command("producer-affected")
+def producer_affected_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """List shots whose inputs changed since the last producer run."""
+    from .producer.orchestrator import affected
+
+    try:
+        deltas = affected(workspace.resolve(), (lesson_dir / lesson).resolve())
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if not deltas:
+        typer.echo("no affected shots")
+        raise typer.Exit(0)
+    for delta in deltas:
+        typer.echo(f"{delta.shot_id}: {delta.change} ({'; '.join(delta.reasons)})")
+    raise typer.Exit(0)
+
+
+@app.command("producer-rebuild")
+def producer_rebuild_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    execute: bool = typer.Option(False, "--execute"),
+    compose: bool = typer.Option(False, "--compose"),
+    build_root: Path | None = typer.Option(None, "--build-root"),
+) -> None:
+    """Plan (and optionally run) a local rebuild of affected shots."""
+    from .producer.orchestrator import execute_rebuild, plan_rebuild
+
+    try:
+        rebuild = plan_rebuild(
+            workspace.resolve(),
+            (lesson_dir / lesson).resolve(),
+            build_root.resolve() if build_root is not None else None,
+            compose=compose,
+        )
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if not rebuild.deltas:
+        typer.echo("no affected shots")
+        raise typer.Exit(0)
+    for delta in rebuild.deltas:
+        typer.echo(f"{delta.shot_id}: {delta.change} ({'; '.join(delta.reasons)})")
+    typer.echo(f"authorized: {'yes' if rebuild.authorized else 'no'}")
+    typer.echo("command: " + " ".join(rebuild.command))
+    if not execute:
+        raise typer.Exit(0)
+    if not rebuild.authorized:
+        typer.echo("refused: order.authorizations.allow_render is false", err=True)
+        raise typer.Exit(2)
+    try:
+        result = execute_rebuild(
+            rebuild,
+            workspace.resolve(),
+            (lesson_dir / lesson).resolve(),
+            build_root.resolve() if build_root is not None else None,
+            compose=compose,
+        )
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = result["report"]
+    typer.echo(f"verdict: {report.verdict}")
+    for stage in report.stages:
+        if stage.name.startswith("render:"):
+            typer.echo(f"  {stage.name}: {stage.status.value}")
+    typer.echo(f"state refreshed: {'yes' if result['state'] is not None else 'no'}")
+    raise typer.Exit(1 if result["failed"] else 0)

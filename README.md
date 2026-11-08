@@ -54,7 +54,7 @@ verify                                 → build/<slug>/final/build-report.json�
 | 目录 | 职责 | 产物 | 是否主流程 |
 | --- | --- | --- | --- |
 | `lessons/` | 课程唯一入口 | 双文件内容 + 契约 | 是 |
-| `CourseControl/` | 校验、调度、收集、报告 | `shots.json`、`build-report.json` | 是 |
+| `CourseControl/` | 校验、调度、收集、报告；含 `director/` 与 `producer/` | `shots.json`、`build-report.json`、导演计划、交付清单 | 是 |
 | `CourseSlides/` | Reveal 6 外壳 | 浏览器页面 | 是 |
 | `MotionStudio/` | 结构动画（人工导出） | `animation/<stem>.mp4` | 是（人工） |
 | `ManimSandbox/` | 数学动画备选 | `animation/*.mp4` | 否 |
@@ -78,6 +78,9 @@ verify                                 → build/<slug>/final/build-report.json�
 
 # 只校验课程契约
 uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-era
+uv run --project CourseControl course-control director-plan --lesson 01-transformer-demo
+uv run --project CourseControl course-control producer-run --lesson 01-transformer-demo
+uv run --project CourseControl course-control producer-rebuild --lesson 01-transformer-demo
 
 # 完整构建
 .\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era
@@ -160,5 +163,6 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 - 三维契约：[Blender 场景任务 IR v2](docs/Blender场景任务IR-v2.md)
 - 流程：[提交前检查清单](docs/提交前检查清单.md)
 - 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
+- 导演/制片：[导演层](docs/导演层.md) · [制片层](docs/制片层.md)
 - 产品决策：[前端必要性评估](docs/FRONTEND_ASSESSMENT.md)
 - 历史：[docs/archive/](docs/archive/README.md)

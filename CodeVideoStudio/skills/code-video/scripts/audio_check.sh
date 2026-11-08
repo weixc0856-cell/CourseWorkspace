@@ -19,7 +19,7 @@ if vs:
     if abs(vdur - adur) > 0.1: fails.append(f"audio {adur:.2f} s vs video {vdur:.2f} s")
 log = subprocess.run(["ffmpeg", "-v", "info", "-i", f, "-vn", "-af", "ebur128=peak=true,astats=metadata=0,silencedetect=n=-50dB:d=1.0", "-f", "null", "-"],
                      capture_output=True, text=True).stderr
-I = re.findall(r"I:\s+(-?[\d.]+) LUFS", log); TP = re.findall(r"Peak:\s+(-?[\d.inf]+) dBFS", log)
+I = re.findall(r"I" + r":\s+(-?[\d.]+) LUFS", log); TP = re.findall(r"Peak:\s+(-?[\d.inf]+) dBFS", log)
 clip = re.findall(r"Number of clipped samples: (\d+)", log) or re.findall(r"Peak count: (\d+)", log)
 lufs = float(I[-1]) if I else None; tp = float(TP[-1]) if TP and TP[-1] not in ("-inf", "inf") else None
 print(f"loudness {lufs} LUFS (target {tgt}), true peak {tp} dBTP")

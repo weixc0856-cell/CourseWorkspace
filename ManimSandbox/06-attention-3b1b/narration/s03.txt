@@ -1,0 +1,1 @@
+Attention lets each word look at all the others. To do that, every word emits three vectors. A query, a key, and a value.

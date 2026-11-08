@@ -110,6 +110,18 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
                 None,
             )
         if parent is None:
+            # Scene mode uses one full-length base video without a slide id.
+            parent = next(
+                (
+                    item
+                    for item in base
+                    if item.slide is None
+                    and item.start_s - 1e-6 <= overlay.start_s
+                    and overlay.start_s + overlay.duration_s <= item.start_s + item.duration_s + 1e-6
+                ),
+                None,
+            )
+        if parent is None:
             timeline_errors.append(f"{overlay.id} is not inside a base segment")
     for index, first in enumerate(overlays):
         for second in overlays[index + 1:]:

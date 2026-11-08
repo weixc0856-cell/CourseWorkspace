@@ -10,7 +10,7 @@ from ..code_video_qc import check_video, contact_sheet
 from ..contracts import Status
 from ..paths import LessonPaths
 from ..utils import run_command, which_command
-from .base import StageOutcome
+from .base import StageOutcome, selected
 
 
 def _project_for(paths: LessonPaths, shot) -> Path:
@@ -19,7 +19,7 @@ def _project_for(paths: LessonPaths, shot) -> Path:
 
 
 def run(paths: LessonPaths) -> StageOutcome:
-    shots = [shot for shot in paths.storyboard.shots if shot.engine == "code_video"]
+    shots = [shot for shot in paths.storyboard.shots if selected(paths, shot.id) and shot.engine == "code_video"]
     if not shots:
         return StageOutcome("render:code_video", Status.NOT_APPLICABLE)
 

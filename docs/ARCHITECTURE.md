@@ -51,6 +51,8 @@ CourseWorkspace/
 | 模块 | 职责 | 不做什么 |
 | --- | --- | --- |
 | `CourseControl` | 解析契约、调度阶段、收集时间线、合成调用、报告 | 不改课程正文；不判定内容正确性 |
+| `CourseControl/director` | 把已批准内容收敛为章节/镜头/引擎/旁白计划并做硬校验 | 不写场景代码、不调用渲染引擎 |
+| `CourseControl/producer` | 生产订单、资源授权、用量、交付清单、增量指纹 | 不读密钥、不渲染、不自动发布 |
 | `CourseSlides` | 加载指定课程为 Reveal 页面 | 不写 `build/` |
 | `MotionStudio` | 动画场景源码 | 不自动导出 |
 | `ManimSandbox` | 数学动画备选 | 不进入主流程 |
@@ -60,6 +62,8 @@ CourseWorkspace/
 | `ContentQA` | 在线审查候选意见与报告 | 不改课程、不影响 verdict |
 | `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
+
+`CourseControl/director` 与 `CourseControl/producer` 是 CourseControl 内部的设计层与制片层：前者把批准的 brief/outline/script 收敛成章节、镜头、引擎与旁白计划；后者管订单、授权、用量、交付清单和增量指纹。两者都不新增独立进程，也不写课程正文。
 
 ---
 
@@ -233,6 +237,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 - 视觉阶段只有在 `supports_vision=true` 且配置 `vision_model` 时才回退；否则保持本地失败/`blocked`，不把图片交给文本模型。**DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 已禁用，`RemoteConfig` / `RemoteSettings` / ContentQA 配置都会拒绝。其他 OpenAI 兼容 provider 使用各自配置的模型。**
 - 远程凭据只从环境变量读取；配置、日志、任务记录、异常与健康输出都不包含密钥。
 - DeepSeek flash 默认把 `max_tokens` 用于 reasoning；长输出/结构化任务必须显式 `thinking=disabled`（`RemoteConfig.thinking` 或 `chat_completion(..., thinking="disabled")`），否则可能返回空 `content`。
+- 旁白可通过 `lesson.yaml.narration.speed` 控制 VoxCPM2 后处理语速（0.5–2.0）；`narration.meta.json` 记录实际 speed 与页跨度。
 - **课程 AI 默认后端是 Claude Code（D-042）。** 文本阶段用 `claude -p --tools=`（无工具），镜头 Agent 阶段才开放工具且只写 `build/` 暂存目录；任务记录 `provider=claude_code`。Claude Code 不可用时显式 `blocked`，只有 `claude_code_fallback: local_first` 才回退到本地/远程。ModelingStudio 的 vision 阶段仍用本地/远程视觉模型。
 - 配置参考：`config/model-routing.example.yaml`（provider-agnostic，含 DeepSeek / OpenAI-compatible 示例）；本机实际 `.env` 与 `config/model-routing.yaml` 均被 `.gitignore` 忽略。通用环境变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`，DeepSeek 也兼容 `DEEPSEEK_*`。API key 只从系统环境变量读取（本机为 `DeepSeek-API`），不写入 `.env`、YAML、日志或任何文件；仓库只保留不含 key 的 `.env.example`。
 
@@ -264,7 +269,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | 整课旁白 | `narration_course.py`、`narrate.py` | 单服务、逐段缓存、48 kHz mono、页跨度回写；V-30 |
 | 双语字幕 | `subtitles.py` | 英上中下、SRT/ASS/VTT、逐 cue 翻译；V-31 |
 | 双版本成片 | `adapters/burn.py`、`pipeline.py` | 干净母版 + ASS 烧录版；QSV → libx264；V-28 |
-| TimelineSpec 合成 | `RemotionStudio/src/compositions/CourseTimeline.tsx`、`adapters/remotion.py` | `timeline.spec.json` 驱动；`compose.renderer: legacy` 回退 |
+| TimelineSpec 合成 | `RemotionStudio/src/compositions/CourseTimeline.tsx`、`ScenePage.tsx`、`adapters/remotion.py` | `timeline.spec.json` 驱动；`compose.mode=scene` 用全屏 ScenePage 作为 base；`renderer: legacy` 回退 |
 | 引擎路由 | `engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
 | Code2Video 镜头 | `adapters/code_video.py`、`CodeVideoStudio/` | 镜头级 `SPEC.md` + `frame(t)` + `VERIFY.md`；本地 Playwright/ffmpeg；不部署 27B；Agent 用 Claude Code + DeepSeek |
 | HTML 渲染/lint 备选 | `CodeVideoStudio/backends/hyperframes/` | HyperFrames POC：HTML/GSAP → MP4，`check` 提供首帧/字号/对比度检查；不替换 Remotion |

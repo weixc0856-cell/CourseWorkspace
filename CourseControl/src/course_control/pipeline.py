@@ -18,6 +18,9 @@ from .verify import verify
 class BuildOptions:
     skip_render: bool = False
     skip_compose: bool = False
+    storyboard: Path | None = None
+    shots: list[str] | None = None
+    build_root: Path | None = None
 
 
 def _stage(name: str, status: Status, reason: str | None = None, errors: list[str] | None = None) -> StageOutcome:
@@ -32,7 +35,15 @@ def _mark_not_run(builder: ReportBuilder, names: list[str], reason: str) -> None
 
 
 def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple:
-    paths = LessonPaths.load(workspace, lesson_dir)
+    paths = LessonPaths.load(
+        workspace, lesson_dir, storyboard_override=options.storyboard, build_root_override=options.build_root
+    )
+    if options.shots:
+        known = {shot.id for shot in paths.storyboard.shots}
+        unknown = sorted(set(options.shots) - known)
+        if unknown:
+            raise ContractError(f"unknown shot ids for this storyboard: {', '.join(unknown)}")
+        paths.selected_shot_ids = set(options.shots)
     adapters.slides.clean_staging(paths)
     builder = ReportBuilder(paths)
 
@@ -63,6 +74,8 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
 
     if paths.lesson.compose.mode == "recording":
         builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="recording_mode"))
+    elif paths.lesson.compose.mode == "scene":
+        builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="scene_mode"))
     elif options.skip_compose:
         builder.add_stage(_stage("capture_slides", Status.SKIPPED, reason="skip_compose"))
     else:
