@@ -25,6 +25,7 @@
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)
 - 三维：[Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)、[AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)
 - 流程：[WORKFLOW.md](WORKFLOW.md)、[提交前检查清单.md](提交前检查清单.md)
+- 研发审核：[ReviewRunner/README.md](../ReviewRunner/README.md)：独立只读第二意见（Phase 1 只做代码审查）
 
 ## 3. 评估与雷达（`evaluations/`）
 
@@ -47,6 +48,7 @@
 - [PROJECT_STATUS.md](PROJECT_STATUS.md)：当前状态与 PRD 盘点
 - [ACCEPTANCE.md](ACCEPTANCE.md)：验收规则、命令与证据
 - [项目差距清单.md](项目差距清单.md)：P0–P2 缺口
+- [课程质量保障体系-差距审查.md](课程质量保障体系-差距审查.md)：五条质量防线的实现差距与 P0/P1 路线
 
 ## 5. 本地归档（不入远程）
 

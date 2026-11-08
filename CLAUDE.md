@@ -35,6 +35,8 @@
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)
 - 内容类型与音频策略：[docs/内容类型与音频策略.md](docs/内容类型与音频策略.md)
 - 项目差距清单：[docs/项目差距清单.md](docs/项目差距清单.md)
+- 课程质量防线差距审查：[docs/课程质量保障体系-差距审查.md](docs/课程质量保障体系-差距审查.md)
+- 独立代码审核（只读第二意见）：[ReviewRunner/README.md](ReviewRunner/README.md)、[scripts/review.ps1](scripts/review.ps1)
 - Attention 两分钟样片与 3B1B 差距：[docs/evaluations/样片-注意力-3B1B差距与路线.md](docs/evaluations/样片-注意力-3B1B差距与路线.md)
 - 动画/音频/口播整合：[docs/evaluations/评估-动画音频口播-整合.md](docs/evaluations/评估-动画音频口播-整合.md)
 - 交付物/QC/归档：[docs/课程生产交付物规范.md](docs/课程生产交付物规范.md)

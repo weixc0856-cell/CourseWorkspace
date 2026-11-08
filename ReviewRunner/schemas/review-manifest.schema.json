@@ -1,0 +1,674 @@
+{
+  "$defs": {
+    "BudgetInfo": {
+      "properties": {
+        "hard_limit": {
+          "title": "Hard Limit",
+          "type": "integer"
+        },
+        "safety_margin": {
+          "title": "Safety Margin",
+          "type": "integer"
+        },
+        "system_reserve": {
+          "title": "System Reserve",
+          "type": "integer"
+        },
+        "instruction_reserve": {
+          "title": "Instruction Reserve",
+          "type": "integer"
+        },
+        "output_reserve": {
+          "title": "Output Reserve",
+          "type": "integer"
+        },
+        "file_budget": {
+          "title": "File Budget",
+          "type": "integer"
+        },
+        "diff_tokens": {
+          "default": 0,
+          "title": "Diff Tokens",
+          "type": "integer"
+        },
+        "file_tokens": {
+          "default": 0,
+          "title": "File Tokens",
+          "type": "integer"
+        },
+        "task_prompt_tokens": {
+          "default": 0,
+          "title": "Task Prompt Tokens",
+          "type": "integer"
+        },
+        "estimated_input_tokens": {
+          "default": 0,
+          "title": "Estimated Input Tokens",
+          "type": "integer"
+        },
+        "estimated_total_tokens": {
+          "default": 0,
+          "title": "Estimated Total Tokens",
+          "type": "integer"
+        },
+        "warning": {
+          "default": false,
+          "title": "Warning",
+          "type": "boolean"
+        },
+        "blocked": {
+          "default": false,
+          "title": "Blocked",
+          "type": "boolean"
+        },
+        "blocked_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blocked Reason"
+        },
+        "actual_input_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Input Tokens"
+        },
+        "actual_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actual Output Tokens"
+        },
+        "output_over_reserve": {
+          "default": false,
+          "title": "Output Over Reserve",
+          "type": "boolean"
+        },
+        "violation": {
+          "default": false,
+          "title": "Violation",
+          "type": "boolean"
+        },
+        "estimate_note": {
+          "default": "estimate_text_tokens is an approximation (CJK-aware); actual usage is read from turn.completed and never assumed.",
+          "title": "Estimate Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hard_limit",
+        "safety_margin",
+        "system_reserve",
+        "instruction_reserve",
+        "output_reserve",
+        "file_budget"
+      ],
+      "title": "BudgetInfo",
+      "type": "object"
+    },
+    "ExclusionRecord": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "kind": {
+          "default": "policy",
+          "enum": [
+            "policy",
+            "binary",
+            "denied",
+            "unreadable"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "reason"
+      ],
+      "title": "ExclusionRecord",
+      "type": "object"
+    },
+    "ExecutionInfo": {
+      "properties": {
+        "executable": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Executable"
+        },
+        "argv": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Argv",
+          "type": "array"
+        },
+        "sandbox": {
+          "default": "read-only",
+          "title": "Sandbox",
+          "type": "string"
+        },
+        "isolation": {
+          "default": "isolated",
+          "title": "Isolation",
+          "type": "string"
+        },
+        "timeout_s": {
+          "default": 600,
+          "title": "Timeout S",
+          "type": "integer"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finished At"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "timed_out": {
+          "default": false,
+          "title": "Timed Out",
+          "type": "boolean"
+        },
+        "launcher_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Launcher Error"
+        },
+        "stderr_tail": {
+          "default": "",
+          "title": "Stderr Tail",
+          "type": "string"
+        },
+        "stdout_bytes": {
+          "default": 0,
+          "title": "Stdout Bytes",
+          "type": "integer"
+        },
+        "thread_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thread Id"
+        },
+        "noise_filtered": {
+          "default": 0,
+          "title": "Noise Filtered",
+          "type": "integer"
+        },
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "snapshot_intact": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Snapshot Intact"
+        }
+      },
+      "title": "ExecutionInfo",
+      "type": "object"
+    },
+    "ExecutionStatus": {
+      "enum": [
+        "NOT_RUN",
+        "EXECUTION_SUCCESS",
+        "EXECUTION_FAILED"
+      ],
+      "title": "ExecutionStatus",
+      "type": "string"
+    },
+    "FileRecord": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "diff",
+            "changed_file",
+            "context",
+            "task_prompt",
+            "manifest"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "bytes": {
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "tokens_estimated": {
+          "title": "Tokens Estimated",
+          "type": "integer"
+        },
+        "source": {
+          "default": "git_object",
+          "enum": [
+            "git_object",
+            "generated"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "role",
+        "sha256",
+        "bytes",
+        "tokens_estimated"
+      ],
+      "title": "FileRecord",
+      "type": "object"
+    },
+    "PrivacyInfo": {
+      "properties": {
+        "external_content": {
+          "title": "External Content",
+          "type": "boolean"
+        },
+        "authorization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Authorization"
+        },
+        "granted": {
+          "title": "Granted",
+          "type": "boolean"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "endpoint_host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endpoint Host"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "external_content",
+        "granted"
+      ],
+      "title": "PrivacyInfo",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "enum": [
+        "NOT_RUN",
+        "REVIEW_COMPLETED",
+        "REVIEW_INCOMPLETE"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "ReviewType": {
+      "enum": [
+        "code",
+        "docs",
+        "course"
+      ],
+      "title": "ReviewType",
+      "type": "string"
+    },
+    "ScopeInfo": {
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/ScopeMode"
+        },
+        "commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit"
+        },
+        "base": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base"
+        },
+        "head_sha": {
+          "title": "Head Sha",
+          "type": "string"
+        },
+        "review_rev": {
+          "title": "Review Rev",
+          "type": "string"
+        },
+        "diff_range": {
+          "title": "Diff Range",
+          "type": "string"
+        },
+        "worktree_dirty": {
+          "title": "Worktree Dirty",
+          "type": "boolean"
+        },
+        "dirty_paths": {
+          "title": "Dirty Paths",
+          "type": "integer"
+        },
+        "changed_files": {
+          "title": "Changed Files",
+          "type": "integer"
+        },
+        "reviewed_files": {
+          "title": "Reviewed Files",
+          "type": "integer"
+        },
+        "snapshot_source": {
+          "const": "git_objects",
+          "default": "git_objects",
+          "title": "Snapshot Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "head_sha",
+        "review_rev",
+        "diff_range",
+        "worktree_dirty",
+        "dirty_paths",
+        "changed_files",
+        "reviewed_files"
+      ],
+      "title": "ScopeInfo",
+      "type": "object"
+    },
+    "ScopeMode": {
+      "enum": [
+        "commit",
+        "base"
+      ],
+      "title": "ScopeMode",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "default": "review-runner/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "review_id": {
+      "title": "Review Id",
+      "type": "string"
+    },
+    "review_type": {
+      "$ref": "#/$defs/ReviewType"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "workspace": {
+      "title": "Workspace",
+      "type": "string"
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScopeInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/FileRecord"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "exclusions": {
+      "items": {
+        "$ref": "#/$defs/ExclusionRecord"
+      },
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "privacy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PrivacyInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "budget": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BudgetInfo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionInfo"
+    },
+    "execution_status": {
+      "$ref": "#/$defs/ExecutionStatus",
+      "default": "NOT_RUN"
+    },
+    "review_status": {
+      "$ref": "#/$defs/ReviewStatus",
+      "default": "NOT_RUN"
+    },
+    "flags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Flags",
+      "type": "array"
+    },
+    "blocked_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Blocked Reason"
+    },
+    "findings_count": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Findings Count"
+    },
+    "artifacts": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Artifacts",
+      "type": "object"
+    },
+    "production_effect": {
+      "const": "none",
+      "default": "none",
+      "title": "Production Effect",
+      "type": "string"
+    }
+  },
+  "required": [
+    "review_id",
+    "review_type",
+    "created_at",
+    "workspace"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}

@@ -479,3 +479,11 @@
 **决策**：Motion Canvas 的生产导出改为无头自动路径；`adapters/motion_canvas.py` 自动调用、最多重试 2 次、ffprobe 校验分辨率/帧率/帧数。失败即 `fail`，不再写 `skipped + incomplete`。编辑器只用于制作/预览；合法旧人工导出可作为缓存复用。端口 4173/4174 专用于无头导出，不占用 5173 编辑器端口。
 
 **后果**：Motion Canvas 从生产执行人工节点变为自动节点。仍依赖本机 Chrome/Playwright 与 Vite，属于浏览器渲染而非纯 Node 渲染；不引入 VideoZero、不引入第二套编辑器 UI 自动化。真实课程需要重跑才能把历史 `incomplete` 更新为新的构建结论。
+
+## D-055 独立代码审核用 ReviewRunner，默认隔离本机 Codex 配置
+
+**背景**：课程生产需要独立第二意见，但 Codex 使用本机 `~/.codex` 配置时会加载多个 MCP 服务器、插件与模型目录；实测一次简单请求 `input_tokens=19238`，且配置告警混入输出。项目硬上限是 64K，不能依赖模型 catalog 的更大上下文。
+
+**决策**：新增独立 `ReviewRunner/`（不进入生产主链，不接 `check.ps1` 门禁，不自动 apply）。默认用 `codex exec --ignore-user-config` 加显式 provider 配置：`base_url/model/api_key_env` 来自 `config/model-routing.yaml`，key 只由子进程从环境变量读取，不进入 argv/日志/manifest。审核输入全部来自 Git 对象，落在临时目录，运行前后校验 SHA256；输出按执行轴与审核轴分别记录，`production_effect: none`。隔离实测基线 14,243 tokens，因此系统预留 18,000、文件内容预算 35,536；用户配置模式保留 24,000/29,536。超出预算直接 `BLOCKED`，不静默缩减范围。
+
+**后果**：本机 MCP 与插件默认不参与审核；宿主 skill frontmatter 告警作为噪声过滤并计数。Windows 沙箱隔离强度未验证，工具只声称“临时目录 + 前后哈希”，不声称绝对沙箱。Phase 1 只做代码审查，Docs/Course 仅保留隐私门与接口；Course 外发必须逐次授权。
