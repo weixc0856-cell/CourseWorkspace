@@ -570,6 +570,6 @@ R1 增量完成条件：
 - `SimulationSpec`：seed、hex radius、3 个物种、3×3 收益矩阵、mutation、updates_per_frame、frames、fps。
 - `simulation-run` 输出 `SimulationData`（cells、每帧 species、fractions），同 seed 同结果。
 - 长序列模拟用 Three.js / CodeVideoStudio 的 `frame(t)` 捕获；Blender 负责 hero 镜头、材质与灯光；不引入 Godot。
-- 30 秒 POC 已跑通（Python → Blender Eevee → Remotion）。
+- 30 秒 POC 已跑通（Python → Blender Eevee → Remotion）；Three.js 版同数据 900 帧 45.7 秒、双次哈希一致。
 
 **验收**：`docs/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。

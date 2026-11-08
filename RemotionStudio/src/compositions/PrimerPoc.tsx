@@ -17,6 +17,7 @@ export type PrimerPocProps = {
   matrix: number[][];
   species: Species[];
   fractions: number[][];
+  engineLabel?: string;
 };
 
 const BG = '#2D3033';
@@ -181,7 +182,7 @@ export const PrimerPoc: React.FC<PrimerPocProps> = (props) => {
         }}
       />
       <div style={{position: 'absolute', left: 1540, top: 912, fontFamily: SERIF, fontSize: 14, color: MUTED}}>
-        Blender Eevee · deterministic seed {props.seed}
+        {props.engineLabel ?? 'Blender Eevee'} · deterministic seed {props.seed}
       </div>
     </AbsoluteFill>
   );

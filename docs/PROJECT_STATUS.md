@@ -16,7 +16,7 @@
 | 能力 | 契约 / 代码 | 证据 | 状态 |
 | --- | --- | --- | --- |
 | FR-28 导演层 | `CourseControl/src/course_control/director/`、`docs/导演层.md` | 01-transformer-demo：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 9 warning；5 个真实渲染镜头 | COMPLETED（POC） |
-| FR-33 模拟契约 | `simulation.py`、`primer-poc/`、POC 文档 | SimulationSpec + 30s POC；长序列定 Three.js | COMPLETED（POC） |
+| FR-33 模拟契约 | `simulation.py`、`primer-poc/`、POC 文档 | SimulationSpec + 30s POC；Three.js 900 帧 45.7 s、哈希一致 | COMPLETED（POC） |
 | FR-32 静帧运镜 | `motion.py`、`MotionImage.tsx`、`docs/运镜与剪辑.md` | ken_burns 元数据 + Remotion 组件；tsc 通过 | COMPLETED（POC） |
 | FR-31 配色系统 | `layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | 浅色主题 + 语义色；palette-review 合辑 | COMPLETED（POC） |
 | FR-30 版式系统 | `CourseControl/src/course_control/layout/`、`docs/版式系统.md` | 8 个模板、12 镜头模板分配、CrossAttention/Loss 前后对比 | COMPLETED（POC） |
