@@ -115,6 +115,7 @@ log(`frame sink on ${sinkPort}`);
 const viteBin = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
 const vite = spawn(process.execPath, [viteBin, '--port', String(vitePort), '--strictPort'], {
   cwd: projectRoot,
+  env: {...process.env, MOTION_CANVAS_HEADLESS: '1'},
   stdio: ['ignore', 'pipe', 'pipe'],
   shell: false,
 });
