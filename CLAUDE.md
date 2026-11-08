@@ -25,6 +25,7 @@
 - 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
 - 科学计算/绘图接入：[docs/evaluations/科学图形与图表接入评估.md](docs/evaluations/科学图形与图表接入评估.md)
 - 动画视觉导演规范：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md)
+- 动画渲染适配器：[docs/动画渲染适配器.md](docs/动画渲染适配器.md)
 - 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
 - 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)

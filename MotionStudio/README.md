@@ -20,6 +20,7 @@
 - Node.js（本机 v24）与本地 `node_modules/`，不装全局包
 - 依赖锁在 `package-lock.json`；Motion Canvas 三件套固定 3.17.2
 - `vite` 固定在 4.x：`@motion-canvas/ffmpeg` 的 peer 只认 4.x，升到 5 会解析失败
+- 无头导出复用 `../RemotionStudio/node_modules` 的 Playwright 与本机 Chrome；需先安装 RemotionStudio 依赖
 
 首次：
 
@@ -43,28 +44,41 @@ npm run serve
 
 键盘：`Space` 播放/暂停，`End` 跳到末帧，方向键逐帧。
 
+## 无头导出
+
+`scripts/render-headless.mjs` 用 Motion Canvas core `Renderer` 在无 UI 页面中渲染，不点击编辑器：
+
+1. 启动 Vite（4173）和 Node 帧接收器（4174）；
+2. Playwright/Chrome 打开 `headless.html`，`Renderer` 逐帧调用自定义 exporter；
+3. 每帧 PNG POST 到接收器，ffmpeg 编码 MP4；
+4. ffprobe 校验分辨率、帧率、帧数，并写 `build/motion-canvas/<run>/meta.json`。
+
+```powershell
+cd MotionStudio
+node scripts/render-headless.mjs --scene attention-flow --fps 30 --width 1920 --height 1080 `
+  --out ../build/motion-canvas/attention-flow.mp4
+```
+
 ## 构建集成
 
-CourseControl 的 `render:motion_canvas` 采用“人工导出 + 控制层校验”的基线：
+CourseControl 的 `render:motion_canvas` 自动调用上面的脚本：
 
-1. 在编辑器里导出 `Video (FFmpeg)` 的 MP4。
-2. 放到 `build/<lesson-slug>/animation/<scene-stem>.mp4`。
-   - 例：`src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/01-shell-for-ai-era/animation/gui_vs_cli_paths.mp4`
-3. 确认场景已注册在 `src/project.ts`。
-4. 运行 `.\scripts\build-lesson.ps1 -Lesson <slug>`。
+1. 场景必须注册在 `src/project.ts`；
+2. 输出固定为 `build/<lesson-slug>/animation/<scene-stem>.mp4`；
+3. adapter 最多重试 2 次，ffprobe 通过后才 `pass`；
+4. 仍失败 → `fail`，不写 `skipped` / `incomplete`；合法的旧人工导出可复用，但不是默认路径。
 
-控制层会校验文件存在、分辨率、帧率与时长。文件缺失时：
+例：`src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/01-shell-for-ai-era/animation/gui_vs_cli_paths.mp4`。
 
-- `allow_manual_animation_export: true` → 阶段 `skipped`（`manual_export_required`），最终 `incomplete`；
-- 为 `false` → `fail`。
-
-不会用截图拼帧或伪造文件冒充导出结果。原因与升级路径见 [DECISIONS.md](../docs/DECISIONS.md) D-004。
+不会用截图拼帧或伪造文件冒充导出结果。见 [DECISIONS.md](../docs/DECISIONS.md) D-054。
 
 ## 目录结构
 
 ```text
 MotionStudio/
+├── headless.html                        # 无头渲染页
 ├── src/
+│   ├── headless.js                      # core Renderer + 自定义帧接收 exporter
 │   ├── project.ts                        # 注册场景，决定时间轴顺序
 │   ├── motion-canvas.d.ts                # 类型引用，缺了 tsc 会报 Callback 未定义
 │   ├── styles/
@@ -72,6 +86,7 @@ MotionStudio/
 │   └── scenes/
 │       └── 01-transformer-demo/          # 目录名 = 课件 lesson slug
 │           └── attention-flow.tsx        # 一个文件一个场景
+├── scripts/render-headless.mjs           # Vite + Playwright + 帧接收器 + ffmpeg
 ├── vite.config.ts                        # motionCanvas + ffmpeg 插件
 ├── tsconfig.json
 └── package.json
@@ -81,7 +96,8 @@ MotionStudio/
 
 1. 在 `src/scenes/<lesson-slug>/` 下建 `<scene>.tsx`，默认导出 `makeScene2D(...)`
 2. 在 `src/project.ts` 里 import `./scenes/<slug>/<scene>?scene` 并加进 `scenes`
-3. 颜色与字体一律从 `src/styles/mckinsey.ts` 取，不写死十六进制
+3. 在 `src/headless.js` 的 `scenes` 映射里加入 kebab-case scene id（文件名下划线转连字符）
+4. 颜色与字体一律从 `src/styles/mckinsey.ts` 取，不写死十六进制
 
 ## 约定
 

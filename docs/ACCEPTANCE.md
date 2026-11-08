@@ -23,7 +23,7 @@
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11（10 通过 + 1 跳过） | 10 通过，1 跳过 |
 
-合计 **416** 个用例（410 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **420** 个用例（414 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -216,11 +216,11 @@ python ManimSandbox/05-multi-head/assemble.py
 | --- | --- | --- | --- |
 | `lesson-smoke` | recording + Blender + 旁白 + 字幕 | **pass** | 全链路真实执行（Blender → collect → Remotion → verify） |
 | `lesson-blender-only` | recording + Blender | **pass** | 同上，无旁白/字幕 |
-| `01-shell-for-ai-era` | deck + Motion | **incomplete** | 截图 20/20 通过；8 段 Motion 动画未导出 → `manual_export_required`；下游 `not_run` |
-| `01-transformer-demo` | deck + Motion | NOT_RUN（本轮） | 与 Shell 课同一阻塞 |
-| `lesson-manual` | recording + 人工导出 | validate 通过 | 本轮未单独构建 |
+| `01-shell-for-ai-era` | deck + Motion | NOT_RUN（本轮） | Motion 自动导出已实现，但本轮未重跑整课 |
+| `01-transformer-demo` | deck + Motion | NOT_RUN（本轮） | 同上 |
+| `lesson-manual` | recording + Motion | **pass** | adapter 真实无头渲染 `gui_vs_cli_paths`，ffprobe 通过；含 1 条时长差异 warning |
 
-**真实课程未完成的原因**：`build/01-shell-for-ai-era/animation/` 没有 8 个导出文件。这是人工节点，不是程序缺陷；系统如实返回 `incomplete`，未伪装成 pass。
+Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重跑，因此不能把历史 `incomplete` 直接改写成 pass。
 
 ---
 
@@ -261,7 +261,7 @@ python ManimSandbox/05-multi-head/assemble.py
 
 | 项 | 原因 | 影响 |
 | --- | --- | --- |
-| 真实课程成片 | Motion Canvas 8 段未导出（人工） | `01-shell-for-ai-era` 为 `incomplete` |
+| 真实课程成片 | 本轮未重跑；Motion 自动导出已有 POC 与夹具证据 | 真实课程仍待下次完整构建 |
 | 真实审查调用 | ContentQA 默认 Claude Code；API 后端已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
 | 本轮重跑 ModelingStudio 全链路 | 需独占 8080 约 10–30 分钟，且会与用户其他任务冲突 | 仅有历史作业证据 |
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
@@ -311,7 +311,7 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
 | V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
 
-R1 测试计数：五套合计 **416 个用例（410 通过 + 6 跳过）**：CourseControl 304（299+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
+R1 测试计数：五套合计 **420 个用例（414 通过 + 6 跳过）**：CourseControl 308（303+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
 
 R1 真实产物：
 

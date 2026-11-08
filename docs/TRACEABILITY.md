@@ -50,6 +50,6 @@
 
 | 项 | 代码位置 | 说明 |
 | --- | --- | --- |
-| Motion Canvas 导出 | `adapters/motion_canvas.py` 只校验 | 编辑器导出是正式节点 |
+| Motion Canvas 导出 | `MotionStudio/scripts/render-headless.mjs`、`src/headless.js`、`adapters/motion_canvas.py` | `test_motion_canvas_headless.py`；attention-flow 3 次哈希一致；注入失败 |
 | 审查后端凭据 | `ContentQA/src/content_qa/config.py` | 默认 Claude Code；API 凭据只读环境变量 / 本机忽略配置 |
 | 课程内容 | `lessons/` | 作者维护，不入库 |

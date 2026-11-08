@@ -3,7 +3,7 @@
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-08（旧 Manim 镜头统一、ContentQA 默认后端、文档/路径卫生）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `37b0716` + 2026-11-08 未提交改动
-- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 416 个用例（410 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
+- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 420 个用例（414 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -37,6 +37,7 @@
 | AudioPlan | `CourseControl/src/course_control/audio_plan.py`、`audio-plan` CLI | 内容类型/许可/署名/电平闸门；6 个单测；输出 `build/<slug>/audio/audio_plan.json` |
 | 章节卡 | `RemotionStudio/src/compositions/ChapterCard.tsx` | 真实 still 渲染；尚未自动插入时间线 |
 | 全量 Manim 镜头 | `build/01-transformer-demo/animation/*.mp4` | 7 个镜头 1080p30 全部渲染并通过 adapter |
+| Motion Canvas 无头导出 | `MotionStudio/scripts/render-headless.mjs`、`src/headless.js` | attention-flow 1920×1080/30fps/142 帧；3 次 SHA256 一致；注入第 30 帧失败不产 MP4 |
 | 长序列基准（失败） | `CodeVideoStudio/shots/primer-rps` | 180 s / 5400 帧 capture 未产出可播放 MP4；30 s 基线仍有效 |
 | ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
 | 路径与文档 | 全部 README、`docs/` | `path check ok`；清除控制字符与个人路径；补全 `VOICE_REF_WAV`、junction、配色说明 |
@@ -205,7 +206,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 科学图形 POC | `ScientificFigures/` | SymPy + Matplotlib + SciencePlots；连续性方程 LaTeX + Poiseuille SVG/PDF/PNG |
 | Formula Pipeline | `formulas.py`、`Formula.tsx`、`formula-render.mjs`、Manim smoke | 唯一 LaTeX 源；KaTeX HTML/PNG；四类 validation；三路冒烟 |
 | 技术雷达 | `docs/evaluations/技术雷达-视频生产.md`、`docs/课程生产交付物规范.md`、`docs/evaluations/评估-DeepSeek Harness.md`、`docs/evaluations/评估-四后端对比.md` | 评分/许可证/硬门槛/交付归档规范；Claude Code/dsh 对比与受控代理决策（不接入运行时） |
-| 测试 | 五套单测 | **416 个用例（410 通过 + 6 跳过）**：CourseControl 304（299+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
+| 测试 | 五套单测 | **420 个用例（414 通过 + 6 跳过）**：CourseControl 308（303+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
 
 **暂缓**：具体课件内容、整课 TTS、实测字幕与最终成片（按用户要求先做仓库/接入优化）。**已完成**：Code2Video P2（含 QC 门）、HyperFrames POC、VideoZero POC、技术雷达与交付物规范、DeepSeek Harness CLI 对比、四后端镜头生成对比、Claude Code 全量默认后端接入、汽车空气动力学课（制作中）。
 
@@ -249,7 +250,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | FR-01 | 课程内容契约 | `lessons/` + `paths.py` / `contracts.py` | 5 个课程/夹具 validate 通过（本地） | COMPLETED | — |
 | FR-02 | V-01~V-09 校验 | `validators.py` | `check.ps1`；V-04 失败单测 | COMPLETED | — |
 | FR-03 | 预览与截图 | `adapters/slides.py` + `capture-slides.mjs` | 真实课程 20/20（`build/01-shell-for-ai-era/slides`） | COMPLETED | — |
-| FR-04 | 动画渲染 | Motion 人工导出；Manim / Blender v1 适配器 | `lesson-manual` 夹具；真实课程 `manual_export_required` | PARTIAL | 8 段 Motion 导出未完成 |
+| FR-04 | 动画渲染 | Motion 无头自动导出；Manim / Blender v1 适配器 | attention-flow 3 次哈希一致；注入失败不产 MP4；`lesson-manual` fixture PASS | COMPLETED（真实课程待重跑） | 重跑 01-shell 全课 |
 | FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py`、`shared/scene_expr` | `check-scene-system.ps1 -Render` 8 次真实渲染；CourseControl 测试覆盖见 ACCEPTANCE（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色、参数化曲面与语义验收） | COMPLETED | — |
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
 | FR-07 | 时间线收集 | `collect.py`（含 `annotations[]`） | `lesson-smoke` shots.json 通过 verify；V-22 标注检查 | COMPLETED | — |
@@ -265,7 +266,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 
 | 编号 | 需求 | 状态 | 说明 |
 | --- | --- | --- | --- |
-| NFR-01 | 可复现 | PARTIAL | 夹具重复构建文件集合稳定（历史证据）；真实课程因缺导出未重复构建 |
+| NFR-01 | 可复现 | PARTIAL | 夹具重复构建文件集合稳定；Motion 自动导出 3 次 SHA256 一致；真实课程本轮未重跑 |
 | NFR-02 | 失败可见 | COMPLETED | 状态与 failures 一致 |
 | NFR-03 | 隔离 | COMPLETED | 本机配置与产物均忽略 |
 | NFR-04 | 路径安全 | COMPLETED | 绝对路径/反斜杠/`..` 被拒 |
@@ -280,10 +281,10 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 416 个用例（410 通过 + 6 跳过；304+33+50+18+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 416 个用例（410 通过 + 6 跳过；308+33+50+18+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
-| 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
+| 5 | 真实课程如实报告状态 | COMPLETED | 历史 `incomplete` 保留；Motion 自动导出已用 POC/夹具验证 |
 | 6 | 本地模型串行有真实证据 | COMPLETED | 双进程竞争测试 |
 | 7 | 内容审查 mock + 不可用 blocked | COMPLETED | ContentQA 测试 + 真实课程 exit 3；默认 Claude Code，API 路径测试显式固定 |
 | 8 | 预算测试通过并记录 | COMPLETED | 每次请求前检查并写任务记录 |
@@ -294,8 +295,8 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 
 | 编号 | 事项 | 状态 | 说明 |
 | --- | --- | --- | --- |
-| OPEN-01 | Motion Canvas headless 导出 | DEFERRED | 人工节点是正式设计 |
-| OPEN-02 | 真实课程内容补全 | BLOCKED | 4 页占位、3 页中文、8 段动画导出，责任在作者 |
+| OPEN-01 | Motion Canvas headless 导出 | COMPLETED | D-054；Renderer + 帧接收器 + ffmpeg |
+| OPEN-02 | 真实课程内容补全 | BLOCKED | 4 页占位、3 页中文，责任在作者；动画导出已自动 |
 | OPEN-03 | 审查后端供应商与凭据 | BLOCKED | 默认 Claude Code；API 未配置时 `blocked` 语义已实现 |
 | OPEN-04 | Manim 接入课程 | DEFERRED | 无课程使用，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式/语料） | OUT_OF_SCOPE | 本期只交付审查内核 |

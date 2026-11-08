@@ -12,8 +12,8 @@
    │
    ├─[自动] capture_slides             deck 模式：8081 + Playwright → slides/*.png
    │
-   ├─[人工] Motion Canvas 导出         → build/<slug>/animation/<scene-stem>.mp4
-   │    └─[自动] render:motion_canvas  校验文件存在 + ffprobe
+   ├─[自动] Motion Canvas 无头渲染     → build/<slug>/animation/<scene-stem>.mp4
+   │    └─[自动] render:motion_canvas  Renderer → PNG → ffmpeg + ffprobe
    │
    ├─[自动][可选] render:manim         uv run manim --media_dir build/<slug>/tmp
    │
@@ -87,13 +87,13 @@
 | 项 | 内容 |
 | --- | --- |
 | Motion 输入 | `MotionStudio/src/scenes/<lesson>/<scene>.tsx` |
-| Motion 输出 | 作者在编辑器导出到 `build/<slug>/animation/<scene-stem>.mp4` |
-| 自动部分 | `adapters/motion_canvas.py` 只校验文件存在 + ffprobe；不执行导出 |
+| Motion 输出 | `build/<slug>/animation/<scene-stem>.mp4` |
+| 自动部分 | `scripts/render-headless.mjs`：Vite + core Renderer + Node 帧接收器 + ffmpeg；adapter 最多重试 2 次并 ffprobe |
 | Manim | `adapters/manim.py`：`uv run manim render --media_dir build/<slug>/tmp/manim-media`，复制到 `animation/` |
-| 失败 | Motion 缺失：`skipped` + `manual_export_required`，verdict `incomplete`；导出无效：`fail` |
-| 证据 | `lesson-manual` 夹具通过；真实课程如实 `incomplete` |
+| 失败 | 重试 2 次仍失败：`fail`；不得写 `skipped` / `incomplete` 冒充 |
+| 证据 | `attention-flow` 3 次哈希一致；`lesson-manual` fixture PASS；注入失败不产 MP4 |
 
-**这是正式的人工节点，不是待修缺陷。** 不允许用截图拼帧冒充导出。
+**这是自动生产节点。** 编辑器只用于制作/预览；合法的旧人工导出可复用，但不是默认路径。不允许用截图拼帧冒充导出。
 
 ---
 
@@ -230,15 +230,12 @@
 uv run --project CourseControl course-control validate --lesson <slug>
 .\scripts\build-lesson.ps1 -Lesson <slug>
 
-# 4) 人工导出 Motion Canvas（如课程使用）
-#    编辑器导出到 build/<slug>/animation/<scene-stem>.mp4，然后重跑构建
-
-# 5) 结果
+# 4) 结果
 #    build/<slug>/final/course-video.mp4
 #    build/<slug>/final/build-report.json
 ```
 
-**合格判定**：`build-report.json` 的 `verdict=pass`，且没有 `skipped` / `not_run` / `fail`。`incomplete` 表示还差人工步骤或渲染产物。
+**合格判定**：`build-report.json` 的 `verdict=pass`，且没有 `skipped` / `not_run` / `fail`。`incomplete` 表示仍有 `skipped` / `not_run` 阶段；生产渲染默认自动执行。
 
 **真实状态**：两门真实课程目前都是 `incomplete`（Motion 未导出）；夹具 `lesson-smoke`、`lesson-blender-only` 为 `pass`。
 

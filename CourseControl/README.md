@@ -92,7 +92,7 @@ uv run course-control scene-schema
 | --- | --- | --- |
 | `validate` | 总是 | 契约校验结果 |
 | `capture_slides` | `compose.mode=deck` 且未跳过合成 | `build/<slug>/slides/*.png` + manifest |
-| `render:motion_canvas` | `engines` 含 `motion_canvas` | `build/<slug>/animation/<scene>.mp4`（人工导出基线） |
+| `render:motion_canvas` | `engines` 含 `motion_canvas` | `build/<slug>/animation/<scene>.mp4`（无头 Renderer 自动导出） |
 | `render:manim` | `engines` 含 `manim` | `build/<slug>/animation/<scene>.mp4` |
 | `render:blender` | `engines` 含 `blender` | 由 Blender 任务 JSON 指定的 `build/<slug>/blender/*.mp4` |
 | `render:code_video` | `engines` 含 `code_video` | `build/<slug>/animation/<project>.mp4`；`inputs.simulation_spec` 会先生成 `simulation.json` |
@@ -100,12 +100,13 @@ uv run course-control scene-schema
 | `compose` | 上游通过且未跳过 | staging + Remotion → `final/course-video.mp4` |
 | `verify` | 合成通过 | `checks[]` |
 
-不适用的阶段写 `not_applicable`；人工导出或 CLI 跳过写 `skipped` / `not_run`；只有全部必需阶段为 `pass` 才是 `verdict=pass`。
+不适用的阶段写 `not_applicable`；人工/CLI 跳过写 `skipped` / `not_run`；Motion Canvas 自动导出失败写 `fail`，重试 2 次，不写 `skipped`。只有全部必需阶段为 `pass` 才是 `verdict=pass`。
 
 ## 设计/制片层
 
 - 导演计划：`director-plan`，输出 `director_plan.json`、`storyboard.director.yaml`、`directions/`、`shot_specs/`、`director_review.md`；
 - 制片：`producer-order` / `producer-run` / `producer-status` / `producer-rebuild`，输出订单、状态和七项交付清单；
+- 动画适配器：Motion Canvas 无头导出、Manim、Blender、CodeVideo 统一 `StageOutcome`，见 [动画渲染适配器](../docs/动画渲染适配器.md)；
 - 版式与配色：8 个模板、安全区/重叠/容量/字幕带校验；
 - 音频：`audio-plan` 按内容类型校验 BGM（正式课程/新闻禁用；许可/署名/电平硬闸门）；
 - 模拟：`SimulationSpec` → `SimulationData`，Blender/Three.js 共用；
@@ -116,7 +117,6 @@ uv run course-control scene-schema
 `pass` / `fail` / `skipped` / `not_run` / `not_applicable`，与 PRD 一致。
 
 - 引擎不在 `engines` 中 → `not_applicable`
-- 人工导出缺失且 `allow_manual_animation_export=true` → `skipped`，最终 `incomplete`
 - 任一阶段失败 → `fail`，下游写 `not_run`
 - 合成失败时保留 `public/staging/<slug>/` 与日志，便于排查；成功后才清理
 
@@ -143,9 +143,9 @@ build/<lesson>/logs/verify-<task_id>.log               # Blender 场景验收日
 
 manifest 记录任务哈希、随机种子、Blender 版本、宿主 Python/平台、渲染参数、退出码、耗时与全部检查。完整契约见 [Blender 场景任务 IR v2](../docs/Blender场景任务IR-v2.md)。
 
-## 人工导出 Motion Canvas
+## Motion Canvas 自动导出
 
-R4 采用基线 C：Motion Canvas 3.17.2 没有 CLI 渲染入口，需在编辑器里导出。文件命名：
+Motion Canvas 3.17.2 没有官方 CLI，但 core `Renderer` 可编程调用。`MotionStudio/scripts/render-headless.mjs` 启动 Vite、用 Playwright/Chrome 加载无头页、通过自定义 exporter 把每帧 PNG 发送到 Node 帧接收器，再由 ffmpeg 编码。输出命名：
 
 ```text
 build/<slug>/animation/<scene-stem>.mp4
@@ -159,9 +159,9 @@ build/<slug>/animation/<scene-stem>.mp4
 
 - `tests/fixtures/lesson-smoke/`：`recording` 模式、纯 Blender 插片、字幕开启。
 - `tests/fixtures/lesson-blender-only/`：纯 Blender，验证 Motion / Manim 为 `not_applicable`。
-- `tests/fixtures/lesson-manual/`：Motion Canvas 人工导出接入。
+- `tests/fixtures/lesson-manual/`：Motion Canvas 自动导出接入。
 
-夹具需要的底稿、旁白和人工导出样本由脚本生成：
+夹具需要的底稿、旁白和 Motion 导出样本由脚本生成：
 
 ```powershell
 .\scripts\prepare-fixtures.ps1
