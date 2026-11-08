@@ -464,6 +464,11 @@
           "default": null,
           "title": "Blend Task"
         },
+        "inputs": {
+          "additionalProperties": true,
+          "title": "Inputs",
+          "type": "object"
+        },
         "asset_seconds": {
           "anyOf": [
             {

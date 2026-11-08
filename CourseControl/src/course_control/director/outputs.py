@@ -65,6 +65,7 @@ def _storyboard(plan: DirectorPlan) -> Storyboard:
                 cue_seconds=shot.cue_seconds,
                 expected_duration_s=shot.asset_seconds,
                 blend_task=shot.blend_task,
+                inputs=shot.inputs or None,
                 engine_profile=shot.engine_profile,
                 note=(
                     f"director: {shot.readiness}; {shot.notes}"

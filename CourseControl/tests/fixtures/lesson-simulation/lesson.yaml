@@ -21,3 +21,18 @@ narration:
   enabled: false
 subtitles:
   enabled: false
+
+duration:
+  profile: short
+  target_seconds: 30
+  min_seconds: 30
+  max_seconds: 30
+  page_tolerance_seconds: 1.0
+
+authoring:
+  sources: null
+  digest: null
+  brief: authoring/brief.json
+  outline: authoring/outline.json
+  script: authoring/script.json
+  approval: authoring/approval.json

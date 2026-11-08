@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-simulation",
+  "language": "en",
+  "voice": {},
+  "policy": {},
+  "pages": [
+    {
+      "slide": 1,
+      "target_seconds": 30.0,
+      "source_refs": [
+        "S1"
+      ],
+      "segments": [
+        {
+          "id": "s001-p1",
+          "text": "Rock beats scissors, scissors beats paper, paper beats rock.",
+          "style": null,
+          "pause_after_ms": 400,
+          "emphasis": [],
+          "source_refs": [
+            "S1"
+          ]
+        }
+      ]
+    }
+  ],
+  "generator": {
+    "kind": "fixture"
+  }
+}

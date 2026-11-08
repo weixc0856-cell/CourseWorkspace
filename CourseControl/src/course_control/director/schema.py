@@ -80,6 +80,7 @@ class ShotPlan(StrictModel):
     engine_profile: str = Field(min_length=1)
     scene: str | None = None
     blend_task: str | None = None
+    inputs: dict = Field(default_factory=dict)
     asset_seconds: float | None = Field(default=None, gt=0)
     readiness: Readiness
     start_s: float = Field(ge=0)

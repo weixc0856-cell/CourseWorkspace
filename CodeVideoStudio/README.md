@@ -46,7 +46,7 @@ uv run --project CourseControl python ../../scripts/contact_sheet.py out/final.m
 
 - 30s / 1920×1080 / 30fps / 900 帧；`check_video.sh` OK；两次独立渲染 900/900 帧哈希一致。
 - `adapters/code_video.py` 真实跑通：`build/code-video-studio/animation/attention-flow.mp4`。
-- `primer-rps`：ShotSpec `inputs.simulation_spec` → adapter 自动生成 `simulation.json` → 1920×1080/30s capture → QC PASS（`build/lesson-simulation/animation/primer-rps.mp4`）。
+- `primer-rps`：ShotSpec `inputs.simulation_spec` → adapter 自动生成 `simulation.json` → 1920×1080/30s capture → QC PASS（`build/lesson-simulation/animation/primer-rps.mp4`）；导演层 `visual_kind: simulation` 可直接路由到该镜头。
 - HyperFrames POC：10s / 300 帧，`check` 0 error/0 warning，27.1s 渲染；仅作为可选 HTML/lint 后端。
 
 ## 外部项目边界

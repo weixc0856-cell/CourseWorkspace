@@ -460,4 +460,4 @@
 
 **决策**：`SimulationSpec` 固化模拟输入；长序列用 Three.js / CodeVideoStudio 渲染，Blender 负责 hero 镜头、材质、灯光与特写；不引入 Godot。Blender 侧只保留“数据 → 场景”的任务。
 
-**后果**：Three.js 镜头模板已落地（`CodeVideoStudio/shots/primer-rps`）：同一 30 秒 900 帧 **45.7 秒**、双次 capture sha256 一致；Blender 约 12 分钟。`adapters/code_video.py` 可按 `ShotSpec.inputs.simulation_spec` 自动生成数据并完成 capture + QC（`lesson-simulation` 夹具 PASS）。Blender 场景脚本继续作为高质感备选，模拟数据与引擎解耦。
+**后果**：Three.js 镜头模板已落地（`CodeVideoStudio/shots/primer-rps`）：同一 30 秒 900 帧 **45.7 秒**、双次 capture sha256 一致；Blender 约 12 分钟。`adapters/code_video.py` 可按 `ShotSpec.inputs.simulation_spec` 自动生成数据并完成 capture + QC（`lesson-simulation` 夹具 PASS）。导演层 `visual_kind: simulation` 路由 code_video、带 inputs、校验 spec 存在，夹具计划为 ready。Blender 场景脚本继续作为高质感备选，模拟数据与引擎解耦。

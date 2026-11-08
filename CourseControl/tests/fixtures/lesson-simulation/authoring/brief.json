@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-simulation",
+  "audience": "fixture",
+  "objectives": [
+    "Explain the rock-paper-scissors agent simulation."
+  ],
+  "prerequisites": [],
+  "duration": {
+    "target_seconds": 30
+  },
+  "scope_in": [],
+  "scope_out": [],
+  "assumptions": [],
+  "source_map": [],
+  "generator": {
+    "kind": "fixture"
+  }
+}

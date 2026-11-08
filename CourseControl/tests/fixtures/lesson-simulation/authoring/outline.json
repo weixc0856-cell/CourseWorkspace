@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-simulation",
+  "chapters": [
+    {
+      "id": "c1",
+      "title": "Simulation",
+      "pages": [
+        {
+          "slide": 1,
+          "title": "Rock Paper Scissors",
+          "claim": "Cyclic dominance keeps all three species alive.",
+          "target_seconds": 30.0,
+          "visual": "A hex world of agents flips colours as the simulation runs.",
+          "visual_kind": "simulation",
+          "needs_3d": true,
+          "animation": "primer-rps",
+          "source_refs": [
+            "S1"
+          ],
+          "no_source": null
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "pages": 1,
+    "target_seconds": 30
+  },
+  "generator": {
+    "kind": "fixture"
+  }
+}

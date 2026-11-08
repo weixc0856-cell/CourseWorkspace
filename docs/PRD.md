@@ -572,5 +572,6 @@ R1 增量完成条件：
 - 长序列模拟用 Three.js / CodeVideoStudio 的 `frame(t)` 捕获；Blender 负责 hero 镜头、材质与灯光；不引入 Godot。
 - 30 秒 POC 已跑通（Python → Blender Eevee → Remotion）；Three.js 版同数据 900 帧 45.7 秒、双次哈希一致。
 - `ShotSpec.engine=code_video` 且 `inputs.simulation_spec` 时，adapter 自动生成 `simulation.json`、capture 并 QC。
+- 导演层 `visual_kind: simulation` 路由 code_video，并在计划中携带/校验 `inputs.simulation_spec`。
 
 **验收**：`docs/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。
