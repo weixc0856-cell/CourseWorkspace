@@ -550,3 +550,15 @@ R1 增量完成条件：
 - 导演 `color_semantics` 与 Manim token 由测试保持一致。
 
 **验收**：`docs/配色规范.md`、`test_color_system.py`、`palette-system.mp4`（色卡 + 三个应用镜头）。
+
+### FR-32 静帧运镜与剪辑
+
+**目标**：借鉴纪录片式静帧运镜，在不改课程内容的前提下提升静态页面的质感。
+
+- `MotionPolicy`：`slides: ken_burns|static`、`scale`、`pan_percent`，写在 `lesson.yaml.motion`。
+- `slide_motion` 生成 4 种确定性路径；缩放 ≥1.04、平移 ≤1.2%，不露画布边缘。
+- `TimelineSpec.video[].metadata.legacy_motion` 只出现在 slide 底图；视频与 Manim 插入不受影响。
+- Remotion `MotionImage` 按镜头时长做平移/缩放；`static` 时回到原状。
+- 不引入音乐/生图；章节卡与 dissolve 留待后续。
+
+**验收**：`docs/运镜与剪辑.md`、`test_motion.py`、Remotion `tsc --noEmit`、01-transformer-demo 时间线元数据。

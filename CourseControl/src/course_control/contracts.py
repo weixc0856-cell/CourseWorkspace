@@ -109,6 +109,14 @@ class BuildOptions(StrictModel):
     allow_manual_animation_export: bool = True
 
 
+class MotionPolicy(StrictModel):
+    """Slow still-image camera move for captured slides."""
+
+    slides: Literal["static", "ken_burns"] = "ken_burns"
+    scale: float = Field(default=1.05, gt=1.0, le=1.15)
+    pan_percent: float = Field(default=1.2, ge=0.0, le=4.0)
+
+
 class LessonConfig(StrictModel):
     schema_version: Literal[1]
     lesson_id: str
@@ -123,6 +131,7 @@ class LessonConfig(StrictModel):
     subtitles: Subtitles = Subtitles()
     acceptance: Acceptance = Acceptance()
     build: BuildOptions = BuildOptions()
+    motion: MotionPolicy = MotionPolicy()
     duration: DurationPolicy | None = None
     authoring: Authoring | None = None
 

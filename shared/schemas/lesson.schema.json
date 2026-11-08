@@ -272,6 +272,37 @@
       "title": "DurationPolicy",
       "type": "object"
     },
+    "MotionPolicy": {
+      "additionalProperties": false,
+      "description": "Slow still-image camera move for captured slides.",
+      "properties": {
+        "slides": {
+          "default": "ken_burns",
+          "enum": [
+            "static",
+            "ken_burns"
+          ],
+          "title": "Slides",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1.05,
+          "exclusiveMinimum": 1.0,
+          "maximum": 1.15,
+          "title": "Scale",
+          "type": "number"
+        },
+        "pan_percent": {
+          "default": 1.2,
+          "maximum": 4.0,
+          "minimum": 0.0,
+          "title": "Pan Percent",
+          "type": "number"
+        }
+      },
+      "title": "MotionPolicy",
+      "type": "object"
+    },
     "Narration": {
       "additionalProperties": false,
       "properties": {
@@ -511,6 +542,14 @@
       "$ref": "#/$defs/BuildOptions",
       "default": {
         "allow_manual_animation_export": true
+      }
+    },
+    "motion": {
+      "$ref": "#/$defs/MotionPolicy",
+      "default": {
+        "slides": "ken_burns",
+        "scale": 1.05,
+        "pan_percent": 1.2
       }
     },
     "duration": {

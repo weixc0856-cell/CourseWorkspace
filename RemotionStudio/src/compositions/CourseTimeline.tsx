@@ -9,6 +9,7 @@ import {
   staticFile,
   useCurrentFrame,
 } from 'remotion';
+import {KenBurnsMotion, MotionImage} from '../components/MotionImage';
 import {Annotations} from '../overlays/Annotations';
 import {COLORS, FONTS} from '../styles/tokens';
 import {
@@ -56,11 +57,20 @@ const AssetFrame: React.FC<{
   shot: TimelineVideo;
 }> = ({lesson, shot}) => {
   const src = staticFile(timelineAssetPath(lesson, shot.asset.path));
-  return shot.asset.kind === 'image' ? (
-    <Img src={src} style={videoStyle} />
-  ) : (
-    <OffthreadVideo src={src} style={videoStyle} />
-  );
+  if (shot.asset.kind === 'image') {
+    const motion = shot.metadata?.legacy_motion as KenBurnsMotion | undefined;
+    if (motion && motion.kind === 'ken_burns') {
+      return (
+        <MotionImage
+          src={src}
+          durationInFrames={shot.duration_frames}
+          motion={motion}
+        />
+      );
+    }
+    return <Img src={src} style={videoStyle} />;
+  }
+  return <OffthreadVideo src={src} style={videoStyle} />;
 };
 
 const BaseVideo: React.FC<{lesson: string; shot: TimelineVideo}> = ({
