@@ -17,7 +17,7 @@ FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-manual"
 
 def media() -> MediaInfo:
     return MediaInfo(
-        duration=1.0,
+        duration=12.3,
         width=1920,
         height=1080,
         fps=30.0,
