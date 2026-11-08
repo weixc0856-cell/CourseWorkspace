@@ -37,6 +37,7 @@
 | AudioPlan | `CourseControl/src/course_control/audio_plan.py`、`audio-plan` CLI | 内容类型/许可/署名/电平闸门；6 个单测；输出 `build/<slug>/audio/audio_plan.json` |
 | 章节卡 | `RemotionStudio/src/compositions/ChapterCard.tsx` | 真实 still 渲染；尚未自动插入时间线 |
 | 全量 Manim 镜头 | `build/01-transformer-demo/animation/*.mp4` | 7 个镜头 1080p30 全部渲染并通过 adapter |
+| 长序列基准（失败） | `CodeVideoStudio/shots/primer-rps` | 180 s / 5400 帧 capture 未产出可播放 MP4；30 s 基线仍有效 |
 | ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
 | 路径与文档 | 全部 README、`docs/` | `path check ok`；清除控制字符与个人路径；补全 `VOICE_REF_WAV`、junction、配色说明 |
 
