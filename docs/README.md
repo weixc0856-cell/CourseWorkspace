@@ -10,6 +10,12 @@
 - [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射
 
+## 1.1 许可与贡献
+
+- [LICENSE](../LICENSE)：AGPL-3.0-or-later
+- [NOTICE](../NOTICE)：第三方许可
+- [CONTRIBUTING.md](../CONTRIBUTING.md)：贡献与 CLA
+
 ## 2. 生产规范
 
 - 内容与课程：[课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)、[课程生产交付物规范.md](课程生产交付物规范.md)、[课程交付清单模板.md](课程交付清单模板.md)
