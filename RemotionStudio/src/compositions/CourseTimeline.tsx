@@ -119,7 +119,7 @@ const OverlayContent: React.FC<{
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: presentation === 'cutaway' ? COLORS.white : 'transparent',
+        backgroundColor: presentation === 'cutaway' ? COLORS.paper : 'transparent',
       }}
     >
       <OffthreadVideo
@@ -204,7 +204,7 @@ export const CourseTimeline: React.FC<TimelineSpec> = (props) => {
   const showCaptions = props.captions !== false;
 
   return (
-    <AbsoluteFill style={{backgroundColor: COLORS.white}}>
+    <AbsoluteFill style={{backgroundColor: COLORS.paper}}>
       {base.map((shot) => (
         <BaseVideo key={shot.shot_id} lesson={lesson} shot={shot} />
       ))}

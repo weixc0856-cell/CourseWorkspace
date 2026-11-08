@@ -101,6 +101,11 @@ def _audio_files(paths: LessonPaths, build_root: Path, workspace: Path) -> list[
     files = [
         _artifact(build_root / "narration" / "narration.wav", workspace),
         _artifact(build_root / "narration" / "narration.meta.json", workspace, required=False),
+        _artifact(
+            build_root / "audio" / "audio_plan.json",
+            workspace,
+            required=bool(paths.lesson.audio.bgm),
+        ),
     ]
     if paths.lesson.content.subtitles:
         files.append(_artifact(paths.lesson_dir / paths.lesson.content.subtitles, workspace))

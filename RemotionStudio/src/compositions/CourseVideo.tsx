@@ -88,7 +88,7 @@ const OverlayContent: React.FC<{
 
   return (
     <AbsoluteFill
-      style={{backgroundColor: presentation === 'cutaway' ? COLORS.white : 'transparent'}}
+      style={{backgroundColor: presentation === 'cutaway' ? COLORS.paper : 'transparent'}}
     >
       <OffthreadVideo
         src={src}
@@ -126,14 +126,14 @@ export const CourseVideo: React.FC<ShotsFile> = (props) => {
   const shots = props.shots ?? [];
 
   if (shots.length === 0) {
-    return <AbsoluteFill style={{backgroundColor: COLORS.white}} />;
+    return <AbsoluteFill style={{backgroundColor: COLORS.paper}} />;
   }
 
   const baseShots = shots.filter((shot) => shot.timeline_role === 'base');
   const overlayShots = shots.filter((shot) => shot.timeline_role === 'overlay');
 
   return (
-    <AbsoluteFill style={{backgroundColor: COLORS.white}}>
+    <AbsoluteFill style={{backgroundColor: COLORS.paper}}>
       {baseShots.map((shot) => (
         <BaseShot key={shot.id} lesson={props.lesson} shot={shot} fps={fps} />
       ))}

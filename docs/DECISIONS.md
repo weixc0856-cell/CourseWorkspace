@@ -105,11 +105,13 @@
 
 **后果**：并发调用会排队或 `blocked`；硬杀进程可能留下陈旧锁，由回收机制处理。
 
-## D-009 在线模型独立
+## D-009 内容审查独立
 
-**决策**：在线模型调用只出现在 `ContentQA`；它只读课程、只写 `build/<slug>/review/`，不影响构建 verdict。无凭据时 `blocked`，不降级到本地模型。
+**决策**：模型审查调用只出现在 `ContentQA`；它只读课程、只写 `build/<slug>/review/`，不影响构建 verdict。无凭据时 `blocked`，不降级到本地模型。
 
-**后果**：在线审查可以独立演进；构建仍可离线复现。
+**后果**：内容审查可以独立演进；构建仍可离线复现。
+
+**2026-11-08 补充**：默认后端已按 D-042 切到 Claude Code；`backend: api` 仍可显式启用。独立、只读与 `blocked` 语义不变。
 
 ## D-010 上下文预算
 
@@ -460,4 +462,4 @@
 
 **决策**：`SimulationSpec` 固化模拟输入；长序列用 Three.js / CodeVideoStudio 渲染，Blender 负责 hero 镜头、材质、灯光与特写；不引入 Godot。Blender 侧只保留“数据 → 场景”的任务。
 
-**后果**：Three.js 镜头模板已落地（`CodeVideoStudio/shots/primer-rps`）：同一 30 秒 900 帧 **45.7 秒**、双次 capture sha256 一致；Blender 约 12 分钟。Blender 场景脚本继续作为高质感备选，模拟数据与引擎解耦。
+**后果**：Three.js 镜头模板已落地（`CodeVideoStudio/shots/primer-rps`）：同一 30 秒 900 帧 **45.7 秒**、双次 capture sha256 一致；Blender 约 12 分钟。`adapters/code_video.py` 可按 `ShotSpec.inputs.simulation_spec` 自动生成数据并完成 capture + QC（`lesson-simulation` 夹具 PASS）。导演层 `visual_kind: simulation` 路由 code_video、带 inputs、校验 spec 存在，夹具计划为 ready。Blender 场景脚本继续作为高质感备选，模拟数据与引擎解耦。

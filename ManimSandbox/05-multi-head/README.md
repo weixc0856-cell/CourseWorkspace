@@ -29,7 +29,7 @@ uv run --project CourseControl course-control narrate --workspace . `
   --lesson e6.5-multi-head --segment-id e65-b1 `
   --text-file ManimSandbox/05-multi-head/narration/b1.txt `
   --voice-ref "<VOICE_REF_WAV>" `
-  --prompt-text "希望你以后能够做的比我还好呦。" `
+  --prompt-text "<VOICE_PROMPT_TEXT>" `
   --out build/manim-multi-head/e6.5/narration/segments/e65-b1.wav
 
 python ManimSandbox/05-multi-head/assemble.py

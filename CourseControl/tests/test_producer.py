@@ -57,6 +57,8 @@ class ProducerRunTest(unittest.TestCase):
         self.assertEqual(self.result.state.stages["director"], "ready")
         self.assertEqual(self.result.state.stages["render"], "missing")
         self.assertEqual(self.result.state.stages["audio"], "missing")
+        self.assertEqual(self.result.state.stages["audio_policy"], "ready")
+        self.assertTrue(self.result.paths["audio_plan"].is_file())
         self.assertGreater(self.result.state.usage.wall_seconds, 0)
         self.assertGreaterEqual(self.result.state.usage.disk_gb, 0)
 
@@ -96,8 +98,8 @@ class ProducerRunTest(unittest.TestCase):
 
     def test_approval_is_recorded_thanks_to_delivery_policy(self):
         with tempfile.TemporaryDirectory() as tmp:
-            result = run(WORKSPACE, LESSON, build_root=Path(tmp), approve_by="Wayne")
-            self.assertEqual(result.order.approved_by, "Wayne")
+            result = run(WORKSPACE, LESSON, build_root=Path(tmp), approve_by="reviewer")
+            self.assertEqual(result.order.approved_by, "reviewer")
             self.assertIsNotNone(result.order.approved_at)
             # Missing artifacts still block delivery even when the order is approved.
             self.assertEqual(result.manifest.status, "blocked")

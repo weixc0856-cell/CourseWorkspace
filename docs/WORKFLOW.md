@@ -30,7 +30,7 @@
 
 [独立][自动][可选] scene-run           IR v2 → Blender → 场景验收 → manifests/
 [独立][自动][人工触发] modeling-studio 本地模型 → 脚本 → Blender → validation.json
-[独立][自动][可选] content-qa review    在线模型 → build/<slug>/review/
+[独立][自动][可选] content-qa review    默认 Claude Code → build/<slug>/review/
 ```
 
 ---
@@ -181,7 +181,7 @@
 | 输入 | `lessons/<slug>/slides.md`、`lecture_notes.md`、可选 `sources.yaml` |
 | 输出 | `build/<slug>/review/review.json`、`review.md`、`raw/` |
 | 模块 | `ContentQA/src/content_qa/` |
-| 模型 | **在线模型**（OpenAI 兼容），凭据只读环境变量 |
+| 模型 | **默认 Claude Code**；显式 `backend: api` 时走 OpenAI 兼容接口，凭据只读环境变量 |
 | 拆分 | 按页/按段，逐任务预算（默认 16K） |
 | 失败 | 无配置/无凭据 → `blocked`（exit 3）；非法 JSON/500/超时 → `failed` |
 | 边界 | 只读课程；不影响构建 verdict；不降级到本地模型 |

@@ -18,7 +18,7 @@ CourseWorkspace/
 ├── BlenderStudio/      三维层：Blender 5.2 + 场景系统 + 渲染脚本
 ├── RemotionStudio/     合成层：截图采集、staging、Remotion 合成（Node）
 ├── ModelingStudio/     三维内部能力：图片 → Blender（Python）
-├── ContentQA/          审查内部能力：在线模型内容审查（Python）
+├── ContentQA/          审查内部能力：Claude Code 默认 / API 可选（Python）
 ├── shared/
 │   ├── ai_runtime/     AI 运行时：跨进程锁、服务生命周期、任务状态、上下文预算
 │   ├── scene_expr/     受限表达式：AST 白名单 + 解释器（控制层与 Blender 共用）
@@ -59,7 +59,7 @@ CourseWorkspace/
 | `BlenderStudio` | v1 课程渲染任务、v2 场景系统、GN 资产、场景验收 | 不读取 `lesson.yaml` |
 | `RemotionStudio` | 截图、staging、合成、字幕/旁白渲染 | 不做时间线推导 |
 | `ModelingStudio` | 图片→分析→规划→脚本→Blender→验收 | 不写 `lessons/` 与课程 `build/` |
-| `ContentQA` | 在线审查候选意见与报告 | 不改课程、不影响 verdict |
+| `ContentQA` | 审查候选意见与报告（默认 Claude Code） | 不改课程、不影响 verdict |
 | `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 
@@ -114,13 +114,13 @@ modeling-studio run
 
 每个阶段：申请跨进程锁 → 确保模型在 8080 → 发送请求（预算检查）→ 写任务记录 → 释放锁/停止自有服务。
 
-### 3.4 在线审查
+### 3.4 内容审查
 
 ```text
 content-qa review
   ├─ 读取 lessons/<slug>/slides.md、lecture_notes.md、sources.yaml（可选）
   ├─ 按页拆分 + 预算
-  ├─ 在线模型（OpenAI 兼容）逐任务调用
+  ├─ Claude Code 默认；显式 API 时走 OpenAI 兼容接口
   ├─ 结构校验（Pydantic）
   └─ build/<slug>/review/review.json + review.md
 ```
@@ -142,7 +142,7 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | Blender 任务 v2 | 场景任务 | `shared/schemas/blender-scene-task.schema.json` |
 | 代码/终端会话 | 执行、录制、证据 | `shared/schemas/session.schema.json`、`evidence.schema.json` |
 | 模型任务记录 | 任务状态与预算 | `shared/schemas/model-task.schema.json` |
-| 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
+| 内容审查报告 | ContentQA 输出 | `ContentQA/schemas/content-review.schema.json` |
 | 规范化运行时 V1（V1-B/C/F 已实现；V1-D 证据适配器、V1-E 兼容层已实现；Remotion/Session 原生切换未完成） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
 
 Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output shared/schemas`，V1 用 `course-control schemas-v1 --output shared/schemas`。提交前必须与模型一致（有测试锁定）。V1 是 `lesson.yaml` / `storyboard.yaml` 之上的规范化运行时层，不替换作者文件。

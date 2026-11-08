@@ -10,6 +10,7 @@ import re
 
 from .inputs import DirectorInputs
 from ..layout import get_template, validate_content, validate_template
+from ..paths import is_under
 from .planners import VisualDecision, resolve_scene, scene_classes
 from .schema import DirectorCheck, DirectorPlan
 
@@ -145,7 +146,7 @@ def _contextual(plan: DirectorPlan, inputs: DirectorInputs, decisions: dict[int,
             checks.add("engine.not_enabled", "error", f"engine {shot.engine!r} is not listed in lesson.engines", shot_id=shot.id)
         page = pages.get(shot.slide)
         decision = decisions.get(shot.slide)
-        if page is not None and page.needs_3d and shot.engine != "blender":
+        if page is not None and page.needs_3d and shot.engine != "blender" and page.visual_kind != "simulation":
             if decision is None or not decision.overridden:
                 checks.add("engine.3d_route", "error", "3D page must route to blender or record an explicit storyboard override", shot_id=shot.id)
         if shot.duration_s > MAX_SHOT_SECONDS:
@@ -153,6 +154,13 @@ def _contextual(plan: DirectorPlan, inputs: DirectorInputs, decisions: dict[int,
         resolved = resolve_scene(inputs.paths, shot.engine, shot.scene)
         if shot.scene and resolved is not None and not resolved.is_file():
             checks.add("scene.exists", "error", f"scene not found: {resolved}", shot_id=shot.id)
+        simulation_spec = (shot.inputs or {}).get("simulation_spec")
+        if simulation_spec:
+            spec_path = (inputs.paths.workspace / str(simulation_spec)).resolve()
+            if not is_under(inputs.paths.workspace, spec_path):
+                checks.add("simulation.spec_outside", "error", f"simulation_spec is outside workspace: {simulation_spec}", shot_id=shot.id)
+            elif not spec_path.is_file():
+                checks.add("simulation.spec_missing", "error", f"simulation_spec not found: {simulation_spec}", shot_id=shot.id)
         if shot.engine == "manim" and "::" in (shot.scene or "") and resolved is not None and resolved.is_file():
             class_name = shot.scene.split("::", 1)[1]
             if class_name not in scene_classes(resolved):

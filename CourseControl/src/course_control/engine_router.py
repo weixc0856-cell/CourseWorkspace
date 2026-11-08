@@ -39,6 +39,7 @@ CODE_VIDEO_KINDS = {
     "webgl",
     "shader",
     "infographic",
+    "simulation",
 }
 REMOTION_KINDS = {
     "layout",
@@ -83,6 +84,12 @@ def route_engine(requirement: VisualRequirement) -> EngineRoute:
             "motion_canvas",
             ENGINE_PROFILES["motion_canvas"],
             "existing Motion Canvas asset is kept as-is",
+        )
+    if kind == "simulation":
+        return EngineRoute(
+            "code_video",
+            ENGINE_PROFILES["code_video"],
+            "agent simulation runs in Three.js / CodeVideoStudio",
         )
     if requirement.needs_3d or kind in BLENDER_KINDS:
         return EngineRoute(

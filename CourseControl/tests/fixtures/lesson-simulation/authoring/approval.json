@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "lesson": "lesson-simulation",
+  "approvals": [
+    {
+      "kind": "brief",
+      "path": "authoring/brief.json",
+      "sha256": "a12bcdb5f9a4553dad2ae99d2c13fa52e88b483fd366d4dbe3752d81b118d5e2",
+      "approved_by": "human",
+      "approved_at": "2026-11-08T00:00:00+00:00",
+      "task_id": null
+    },
+    {
+      "kind": "outline",
+      "path": "authoring/outline.json",
+      "sha256": "4349e8aa6295dfea4b7bd76dc9737b10e4f98f327cfa04adc0d4eec389de3c9b",
+      "approved_by": "human",
+      "approved_at": "2026-11-08T00:00:00+00:00",
+      "task_id": null
+    },
+    {
+      "kind": "script",
+      "path": "authoring/script.json",
+      "sha256": "1aba9c2d7ffa92c10a96c02541a2831bd5aa54bea16044f0dd52bc65ed2fe7f3",
+      "approved_by": "human",
+      "approved_at": "2026-11-08T00:00:00+00:00",
+      "task_id": null
+    }
+  ]
+}

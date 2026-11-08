@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "BgmCue": {
+      "additionalProperties": false,
+      "description": "One music bed interval; licence and level are part of the contract.",
+      "properties": {
+        "track_id": {
+          "minLength": 1,
+          "title": "Track Id",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "exclusiveMinimum": 0,
+          "title": "End S",
+          "type": "number"
+        },
+        "gain_db": {
+          "default": -25.0,
+          "maximum": 0.0,
+          "minimum": -60.0,
+          "title": "Gain Db",
+          "type": "number"
+        },
+        "duck_db": {
+          "default": 6.0,
+          "maximum": 24.0,
+          "minimum": 0.0,
+          "title": "Duck Db",
+          "type": "number"
+        },
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "license_status": {
+          "default": "unknown",
+          "enum": [
+            "public_domain",
+            "cc_by",
+            "owner_authorized_unverified",
+            "unknown"
+          ],
+          "title": "License Status",
+          "type": "string"
+        },
+        "commercial_allowed": {
+          "default": false,
+          "title": "Commercial Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "track_id",
+        "start_s",
+        "end_s"
+      ],
+      "title": "BgmCue",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "audio_plan",
+      "default": "audio_plan",
+      "title": "Kind",
+      "type": "string"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "content_kind": {
+      "enum": [
+        "popular_science",
+        "formal_course",
+        "news"
+      ],
+      "title": "Content Kind",
+      "type": "string"
+    },
+    "bgm_allowed": {
+      "title": "Bgm Allowed",
+      "type": "boolean"
+    },
+    "cues": {
+      "items": {
+        "$ref": "#/$defs/BgmCue"
+      },
+      "title": "Cues",
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "errors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Errors",
+      "type": "array"
+    },
+    "status": {
+      "default": "ready",
+      "enum": [
+        "ready",
+        "blocked"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "content_kind",
+    "bgm_allowed"
+  ],
+  "title": "AudioPlan",
+  "type": "object"
+}

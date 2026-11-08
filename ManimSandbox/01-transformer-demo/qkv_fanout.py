@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 from manim import (
     DOWN,
     LEFT,
-    ORANGE,
     RIGHT,
     UP,
     Arrow,
@@ -17,11 +19,17 @@ from manim import (
     Text,
     VGroup,
     Write,
+    config,
 )
 
-TEXT = "#1A1A1A"
-MUTED = "#595959"
-ORANGE_HEX = "#EB6100"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
+from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
+
+config.background_color = BG
+
+TEXT = INK
+ORANGE_HEX = ORANGE
 
 
 def label(value: str, size: int = 36, color: str = TEXT) -> Text:
@@ -52,16 +60,15 @@ class QkvFanoutScene(Scene):
             width=2.25, height=1.1, stroke_color=ORANGE_HEX, stroke_width=4,
         ).move_to(target)
         self.play(Create(halo), run_time=0.5)
-        self.play(target.animate.set_fill(ORANGE_HEX, opacity=0.12), run_time=0.4)
         self.wait(0.3)
 
         projections = VGroup()
-        for name, color in (("Q", "#2F6DB3"), ("K", "#2F8F6B"), ("V", "#B3478A")):
+        for name, color in (("Q", BLUE), ("K", TEAL), ("V", PURPLE)):
             block = RoundedRectangle(
-                width=1.5, height=1.1, corner_radius=0.12,
+                width=1.8, height=1.1, corner_radius=0.12,
                 stroke_color=color, stroke_width=3,
             )
-            block.add(label(f"{name} vector", 26, color).move_to(block))
+            block.add(label(f"{name} vector", 24, color).move_to(block))
             projections.add(block)
         projections.arrange(DOWN, buff=0.45).shift(LEFT * 4.6 + DOWN * 1.1)
         arrows = VGroup()
@@ -76,17 +83,17 @@ class QkvFanoutScene(Scene):
         self.play(LaggedStart(*[Create(arrow) for arrow in arrows], lag_ratio=0.2), run_time=0.8)
         self.play(LaggedStart(*[FadeIn(block) for block in projections], lag_ratio=0.2), run_time=0.8)
 
-        score_title = label("attention scores for “animal”", 28, MUTED).shift(RIGHT * 2.4 + UP * 0.2)
+        score_title = label("attention scores for “animal”", 28, MUTED).shift(RIGHT * 1.7 + UP * 0.2)
         self.play(FadeIn(score_title), run_time=0.4)
         scores = [0.18, 0.62, 0.12, 0.30, 0.08]
         bars = VGroup()
         for word, score in zip(words, scores):
             bar = Rectangle(
-                width=0.7, height=score * 2.2,
+                width=0.6, height=score * 2.2,
                 stroke_width=0, fill_color=ORANGE_HEX, fill_opacity=0.75,
             )
-            bar.move_to(RIGHT * 2.4 + DOWN * 1.9, aligned_edge=DOWN)
-            bar.shift(RIGHT * (len(bars) - 2) * 1.0)
+            bar.move_to(RIGHT * 1.7 + DOWN * 1.9, aligned_edge=DOWN)
+            bar.shift(RIGHT * (len(bars) - 2) * 0.95)
             bars.add(bar)
         bar_labels = VGroup()
         for word, bar in zip(words, bars):
@@ -95,11 +102,11 @@ class QkvFanoutScene(Scene):
         self.play(FadeIn(bar_labels), run_time=0.5)
 
         context = RoundedRectangle(
-            width=2.1, height=1.1, corner_radius=0.12,
+            width=2.2, height=1.0, corner_radius=0.12,
             stroke_color=ORANGE_HEX, stroke_width=4,
         )
-        context.add(label("context vector", 24, ORANGE_HEX).move_to(context))
-        context.shift(RIGHT * 6.0 + DOWN * 1.1)
+        context.add(label("context vector", 20, ORANGE_HEX).move_to(context))
+        context.shift(RIGHT * 5.3 + DOWN * 1.75)
         self.play(FadeIn(context), run_time=0.5)
         self.play(
             Create(Arrow(bars.get_right(), context.get_left(), buff=0.2, stroke_width=3, color=ORANGE_HEX)),
@@ -109,6 +116,7 @@ class QkvFanoutScene(Scene):
         summary = VGroup(
             label("Q · K decide where to look", 28, MUTED),
             label("V is what gets passed back", 28, MUTED),
-        ).arrange(DOWN, buff=0.18).to_edge(DOWN, buff=0.45)
+        ).arrange(DOWN, buff=0.18).to_edge(DOWN, buff=0.62)
         self.play(FadeIn(summary), run_time=0.6)
         self.wait(2.0)
+        enforce(self)

@@ -3,7 +3,6 @@ from __future__ import annotations
 from manim import (
     DOWN,
     LEFT,
-    ORANGE,
     RIGHT,
     UP,
     Arrow,
@@ -15,10 +14,19 @@ from manim import (
     Scene,
     Text,
     VGroup,
+    config,
 )
 
-TEXT = "#1A1A1A"
-MUTED = "#595959"
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.scene_checks import enforce
+from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
+
+config.background_color = BG
+
+TEXT = INK
 
 
 def label(value: str, size: int = 32, color: str = TEXT) -> Text:
@@ -42,21 +50,21 @@ class HeadSplitMergeScene(Scene):
         self.play(FadeIn(title), run_time=0.5)
 
         qkv = VGroup(
-            block("Q", "#2F6DB3"),
-            block("K", "#2F8F6B"),
-            block("V", "#B3478A"),
-        ).arrange(DOWN, buff=0.3).shift(LEFT * 6.0)
+            block("Q", BLUE),
+            block("K", TEAL),
+            block("V", PURPLE),
+        ).arrange(DOWN, buff=0.3).shift(LEFT * 6.0 + DOWN * 0.25)
         self.play(LaggedStart(*[Create(item) for item in qkv], lag_ratio=0.15), run_time=0.9)
 
         heads = VGroup()
         for index in range(3):
             head = VGroup(
-                block(f"head {index + 1}", ORANGE, 1.7, 0.7),
-                Rectangle(width=1.7, height=1.1, stroke_color=MUTED, stroke_width=1.5),
-            ).arrange(DOWN, buff=0.2)
+                block(f"head {index + 1}", ORANGE, 1.7, 0.6),
+                Rectangle(width=1.7, height=0.9, stroke_color=MUTED, stroke_width=1.5),
+            ).arrange(DOWN, buff=0.15)
             head.add(label("attention", 18, MUTED).move_to(head[1]))
             heads.add(head)
-        heads.arrange(DOWN, buff=0.3).shift(LEFT * 2.2)
+        heads.arrange(DOWN, buff=0.3).shift(LEFT * 2.2 + DOWN * 0.25)
         arrows = VGroup()
         for head in heads:
             arrows.add(
@@ -71,7 +79,7 @@ class HeadSplitMergeScene(Scene):
         ).shift(RIGHT * 1.4)
         concat.add(label("concat", 22, ORANGE).rotate(90 * 3.14159 / 180).move_to(concat))
         mix = block("W_O", ORANGE, 1.4, 1.1).shift(RIGHT * 3.4)
-        output = block("output", "#2F6DB3", 1.5, 1.1).shift(RIGHT * 5.6)
+        output = block("output", BLUE, 1.5, 1.1).shift(RIGHT * 5.6)
         self.play(FadeIn(concat), run_time=0.5)
         self.play(
             LaggedStart(
@@ -83,6 +91,7 @@ class HeadSplitMergeScene(Scene):
         self.play(FadeIn(mix), Create(Arrow(concat.get_right(), mix.get_left(), buff=0.1, stroke_width=3, color=ORANGE)), run_time=0.6)
         self.play(FadeIn(output), Create(Arrow(mix.get_right(), output.get_left(), buff=0.1, stroke_width=3, color=ORANGE)), run_time=0.6)
 
-        note = label("each head keeps its own learned projections", 26, MUTED).to_edge(DOWN, buff=0.45)
+        note = label("each head keeps its own learned projections", 26, MUTED).to_edge(DOWN, buff=0.62)
         self.play(FadeIn(note), run_time=0.5)
         self.wait(2.0)
+        enforce(self)

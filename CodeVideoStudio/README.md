@@ -13,7 +13,8 @@
 CodeVideoStudio/
 ├── skills/code-video/        # SKILL.md、8 类 crafts、capture/check/contact 脚本
 ├── shots/
-│   └── attention-flow/       # 30s 验证镜头：SPEC.md、index.html、main.js、VERIFY.md
+│   ├── attention-flow/       # 30s 验证镜头：SPEC.md、index.html、main.js、VERIFY.md
+│   └── primer-rps/           # 30s 模拟镜头：Three.js + SimulationData，900 帧约 46 s
 ├── scripts/contact_sheet.py  # Windows/Pillow fallback（ffmpeg drawtext 会段错误）
 ├── bin/python3               # Git Bash shim（本机没有 python3 命令）
 ├── backends/hyperframes/
@@ -45,6 +46,7 @@ uv run --project CourseControl python ../../scripts/contact_sheet.py out/final.m
 
 - 30s / 1920×1080 / 30fps / 900 帧；`check_video.sh` OK；两次独立渲染 900/900 帧哈希一致。
 - `adapters/code_video.py` 真实跑通：`build/code-video-studio/animation/attention-flow.mp4`。
+- `primer-rps`：ShotSpec `inputs.simulation_spec` → adapter 自动生成 `simulation.json` → 1920×1080/30s capture → QC PASS（`build/lesson-simulation/animation/primer-rps.mp4`）；导演层 `visual_kind: simulation` 可直接路由到该镜头。
 - HyperFrames POC：10s / 300 帧，`check` 0 error/0 warning，27.1s 渲染；仅作为可选 HTML/lint 后端。
 
 ## 外部项目边界

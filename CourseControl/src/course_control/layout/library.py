@@ -155,5 +155,6 @@ def choose_template(content_type: str, animation: str | None = None) -> str:
         "layout": "summary",
         "recap": "summary",
         "structure3d": "principle_diagram",
+        "simulation": "process_flow",
     }
     return mapping.get(content_type, "principle_diagram")

@@ -2,11 +2,17 @@
 
 课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`。
 
+在上游还包含三个设计/管理层：
+
+- `director/`：已批准的 brief / outline / script / storyboard → 导演计划、引擎路由、硬闸门；
+- `producer/`：订单、授权、交付清单、状态与 `producer-rebuild` 增量；
+- `layout/` + `simulation.py`：版式模板/配色 token，以及模拟数据的输入输出契约。
+
 ## 边界
 
 - 只写 `build/<slug>/` 与各工程的 `.venv` / `node_modules` 缓存。
 - 不修改课程正文、`CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`BlenderStudio/` 的源码。
-- 不调用 LLM，不自动发布，不自动提交 Git。
+- 课程文本/审查经 `shared/ai_runtime` 显式调用 Claude Code 或配置的后端；不自动发布，不自动提交 Git。
 - 课程 YAML 由本层解析；Blender 只接收 JSON 任务。
 
 ## 环境
@@ -27,7 +33,27 @@ uv run course-control audit --workspace ..
 # 只校验契约
 uv run course-control validate --lesson 01-shell-for-ai-era --workspace ..
 
-# 完整构建
+# 导演计划 / 结构校验 / 局部重渲染
+uv run course-control director-plan --lesson 01-transformer-demo --workspace ..
+uv run course-control director-validate --plan ../build/01-transformer-demo/director/director_plan.json
+uv run course-control producer-run --lesson 01-transformer-demo --workspace ..
+uv run course-control producer-rebuild --lesson 01-transformer-demo --workspace ..
+
+# 旁白 / 字幕
+uv run course-control narration-build --lesson 01-transformer-demo --workspace ..
+uv run course-control subtitles-build --lesson 01-transformer-demo --workspace ..
+uv run course-control subtitles-accept --lesson 01-transformer-demo --workspace ..
+uv run course-control burn-subs --lesson 01-transformer-demo --workspace ..
+
+# 音频策略
+uv run course-control audio-plan --lesson 01-transformer-demo --workspace ..
+
+# 版式 / 模拟
+uv run course-control layout-templates
+uv run course-control layout-validate --template process_flow
+uv run course-control simulation-run --spec ../BlenderStudio/scenes/primer-poc/simulation.spec.json --out ../build/primer-poc/simulation.json
+
+# 完整构建（导演 handoff 可选）
 uv run course-control build --lesson lesson-smoke `
   --lesson-dir CourseControl/tests/fixtures --workspace ..
 
@@ -69,11 +95,21 @@ uv run course-control scene-schema
 | `render:motion_canvas` | `engines` 含 `motion_canvas` | `build/<slug>/animation/<scene>.mp4`（人工导出基线） |
 | `render:manim` | `engines` 含 `manim` | `build/<slug>/animation/<scene>.mp4` |
 | `render:blender` | `engines` 含 `blender` | 由 Blender 任务 JSON 指定的 `build/<slug>/blender/*.mp4` |
+| `render:code_video` | `engines` 含 `code_video` | `build/<slug>/animation/<project>.mp4`；`inputs.simulation_spec` 会先生成 `simulation.json` |
 | `collect` | 上游通过 | `build/<slug>/shots.json` |
 | `compose` | 上游通过且未跳过 | staging + Remotion → `final/course-video.mp4` |
 | `verify` | 合成通过 | `checks[]` |
 
 不适用的阶段写 `not_applicable`；人工导出或 CLI 跳过写 `skipped` / `not_run`；只有全部必需阶段为 `pass` 才是 `verdict=pass`。
+
+## 设计/制片层
+
+- 导演计划：`director-plan`，输出 `director_plan.json`、`storyboard.director.yaml`、`directions/`、`shot_specs/`、`director_review.md`；
+- 制片：`producer-order` / `producer-run` / `producer-status` / `producer-rebuild`，输出订单、状态和七项交付清单；
+- 版式与配色：8 个模板、安全区/重叠/容量/字幕带校验；
+- 音频：`audio-plan` 按内容类型校验 BGM（正式课程/新闻禁用；许可/署名/电平硬闸门）；
+- 模拟：`SimulationSpec` → `SimulationData`，Blender/Three.js 共用；
+- `build --storyboard` / `--shots` 可显式加载导演 handoff 并局部重渲染。
 
 ## 阶段状态
 
@@ -136,8 +172,8 @@ build/<slug>/animation/<scene-stem>.mp4
 - 旁白是可选输入：`build/<slug>/narration/<source>`，在 `lesson.yaml` 用 `narration.enabled` / `narration.source` 打开。
 - 合成时 `collect` 探测音频时长，Remotion 混音，`verify` 用 V-15 检查音画差。
 - 字幕是可选输入：`lessons/<slug>/subtitles.srt`，由 `subtitles.enabled` 打开；`collect` 复制到 `build/<slug>/subtitles.srt`。
-- 合成与配音运行时都在 `<AI_ROOT>`，接入流程见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
-- 本层不做 TTS、不做语音识别。
+- 配音走本地 VoxCPM2（50000，唯一实例，谁启动谁停止）；合成与运行时接入见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
+- 本层不做 ASR / 词级对齐；字幕由实测旁白时间轴生成，人工 `subtitles-accept` 后才进入正式字幕。
 
 ## 报告与日志
 

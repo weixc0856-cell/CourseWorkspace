@@ -33,6 +33,12 @@ const baseUrl = args['base-url'] ?? 'http://localhost:8081';
 const outDir = path.resolve(args.out ?? path.join(workspaceRoot, 'build', lesson, 'slides'));
 const maxPages = args.max ? Number(args.max) : null;
 const preferredChannel = args.channel ?? 'chrome';
+const width = Number(args.width ?? 1920);
+const height = Number(args.height ?? 1080);
+if (!Number.isInteger(width) || !Number.isInteger(height) || width < 320 || height < 180) {
+  console.error('ERROR: --width/--height must be integers >= 320x180');
+  process.exit(2);
+}
 
 const pageLabel = (horizontal, vertical) =>
   String(horizontal + 1).padStart(3, '0') +
@@ -59,7 +65,7 @@ await mkdir(outDir, {recursive: true});
 const browser = await launch();
 try {
   const page = await browser.newPage({
-    viewport: {width: 1920, height: 1080},
+    viewport: {width, height},
     deviceScaleFactor: 1,
   });
 
@@ -114,7 +120,7 @@ try {
     await page.screenshot({path: target, fullPage: false});
     const info = await stat(target);
     if (info.size <= 0) throw new Error(`empty screenshot: ${target}`);
-    pages.push({index, page: pageNumber, file, width: 1920, height: 1080, bytes: info.size});
+    pages.push({index, page: pageNumber, file, width, height, bytes: info.size});
     console.log(`WROTE ${file} (${info.size} bytes)`);
 
     index += 1;
@@ -135,7 +141,7 @@ try {
         lesson,
         generated_at: new Date().toISOString(),
         source: 'auto',
-        viewport: [1920, 1080],
+        viewport: [width, height],
         total_slides: total,
         captured: pages.length,
         pages,

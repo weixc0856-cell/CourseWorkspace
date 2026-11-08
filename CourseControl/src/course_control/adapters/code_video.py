@@ -8,7 +8,8 @@ from pathlib import Path
 
 from ..code_video_qc import check_video, contact_sheet
 from ..contracts import Status
-from ..paths import LessonPaths
+from ..paths import LessonPaths, is_under
+from ..simulation import load_spec, run_simulation, write_data
 from ..utils import run_command, which_command
 from .base import StageOutcome, selected
 
@@ -16,6 +17,24 @@ from .base import StageOutcome, selected
 def _project_for(paths: LessonPaths, shot) -> Path:
     scene_path, _ = paths.scene_path(shot)
     return scene_path.parent
+
+
+def materialize_simulation(workspace: Path, project: Path, inputs: dict | None) -> Path | None:
+    """Run SimulationSpec from ShotSpec.inputs and write data into the project."""
+    if not inputs:
+        return None
+    relative = inputs.get("simulation_spec")
+    if not relative:
+        return None
+    spec_path = (workspace / str(relative)).resolve()
+    if not is_under(workspace, spec_path):
+        raise ValueError(f"simulation_spec is outside the workspace: {relative}")
+    if not spec_path.is_file():
+        raise FileNotFoundError(f"simulation_spec not found: {spec_path}")
+    data = run_simulation(load_spec(spec_path))
+    target = project / str(inputs.get("simulation_out", "simulation.json"))
+    write_data(data, target)
+    return target
 
 
 def run(paths: LessonPaths) -> StageOutcome:
@@ -55,6 +74,14 @@ def run(paths: LessonPaths) -> StageOutcome:
         if re.search(r"\|\s*fail\s*\|", verify_text, re.I):
             errors.append(f"{shot.id}: VERIFY.md contains a failing must-have")
             continue
+
+        try:
+            simulated = materialize_simulation(paths.workspace, project, getattr(shot, "inputs", None))
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{shot.id}: simulation failed: {exc}")
+            continue
+        if simulated is not None:
+            warnings.append(f"{shot.id}: simulation data {simulated.name}")
 
         temp = build_root / "tmp" / "code-video" / f"{project.name}.mp4"
         temp.parent.mkdir(parents=True, exist_ok=True)

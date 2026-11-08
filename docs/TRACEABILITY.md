@@ -17,7 +17,7 @@
 | FR-09 本地模型串行与远程回退 | `shared/ai_runtime/src/ai_runtime/locks.py`、`service.py`、`remote.py`、`routing.py`；`ModelingStudio/server.py`、`llm.py` | `test_concurrency.py`、`test_service.py`、`test_lifecycle.py`、`test_remote.py`、`ModelingStudio/tests/test_remote_routing.py`；flash-only 策略 |
 | FR-10 任务状态 | `shared/ai_runtime/src/ai_runtime/tasks.py`；`ModelingStudio/src/modeling_studio/job.py` | `test_runtime.py`、`ModelingStudio/tests/test_job_state.py` |
 | FR-11 上下文预算 | `shared/ai_runtime/src/ai_runtime/budget.py`；`ModelingStudio/src/modeling_studio/config.py`、`llm.py` | `test_runtime.py`、`ModelingStudio/tests/test_budget.py`、`ContentQA/tests/test_content_qa.py` |
-| FR-12 在线审查 | `ContentQA/src/content_qa/` | `ContentQA/tests/test_content_qa.py`、`test_schemas.py`、`test_model_policy.py`、`test_env_overrides.py` |
+| FR-12 内容审查 | `ContentQA/src/content_qa/` | `ContentQA/tests/test_content_qa.py`、`test_schemas.py`、`test_model_policy.py`、`test_env_overrides.py` |
 | FR-13 报告 | `CourseControl/src/course_control/report.py`、`blender_runner.py`、`shared/ai_runtime/tasks.py`、`ContentQA/src/content_qa/review.py` | 各报告结构断言 |
 | FR-14 一键回归 | `scripts/check.ps1`、`scripts/check-scene-system.ps1`、`scripts/check_paths.py` | 自身执行 |
 | FR-15 输入摄取/摘要 | `CourseControl/src/course_control/authoring/ingest.py`、`digest.py` | `test_authoring_ingest.py` |
@@ -38,7 +38,8 @@
 | FR-30 版式系统 | `CourseControl/src/course_control/layout/`、`ManimSandbox/common/design_system.py`、`docs/版式系统.md` | `test_layout.py`、12 镜头模板分配、CrossAttention/Loss 前后对比 |
 | FR-31 配色系统 | `CourseControl/src/course_control/layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | `test_color_system.py`、palette-review 合辑 |
 | FR-32 静帧运镜 | `CourseControl/src/course_control/motion.py`、`RemotionStudio/src/components/MotionImage.tsx`、`docs/运镜与剪辑.md` | `test_motion.py`、`tsc --noEmit`、timeline metadata |
-| FR-33 模拟契约 | `CourseControl/src/course_control/simulation.py`、`BlenderStudio/scenes/primer-poc/`、`docs/评估-Primer模拟视频POC.md` | `test_simulation.py`、30 秒 POC、SimulationSpec |
+| FR-33 模拟契约 | `CourseControl/src/course_control/simulation.py`、`BlenderStudio/scenes/primer-poc/`、`docs/评估-Primer模拟视频POC.md` | `test_simulation.py`、`test_simulation_director.py`、adapter PASS、30 秒 POC |
+| 音频策略（内容类型/BGM） | `CourseControl/src/course_control/audio_plan.py`；`contracts.py`（`AudioPolicy`）；`audio-plan` CLI；`producer/delivery.py` | `test_audio_plan.py`；交付包在配置 BGM 时要求 `audio_plan.json` |
 | V1-E 时间线兼容层 | `CourseControl/src/course_control/v1_timeline.py`；`collect` 写 `contracts/timeline.spec.json`；CLI `timeline-v1` | `CourseControl/tests/test_v1_timeline.py`；lesson-smoke 实跑 |
 | V1-D Session 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |
 | V1-D 剩余轨道 | `ShotSpec` 扩展 `session/simulation/graphics`；Session runner 原生写 V1 | 未开始 |
@@ -50,5 +51,5 @@
 | 项 | 代码位置 | 说明 |
 | --- | --- | --- |
 | Motion Canvas 导出 | `adapters/motion_canvas.py` 只校验 | 编辑器导出是正式节点 |
-| 在线模型凭据 | `ContentQA/src/content_qa/config.py` | 环境变量 / 本机忽略配置 |
+| 审查后端凭据 | `ContentQA/src/content_qa/config.py` | 默认 Claude Code；API 凭据只读环境变量 / 本机忽略配置 |
 | 课程内容 | `lessons/` | 作者维护，不入库 |

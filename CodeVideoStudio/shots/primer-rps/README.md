@@ -11,8 +11,7 @@ uv run --project CourseControl course-control simulation-run `
 Copy-Item build/primer-poc/simulation.json CodeVideoStudio/shots/primer-rps/simulation.json
 
 # one-time: reuse Playwright from RemotionStudio (junction, not committed)
-cmd /c mklink /J node_modules ..\..\..\RemotionStudio
-ode_modules
+cmd /c mklink /J node_modules ..\..\..\RemotionStudio\node_modules
 
 # capture 30 s at 1280x720
 cd CodeVideoStudio/shots/primer-rps

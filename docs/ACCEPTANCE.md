@@ -17,13 +17,13 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 293（288 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 288 通过，5 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 298（293 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 293 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11（10 通过 + 1 跳过） | 10 通过，1 跳过 |
 
-合计 **405** 个用例（399 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **416** 个用例（410 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -224,7 +224,7 @@ python ManimSandbox/05-multi-head/assemble.py
 
 ---
 
-## 5. 模型运行时与在线审查
+## 5. 模型运行时与内容审查
 
 | 项 | 命令 | 结果 |
 | --- | --- | --- |
@@ -236,9 +236,9 @@ python ManimSandbox/05-multi-head/assemble.py
 | 重试绕过预算 | `test_budget.py::test_retry_cannot_bypass_budget` | 通过：每次请求前重新检查 |
 | 任务失败落盘 | `test_job_state.py` | `job.json` 与任务记录均为 `failed` |
 | 上下文预算 | `test_runtime.py` | 文本/CJK/图片/超限拆分 |
-| 在线审查成功 | `test_content_qa.py`（mock） | 2 页 → 2 请求 → completed；报告字段完整 |
+| 内容审查成功 | `test_content_qa.py`（mock API 后端） | 2 页 → 2 请求 → completed；报告字段完整 |
 | 审查 Schema 漂移 | `test_schemas.py` | 4 份 Schema 与 Pydantic 模型一致 |
-| 在线审查非法 JSON | 同上 | failed + raw 保存 |
+| 内容审查非法 JSON | 同上 | failed + raw 保存 |
 | 多页中途失败 | 同上（flaky） | 第 1 页 findings 保留，第 2 页 failed |
 | 在线请求超时 | 同上（slow） | failed，任务记录终态 |
 | 只读边界 | 同上 | 课程文件字节不变；未生成 shots.json / build-report.json |
@@ -262,13 +262,13 @@ python ManimSandbox/05-multi-head/assemble.py
 | 项 | 原因 | 影响 |
 | --- | --- | --- |
 | 真实课程成片 | Motion Canvas 8 段未导出（人工） | `01-shell-for-ai-era` 为 `incomplete` |
-| 真实在线模型调用 | ContentQA 已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
+| 真实审查调用 | ContentQA 默认 Claude Code；API 后端已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
 | 本轮重跑 ModelingStudio 全链路 | 需独占 8080 约 10–30 分钟，且会与用户其他任务冲突 | 仅有历史作业证据 |
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |
 | VoxCPM2 / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
-| V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成 | 新 session 不会自动产出 `EvidenceManifestV1` |
-| V1-E Remotion 切换 | Remotion 仍读 `shots.json`；V1 时间线是并列视图 | 尚未用 V1 直接驱动合成 |
+| V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成；`ShotSpec` 已支持 `simulation`，`session/graphics` 未做 | 新 session 不会自动产出 `EvidenceManifestV1` |
+| V1-E Remotion 切换 | adapter 已按 `compose.renderer=timeline` 选择 `CourseTimeline`；真实课程尚未完成全链路构建 | 需要在真实课程上验证 |
 | 远程完整作业 | 只验证了单轮文本/图片；未跑完整 ModelingStudio 远程作业 | 远程回退的路由与协议已测，作业级证据待补 |
 
 ---
@@ -277,7 +277,7 @@ python ManimSandbox/05-multi-head/assemble.py
 
 | 检查 | 命令 | 预期 |
 | --- | --- | --- |
-| 导演计划 | `course-control director-plan --lesson 01-transformer-demo --workspace .` | `status: ready`；12 镜头 / 5 章 / 1200 s；0 error，9 warning |
+| 导演计划 | `course-control director-plan --lesson 01-transformer-demo --workspace .` | `status: ready`；12 镜头 / 5 章 / 1200 s；0 error，5 warning |
 | 结构校验 | `course-control director-validate --plan build/01-transformer-demo/director/director_plan.json` | `no issues` |
 | 交付清单 | `course-control producer-run --lesson 01-transformer-demo --workspace .` | exit 1；`blocked`；4 项缺失（成片、旁白、字幕、build-report） |
 | 增量检测 | `course-control producer-affected --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots` |
@@ -311,7 +311,7 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
 | V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
 
-R1 测试计数：五套合计 **405 个用例（399 通过 + 6 跳过）**：CourseControl 293（288+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
+R1 测试计数：五套合计 **416 个用例（410 通过 + 6 跳过）**：CourseControl 304（299+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
 
 R1 真实产物：
 

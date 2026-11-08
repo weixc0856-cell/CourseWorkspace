@@ -9,7 +9,7 @@
   "voice": {
     "provider": "voxcpm2",
     "ref_audio": {
-      "path": "assets/voice/my_voice_clean_v1.wav",
+      "path": "assets/voice/<VOICE_REF_WAV>",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "bytes": 0,
       "kind": "audio",

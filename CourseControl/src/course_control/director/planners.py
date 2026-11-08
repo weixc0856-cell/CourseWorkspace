@@ -7,6 +7,7 @@ existing ``engine_router``. Narrative claims and visuals come from the outline.
 from __future__ import annotations
 
 import ast
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -61,6 +62,7 @@ CAMERA_BY_KIND = {
     "layout": "static, hold",
     "recap": "slow pull back",
     "diagram": "slow push in",
+    "simulation": "slow orbit",
 }
 
 SIZE_BY_KIND = {
@@ -71,6 +73,7 @@ SIZE_BY_KIND = {
     "layout": "wide",
     "recap": "wide",
     "diagram": "medium",
+    "simulation": "wide",
 }
 
 PURPOSE_BY_KIND = {
@@ -81,6 +84,7 @@ PURPOSE_BY_KIND = {
     "layout": "summarize",
     "recap": "recap",
     "diagram": "explain",
+    "simulation": "demonstrate",
 }
 
 SPEECH_WORDS_PER_SECOND = 2.5
@@ -229,6 +233,7 @@ class VisualDecision:
     page: OutlinePage | None = None
     asset_seconds: float | None = None
     blend_task: str | None = None
+    inputs: dict = field(default_factory=dict)
 
 
 def resolve_scene(paths: LessonPaths, engine: str, scene: str | None) -> Path | None:
@@ -300,6 +305,17 @@ def plan_visual(paths: LessonPaths, page: OutlinePage, storyboard_shots: dict[in
     else:
         scene = _infer_scene(paths, engine, page.animation)
 
+    inputs: dict = {}
+    if existing is not None and existing.inputs:
+        inputs = dict(existing.inputs)
+    elif engine == "code_video" and page.animation:
+        shot_spec = paths.engine_root("code_video") / "shots" / page.animation / "shot.spec.json"
+        if shot_spec.is_file():
+            try:
+                inputs = dict(json.loads(shot_spec.read_text(encoding="utf-8")).get("inputs") or {})
+            except (OSError, json.JSONDecodeError):
+                inputs = {}
+
     resolved = resolve_scene(paths, engine, scene)
     readiness = "ready" if engine == "remotion" or (resolved is not None and resolved.is_file()) else "planned"
     if readiness == "planned" and scene:
@@ -323,6 +339,7 @@ def plan_visual(paths: LessonPaths, page: OutlinePage, storyboard_shots: dict[in
         page=page,
         asset_seconds=existing.expected_duration_s if existing is not None else None,
         blend_task=existing.blend_task if existing is not None else None,
+        inputs=inputs,
     )
 
 
@@ -346,9 +363,11 @@ def build_shots(
             cue = existing.cue_seconds if existing is not None else min(30.0, max(0.0, page.target_seconds / 3))
             layout_id = choose_template(page.visual_kind, page.animation)
             layout = get_template(layout_id)
-            narration_ids = [
-                segment.id for segment in script_by_slide[page.slide].segments
-            ] if page.slide in script_by_slide else []
+            narration_ids = (
+                [segment.id for segment in script_by_slide[page.slide].segments]
+                if inputs.paths.lesson.narration.enabled and page.slide in script_by_slide
+                else []
+            )
             same_context = decision.engine == previous_engine and chapter.id == previous_chapter
             transition = "continuous" if same_context and page.visual_kind not in {"title", "layout", "recap"} else "cut"
             shot_id = f"shot_{page.slide:03d}"
@@ -363,6 +382,7 @@ def build_shots(
                     engine_profile=decision.engine_profile,
                     scene=decision.scene,
                     blend_task=decision.blend_task,
+                    inputs=decision.inputs,
                     asset_seconds=decision.asset_seconds,
                     readiness=decision.readiness,
                     start_s=round(start, 3),

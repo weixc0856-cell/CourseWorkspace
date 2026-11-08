@@ -65,11 +65,16 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
     try:
         if not _server_ready():
             server = _start_server(paths, log_dir)
+        width, height = paths.lesson.outputs.resolution
         command = [
             *which_command("node"),
             "scripts/capture-slides.mjs",
             "--lesson",
             paths.slug,
+            "--width",
+            str(width),
+            "--height",
+            str(height),
         ]
         result = run_command(
             command,
