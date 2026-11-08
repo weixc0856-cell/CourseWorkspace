@@ -3,8 +3,10 @@
 30 秒验证：Python agent 模拟 → Blender Eevee 六边形世界 → Remotion 三元图/矩阵/排版。
 
 ```powershell
-# 1. 模拟（确定性，seed=7）
-python BlenderStudio/scenes/primer-poc/simulate.py --out build/primer-poc/simulation.json
+# 1. 模拟（确定性，spec 固定 seed=7）
+uv run --project CourseControl course-control simulation-run `
+  --spec BlenderStudio/scenes/primer-poc/simulation.spec.json `
+  --out build/primer-poc/simulation.json
 
 # 2. Blender 渲染世界（900 帧 PNG，720p）
 & $env:BLENDER_EXE -b -P BlenderStudio/scenes/primer-poc/world.py -- `

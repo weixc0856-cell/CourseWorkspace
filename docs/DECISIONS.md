@@ -453,3 +453,11 @@
 **决策**：新增 `MotionPolicy`（`lesson.yaml.motion`）与确定性 `slide_motion`；`collect` 写 `legacy_motion` 到时间线，Remotion `MotionImage` 执行缩放/平移。只作用于 slide 底图，缩放 ≥1.04、平移 ≤1.2%。音乐/音效、AI 生图、章节卡、dissolve 明确不纳入本轮。
 
 **后果**：静态页面获得稳定的轻运镜；可直接用 `slides: static` 关闭。下一步才是音频床/ducking（需授权曲库）与生图模块。
+
+## D-053 长序列模拟用 Three.js/CodeVideo，Blender 只做 hero 镜头
+
+**背景**：Primer 用 Godot 做实时模拟；我们的 Blender POC 在 720p30、91 个 agent 下约 0.8 s/帧，30 秒要 12 分钟。按此外推，15 分钟 1080p30 约 13 小时/遍，1440p60 约 20–40 小时/遍，返工不可接受。CodeVideoStudio 已有 Three.js + `window.seek(t)` 的确定性捕获，且验证过 900/900 帧哈希一致。
+
+**决策**：`SimulationSpec` 固化模拟输入；长序列用 Three.js / CodeVideoStudio 渲染，Blender 负责 hero 镜头、材质、灯光与特写；不引入 Godot。Blender 侧只保留“数据 → 场景”的任务。
+
+**后果**：下一步需要一个读取 `SimulationData` 的 Three.js 镜头模板；Blender 场景脚本继续作为高质感备选。模拟数据与引擎解耦。

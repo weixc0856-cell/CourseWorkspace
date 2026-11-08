@@ -8,7 +8,7 @@
 ## 1. 结论
 
 **混合架构可行**：Python 模拟 + Blender Eevee + Remotion 排版，30 秒 POC 已跑通。  
-**全 Blender 做 15 分钟不划算**：渲染时间与迭代成本会压过收益；长序列应交给实时引擎（Godot/Three.js），Blender 负责 hero 镜头与质感。
+**全 Blender 做 15 分钟不划算**：渲染时间与迭代成本会压过收益；长序列应交给 Three.js/CodeVideo 实时捕获，Blender 负责 hero 镜头与质感。
 
 ## 2. POC 内容
 
@@ -20,7 +20,8 @@
 数据链路：
 
 ```text
-simulate.py
+simulation.spec.json
+  → course-control simulation-run（SimulationData）
   → build/primer-poc/simulation.json（cells / frames_species / fractions）
   → world.py（Blender，900 帧 PNG）
   → ffmpeg（world.mp4）
@@ -54,11 +55,13 @@ Blender 5.2 当前构建没有 `file_format=FFMPEG` 枚举，POC 改为 PNG 序�
 - 章节卡、音乐/音效、旁白：未做；
 - Blender 没有 agent 点缓存导入：当前用 Python 生成对象颜色/位置关键帧，agent 上千时会膨胀。
 
-## 6. 推荐路线
+## 6. 已确定的路线
 
-1. **POC 通过后**，把 `SimulationSpec` 固化为契约（seed、网格、规则、帧数、每帧状态）；
+`SimulationSpec` 已固化为 `CourseControl/src/course_control/simulation.py`；长序列引擎已决定用 Three.js/CodeVideoStudio，Blender 只做 hero 镜头，不引入 Godot。理由见 D-053。
+
+1. `SimulationSpec` 契约（seed、网格、规则、帧数、每帧状态）已实现；
 2. Blender 侧只保留 `world.py` 这类“数据 → 场景”任务，不直接在 Blender 里写模拟；
-3. 长序列用 Three.js/CodeVideo 或 Godot 实时渲染，Blender 做特写/材质/灯光；
+3. 长序列用 Three.js/CodeVideo 实时渲染，Blender 做特写/材质/灯光；
 4. 2×2 面板、三元图、表格、字幕全部交给 Remotion；
 5. 音频单独做，先解决授权音乐与中文旁白。
 

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "simulation_id": "primer-rps-poc",
+  "title": "Rock, Paper, Scissors — agent simulation",
+  "seed": 7,
+  "grid": {"kind": "hex", "radius": 5},
+  "species": [
+    {"id": "rock", "name": "Rock", "hex": "#C75B55"},
+    {"id": "paper", "name": "Paper", "hex": "#E3C84A"},
+    {"id": "scissors", "name": "Scissors", "hex": "#4A82B8"}
+  ],
+  "rules": {
+    "kind": "rock_paper_scissors",
+    "matrix": [[0.5, 0.0, 1.0], [1.0, 0.5, 0.0], [0.0, 1.0, 0.5]],
+    "mutation": 0.0001,
+    "updates_per_frame": 8
+  },
+  "frames": 900,
+  "fps": 30
+}

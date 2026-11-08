@@ -135,6 +135,7 @@ def schemas_command(
     from .animation_direction import AnimationDirection
     from .director.schema import DirectorPlan
     from .layout.schema import LayoutTemplate
+    from .simulation import SimulationSpec
     from .producer.schema import DeliveryManifest, ProductionOrder, ProductionState
     from .formulas import FormulaSpec
     from .session import EvidenceManifest, SessionSpec
@@ -155,6 +156,7 @@ def schemas_command(
         "production-state": ProductionState,
         "delivery-manifest": DeliveryManifest,
         "layout-template": LayoutTemplate,
+        "simulation-spec": SimulationSpec,
     }
     for name, model in models.items():
         target = output / f"{name}.schema.json"
@@ -1485,3 +1487,45 @@ def layout_validate_command(
     if not checks:
         typer.echo("no issues")
     raise typer.Exit(0 if ok(checks) else 1)
+
+
+@app.command("simulation-validate")
+def simulation_validate_command(
+    spec: Path = typer.Option(..., "--spec"),
+) -> None:
+    """Validate a SimulationSpec JSON file."""
+    from .simulation import load_spec
+
+    try:
+        parsed = load_spec(spec)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"invalid simulation spec: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(
+        f"ok: {parsed.simulation_id} / {parsed.frames} frames / "
+        f"radius {parsed.grid.radius} / seed {parsed.seed}"
+    )
+
+
+@app.command("simulation-run")
+def simulation_run_command(
+    spec: Path = typer.Option(..., "--spec"),
+    out: Path = typer.Option(..., "--out"),
+) -> None:
+    """Run a SimulationSpec and write SimulationData JSON."""
+    from .simulation import load_spec, run_simulation, write_data
+
+    try:
+        parsed = load_spec(spec)
+        data = run_simulation(parsed)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"simulation failed: {exc}", err=True)
+        raise typer.Exit(1)
+    write_data(data, out)
+    ranges = [
+        (round(min(frame[k] for frame in data.fractions), 3), round(max(frame[k] for frame in data.fractions), 3))
+        for k in range(3)
+    ]
+    typer.echo(f"cells={len(data.cells)} frames={len(data.frames_species)}")
+    typer.echo(f"fractions={ranges}")
+    typer.echo(f"data: {out}")

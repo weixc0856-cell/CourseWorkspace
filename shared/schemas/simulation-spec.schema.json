@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "HexGrid": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "hex",
+          "default": "hex",
+          "title": "Kind",
+          "type": "string"
+        },
+        "radius": {
+          "default": 5,
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Radius",
+          "type": "integer"
+        }
+      },
+      "title": "HexGrid",
+      "type": "object"
+    },
+    "RPSRules": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "rock_paper_scissors",
+          "default": "rock_paper_scissors",
+          "title": "Kind",
+          "type": "string"
+        },
+        "matrix": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Matrix",
+          "type": "array"
+        },
+        "mutation": {
+          "default": 0.0001,
+          "maximum": 0.1,
+          "minimum": 0.0,
+          "title": "Mutation",
+          "type": "number"
+        },
+        "updates_per_frame": {
+          "default": 8,
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Updates Per Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "matrix"
+      ],
+      "title": "RPSRules",
+      "type": "object"
+    },
+    "Species": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z][a-z0-9_-]{1,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "hex": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Hex",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "hex"
+      ],
+      "title": "Species",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "simulation_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "title": "Simulation Id",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "grid": {
+      "$ref": "#/$defs/HexGrid"
+    },
+    "species": {
+      "items": {
+        "$ref": "#/$defs/Species"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Species",
+      "type": "array"
+    },
+    "rules": {
+      "$ref": "#/$defs/RPSRules"
+    },
+    "frames": {
+      "default": 900,
+      "maximum": 100000,
+      "minimum": 1,
+      "title": "Frames",
+      "type": "integer"
+    },
+    "fps": {
+      "default": 30,
+      "maximum": 120,
+      "minimum": 1,
+      "title": "Fps",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "simulation_id",
+    "title",
+    "seed",
+    "species",
+    "rules"
+  ],
+  "title": "SimulationSpec",
+  "type": "object"
+}

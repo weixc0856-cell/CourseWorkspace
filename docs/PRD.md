@@ -562,3 +562,14 @@ R1 增量完成条件：
 - 不引入音乐/生图；章节卡与 dissolve 留待后续。
 
 **验收**：`docs/运镜与剪辑.md`、`test_motion.py`、Remotion `tsc --noEmit`、01-transformer-demo 时间线元数据。
+
+### FR-33 模拟数据契约与引擎分工
+
+**目标**：模拟类内容有确定的输入/输出契约，Blender 与 CodeVideoStudio 共用同一份数据。
+
+- `SimulationSpec`：seed、hex radius、3 个物种、3×3 收益矩阵、mutation、updates_per_frame、frames、fps。
+- `simulation-run` 输出 `SimulationData`（cells、每帧 species、fractions），同 seed 同结果。
+- 长序列模拟用 Three.js / CodeVideoStudio 的 `frame(t)` 捕获；Blender 负责 hero 镜头、材质与灯光；不引入 Godot。
+- 30 秒 POC 已跑通（Python → Blender Eevee → Remotion）。
+
+**验收**：`docs/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。

@@ -17,13 +17,13 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 287（282 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 282 通过，5 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 293（288 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 288 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11（10 通过 + 1 跳过） | 10 通过，1 跳过 |
 
-合计 **399** 个用例（393 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **405** 个用例（399 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -311,7 +311,7 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
 | V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
 
-R1 测试计数：五套合计 **399 个用例（393 通过 + 6 跳过）**：CourseControl 287（282+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
+R1 测试计数：五套合计 **405 个用例（399 通过 + 6 跳过）**：CourseControl 293（288+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
 
 R1 真实产物：
 
