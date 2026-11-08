@@ -134,6 +134,7 @@ def schemas_command(
     from .contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
     from .animation_direction import AnimationDirection
     from .audio_plan import AudioPlan
+    from .narrative import NarrativePlan
     from .director.schema import DirectorPlan
     from .layout.schema import LayoutTemplate
     from .simulation import SimulationSpec
@@ -153,6 +154,7 @@ def schemas_command(
         "formula": FormulaSpec,
         "animation-direction": AnimationDirection,
         "audio-plan": AudioPlan,
+        "narrative-plan": NarrativePlan,
         "director-plan": DirectorPlan,
         "production-order": ProductionOrder,
         "production-state": ProductionState,
@@ -1089,6 +1091,7 @@ def formula_validate_command(
     """Validate one FormulaSpec without rendering."""
     from .animation_direction import AnimationDirection
     from .audio_plan import AudioPlan
+    from .narrative import NarrativePlan
     from .formulas import FormulaSpec, load_spec, source_problems
 
     try:
@@ -1162,6 +1165,7 @@ def direction_validate_command(spec: Path = typer.Option(..., "--spec")) -> None
     """Validate an AnimationDirection shot list before writing renderer code."""
     from .animation_direction import AnimationDirection
     from .audio_plan import AudioPlan
+    from .narrative import NarrativePlan
 
     try:
         direction = AnimationDirection.model_validate_json(spec.read_text(encoding="utf-8"))
@@ -1559,3 +1563,106 @@ def audio_plan_command(
         typer.echo(f"error: {error}", err=True)
     typer.echo(f"audio_plan: {target}")
     raise typer.Exit(0 if plan.status == "ready" else 2)
+
+
+@app.command("audio-mix")
+def audio_mix_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Mix the planned BGM bed into the finished video with ducking."""
+    from .audio_mix import mix_lesson
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    result = mix_lesson(workspace.resolve(), paths)
+    typer.echo(f"status: {result.status.value}")
+    if result.output is not None:
+        typer.echo(f"output: {result.output}")
+    for warning in result.warnings:
+        typer.echo(f"warning: {warning}")
+    for error in result.errors:
+        typer.echo(f"error: {error}", err=True)
+    typer.echo(f"report: {result.report_path}")
+    raise typer.Exit(0 if result.status.value in {"pass", "skipped"} else 1)
+
+
+@app.command("media-qc")
+def media_qc_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Run full-file audio/video/subtitle checks on the finished video."""
+    from .media_qc import BLOCKED, INCOMPLETE, run_media_qc
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report, target = run_media_qc(workspace.resolve(), paths)
+    typer.echo(f"status: {report['status']}")
+    for check in report["checks"]:
+        typer.echo(f"  [{check['id']}] {check['status']}: {check['detail']}")
+    typer.echo(f"report: {target}")
+    if report["status"] == BLOCKED:
+        raise typer.Exit(1)
+    if report["status"] == INCOMPLETE:
+        raise typer.Exit(3)
+    raise typer.Exit(0)
+
+
+@app.command("quality-report")
+def quality_report_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Aggregate the five quality dimensions from existing artifacts."""
+    from .quality import BLOCKED, INCOMPLETE, build_quality_report
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report, target = build_quality_report(workspace.resolve(), paths)
+    for item in report["dimensions"]:
+        typer.echo(f"  [{item['id']}] {item['status']}: {item['reason']}")
+    states = report["states"]
+    typer.echo(f"BUILD_PASS: {states['BUILD_PASS']}")
+    typer.echo(f"QUALITY_PASS: {states['QUALITY_PASS']}")
+    typer.echo(f"RELEASE_APPROVED: {states['RELEASE_APPROVED']}")
+    typer.echo(f"report: {target}")
+    if any(item["status"] == BLOCKED for item in report["dimensions"]):
+        raise typer.Exit(1)
+    if any(item["status"] == INCOMPLETE for item in report["dimensions"]):
+        raise typer.Exit(3)
+    raise typer.Exit(0)
+
+
+@app.command("narrative-validate")
+def narrative_validate_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Validate the Director narrative plan against the content methodology."""
+    from .narrative import validate_lesson
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report, target = validate_lesson(workspace.resolve(), paths)
+    typer.echo(f"status: {report['status']} (form={report['form']})")
+    for issue in report["issues"]:
+        typer.echo(f"  [{issue['rule']}] {issue['level']}: {issue['message']}")
+    typer.echo(f"report: {target}")
+    raise typer.Exit(1 if report["status"] == "fail" else 0)

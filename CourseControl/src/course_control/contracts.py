@@ -98,6 +98,7 @@ class Authoring(StrictModel):
     outline: str | None = None
     script: str | None = None
     approval: str | None = None
+    narrative: str | None = None
 
 
 class Acceptance(StrictModel):
@@ -165,6 +166,7 @@ class LessonConfig(StrictModel):
     build: BuildOptions = BuildOptions()
     motion: MotionPolicy = MotionPolicy()
     audio: AudioPolicy = AudioPolicy()
+    video_form: Literal["long", "short"] = "long"
     duration: DurationPolicy | None = None
     authoring: Authoring | None = None
 

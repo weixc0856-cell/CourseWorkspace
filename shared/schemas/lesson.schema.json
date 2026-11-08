@@ -124,6 +124,18 @@
           ],
           "default": null,
           "title": "Approval"
+        },
+        "narrative": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Narrative"
         }
       },
       "title": "Authoring",
@@ -653,6 +665,15 @@
         "content_kind": "formal_course",
         "bgm": []
       }
+    },
+    "video_form": {
+      "default": "long",
+      "enum": [
+        "long",
+        "short"
+      ],
+      "title": "Video Form",
+      "type": "string"
     },
     "duration": {
       "anyOf": [

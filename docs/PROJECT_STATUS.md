@@ -7,6 +7,20 @@
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
+## 0.0 2026-11-09 增量：五条质量防线 P0 与 5 分钟校准课
+
+| 能力 | 代码 / 契约 | 证据 | 状态 |
+| --- | --- | --- | --- |
+| 叙事契约 | `CourseControl/src/course_control/narrative.py`、`narrative-validate` | 5 分钟课六段骨架 `pass`；`build/05-transformer-5min/quality/narrative.json` | COMPLETED（P0） |
+| BGM 混音 | `audio_mix.py`、`audio-mix` | Schubert D.664（PD）；−15.9 LUFS / −1.4 dBTP；`audio/mix.json` | COMPLETED（P0） |
+| 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/冻结/字幕全部 PASS | COMPLETED（P0） |
+| 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
+| 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.37 s；2 个 Manim 镜头；73 cue；Producer `awaiting_approval` | VERIFIED（本地） |
+| 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |
+
+边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
+ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。
+
 状态词：`COMPLETED`（实现且有真实证据）/ `PARTIAL`（有缺口）/ `NOT_IMPLEMENTED` / `BLOCKED`（外部条件限制）/ `NOT_RUN` / `DEFERRED` / `OUT_OF_SCOPE`。
 
 ---

@@ -487,3 +487,16 @@
 **决策**：新增独立 `ReviewRunner/`（不进入生产主链，不接 `check.ps1` 门禁，不自动 apply）。默认用 `codex exec --ignore-user-config` 加显式 provider 配置：`base_url/model/api_key_env` 来自 `config/model-routing.yaml`，key 只由子进程从环境变量读取，不进入 argv/日志/manifest。审核输入全部来自 Git 对象，落在临时目录，运行前后校验 SHA256；输出按执行轴与审核轴分别记录，`production_effect: none`。隔离实测基线 14,243 tokens，因此系统预留 18,000、文件内容预算 35,536；用户配置模式保留 24,000/29,536。超出预算直接 `BLOCKED`，不静默缩减范围。
 
 **后果**：本机 MCP 与插件默认不参与审核；宿主 skill frontmatter 告警作为噪声过滤并计数。Windows 沙箱隔离强度未验证，工具只声称“临时目录 + 前后哈希”，不声称绝对沙箱。Phase 1 只做代码审查，Docs/Course 仅保留隐私门与接口；Course 外发必须逐次授权。
+
+## D-056 五条质量防线 P0 落地；5 分钟校准课与 Shorts 分开
+
+**背景**：差距审查确认五条质量防线中 Q1 只有单模型候选审查、Q2 基本没有、Q3 缺全片音视频检查、Q5 只按文件存在性判定；真实课程 `01-transformer-demo` 的交付仍为 `blocked`。规范要求先打通一门真实课程闭环，再扩展模块。
+
+**决策**：
+1. 新建本地校准课 `05-transformer-5min`，从已批准的 `01-transformer-demo` 第 1、3、5 页逐字取用，只做分页与编号调整；旁白复用同参数缓存，12 段全部命中；审批记录写 `user-instruction` 与 subset 来源，不冒充新的语义审查。该课程属于**短课/校准片**，不是 YouTube Shorts。
+2. 在 `CourseControl` 内新增 `narrative.py`、`audio_mix.py`、`media_qc.py`、`quality.py` 与四个 CLI 命令：`narrative-validate`、`audio-mix`、`media-qc`、`quality-report`；不新建 TeachingQA/MediaQA 顶层工程。
+3. 长视频必须提供 `authoring/narrative-plan.json`（六段骨架）；Shorts 使用 `video_form: short`、30–90 秒、9:16、独立脚本。方法论文档为 `docs/creative/叙事设计与观众留存规范.md`。
+4. BGM 只消费本地授权库：曲目缺失、许可未知、CC BY 缺署名一律 blocked；混音固定 sidechain ducking + `loudnorm I=-16:TP=-1.5`。
+5. 质量状态保持五维独立；`BUILD_PASS`、`QUALITY_PASS`、`RELEASE_APPROVED` 三层分离，最后一层必须有人工批准文件。叙事结构通过只把 Q2 记为 WARN，不证明教学有效。
+
+**后果**：5 分钟校准课可以跑通旁白、字幕、两种动画、BGM、全片 QC 与质量报告；ASR/强制对齐仍未接入，因此“字幕与语音一致”保持 INCOMPLETE。Shorts 不通过裁切长视频生成，后续单独建课。

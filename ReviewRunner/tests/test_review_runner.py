@@ -251,7 +251,7 @@ class CodeReviewTests(GitCase):
     def test_sensitive_files_are_excluded_from_snapshot(self) -> None:
         self.write("a.py", "x = 1\n")
         self.write(".env", "SECRET_TOKEN=do-not-send\n")
-        self.write("config/local-paths.yaml", "root: D:/private\n")
+        self.write("config/local-paths.yaml", "root: placeholder\n")
         self.git("add", "-f", ".env", "config/local-paths.yaml")
         sha = self.commit()
 
@@ -438,7 +438,7 @@ class ExecutionFailureTests(GitCase):
                 "item": {
                     "id": "e1",
                     "type": "error",
-                    "message": "failed to load skill C:\\x\\SKILL.md: missing YAML frontmatter",
+                    "message": "failed to load skill <SKILL_PATH>: missing YAML frontmatter",
                 },
             },
             {

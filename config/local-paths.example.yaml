@@ -12,3 +12,4 @@ tts:
   prompt_text_en: "<EN_REFERENCE_TRANSCRIPT>"
   auto_start: true
   wait_timeout_s: 1800
+bgm_root: <BGM_LIBRARY_ROOT>

@@ -183,3 +183,22 @@ build/<slug>/animation/<scene-stem>.mp4
 - 合成时间线：`build/<slug>/shots.json`
 
 报告包含 `stages[]`、`checks[]`、`artifacts[]`、`toolchain`、`verdict` 与 `failures[]`。
+
+## 质量闭环（P0）
+
+```powershell
+uv run --project CourseControl course-control narrative-validate --lesson <slug>
+uv run --project CourseControl course-control audio-plan --lesson <slug>
+uv run --project CourseControl course-control audio-mix --lesson <slug>
+uv run --project CourseControl course-control media-qc --lesson <slug>
+uv run --project CourseControl course-control quality-report --lesson <slug>
+```
+
+- `narrative-validate`：校验 `authoring/narrative-plan.json` 的六段骨架与时长，写 `quality/narrative.json`。
+- `audio-mix`：消费 `audio_plan.json`，从 `config/local-paths.yaml` 的 `bgm_root` 找本地曲目；
+  sidechain ducking + `loudnorm I=-16:TP=-1.5`，输出 `final/course-video-mixed.mp4`。缺曲目或许可未知即 blocked。
+- `media-qc`：全片解码、分辨率/帧率/帧数、EBU R128 响度、静音、黑帧、冻结帧、字幕结构；
+  写 `quality/media-qc.json`。
+- `quality-report`：五维独立状态（Q1–Q5）与 `BUILD_PASS / QUALITY_PASS / RELEASE_APPROVED`；
+  输出 `quality/quality-report.{json,md,html}`。叙事结构通过只把 Q2 记 WARN，不等于教学有效。
+- 发布批准必须有人工 `quality/release-approval.json`，系统不代签。

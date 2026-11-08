@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "NarrativeBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "enum": [
+            "cold_open",
+            "question",
+            "intuition",
+            "mechanism",
+            "test",
+            "connect"
+          ],
+          "title": "Id",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "exclusiveMinimum": 0,
+          "title": "End S",
+          "type": "number"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "schematic",
+          "enum": [
+            "real_data",
+            "simulation",
+            "schematic"
+          ],
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "start_s",
+        "end_s",
+        "summary"
+      ],
+      "title": "NarrativeBeat",
+      "type": "object"
+    },
+    "ShortForm": {
+      "additionalProperties": false,
+      "properties": {
+        "target_seconds": {
+          "maximum": 90,
+          "minimum": 30,
+          "title": "Target Seconds",
+          "type": "number"
+        },
+        "aspect_ratio": {
+          "const": "9:16",
+          "default": "9:16",
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "independent_script": {
+          "default": true,
+          "title": "Independent Script",
+          "type": "boolean"
+        },
+        "hook": {
+          "minLength": 1,
+          "title": "Hook",
+          "type": "string"
+        },
+        "payoff": {
+          "minLength": 1,
+          "title": "Payoff",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_seconds",
+        "hook",
+        "payoff"
+      ],
+      "title": "ShortForm",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "form": {
+      "default": "long",
+      "enum": [
+        "long",
+        "short"
+      ],
+      "title": "Form",
+      "type": "string"
+    },
+    "audience": {
+      "minLength": 1,
+      "title": "Audience",
+      "type": "string"
+    },
+    "promise": {
+      "minLength": 1,
+      "title": "Promise",
+      "type": "string"
+    },
+    "beats": {
+      "items": {
+        "$ref": "#/$defs/NarrativeBeat"
+      },
+      "minItems": 1,
+      "title": "Beats",
+      "type": "array"
+    },
+    "payoff": {
+      "minLength": 1,
+      "title": "Payoff",
+      "type": "string"
+    },
+    "short_form": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ShortForm"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "audience",
+    "promise",
+    "beats",
+    "payoff"
+  ],
+  "title": "NarrativePlan",
+  "type": "object"
+}
