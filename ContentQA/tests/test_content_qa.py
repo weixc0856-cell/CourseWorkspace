@@ -131,6 +131,7 @@ class ReviewTest(unittest.TestCase):
 
         payload = {
             "schema_version": 1,
+            "backend": "api",
             "model": {
                 "base_url": base_url,
                 "model": "test-model",

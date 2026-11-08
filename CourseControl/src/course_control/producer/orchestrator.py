@@ -65,7 +65,7 @@ def _coverage_notes(order: ProductionOrder, plan: DirectorPlan) -> list[str]:
     return gaps
 
 
-def _report(result: ProducerResult) -> str:
+def _report(result: ProducerResult, workspace: Path) -> str:
     order = result.order
     manifest = result.manifest
     lines = [
@@ -114,7 +114,11 @@ def _report(result: ProducerResult) -> str:
         lines += ["", "## Coverage notes", ""] + [f"- {item}" for item in result.state.notes]
     lines += ["", "## Artifacts", ""]
     for name, path in result.paths.items():
-        lines.append(f"- {name}: `{path}`")
+        try:
+            display = path.resolve().relative_to(workspace.resolve()).as_posix()
+        except ValueError:
+            display = path.as_posix()
+        lines.append(f"- {name}: `{display}`")
     lines += ["", "## Changed since last run", ""]
     if result.deltas:
         for delta in result.deltas:
@@ -214,7 +218,7 @@ def run(
     )
     report = root / "production" / "report.md"
     report.parent.mkdir(parents=True, exist_ok=True)
-    report.write_text(_report(result), encoding="utf-8")
+    report.write_text(_report(result, workspace), encoding="utf-8")
     result.paths["report"] = report
     return result
 

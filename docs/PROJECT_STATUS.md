@@ -1,9 +1,9 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-08（导演层/制片层落地、计数校正）
-- **代码基线**：`origin/main` = `577501e`；当前分支 `feat/v1-pipeline-remote-fallback` 的功能提交 = `d95d887`（未推送）；本地 `main` 已同步 `origin/main`
-- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 410 个用例（404 通过 + 6 跳过）
+- **最近更新**：2026-11-08（旧 Manim 镜头统一、ContentQA 默认后端、文档/路径卫生）
+- **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `37b0716` + 2026-11-08 未提交改动
+- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 410 个用例（404 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -23,6 +23,17 @@
 | FR-29 制片层 | `CourseControl/src/course_control/producer/`、`docs/制片层.md` | 订单 + 七项交付清单：blocked，4 项缺失；增量检测实测 | COMPLETED（POC，交付未完成） |
 
 边界：导演层不写场景代码、不渲染；制片层不读密钥、不触发渲染/TTS/发布；成片未产出，交付清单如实 blocked。
+
+### 0.1a 2026-11-08 视觉与文档收尾
+
+| 内容 | 文件 | 证据 |
+| --- | --- | --- |
+| 旧 Manim 镜头统一 | `ManimSandbox/01-transformer-demo/qkv_fanout.py`、`row_trace.py`、`head_split_merge.py`、`position_add.py` | 纸白底 + `design_system` 语义色；修复字面量颜色、标题/底注重叠、context 越界、标签对比度；末帧渲染核对 |
+| 残差镜头核对 | `residual_bypass.py` | 垂直栈、旁路、括号与标签在安全区内；末帧渲染核对 |
+| 导演层回归 | `test_director.py` | Golden plan 不再期望 `style.background_mismatch` |
+| Ken Burns 真实核对 | `build/01-transformer-demo/slides/`、`build/01-transformer-demo/final/motion-test.mp4` | 12 页真实截图；150 帧 CourseTimeline；首末帧可见推近与 1.2% 平移 |
+| ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
+| 路径与文档 | 全部 README、`docs/` | `path check ok`；清除控制字符与个人路径；补全 `VOICE_REF_WAV`、junction、配色说明 |
 
 ## 0. 2026-11-04 增量（P1–P4）
 

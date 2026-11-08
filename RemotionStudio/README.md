@@ -1,10 +1,10 @@
 # RemotionStudio
 
-最终视频编排工程。读取 `build/<lesson>/shots.json`，把幻灯片画面、Blender / Motion Canvas / Manim 成片、旁白和字幕组合成课程视频。
+最终视频编排工程。读取 `build/<lesson>/shots.json` 或 `build/<lesson>/contracts/timeline.spec.json`，把幻灯片画面、Blender / Motion Canvas / Manim / CodeVideo 成片、旁白和字幕组合成课程视频。
 
 ## 边界
 
-- 读取：`build/<lesson>/shots.json` 指向的素材、`lessons/<slug>/subtitles.srt`（可选）、`shared/design-tokens/tokens.json`。
+- 读取：`shots.json` 或 `timeline.spec.json` 指向的素材、`lessons/<slug>/subtitles.srt`（可选）、`shared/design-tokens/tokens.json`。
 - 写入：`build/<lesson>/final/`、`build/<lesson>/remotion/`、本工程 `public/staging/`（临时）。
 - 不读取 `MotionStudio/`、`ManimSandbox/`、`BlenderStudio/` 的源码或产物目录；一切素材先进入 `build/`。
 - 不做 TTS、不做语音识别、不做云端渲染。
@@ -34,10 +34,15 @@ node scripts/capture-slides.mjs --lesson 01-shell-for-ai-era --max 2
 # 按 shots.json 复制素材到 public/staging/<lesson>/
 node scripts/stage-assets.mjs --lesson 01-shell-for-ai-era
 
-# 渲染
+# 渲染 legacy shots.json
 npx remotion render src/index.ts CourseVideo `
   ../build/01-shell-for-ai-era/final/preview-remotion.mp4 `
   --props=../build/01-shell-for-ai-era/shots.json
+
+# 渲染 V1 时间线（含 Ken Burns / TimelineSpec）
+npx remotion render src/index.ts CourseTimeline `
+  ../build/01-shell-for-ai-era/final/preview-timeline.mp4 `
+  --props=../build/01-shell-for-ai-era/contracts/timeline.spec.json
 ```
 
 ## 素材访问（S-R3-1 结论）
@@ -62,6 +67,13 @@ npx remotion render src/index.ts CourseVideo `
   - `transparent_overlay`：全屏透明叠加。
 
 转场为 0.3 秒淡入淡出，只作用于 overlay。
+
+### 静帧运镜（Ken Burns）
+
+- 时间线 `video[].metadata.legacy_motion` 由 `collect`/`v1_timeline` 写入；
+- `src/components/MotionImage.tsx` 只对图片资产应用平移/缩放，视频不受影响；
+- 参数来自 `lesson.yaml.motion`：`slides: ken_burns|static`、`scale`、`pan_percent`；
+- `PrimerPoc` 是 30 秒模拟样片合成：世界视频 + 三元图 + payoff 表。
 
 ## 旁白与字幕
 

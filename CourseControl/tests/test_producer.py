@@ -96,8 +96,8 @@ class ProducerRunTest(unittest.TestCase):
 
     def test_approval_is_recorded_thanks_to_delivery_policy(self):
         with tempfile.TemporaryDirectory() as tmp:
-            result = run(WORKSPACE, LESSON, build_root=Path(tmp), approve_by="Wayne")
-            self.assertEqual(result.order.approved_by, "Wayne")
+            result = run(WORKSPACE, LESSON, build_root=Path(tmp), approve_by="reviewer")
+            self.assertEqual(result.order.approved_by, "reviewer")
             self.assertIsNotNone(result.order.approved_at)
             # Missing artifacts still block delivery even when the order is approved.
             self.assertEqual(result.manifest.status, "blocked")

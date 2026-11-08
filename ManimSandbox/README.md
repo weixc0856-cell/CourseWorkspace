@@ -30,25 +30,29 @@ uv sync
 ```powershell
 # FFT 技术基线（1920×1080 / 30 fps）
 uv run manim render -r 1920,1080 --fps 30 `
-  --media_dir ..uild\manim-fft\media 02-fft-baseline/fft_baseline.py FFTBaseline
+  --media_dir ../build\manim-fft\media 02-fft-baseline/fft_baseline.py FFTBaseline
 
 # Transformer 注意力产品基线（1920×1080 / 30 fps）
 uv run manim render -r 1920,1080 --fps 30 `
-  --media_dir ..uild\manim-transformer\media 03-transformer-baseline/attention_baseline.py AttentionBaseline
+  --media_dir ../build\manim-transformer\media 03-transformer-baseline/attention_baseline.py AttentionBaseline
 
 # Transformer 三幕讲解（tokens → attention → context）
 uv run manim render -r 1920,1080 --fps 30 `
-  --media_dir ..uild\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py TokensScene
+  --media_dir ../build\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py TokensScene
 uv run manim render -r 1920,1080 --fps 30 `
-  --media_dir ..uild\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py AttentionScene
+  --media_dir ../build\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py AttentionScene
 uv run manim render -r 1920,1080 --fps 30 `
-  --media_dir ..uild\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py OutputScene
+  --media_dir ../build\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py OutputScene
 
 # 低清预览，-p 渲染完自动播放
 uv run manim -pql 01-transformer-demo/dot_product.py DotProduct
 
 # 确认画面后出 1080p
 uv run manim -qh 01-transformer-demo/dot_product.py DotProduct
+
+# Attention 2 分钟样片（60fps；旁白由 gen_narration.py 生成）
+uv run manim render -r 1920,1080 --fps 60 `
+  --media_dir ../build/attention-3b1b/media 06-attention-3b1b/attention.py AttentionScene
 ```
 
 产物：`media/videos/<脚本名>/<画质目录>/<场景类名>.mp4`，例如 `media/videos/dot_product/1080p60/DotProduct.mp4`。
@@ -88,7 +92,9 @@ ManimSandbox/
 ├── pyproject.toml                # 依赖来源
 ├── uv.lock                       # 可复现解析结果
 ├── requirements.txt              # uv export 生成的只读快照
-├── 01-transformer-demo/          # 目录名 = 课件 lesson slug
+├── 01-transformer-demo/          # Transformer 课程镜头（QKV/row_trace/位置编码/多头/残差/cross-attention/loss）
+├── 06-attention-3b1b/            # 2 分钟 Attention 样片 + 旁白/合成脚本
+├── common/                       # design_system.py（配色/字号/安全区）、formula.py
 │   ├── test_demo.py              # 环境自检：橙白配色
 │   └── dot_product.py            # 点积与投影
 └── media/                        # 渲染产物与缓存（不入库）
@@ -97,7 +103,7 @@ ManimSandbox/
 ## 约定
 
 - **只用 uv**：`.venv` 里没有 pip；加依赖用 `uv add <pkg>`
-- **配色与课件一致**：场景顶部固定 `MK_ORANGE / MK_TEXT / MK_MUTED / MK_BORDER` 与白底
+- **配色与课件一致**：统一 `from common.design_system import BG, INK, MUTED, ORANGE`，纸白底 `#FBFAF7`，语义色只用 Blue/Teal/Purple/Red
 - **屏幕上只出现英文**；中文交给幻灯片
 - **单个机制 5~20 秒**，超出先拆分
 - **不提交产物**：`media/`、`*.mp4`、`*.png`、`*.log` 已在 `.gitignore`

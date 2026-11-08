@@ -3,7 +3,7 @@
 一个机制：`it` 的 query 对所有 key 打分 → 因果遮罩 → softmax → 混合 value，得到 context。
 
 - 场景源码：`attention.py`（Manim CE 0.22，`AttentionScene`）
-- 旁白：`narration/s01..s11.txt`，本地 VoxCPM2 合成
+- 旁白：`narration/s01..s11.txt`，本地 VoxCPM2 合成；参考音色默认取 `lessons/02-car-aerodynamics/assets/voice/my_voice_en_ref_norm.wav`，可用 `VOICE_REF_WAV=<wav>` 覆盖
 - 成片：`build/attention-3b1b/attention.mp4`（1920×1080 / 60 fps / 约 2 分钟）
 - 差距分析：`docs/样片-注意力-3B1B差距与路线.md`
 
@@ -23,7 +23,7 @@ uv run manim render -r 1920,1080 --fps 60 `
 python ManimSandbox/06-attention-3b1b/build_final.py
 ```
 
-`build_final.py` 读取 `timing.json`、按时间轴铺旁白、`loudnorm`（-16 LUFS / -1 dBTP），再与无声画面混流。
+`build_final.py` 读取 `timing.json`、按时间轴铺旁白、`loudnorm`（-16 LUFS / -1 dBTP），再与无声画面混流。画面使用 `common/design_system.py` 的纸白底与语义色。
 
 口播模式（`gen_narration.py`）：
 

@@ -8,7 +8,8 @@
 - 写入：只写 `build/<lesson>/blender/` 与 `build/<lesson>/logs/`。
 - 不写入 `CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`RemotionStudio/`。
 - 不在 Blender 内置 Python 中安装第三方包。
-- 任务文件只包含数据字段，不包含可执行代码。
+- IR v2 任务文件只包含数据字段，不包含可执行代码。
+- `scenes/primer-poc/` 是独立模拟 POC：用 Blender Python 消费 `SimulationData`，不属于 IR v2 任务；只用于双引擎对照。
 
 ## 环境
 
@@ -16,6 +17,10 @@
 - 可执行文件：`<BLENDER_EXE>`，实际路径写入本地 `config/tools.yaml`（已忽略）。`scripts/setup.ps1` 可从 `config/tools.example.yaml` 生成。
 - 不使用 `blender-launcher.exe`；它是 GUI 启动器，不接受后台渲染参数。
 - 默认引擎 `BLENDER_EEVEE`；`CYCLES` 与 `BLENDER_WORKBENCH` 可作为任务级显式选择。
+
+## 模拟世界 POC
+
+`scenes/primer-poc/world.py` 读取 `build/primer-poc/simulation.json`，生成六边形地块、按物种着色的 blob、轨道相机与 PNG 序列；Blender 5.2 当前构建没有 `file_format=FFMPEG`，POC 先出 PNG 再由 ffmpeg 编码。复现见 `scenes/primer-poc/README.md`。
 
 ## 入口
 

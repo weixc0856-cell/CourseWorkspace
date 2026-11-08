@@ -1,6 +1,6 @@
-# ContentQA — 在线内容审查
+# ContentQA — 内容审查
 
-用在线模型对课程内容做事实与一致性核查，产出**候选意见**。它只读课程、只写 `build/<slug>/review/`，不影响课程构建的 verdict。
+默认用 **Claude Code** 对课程内容做事实与一致性核查，产出**候选意见**；也可显式切到 OpenAI 兼容 API。它只读课程、只写 `build/<slug>/review/`，不影响课程构建的 verdict。
 
 - 需求：`docs/PRD.md` FR-12
 - 架构：`docs/ARCHITECTURE.md` §3.4、§4.3
@@ -19,11 +19,12 @@
 
 ```powershell
 copy config\content-qa.example.yaml config\content-qa.yaml
-# 填写 base_url 与 model；API key 只从环境变量读取
-$env:CONTENT_QA_API_KEY = "<your-key>"
 ```
 
-`config/content-qa.yaml` 已被忽略，凭据不得写进仓库。也可用 `--config <path>` 指定其他本机配置。
+- `backend: claude_code`（默认）：读取 `config/claude-code.yaml`；不可用时直接 `blocked`，不静默降级。
+- `backend: api`：走 OpenAI 兼容接口，填写 `base_url` 与 `model`；API key 只从环境变量读取。
+
+`config/content-qa.yaml` 已被忽略，凭据不得写进仓库。也可用 `--config <path>` 指定其他本机配置。任务记录写实际 `provider`（`claude_code` / `remote` / `local`），不得冒充。
 
 `api_key_env` 可以填**任何已存在的环境变量名**，不需要新建一套凭据。例如 Windows 上已有 `DeepSeek-API`，直接写 `api_key_env: "DeepSeek-API"`；base_url 与模型名按供应商的 OpenAI 兼容接口填写（模型 id 可用 `GET /v1/models` 查询）。
 

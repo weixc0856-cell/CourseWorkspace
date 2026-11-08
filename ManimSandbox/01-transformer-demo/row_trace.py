@@ -3,7 +3,6 @@ from __future__ import annotations
 from manim import (
     DOWN,
     LEFT,
-    ORANGE,
     RIGHT,
     UP,
     Arrow,
@@ -14,10 +13,18 @@ from manim import (
     Scene,
     Text,
     VGroup,
+    config,
 )
 
-TEXT = "#1A1A1A"
-MUTED = "#595959"
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
+
+config.background_color = BG
+
+TEXT = INK
 
 
 def label(value: str, size: int = 36, color: str = TEXT) -> Text:

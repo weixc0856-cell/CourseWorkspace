@@ -42,7 +42,7 @@ class ReviewConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     schema_version: Literal[1] = 1
-    backend: Literal["api", "claude_code"] = "api"
+    backend: Literal["api", "claude_code"] = "claude_code"
     model: ModelConfig
     claude_code: ClaudeCodeConfig | None = None
     context_limit: int = Field(16384, ge=2048, le=65536)
@@ -77,7 +77,7 @@ def load_config(path: Path | None = None) -> ReviewConfig | None:
             model_data["model"] = env_model
         if env_key_env:
             model_data["api_key_env"] = env_key_env
-    backend = str(data.get("backend", "api"))
+    backend = str(data.get("backend", "claude_code"))
     claude_code = None
     if backend == "claude_code":
         cc_path = target.parent / "claude-code.yaml"

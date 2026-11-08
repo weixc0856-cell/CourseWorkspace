@@ -30,6 +30,7 @@
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - Primer 式模拟视频 POC：[docs/评估-Primer模拟视频POC.md](docs/评估-Primer模拟视频POC.md)
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)
+- 内容类型与音频策略：[docs/内容类型与音频策略.md](docs/内容类型与音频策略.md)
 - 项目差距清单：[docs/项目差距清单.md](docs/项目差距清单.md)
 - Attention 两分钟样片与 3B1B 差距：[docs/样片-注意力-3B1B差距与路线.md](docs/样片-注意力-3B1B差距与路线.md)
 - 动画/音频/口播整合：[docs/评估-动画音频口播-整合.md](docs/评估-动画音频口播-整合.md)

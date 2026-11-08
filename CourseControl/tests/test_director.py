@@ -49,7 +49,7 @@ class DirectorPlanTest(unittest.TestCase):
         self.assertEqual(self.plan.summary.planned_shots, 0)
         self.assertTrue(self.paths["plan"].is_file())
         rules = {check.rule for check in self.plan.checks}
-        self.assertIn("style.background_mismatch", rules)
+        self.assertNotIn("style.background_mismatch", rules)
         cursor = 0.0
         for shot in self.plan.shots:
             self.assertAlmostEqual(shot.start_s, cursor)

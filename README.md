@@ -11,7 +11,7 @@
 
 ## 仓库范围（远程 vs 本地）
 
-远程仓库（`git@github.com:weixc0856-cell/CourseWorkspace.git`）**只包含项目开发工作流**：代码、契约、Schema、夹具、脚本、文档与测试。
+远程仓库（`git@github.com:<OWNER>/CourseWorkspace.git`）**只包含项目开发工作流**：代码、契约、Schema、夹具、脚本、文档与测试。
 
 | 内容 | 是否进远程 | 说明 |
 | --- | --- | --- |
@@ -49,6 +49,14 @@ verify                                 → build/<slug>/final/build-report.json�
 
 人工节点是正式设计：Motion Canvas 没有 CLI 导出，作者必须在编辑器导出到 `build/<slug>/animation/<scene-stem>.mp4`；未导出时构建结论是 `incomplete`，不是通过。
 
+## 内容形态与音频
+
+- **科普视频**（单篇论文讲解、技术拆解）：允许低音量 BGM；默认 Serenity / Schubert，高潮段可短暂使用 We Never；
+- **正式课程**（书章节、MIT/Stanford/高校或机构课程解读、二次录制）：不使用 BGM，旁白 + 静默为准；
+- **新闻/资讯**：不使用 BGM。
+
+详见 [内容类型与音频策略](docs/内容类型与音频策略.md)；曲目、许可与试听见 [音乐资产盘点](docs/音乐资产盘点.md)。
+
 ## 工程分工
 
 | 目录 | 职责 | 产物 | 是否主流程 |
@@ -81,6 +89,11 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 uv run --project CourseControl course-control director-plan --lesson 01-transformer-demo
 uv run --project CourseControl course-control producer-run --lesson 01-transformer-demo
 uv run --project CourseControl course-control producer-rebuild --lesson 01-transformer-demo
+uv run --project CourseControl course-control layout-templates
+uv run --project CourseControl course-control layout-validate --template process_flow
+uv run --project CourseControl course-control simulation-run `
+  --spec BlenderStudio/scenes/primer-poc/simulation.spec.json `
+  --out build/primer-poc/simulation.json
 
 # 完整构建
 .\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era
@@ -164,5 +177,8 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 - 流程：[提交前检查清单](docs/提交前检查清单.md)
 - 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
 - 导演/制片：[导演层](docs/导演层.md) · [制片层](docs/制片层.md)
+- 版式/配色/运镜：[版式系统](docs/版式系统.md) · [配色规范](docs/配色规范.md) · [运镜与剪辑](docs/运镜与剪辑.md)
+- 模拟/音频：[Primer 式模拟 POC](docs/评估-Primer模拟视频POC.md) · [音乐资产盘点](docs/音乐资产盘点.md) · [内容类型与音频策略](docs/内容类型与音频策略.md)
+- 项目差距：[项目差距清单](docs/项目差距清单.md)
 - 产品决策：[前端必要性评估](docs/FRONTEND_ASSESSMENT.md)
 - 历史：[docs/archive/](docs/archive/README.md)
