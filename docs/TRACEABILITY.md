@@ -39,6 +39,7 @@
 | FR-31 配色系统 | `CourseControl/src/course_control/layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | `test_color_system.py`、palette-review 合辑 |
 | FR-32 静帧运镜 | `CourseControl/src/course_control/motion.py`、`RemotionStudio/src/components/MotionImage.tsx`、`docs/运镜与剪辑.md` | `test_motion.py`、`tsc --noEmit`、timeline metadata |
 | FR-33 模拟契约 | `CourseControl/src/course_control/simulation.py`、`BlenderStudio/scenes/primer-poc/`、`docs/评估-Primer模拟视频POC.md` | `test_simulation.py`、`test_simulation_director.py`、adapter PASS、30 秒 POC |
+| 音频策略（内容类型/BGM） | `CourseControl/src/course_control/audio_plan.py`；`contracts.py`（`AudioPolicy`）；`audio-plan` CLI；`producer/delivery.py` | `test_audio_plan.py`；交付包在配置 BGM 时要求 `audio_plan.json` |
 | V1-E 时间线兼容层 | `CourseControl/src/course_control/v1_timeline.py`；`collect` 写 `contracts/timeline.spec.json`；CLI `timeline-v1` | `CourseControl/tests/test_v1_timeline.py`；lesson-smoke 实跑 |
 | V1-D Session 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |
 | V1-D 剩余轨道 | `ShotSpec` 扩展 `session/simulation/graphics`；Session runner 原生写 V1 | 未开始 |

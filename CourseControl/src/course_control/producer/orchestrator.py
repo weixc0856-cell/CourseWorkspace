@@ -16,6 +16,7 @@ from ..pipeline import BuildOptions, run_build
 from ..report import toolchain_versions
 from ..validators import validate
 from .delivery import build_manifest, write_manifest
+from ..audio_plan import write_audio_plan
 from .order import OrderOverrides, approve, ensure_order, load_order, now, order_path, save_order
 from .rebuild import ShotDelta, diff_fingerprints
 from .schema import DeliveryManifest, ProductionOrder, ProductionState
@@ -157,6 +158,7 @@ def run(
     validation = validate(inputs.paths)
     plan, director_paths = build_director(workspace, lesson_dir, root / "director")
     _write_toolchain(workspace, root)
+    audio_plan, audio_path = write_audio_plan(root, inputs.paths.lesson)
 
     previous = load_state(state_path(root))
     state = previous or ProductionState(
@@ -178,11 +180,14 @@ def run(
         "director": plan.status,
         "render": "present" if (root / "final" / "course-video.mp4").is_file() else "missing",
         "audio": "present" if (root / "narration" / "narration.wav").is_file() else "missing",
+        "audio_policy": audio_plan.status,
         "delivery": manifest.status,
     }
     add_usage(state, time.monotonic() - started, now())
     state.usage.disk_gb = disk_usage_gb(root)
     notes = _coverage_notes(order, plan)
+    if audio_plan.errors:
+        notes.extend(f"audio policy: {error}" for error in audio_plan.errors)
     if order.language != inputs.script.language:
         notes.append(f"order language {order.language} differs from script language {inputs.script.language}")
     if abs(order.target_seconds - plan.duration.target_seconds) > plan.duration.tolerance_seconds:
@@ -191,7 +196,7 @@ def run(
         )
     state.notes = notes
     limits = limit_problems(state, order)
-    if not validation.ok or limits:
+    if not validation.ok or limits or audio_plan.status == "blocked":
         state.status = "blocked"
     elif manifest.status == "delivered":
         state.status = "delivered"
@@ -212,6 +217,7 @@ def run(
             "director_plan": director_paths["plan"],
             "manifest": delivery_paths["manifest"],
             "delivery_readme": delivery_paths["readme"],
+            "audio_plan": audio_path,
         },
         deltas=deltas,
         limits=limits,
