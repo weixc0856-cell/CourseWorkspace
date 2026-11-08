@@ -55,7 +55,7 @@ Blender 5.2 当前构建没有 `file_format=FFMPEG` 枚举，POC 改为 PNG 序�
 ## 5. 不能直接复用什么
 
 - 15 分钟长片的渲染：按 720p30 的 0.8 s/帧线性外推，1080p30 约 13 小时/遍，1440p60 约 20–40 小时/遍；返工成本高；
-- 多面板同步（参考片的 2×2 四组模拟）：POC 只有一画面 + 一元状态图；
+- 多面板同步：`PrimerQuad` 2×2 组件已实现并做过 still 验证；真实四 seed capture 与 30 s 成片尚未跑；
 - 章节卡、音乐/音效、旁白：未做；
 - Blender 没有 agent 点缓存导入：当前用 Python 生成对象颜色/位置关键帧，agent 上千时会膨胀。
 
@@ -66,7 +66,7 @@ Blender 5.2 当前构建没有 `file_format=FFMPEG` 枚举，POC 改为 PNG 序�
 1. `SimulationSpec` 契约（seed、网格、规则、帧数、每帧状态）已实现；
 2. Blender 侧只保留 `world.py` 这类“数据 → 场景”任务，不直接在 Blender 里写模拟；
 3. 长序列用 Three.js/CodeVideo 实时渲染（已接入 CodeVideo adapter：ShotSpec.inputs.simulation_spec → simulation.json → capture → QC PASS；导演层 `visual_kind: simulation` 自动路由），Blender 做特写/材质/灯光；
-4. 2×2 面板、三元图、表格、字幕全部交给 Remotion；
+4. 2×2 面板、三元图、表格、字幕全部交给 Remotion；`PrimerQuad` 已给出布局；
 5. 音频单独做，先解决授权音乐与中文旁白。
 
 ## 7. 边界
