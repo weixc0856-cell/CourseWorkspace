@@ -50,7 +50,7 @@ compose（staging + Remotion）           → build/<slug>/final/course-video.mp
 verify                                 → build/<slug>/final/build-report.json（V-10~V-22）
 ```
 
-人工节点是正式设计：Motion Canvas 没有 CLI 导出，作者必须在编辑器导出到 `build/<slug>/animation/<scene-stem>.mp4`；未导出时构建结论是 `incomplete`，不是通过。
+Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` 通过 core `Renderer`、帧接收器和 ffmpeg 直接产出 `build/<slug>/animation/<scene-stem>.mp4`；adapter 重试并 ffprobe，失败即 `fail`，不写 `skipped`。
 
 ## 内容形态与音频
 
@@ -67,7 +67,7 @@ verify                                 → build/<slug>/final/build-report.json�
 | `lessons/` | 课程唯一入口 | 双文件内容 + 契约 | 是 |
 | `CourseControl/` | 校验、调度、收集、报告；含 `director/` 与 `producer/` | `shots.json`、`build-report.json`、导演计划、交付清单 | 是 |
 | `CourseSlides/` | Reveal 6 外壳 | 浏览器页面 | 是 |
-| `MotionStudio/` | 结构动画（人工导出） | `animation/<stem>.mp4` | 是（人工） |
+| `MotionStudio/` | 结构动画（无头自动导出） | `animation/<stem>.mp4` | 是 |
 | `ManimSandbox/` | 数学动画备选 | `animation/*.mp4` | 否 |
 | `CodeVideoStudio/` | Code2Video Skill：动效/HTML/SVG 镜头 | `animation/<project>.mp4` + `VERIFY.md` | 是（镜头级） |
 | `BlenderStudio/` | 课程渲染任务（v1）+ 场景系统（v2） | `blender/*.png|mp4|blend` | 是（可选引擎） |
@@ -149,7 +149,8 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 | --- | --- | --- |
 | 本地模型（llama.cpp） | 8080 | 唯一实例；所有调用经 `shared/ai_runtime` 排队 |
 | 课件预览 / 截图 | 8081 | `live-server`，截图复用现有实例 |
-| Motion Canvas 编辑器 | 5173 | 人工导出 |
+| Motion Canvas 编辑器 | 5173 | 制作/预览 |
+| Motion Canvas 无头导出 | 4173 / 4174 | Vite + 帧接收器；仅构建时占用 |
 | Remotion Studio | 3000 | 预览 |
 | VoxCPM2 TTS（外部） | 50000 | 唯一实例；谁启动谁停止 |
 

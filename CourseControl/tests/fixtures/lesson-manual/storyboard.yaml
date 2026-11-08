@@ -6,5 +6,5 @@ shots:
     slide: 1
     engine: motion_canvas
     scene: src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx
-    cue_seconds: 1
-    expected_duration_s: 1.0
+    cue_seconds: 0
+    expected_duration_s: 12.3

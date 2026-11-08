@@ -106,6 +106,7 @@ class Acceptance(StrictModel):
 
 
 class BuildOptions(StrictModel):
+    # Legacy switch; the Motion Canvas adapter now renders headlessly and ignores it.
     allow_manual_animation_export: bool = True
 
 

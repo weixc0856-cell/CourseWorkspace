@@ -32,7 +32,7 @@ subtitles:
   enabled: false
 
 acceptance:
-  notes_total_seconds: 6
+  notes_total_seconds: 16
   duration_tolerance_seconds: 0.5
 
 build:

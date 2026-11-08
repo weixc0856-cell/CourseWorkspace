@@ -28,7 +28,6 @@
 - 无人工确认的整课内容直接落盘（R1 起 AI 只产出候选稿，人工批准后才进入正式课程）。
 - 不部署 Code2Video 27B 权重；不引入第二套课程编排流水线；外部引擎只做镜头级能力。
 - 云端渲染、ComfyUI 图像生成流水线。
-- Motion Canvas headless 自动导出（见 FR-04，人工节点是正式设计）。
 - 让 LLM 直接判定课程事实正确性或替代人工审稿。
 - 多用户并发、多机器调度、容器化部署。
 
@@ -39,7 +38,7 @@
 | 角色 | 做什么 | 系统提供 |
 | --- | --- | --- |
 | 课程作者 | 撰写 `slides.md` / `lecture_notes.md`，登记 `storyboard.yaml` | 契约校验、截图、时间线推导 |
-| 动画作者 | 在 Motion Canvas 编辑器制作并导出动画 | 导出文件校验与自动接轨 |
+| 动画作者 | 在 Motion Canvas 编辑器制作场景 | 无头自动导出、ffprobe 校验与自动接轨 |
 | 三维作者 | 编写 IR v2 场景任务或使用 ModelingStudio | 场景执行、验收、manifest |
 | 构建者 | 一键构建并验收 | `build-lesson.ps1`、`build-report.json` |
 | 审稿人 | 核对内容与来源 | 内容审查报告（候选意见，人工裁决） |
@@ -60,7 +59,7 @@
 | `CourseControl/` | 核心 | 是 | 唯一课程调度与验收入口 |
 | `CourseSlides/` | 核心 | 是 | Reveal 预览与截图源 |
 | `RemotionStudio/` | 核心 | 是 | 截图、staging、最终合成 |
-| `MotionStudio/` | 核心 | 是（人工节点） | 结构动画；当前无 CLI 导出 |
+| `MotionStudio/` | 核心 | 是（自动） | 结构动画；Renderer + 帧接收器无头导出（D-054） |
 | `BlenderStudio/` | 核心（三维能力） | 是（可选引擎） | IR v2 场景系统 + 课程渲染任务 |
 | `ModelingStudio/` | 内部能力 | 否 | 图片→Blender 模型；产出可转为三维素材 |
 | `ManimSandbox/` | 可选能力 | 否 | 数学动画备选；当前无课程使用，保活但不接入主流程 |
@@ -72,7 +71,7 @@
 ### 3.1 当前版本边界（v1）
 
 - 课程构建闭环、IR v2、ModelingStudio、本地模型串行调度、在线内容审查内核为**本期交付**。
-- Motion Canvas 导出仍为人工步骤，属于正式工作流节点，不计为缺陷。
+- Motion Canvas 使用自建无头 Renderer 自动导出；编辑器仅用于制作与预览，不再是构建闸门。
 - Manim 仅保留现有 demo 与适配器，不新增课程接入。
 - Blender 任务存在两代 Schema，v1/v2 分工见 FR-04 / FR-05。
 
@@ -115,15 +114,15 @@
 
 **目标**：每个 `storyboard` 镜头产出可校验的视频。
 
-- **Motion Canvas（默认）**：无 CLI 导出。作者在编辑器导出到 `build/<slug>/animation/<scene-stem>.mp4`。
-  - 文件全部存在且 ffprobe 通过 → `render:motion_canvas = pass`。
-  - 缺失且 `build.allow_manual_animation_export=true` → `skipped`，`verdict=incomplete`，原因 `manual_export_required`。
-  - 缺失且开关为 false → `fail`。
+- **Motion Canvas（默认）**：`MotionStudio/scripts/render-headless.mjs` 启动 Vite、用 core `Renderer` 逐帧渲染、Node 帧接收器收集 PNG、ffmpeg 编码到 `build/<slug>/animation/<scene-stem>.mp4`。
+  - 自动渲染成功且 ffprobe 的分辨率/帧率/帧数通过 → `render:motion_canvas = pass`。
+  - 失败最多重试 2 次；仍失败 → `fail`，不得写 `skipped` 或 `pass`。
+  - 已有的合法人工导出文件可复用；但不再是默认路径，也不再需要 `allow_manual_animation_export`。
   - 禁止用截图拼帧或伪造文件冒充导出。
 - **Manim**：`uv run manim render --media_dir build/<slug>/tmp/manim-media`，复制成片到 `animation/`。
 - **Blender（课程任务，Schema v1）**：由 `scripts/blender-render.ps1` 调用 Blender，产物路径必须位于 `build/<lesson>/blender/`。
 
-**验收**：夹具 `lesson-manual` 校验人工导出；真实课程如实返回 `incomplete`；Manim 适配器有可复现命令。
+**验收**：`attention-flow` 连续 3 次无头渲染哈希一致；注入第 30 帧失败时不产生 MP4；`lesson-manual` 走自动导出 PASS；Manim 适配器有可复现命令。
 
 ### FR-05 三维场景任务 IR v2
 
@@ -318,7 +317,7 @@
 - 评估维度：课程适用性 30%、技术成熟度 20%、Agent 适配度 20%、集成成本 15%、商业许可 15%。
 - 硬门槛：许可证不明、无复现案例、特殊硬件不可用、与现有能力重复且无收益 → 不进入生产。
 - 收录：Code2Video、video-production-skill、HyperFrames、VideoZero 及后续项目；记录许可证、POC 结果与决策。
-- 当前决策：Code2Video 接入镜头级；video-production-skill 只吸收规范；HyperFrames 作为可选 HTML 渲染/lint 后端；VideoZero 作为 Motion Canvas 图像序列自动导出的候选。
+- 当前决策：Code2Video 接入镜头级；video-production-skill 只吸收规范；HyperFrames 作为可选 HTML 渲染/lint 后端；Motion Canvas 已用自建 core Renderer + 帧接收器实现无头导出（D-054），VideoZero 只留作历史 POC。
 
 **验收**：`docs/evaluations/技术雷达-视频生产.md` 持续更新；每个接入项有许可证与 POC 证据。
 
@@ -389,7 +388,7 @@ Claude Code、远程 API 与本地模型不得互相冒充。外部后端不可�
 validate（程序，任意失败即中止）
    ↓
 [自动] capture_slides ─────────────────────┐
-[人工] Motion Canvas 导出 → render:motion_canvas
+[自动] Motion Canvas 无头渲染 → render:motion_canvas
 [自动] render:manim（可选）                 ├→ collect → compose → verify
 [自动] render:blender（可选，v1）           │
 [独立] scene-run（IR v2）───────────────────┘（产物可被课程引用）
@@ -448,8 +447,8 @@ R1 增量完成条件：
 
 | 编号 | 事项 | 当前处理 |
 | --- | --- | --- |
-| OPEN-01 | Motion Canvas 是否自建 headless 导出 | 本期不做；人工节点是正式设计 |
-| OPEN-02 | 真实课程内容补全（4 页占位、3 页中文、8 段动画导出） | 用户负责；系统如实报告 `incomplete` |
+| OPEN-01 | Motion Canvas headless 导出 | 已解决（D-054）；编辑器不再是生产闸门 |
+| OPEN-02 | 真实课程内容补全（4 页占位、3 页中文） | 用户负责；动画导出已自动化 |
 | OPEN-03 | 审查后端供应商与凭据 | 默认 Claude Code；API 由用户配置，不可用时 `blocked` |
 | OPEN-04 | Manim 是否接入课程 | 保持可选，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式验证/证据语料） | 本期只交付审查内核 |

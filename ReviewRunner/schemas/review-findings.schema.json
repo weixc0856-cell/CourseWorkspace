@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "Category": {
+      "enum": [
+        "Correctness",
+        "Reliability",
+        "Security",
+        "Documentation",
+        "Teaching"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "Confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "Finding": {
+      "description": "One candidate defect. Every finding starts as ``unverified``.\n\nThe model's own ``confidence`` is recorded but is never evidence of truth;\na human has to confirm a finding before any fix is attempted.",
+      "properties": {
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "category": {
+          "$ref": "#/$defs/Category"
+        },
+        "file": {
+          "minLength": 1,
+          "title": "File",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "problem": {
+          "minLength": 1,
+          "title": "Problem",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "impact": {
+          "minLength": 1,
+          "title": "Impact",
+          "type": "string"
+        },
+        "suggested_fix": {
+          "minLength": 1,
+          "title": "Suggested Fix",
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence",
+          "default": "low"
+        },
+        "verification": {
+          "$ref": "#/$defs/Verification",
+          "default": "unverified"
+        }
+      },
+      "required": [
+        "severity",
+        "category",
+        "file",
+        "problem",
+        "evidence",
+        "impact",
+        "suggested_fix"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "P1",
+        "P2",
+        "P3",
+        "INFO"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "Verification": {
+      "enum": [
+        "unverified",
+        "verified",
+        "dismissed"
+      ],
+      "title": "Verification",
+      "type": "string"
+    }
+  },
+  "description": "The parsed findings document. Never carries a verdict.",
+  "properties": {
+    "production_effect": {
+      "const": "none",
+      "default": "none",
+      "title": "Production Effect",
+      "type": "string"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "findings"
+  ],
+  "title": "FindingsEnvelope",
+  "type": "object"
+}

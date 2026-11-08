@@ -13,7 +13,7 @@ CourseWorkspace/
 ├── lessons/            内容层：唯一的课程输入
 ├── CourseControl/      控制层：校验、调度、收集、报告（Python 3.12 + uv）
 ├── CourseSlides/       展示层：Reveal.js 外壳（Node）
-├── MotionStudio/       动画层：Motion Canvas（Node，人工导出）
+├── MotionStudio/       动画层：Motion Canvas（Node，无头自动导出）
 ├── ManimSandbox/       动画层：Manim（Python，可选）
 ├── BlenderStudio/      三维层：Blender 5.2 + 场景系统 + 渲染脚本
 ├── RemotionStudio/     合成层：截图采集、staging、Remotion 合成（Node）
@@ -78,7 +78,7 @@ course-control build
   ├─ LessonPaths.load(lesson.yaml, storyboard.yaml)
   ├─ validate()                        # V-01..V-09
   ├─ adapters.slides.capture_slides()  # live-server 8081 + playwright
-  ├─ adapters.motion_canvas.run()      # 校验人工导出
+  ├─ adapters.motion_canvas.run()      # 无头渲染 + ffprobe 校验
   ├─ adapters.manim.run()              # uv run manim
   ├─ adapters.blender.run()            # scripts/blender-render.ps1（v1）
   ├─ collect()                         # → shots.json
@@ -247,7 +247,8 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | --- | --- | --- |
 | 本地模型 llama.cpp | 8080 | 唯一实例；所有调用经 `ai_runtime` |
 | 课件预览 / 截图源 | 8081 | live-server |
-| Motion Canvas 编辑器 | 5173 | 人工导出 |
+| Motion Canvas 编辑器 | 5173 | 制作/预览 |
+| Motion Canvas 无头导出 | 4173 / 4174 | Vite + 帧接收器；仅构建时占用 |
 | Remotion Studio | 3000 | 预览 |
 | VoxCPM2 TTS（外部） | 50000 | 唯一实例；谁启动谁停止 |
 
@@ -273,7 +274,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | 引擎路由 | `engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
 | Code2Video 镜头 | `adapters/code_video.py`、`CodeVideoStudio/` | 镜头级 `SPEC.md` + `frame(t)` + `VERIFY.md`；本地 Playwright/ffmpeg；不部署 27B；Agent 用 Claude Code + DeepSeek |
 | HTML 渲染/lint 备选 | `CodeVideoStudio/backends/hyperframes/` | HyperFrames POC：HTML/GSAP → MP4，`check` 提供首帧/字号/对比度检查；不替换 Remotion |
-| Motion Canvas 自动导出候选 | `build/videozero-poc/`（POC） | VideoZero agent：seek/screenshot/render；image sequence + 外部 ffmpeg；不是纯 headless |
+| Motion Canvas 自动导出 | `MotionStudio/scripts/render-headless.mjs` | core `Renderer` + 自定义 exporter + Vite + Playwright/Chrome + Node 帧接收器 + ffmpeg；端口 4173/4174 |
 
 新增路径：`lessons/<slug>/authoring/`（来源、摘要、brief、outline、script、approval）；`build/<slug>/authoring/candidates/`（未批准候选）；`build/<slug>/narration/`；`build/<slug>/subtitles/`；`build/<slug>/timeline/page-plan.json`；`build/<slug>/final/burn.json`。
 
