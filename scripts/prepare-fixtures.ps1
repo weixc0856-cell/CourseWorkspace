@@ -24,6 +24,6 @@ New-Item -ItemType Directory -Force -Path (Split-Path -Parent $narration) | Out-
 ffmpeg -v error -f lavfi -i "sine=frequency=440:sample_rate=48000" -t 6 -y $narration
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg failed for $narration" }
 
-New-FixtureVideo -Path (Join-Path $root "build/lesson-manual/animation/gui_vs_cli_paths.mp4") -Seconds 1
+# lesson-manual animation is produced by the Motion Canvas headless adapter.
 
 Write-Host "fixture inputs ready"

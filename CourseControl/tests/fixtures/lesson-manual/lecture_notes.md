@@ -1,7 +1,7 @@
 ### Slide 1: Manual page one
 
-- **时长预算**：3 秒
-- **动画切入**：第 1 秒切入 Motion Studio 场景 `gui_vs_cli_paths`
+- **时长预算**：13 秒
+- **动画切入**：第 0 秒切入 Motion Studio 场景 `gui_vs_cli_paths`
 - **技术核查**：夹具专用，无外部事实
 - **逐字口播**：手工导出夹具第一页，验证人工文件接入。
 
