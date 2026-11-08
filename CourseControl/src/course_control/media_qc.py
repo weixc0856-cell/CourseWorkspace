@@ -75,7 +75,7 @@ def _measure_loudness(video: Path, workspace: Path) -> dict:
     )
     text = result.stderr + "\n" + result.stdout
     summary = text[text.rfind("Summary:") :] if "Summary:" in text else text
-    integrated = re.search(r"I:\s*(-?[0-9.]+)\s*LUFS", summary)
+    integrated = re.search(r"I\s*:\s*(-?[0-9.]+)\s*LUFS", summary)
     peak = re.search(r"Peak:\s*(-?[0-9.]+)\s*dBFS", summary)
     lra = re.search(r"LRA:\s*(-?[0-9.]+)\s*LU", summary)
     return {
@@ -333,6 +333,38 @@ def run_media_qc(
                 out_of_range=out_of_range,
             )
         )
+
+    asr_path = paths.build_root / "quality" / "asr-alignment.json"
+    if not asr_path.is_file():
+        checks.append(
+            _check(
+                "media.speech_match",
+                INCOMPLETE,
+                "ASR alignment not run; subtitle/speech agreement is unverified",
+            )
+        )
+    else:
+        try:
+            asr = json.loads(asr_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            checks.append(
+                _check("media.speech_match", INCOMPLETE, "cannot read ASR alignment report")
+            )
+        else:
+            asr_status = str(asr.get("status") or INCOMPLETE)
+            mapped = {PASS: PASS, WARN: WARN, BLOCKED: BLOCKED}.get(
+                asr_status, INCOMPLETE
+            )
+            checks.append(
+                _check(
+                    "media.speech_match",
+                    mapped,
+                    f"ASR {asr.get('model')}: mean coverage "
+                    f"{asr.get('mean_coverage')}, "
+                    f"{len(asr.get('mismatches') or [])} cue mismatch(es), "
+                    f"{len(asr.get('uncovered_speech') or [])} uncovered interval(s)",
+                )
+            )
 
     statuses = [check["status"] for check in checks]
     if BLOCKED in statuses:

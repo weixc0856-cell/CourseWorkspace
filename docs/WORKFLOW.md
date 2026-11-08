@@ -276,6 +276,9 @@ uv run --project CourseControl course-control validate --lesson <slug>
 | BGM 混音 | `audio-mix --lesson <slug>` | `final/course-video-mixed.mp4`、`audio/mix.json`（ducking + -16 LUFS） |
 | 全片 QC | `media-qc --lesson <slug>` | `quality/media-qc.json`（解码/格式/帧数/响度/静音/黑帧/冻结/字幕） |
 | 质量报告 | `quality-report --lesson <slug>` | `quality/quality-report.{json,md,html}`（五维独立状态与 BUILD/QUALITY/RELEASE） |
+| 教学结构 | `teaching-qa --lesson <slug>` | `quality/teaching-qa.json`（结构检查；learner_evidence=missing） |
+| 语音对齐 | `--extra asr asr-align --lesson <slug>` | `quality/asr-alignment.json`（ASR 转写与 cue 文本覆盖；缺 ASR 即 INCOMPLETE） |
+| 主张审查 | `content-qa claims` / `content-qa cross-review --a --b` | `review/claim_registry.json`、`review_cross.json`、`conflict_report.md` |
 
 **边界**：`build`/`validate`/`check.ps1` 不调用 8080/50000/网络；TTS 与翻译是显式命令。本地模型默认优先；远程只在 `config/model-routing.yaml` 显式启用且 key 存在时回退，任务记录写 `provider`。`--remote` 是显式远程开关。
 

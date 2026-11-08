@@ -1666,3 +1666,74 @@ def narrative_validate_command(
         typer.echo(f"  [{issue['rule']}] {issue['level']}: {issue['message']}")
     typer.echo(f"report: {target}")
     raise typer.Exit(1 if report["status"] == "fail" else 0)
+
+
+@app.command("asr-align")
+def asr_align_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    model: str = typer.Option("small.en", "--model"),
+    language: str = typer.Option("en", "--language"),
+    device: str = typer.Option("cpu", "--device"),
+    compute_type: str = typer.Option("int8", "--compute-type"),
+) -> None:
+    """Transcribe narration with ASR and check subtitle/speech agreement."""
+    from .alignment import BLOCKED, INCOMPLETE, run_alignment
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report, target = run_alignment(
+        workspace.resolve(),
+        paths,
+        model_size=model,
+        language=language,
+        device=device,
+        compute_type=compute_type,
+    )
+    typer.echo(f"status: {report['status']}")
+    typer.echo(f"cues: {report.get('cue_count', 0)}  words: {report.get('word_count', 0)}")
+    typer.echo(f"mean coverage: {report.get('mean_coverage', 0)}")
+    for mismatch in report.get("mismatches", [])[:8]:
+        typer.echo(
+            f"  cue {mismatch['index']}: coverage {mismatch['coverage']} "
+            f"({mismatch['start_ms']}–{mismatch['end_ms']} ms)"
+        )
+    for interval in report.get("uncovered_speech", [])[:8]:
+        typer.echo(
+            f"  uncovered {interval['start_s']}–{interval['end_s']}s: {interval['text'][:80]}"
+        )
+    for error in report.get("errors", []):
+        typer.echo(f"error: {error}", err=True)
+    typer.echo(f"report: {target}")
+    if report["status"] == BLOCKED:
+        raise typer.Exit(1)
+    if report["status"] == INCOMPLETE:
+        raise typer.Exit(3)
+    raise typer.Exit(0)
+
+
+@app.command("teaching-qa")
+def teaching_qa_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Run structural teaching checks; never claims learner understanding."""
+    from .teaching_qa import run_teaching_qa
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report, target = run_teaching_qa(workspace.resolve(), paths)
+    typer.echo(f"status: {report['status']} (structural: {report['structural_status']})")
+    for check in report["checks"]:
+        typer.echo(f"  [{check['id']}] {check['status']}: {check['detail']}")
+    typer.echo("learner_evidence: missing")
+    typer.echo(f"report: {target}")
+    raise typer.Exit(1 if report["structural_status"] == "BLOCKED" else 0)

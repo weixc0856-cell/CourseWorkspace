@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlparse
 
 import yaml
 from ai_runtime import ClaudeCodeConfig, load_env_file
@@ -64,19 +65,25 @@ def load_config(path: Path | None = None) -> ReviewConfig | None:
     # config only needs a provider shape and a non-secret fallback.
     model_data = data.get("model")
     if isinstance(model_data, dict):
-        env_base = os.environ.get("REMOTE_BASE_URL")
-        env_model = os.environ.get("REMOTE_MODEL")
-        env_key_env = os.environ.get("REMOTE_API_KEY_ENV")
         current_base = str(model_data.get("base_url") or "")
-        if "deepseek" in current_base.lower() or "deepseek" in (env_base or "").lower():
-            env_base = env_base or os.environ.get("DEEPSEEK_BASE_URL")
-            env_model = env_model or os.environ.get("DEEPSEEK_MODEL")
-        if env_base:
-            model_data["base_url"] = env_base
-        if env_model:
-            model_data["model"] = env_model
-        if env_key_env:
-            model_data["api_key_env"] = env_key_env
+        # A local endpoint is an explicit choice (for example the independent
+        # reviewer on 8080); do not let REMOTE_* environment values silently
+        # rewrite it into the remote provider.
+        host = (urlparse(current_base).hostname or "").lower()
+        is_local = host in {"127.0.0.1", "localhost", "::1", ""}
+        if not is_local:
+            env_base = os.environ.get("REMOTE_BASE_URL")
+            env_model = os.environ.get("REMOTE_MODEL")
+            env_key_env = os.environ.get("REMOTE_API_KEY_ENV")
+            if "deepseek" in current_base.lower() or "deepseek" in (env_base or "").lower():
+                env_base = env_base or os.environ.get("DEEPSEEK_BASE_URL")
+                env_model = env_model or os.environ.get("DEEPSEEK_MODEL")
+            if env_base:
+                model_data["base_url"] = env_base
+            if env_model:
+                model_data["model"] = env_model
+            if env_key_env:
+                model_data["api_key_env"] = env_key_env
     backend = str(data.get("backend", "claude_code"))
     claude_code = None
     if backend == "claude_code":

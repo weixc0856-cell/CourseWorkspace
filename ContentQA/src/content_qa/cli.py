@@ -74,3 +74,56 @@ def schema_command(
 
 if __name__ == "__main__":
     app()
+
+
+@app.command("claims")
+def claims_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    report: Path = typer.Option(..., "--report"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Build a Claim Registry from one review report."""
+    from .claims import load_source_ids, registry_from_report, write_registry
+
+    if not report.is_file():
+        typer.echo(f"report not found: {report}", err=True)
+        raise typer.Exit(1)
+    data = json.loads(report.read_text(encoding="utf-8"))
+    sources = load_source_ids(workspace.resolve() / lesson_dir / lesson)
+    registry = registry_from_report(data, source_ids=sources)
+    target = write_registry(
+        workspace.resolve() / "build" / lesson / "review" / "claim_registry.json",
+        registry,
+    )
+    typer.echo(f"claims: {len(registry.claims)}")
+    for claim in registry.claims:
+        typer.echo(f"  {claim.claim_id} [{claim.risk_level.value}] {claim.claim_text[:80]}")
+    typer.echo(f"registry: {target}")
+
+
+@app.command("cross-review")
+def cross_review_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    a: Path = typer.Option(..., "--a"),
+    b: Path = typer.Option(..., "--b"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Align two independent reviews; never treats agreement as proof."""
+    from .cross_review import run_cross_review
+
+    for path in (a, b):
+        if not path.is_file():
+            typer.echo(f"report not found: {path}", err=True)
+            raise typer.Exit(1)
+    out = workspace.resolve() / "build" / lesson / "review"
+    paths = run_cross_review(
+        workspace.resolve() / lesson_dir / lesson, a, b, out_dir=out
+    )
+    cross = json.loads(paths["cross"].read_text(encoding="utf-8"))
+    typer.echo(f"claims: {cross['summary']['claims']}")
+    for key, value in cross["summary"].items():
+        typer.echo(f"  {key}: {value}")
+    for name, path in paths.items():
+        typer.echo(f"{name}: {path}")

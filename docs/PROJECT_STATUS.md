@@ -17,6 +17,9 @@
 | 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
 | 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.37 s；2 个 Manim 镜头；73 cue；Producer `awaiting_approval` | VERIFIED（本地） |
 | 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |
+| ASR/语音对齐 | `CourseControl/src/course_control/alignment.py`、`asr-align` | faster-whisper `small.en`；80 cue，覆盖 0.992，0 不一致/0 未覆盖 | COMPLETED（P1） |
+| Teaching QA | `teaching_qa.py`、`teaching-qa` | 结构 WARN；`learner_evidence=missing` | COMPLETED（结构层） |
+| Claim Registry / 双审 | `ContentQA/src/content_qa/claims.py`、`cross_review.py` | A 23 / B 24；43 claim：3 supported、38 需人工、2 冲突、26 有来源缺口 | COMPLETED（P1 契约） |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
 ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。

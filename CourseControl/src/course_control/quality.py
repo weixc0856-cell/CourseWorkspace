@@ -44,6 +44,22 @@ def _now() -> str:
 
 
 def _q1(paths: LessonPaths) -> dict:
+    cross = _load(paths.build_root / "review" / "review_cross.json")
+    if cross is not None:
+        summary = cross.get("summary") or {}
+        return {
+            "status": WARN,
+            "reason": "independent A/B review; disputes and evidence gaps still need "
+            "human adjudication",
+            "evidence": [
+                "build/<slug>/review/review_cross.json",
+                "build/<slug>/review/claim_registry.json",
+            ],
+            "claims": summary.get("claims"),
+            "disputed": summary.get("disputed"),
+            "needs_human_review": summary.get("needs_human_review"),
+            "missing_evidence": summary.get("missing_evidence"),
+        }
     report = _load(paths.build_root / "review" / "review.json")
     claims = paths.lesson_dir / "authoring" / "claims.yaml"
     if report is None:

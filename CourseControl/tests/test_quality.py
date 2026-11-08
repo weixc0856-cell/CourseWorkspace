@@ -10,6 +10,7 @@ from course_control.contracts import Status
 from course_control.media_qc import INCOMPLETE, _parse_srt, run_media_qc
 from course_control.paths import LessonPaths
 from course_control.quality import BLOCKED, INCOMPLETE as Q_INCOMPLETE, PASS, build_quality_report
+from course_control.teaching_qa import run_teaching_qa
 
 
 LESSON_YAML = """schema_version: 1
@@ -93,6 +94,12 @@ shots:
         result = mix_lesson(self.workspace, self.paths)
         self.assertEqual(result.status, Status.SKIPPED)
         self.assertTrue(result.report_path.is_file())
+
+    def test_teaching_qa_never_claims_learner_evidence(self) -> None:
+        report, target = run_teaching_qa(self.workspace, self.paths)
+        self.assertEqual(report["status"], "WARN")
+        self.assertEqual(report["learner_evidence"], "missing")
+        self.assertTrue(target.is_file())
 
     def test_media_qc_is_incomplete_without_video(self) -> None:
         report, target = run_media_qc(self.workspace, self.paths)

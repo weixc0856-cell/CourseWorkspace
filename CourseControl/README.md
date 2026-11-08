@@ -192,6 +192,8 @@ uv run --project CourseControl course-control audio-plan --lesson <slug>
 uv run --project CourseControl course-control audio-mix --lesson <slug>
 uv run --project CourseControl course-control media-qc --lesson <slug>
 uv run --project CourseControl course-control quality-report --lesson <slug>
+uv run --project CourseControl course-control teaching-qa --lesson <slug>
+uv run --project CourseControl --extra asr course-control asr-align --lesson <slug>
 ```
 
 - `narrative-validate`：校验 `authoring/narrative-plan.json` 的六段骨架与时长，写 `quality/narrative.json`。
@@ -201,4 +203,9 @@ uv run --project CourseControl course-control quality-report --lesson <slug>
   写 `quality/media-qc.json`。
 - `quality-report`：五维独立状态（Q1–Q5）与 `BUILD_PASS / QUALITY_PASS / RELEASE_APPROVED`；
   输出 `quality/quality-report.{json,md,html}`。叙事结构通过只把 Q2 记 WARN，不等于教学有效。
+- `teaching-qa`：教学目标覆盖、页面 claim、例子/反例、认知负荷、收尾检查；
+  `learner_evidence` 永远为 `missing`，报告状态为 WARN，不声称教学有效。
+- `asr-align`：faster-whisper `small.en` 转写旁白，按 cue 窗口比对英文文本；
+  缺 ASR 时 Media QC 的 `media.speech_match` 为 INCOMPLETE。首次需
+  `uv sync --project CourseControl --extra asr`，模型缓存到 `runtime/asr/models/`。
 - 发布批准必须有人工 `quality/release-approval.json`，系统不代签。
