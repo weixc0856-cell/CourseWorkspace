@@ -15,9 +15,9 @@ WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-manual"
 
 
-def media() -> MediaInfo:
+def media(duration: float = 12.3) -> MediaInfo:
     return MediaInfo(
-        duration=12.3,
+        duration=duration,
         width=1920,
         height=1080,
         fps=30.0,
@@ -78,6 +78,15 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
             outcome = adapters.motion_canvas.run(self.paths)
         self.assertEqual(outcome.status, Status.FAIL)
         self.assertTrue(any("bad media" in error for error in outcome.errors))
+
+    def test_short_output_is_not_reused_or_passed(self):
+        self.target.parent.mkdir(parents=True)
+        self.target.write_bytes(b"truncated")
+        with patch.object(adapters.motion_canvas, "which_command", return_value=["node"]),              patch.object(adapters.motion_canvas, "run_command", side_effect=self.fake_success),              patch.object(adapters.motion_canvas, "probe_media", return_value=media(1.0)):
+            outcome = adapters.motion_canvas.run(self.paths)
+        self.assertEqual(outcome.status, Status.FAIL)
+        self.assertTrue(any("duration" in error for error in outcome.errors))
+        self.assertFalse(self.target.is_file())
 
     def test_valid_existing_output_is_reused(self):
         self.target.parent.mkdir(parents=True)

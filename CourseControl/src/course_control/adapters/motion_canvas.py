@@ -78,10 +78,13 @@ def _verify(target: Path, paths: LessonPaths, expected_duration_s: float | None 
         raise ValueError(f"fps {info.fps} does not match {paths.lesson.outputs.fps}")
     if info.duration is None or info.duration <= 0:
         raise ValueError("duration is missing or zero")
-    if expected_duration_s and info.duration < expected_duration_s * 0.5:
-        raise ValueError(
-            f"duration {info.duration:.2f}s is less than half of expected {expected_duration_s:.2f}s"
-        )
+    if expected_duration_s:
+        delta = abs(info.duration - expected_duration_s)
+        if delta > max(1.0, expected_duration_s * 0.25):
+            raise ValueError(
+                f"duration {info.duration:.2f}s differs from expected {expected_duration_s:.2f}s "
+                "by more than 25% (or 1s)"
+            )
     return info, warnings
 
 
@@ -126,6 +129,7 @@ def run(paths: LessonPaths) -> StageOutcome:
             target.unlink(missing_ok=True)
             ok, error = _render_once(paths, shot.id, scene_path, target, attempt)
             if not ok:
+                target.unlink(missing_ok=True)
                 last_error = error
                 warnings.append(f"{shot.id}: attempt {attempt} failed")
                 continue

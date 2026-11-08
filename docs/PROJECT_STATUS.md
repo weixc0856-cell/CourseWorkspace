@@ -3,7 +3,7 @@
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-08（旧 Manim 镜头统一、ContentQA 默认后端、文档/路径卫生）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `eaea74e`
-- **基线核实**：2026-11-08 实跑 `check.ps1`（`UV_NO_SYNC=1`）= `check ok`；五套单测 420 个用例（414 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
+- **基线核实**：2026-11-08 实跑 `check.ps1`（`UV_NO_SYNC=1`）= `check ok`；五套单测 421 个用例（415 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -206,7 +206,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 科学图形 POC | `ScientificFigures/` | SymPy + Matplotlib + SciencePlots；连续性方程 LaTeX + Poiseuille SVG/PDF/PNG |
 | Formula Pipeline | `formulas.py`、`Formula.tsx`、`formula-render.mjs`、Manim smoke | 唯一 LaTeX 源；KaTeX HTML/PNG；四类 validation；三路冒烟 |
 | 技术雷达 | `docs/evaluations/技术雷达-视频生产.md`、`docs/课程生产交付物规范.md`、`docs/evaluations/评估-DeepSeek Harness.md`、`docs/evaluations/评估-四后端对比.md` | 评分/许可证/硬门槛/交付归档规范；Claude Code/dsh 对比与受控代理决策（不接入运行时） |
-| 测试 | 五套单测 | **420 个用例（414 通过 + 6 跳过）**：CourseControl 308（303+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
+| 测试 | 五套单测 | **421 个用例（415 通过 + 6 跳过）**：CourseControl 309（304+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
 
 **暂缓**：具体课件内容、整课 TTS、实测字幕与最终成片（按用户要求先做仓库/接入优化）。**已完成**：Code2Video P2（含 QC 门）、HyperFrames POC、VideoZero POC、技术雷达与交付物规范、DeepSeek Harness CLI 对比、四后端镜头生成对比、Claude Code 全量默认后端接入、汽车空气动力学课（制作中）。
 
@@ -281,7 +281,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 416 个用例（410 通过 + 6 跳过；308+33+50+18+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 416 个用例（410 通过 + 6 跳过；309+33+50+18+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实报告状态 | COMPLETED | 历史 `incomplete` 保留；Motion 自动导出已用 POC/夹具验证 |

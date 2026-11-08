@@ -20,7 +20,7 @@
 - 前端评估：[docs/evaluations/FRONTEND_ASSESSMENT.md](docs/evaluations/FRONTEND_ASSESSMENT.md)
 - 统一契约 V1：[docs/课程生产统一契约V1.md](docs/课程生产统一契约V1.md)
 - E6.5 成片（本地归档，不入库）：`docs/archive/E6.5/E6.5-成片报告.md`
-- 技术雷达与外部项目评估：[docs/evaluations/技术雷达-视频生产.md](docs/evaluations/技术雷达-视频生产.md)、[docs/evaluations/评估-Code2Video接入.md](docs/evaluations/评估-Code2Video接入.md)、[docs/evaluations/评估-DeepSeek Harness.md](docs/evaluations/评估-DeepSeek%20Harness.md)、[docs/evaluations/评估-四后端对比.md](docs/evaluations/评估-四后端对比.md)
+- 技术雷达与外部项目评估：[docs/evaluations/技术雷达-视频生产.md](docs/evaluations/技术雷达-视频生产.md)、[docs/evaluations/评估-Codex审核.md](docs/evaluations/评估-Codex审核.md)、[docs/evaluations/评估-Code2Video接入.md](docs/evaluations/评估-Code2Video接入.md)、[docs/evaluations/评估-DeepSeek Harness.md](docs/evaluations/评估-DeepSeek%20Harness.md)、[docs/evaluations/评估-四后端对比.md](docs/evaluations/评估-四后端对比.md)
 - 课程复刻差距与视觉规范：[docs/evaluations/课程复刻差距与稳定工作流.md](docs/evaluations/课程复刻差距与稳定工作流.md)、[docs/课程视觉风格指南.md](docs/课程视觉风格指南.md)
 - 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
 - 科学计算/绘图接入：[docs/evaluations/科学图形与图表接入评估.md](docs/evaluations/科学图形与图表接入评估.md)

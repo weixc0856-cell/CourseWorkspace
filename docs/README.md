@@ -32,6 +32,7 @@
 - [评估-Code2Video接入.md](evaluations/评估-Code2Video接入.md)
 - [评估-DeepSeek Harness.md](evaluations/评估-DeepSeek%20Harness.md)
 - [评估-四后端对比.md](evaluations/评估-四后端对比.md)
+- [评估-Codex审核.md](evaluations/评估-Codex审核.md)
 - [评估-PBR与科学可视化接入.md](evaluations/评估-PBR与科学可视化接入.md)
 - [评估-Primer模拟视频POC.md](evaluations/评估-Primer模拟视频POC.md)
 - [评估-代码镜头与执行验证.md](evaluations/评估-代码镜头与执行验证.md)
