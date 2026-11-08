@@ -525,4 +525,16 @@ R1 增量完成条件：
 - 每个镜头保存内容/旁白/场景/方向指纹，`producer-affected` 给出 redesign / re-render / re-narrate / recompose。
 - 不读密钥；授权只记录能力布尔值与模型后端。
 
-**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 7 项）与增量检测实测。
+**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 4 项）与增量检测实测。
+
+### FR-30 版式系统
+
+**目标**：把版式作为导演职责，而不是动画完成后的美化；每页先选受控模板，再交给引擎执行。
+
+- `DesignSystem`：画布、96 px 安全边距、颜色角色、字号阶。
+- `LayoutLibrary`：8 个模板（title_intro / two_column / process_flow / principle_diagram / formula_derivation / data_chart / code_demo / summary），区域用归一化坐标。
+- `LayoutValidator`：安全区、重叠、主视觉面积、标题高度、字幕保留带、字号阶、标题/正文容量、项目符号。
+- 导演计划的每个镜头写 `layout_template` 与 `layout_regions`；direction 文件带 `style.layout`。
+- `layout-templates` / `layout-validate` 可独立检查模板与内容容量。
+
+**验收**：`docs/版式系统.md`、`test_layout.py`、`01-transformer-demo` 全镜头模板分配、CrossAttention/Loss 前后对比合辑。

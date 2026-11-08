@@ -3,7 +3,7 @@
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-08（导演层/制片层落地、计数校正）
 - **代码基线**：`origin/main` = `577501e`；当前分支 `feat/v1-pipeline-remote-fallback` 的功能提交 = `d95d887`（未推送）；本地 `main` 已同步 `origin/main`
-- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 383 个用例（377 通过 + 6 跳过）
+- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 390 个用例（384 通过 + 6 跳过）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -16,6 +16,7 @@
 | 能力 | 契约 / 代码 | 证据 | 状态 |
 | --- | --- | --- | --- |
 | FR-28 导演层 | `CourseControl/src/course_control/director/`、`docs/导演层.md` | 01-transformer-demo：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 9 warning；5 个真实渲染镜头 | COMPLETED（POC） |
+| FR-30 版式系统 | `CourseControl/src/course_control/layout/`、`docs/版式系统.md` | 8 个模板、12 镜头模板分配、CrossAttention/Loss 前后对比 | COMPLETED（POC） |
 | FR-29 制片层 | `CourseControl/src/course_control/producer/`、`docs/制片层.md` | 订单 + 七项交付清单：blocked，4 项缺失；增量检测实测 | COMPLETED（POC，交付未完成） |
 
 边界：导演层不写场景代码、不渲染；制片层不读密钥、不触发渲染/TTS/发布；成片未产出，交付清单如实 blocked。
@@ -177,10 +178,11 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 动画视觉导演 | `AnimationDirection`、`direction-validate`、`ManimSandbox/03-vector-intro/` | 90 秒竖切片 1920×1080/30fps；分镜字段与视觉门 |
 | 导演层 | `director/`、`director-plan`、`director-validate` | 12 镜头 / 1200 s / 0 error / 9 warning；storyboard、directions、shot_specs、review |
 | 制片层 | `producer/`、`producer-order/run/status/affected` | 七项交付清单 blocked（4 项缺失）；订单、限额、指纹与增量 |
+| 版式系统 | `layout/`、`layout-templates`、`layout-validate` | 8 模板、安全区/重叠/容量闸门；CrossAttention/Loss 重做 |
 | 科学图形 POC | `ScientificFigures/` | SymPy + Matplotlib + SciencePlots；连续性方程 LaTeX + Poiseuille SVG/PDF/PNG |
 | Formula Pipeline | `formulas.py`、`Formula.tsx`、`formula-render.mjs`、Manim smoke | 唯一 LaTeX 源；KaTeX HTML/PNG；四类 validation；三路冒烟 |
 | 技术雷达 | `docs/技术雷达-视频生产.md`、`docs/课程生产交付物规范.md`、`docs/评估-DeepSeek Harness.md`、`docs/评估-四后端对比.md` | 评分/许可证/硬门槛/交付归档规范；Claude Code/dsh 对比与受控代理决策（不接入运行时） |
-| 测试 | 五套单测 | **383 个用例（377 通过 + 6 跳过）**：CourseControl 271（266+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
+| 测试 | 五套单测 | **390 个用例（384 通过 + 6 跳过）**：CourseControl 278（273+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
 
 **暂缓**：具体课件内容、整课 TTS、实测字幕与最终成片（按用户要求先做仓库/接入优化）。**已完成**：Code2Video P2（含 QC 门）、HyperFrames POC、VideoZero POC、技术雷达与交付物规范、DeepSeek Harness CLI 对比、四后端镜头生成对比、Claude Code 全量默认后端接入、汽车空气动力学课（制作中）。
 
@@ -255,7 +257,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 383 个用例（377 通过 + 6 跳过；271+33+50+18+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 390 个用例（384 通过 + 6 跳过；278+33+50+18+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |

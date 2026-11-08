@@ -69,6 +69,9 @@ class DirectorPlanTest(unittest.TestCase):
         self.assertIn("CrossAttentionFlowScene", by_id["shot_008"].scene)
         self.assertIn("LossBackpropScene", by_id["shot_010"].scene)
         self.assertEqual(by_id["shot_009"].engine, "remotion")
+        self.assertEqual(by_id["shot_001"].layout_template, "title_intro")
+        self.assertEqual(by_id["shot_007"].layout_template, "process_flow")
+        self.assertEqual(by_id["shot_009"].layout_template, "data_chart")
         self.assertEqual(len(self.plan.narration), 54)
         segment_ids = {segment.id for segment in self.plan.narration}
         for shot in self.plan.shots:
@@ -131,6 +134,12 @@ class DirectorPlanTest(unittest.TestCase):
         plan.shots[1].engine = "manim"
         rules = {check.rule for check in validate(plan, self.inputs, self.decisions)}
         self.assertIn("engine.3d_route", rules)
+
+    def test_unknown_layout_template_is_rejected(self):
+        plan = self.reload()
+        plan.shots[0].layout_template = "nope"
+        rules = {check.rule for check in validate(plan, self.inputs, self.decisions)}
+        self.assertIn("layout.unknown_template", rules)
 
     def test_missing_scene_class_is_rejected(self):
         plan = self.reload()

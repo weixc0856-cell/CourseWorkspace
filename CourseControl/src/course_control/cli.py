@@ -134,6 +134,7 @@ def schemas_command(
     from .contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
     from .animation_direction import AnimationDirection
     from .director.schema import DirectorPlan
+    from .layout.schema import LayoutTemplate
     from .producer.schema import DeliveryManifest, ProductionOrder, ProductionState
     from .formulas import FormulaSpec
     from .session import EvidenceManifest, SessionSpec
@@ -153,6 +154,7 @@ def schemas_command(
         "production-order": ProductionOrder,
         "production-state": ProductionState,
         "delivery-manifest": DeliveryManifest,
+        "layout-template": LayoutTemplate,
     }
     for name, model in models.items():
         target = output / f"{name}.schema.json"
@@ -1447,3 +1449,39 @@ def producer_rebuild_command(
             typer.echo(f"  {stage.name}: {stage.status.value}")
     typer.echo(f"state refreshed: {'yes' if result['state'] is not None else 'no'}")
     raise typer.Exit(1 if result["failed"] else 0)
+
+
+@app.command("layout-templates")
+def layout_templates_command() -> None:
+    """List the validated layout templates."""
+    from .layout import TEMPLATES
+
+    for template in TEMPLATES.values():
+        visual = template.region("main_visual")
+        area = visual.area if visual else 0.0
+        typer.echo(f"{template.id}: {template.content_type} / visual {area:.0%} / {template.name}")
+
+
+@app.command("layout-validate")
+def layout_validate_command(
+    template: str = typer.Option(..., "--template"),
+    title_chars: int = typer.Option(0, "--title-chars", min=0),
+    body_chars: int = typer.Option(0, "--body-chars", min=0),
+    bullets: int = typer.Option(0, "--bullets", min=0),
+) -> None:
+    """Validate one layout template, optionally against content sizes."""
+    from .layout import get_template, ok, validate_content, validate_template
+
+    try:
+        layout = get_template(template)
+    except KeyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2)
+    checks = validate_template(layout) + validate_content(
+        layout, title_chars=title_chars, body_chars=body_chars, bullet_count=bullets
+    )
+    for check in checks:
+        typer.echo(f"[{check.level}] {check.id}: {check.message}")
+    if not checks:
+        typer.echo("no issues")
+    raise typer.Exit(0 if ok(checks) else 1)

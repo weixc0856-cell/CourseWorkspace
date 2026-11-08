@@ -16,7 +16,13 @@ def _direction(plan: DirectorPlan, shot: ShotPlan) -> AnimationDirection:
         lesson_id=plan.lesson_id,
         title=shot.title,
         total_seconds=shot.duration_s,
-        style=plan.style.model_dump(),
+        style={
+            "design": plan.style.model_dump(),
+            "layout": {
+                "template": shot.layout_template,
+                "regions": shot.layout_regions,
+            },
+        },
         shots=[
             ShotDirection(
                 shot_id=shot.id,

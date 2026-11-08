@@ -429,3 +429,11 @@
 **决策**：新增 `CourseControl/src/course_control/producer/`。订单声明受众、时长、必须覆盖、授权与限额；`producer-run` 只自动执行 validate → director → package → state，不触发渲染、TTS、发布；交付包按文件存在性与 sha256 判定，全部 present 且订单人工批准才是 `delivered`。每个镜头保存内容/旁白/场景/方向四类指纹，`producer-affected` 输出受影响镜头与动作。
 
 **后果**：交付状态可核查，missing 明确；制片层不读密钥；局部重渲染还需 build 支持 storyboard override，当前只到“指出受影响镜头”。
+
+## D-050 版式作为导演职责，先模板后场景
+
+**背景**：动画方向已经可用，但画面主体偏小、留白平均分散、说明文字偏淡；逐页改场景不可复用，也容易风格漂移。
+
+**决策**：新增 `CourseControl/src/course_control/layout/`：`DesignSystem`（画布/安全边距/颜色/字号）、8 个 `LayoutTemplate`（归一化区域）、`LayoutValidator`（安全区/重叠/主视觉面积/容量/字幕保留带）。导演计划为每个镜头写模板与区域，引擎只能在区域内作画；Manim 场景共用 `ManimSandbox/common/design_system.py` 的 token。模板由规则映射选择，不让模型自由生成坐标。
+
+**后果**：版式可校验、可复用；CrossAttention 与 Loss 先按 `process_flow` 重做并出前后对比；动画过程中的碰撞/遮挡仍未自动检测，留待下一轮。

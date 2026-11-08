@@ -87,6 +87,8 @@ class ShotPlan(StrictModel):
     cue_seconds: float = Field(ge=0)
     target_seconds: float = Field(gt=0)
     transition: Literal["cut", "continuous"]
+    layout_template: str = Field(pattern=r"^[a-z][a-z0-9_]{2,40}$")
+    layout_regions: dict[str, list[float]] = Field(default_factory=dict)
     shot_size: Literal["wide", "medium", "closeup"] = "medium"
     learning_intent: str = Field(min_length=1)
     visual_metaphor: str = Field(min_length=1)

@@ -14,6 +14,7 @@ from pathlib import Path
 from ..authoring.models import NarrationScript, Outline, OutlineChapter, OutlinePage
 from ..contracts import ShotSpec
 from ..engine_router import VisualRequirement, route_engine
+from ..layout import choose_template, get_template
 from ..paths import LessonPaths
 from .inputs import DirectorInputs
 from .schema import (
@@ -338,6 +339,8 @@ def build_shots(
             cursor += page.target_seconds
             existing = storyboard_shots.get(page.slide)
             cue = existing.cue_seconds if existing is not None else min(30.0, max(0.0, page.target_seconds / 3))
+            layout_id = choose_template(page.visual_kind, page.animation)
+            layout = get_template(layout_id)
             narration_ids = [
                 segment.id for segment in script_by_slide[page.slide].segments
             ] if page.slide in script_by_slide else []
@@ -362,6 +365,11 @@ def build_shots(
                     cue_seconds=round(cue, 3),
                     target_seconds=round(page.target_seconds, 3),
                     transition=transition,
+                    layout_template=layout_id,
+                    layout_regions={
+                        region.role: [region.x, region.y, region.w, region.h]
+                        for region in layout.regions
+                    },
                     shot_size=decision.shot_size,
                     learning_intent=page.claim,
                     visual_metaphor=page.visual,

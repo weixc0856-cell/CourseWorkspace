@@ -513,6 +513,21 @@
           "title": "Transition",
           "type": "string"
         },
+        "layout_template": {
+          "pattern": "^[a-z][a-z0-9_]{2,40}$",
+          "title": "Layout Template",
+          "type": "string"
+        },
+        "layout_regions": {
+          "additionalProperties": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "title": "Layout Regions",
+          "type": "object"
+        },
         "shot_size": {
           "default": "medium",
           "enum": [
@@ -604,6 +619,7 @@
         "cue_seconds",
         "target_seconds",
         "transition",
+        "layout_template",
         "learning_intent",
         "visual_metaphor",
         "composition",
