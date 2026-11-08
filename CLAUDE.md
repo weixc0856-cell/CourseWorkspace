@@ -28,6 +28,7 @@
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)
 - 配色规范（浅色主题/语义色/对比度）：[docs/配色规范.md](docs/配色规范.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
+- Primer 式模拟视频 POC：[docs/评估-Primer模拟视频POC.md](docs/评估-Primer模拟视频POC.md)
 - Attention 两分钟样片与 3B1B 差距：[docs/样片-注意力-3B1B差距与路线.md](docs/样片-注意力-3B1B差距与路线.md)
 - 动画/音频/口播整合：[docs/评估-动画音频口播-整合.md](docs/评估-动画音频口播-整合.md)
 - 交付物/QC/归档：[docs/课程生产交付物规范.md](docs/课程生产交付物规范.md)

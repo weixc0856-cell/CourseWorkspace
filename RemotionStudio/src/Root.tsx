@@ -6,6 +6,7 @@ import {CourseVideo} from './compositions/CourseVideo';
 import {R1Smoke} from './compositions/R1Smoke';
 import {ScenePage, ScenePageProps} from './compositions/ScenePage';
 import {FormulaProbe} from './compositions/FormulaProbe';
+import {PrimerPoc, primerPocDefaults} from './compositions/PrimerPoc';
 import {ShotsFile, TimelineSpec} from './types';
 
 const defaultProps: ShotsFile = {
@@ -62,6 +63,15 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={{src: '', kind: 'image' as const}}
+      />
+      <Composition
+        id="PrimerPoc"
+        component={PrimerPoc}
+        durationInFrames={900}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={primerPocDefaults}
       />
       <Composition
         id="CourseTimeline"
