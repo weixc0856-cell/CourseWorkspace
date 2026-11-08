@@ -1,6 +1,7 @@
 [project]
 name = "scene-expr"
 version = "0.1.0"
+license = {text = "AGPL-3.0-or-later"}
 description = "Restricted, dependency-free arithmetic expressions for scene tasks"
 requires-python = ">=3.12,<3.13"
 dependencies = []

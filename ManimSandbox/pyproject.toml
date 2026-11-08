@@ -1,6 +1,7 @@
 [project]
 name = "manim-sandbox"
 version = "0.1.0"
+license = {text = "AGPL-3.0-or-later"}
 description = "Manim scenes for the bilingual technical courseware (fallback for math-heavy animation)"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"

@@ -1,6 +1,7 @@
 [project]
 name = "modeling-studio"
 version = "0.1.0"
+license = {text = "AGPL-3.0-or-later"}
 description = "Local image-to-Blender modeling workflow (Qwen3-VL / Qwen3 / Qwen3-Coder)"
 requires-python = ">=3.12,<3.13"
 dependencies = [

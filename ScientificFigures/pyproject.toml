@@ -1,6 +1,7 @@
 [project]
 name = "scientific-figures"
 version = "0.1.0"
+license = {text = "AGPL-3.0-or-later"}
 description = "Publication-style scientific figures for CourseWorkspace (POC)"
 requires-python = ">=3.12,<3.13"
 dependencies = [

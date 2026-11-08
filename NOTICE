@@ -1,0 +1,24 @@
+CourseWorkspace
+Copyright (C) 2026 CourseWorkspace project owner
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+This repository is licensed under the GNU Affero General Public License,
+version 3 or (at your option) any later version. See LICENSE.
+
+Third-party components retain their own licenses:
+
+- CodeVideoStudio/skills/code-video and CodeVideoStudio/LICENSE.code-video:
+  Apache License 2.0, Copyright OpenSenseNova.
+- CodeVideoStudio/shots/primer-rps/three.module.js:
+  Three.js r160, MIT, Copyright 2010-2023 Three.js Authors.
+- CodeVideoStudio/backends/hyperframes:
+  ISC, upstream HyperFrames package.
+- RemotionStudio/public/fonts/NotoSansSC:
+  SIL Open Font License 1.1; see RemotionStudio/public/fonts/LICENSE-NotoSansSC.txt.
+- Playwright (Apache-2.0) and Chromium (BSD-style) are used through local
+  node_modules; they are not vendored.
+- FFmpeg is an external executable; its license depends on the installed build.
+
+Course content under lessons/, generated media under build/, and audio or
+model assets outside this repository are not licensed by the AGPL unless a
+file explicitly says so.

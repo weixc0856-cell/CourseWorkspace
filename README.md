@@ -172,6 +172,14 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 # 然后把 api_key_env 改成你实际使用的环境变量名
 ```
 
+## License
+
+- 本仓库代码采用 **AGPL-3.0-or-later**，全文见 [LICENSE](LICENSE)。
+- **商业双许可**：如要在闭源产品或商业服务中内嵌本仓库代码、且不愿承担 AGPL 的源码公开义务，需向仓库所有者取得单独的商业授权。
+- 第三方组件保留原许可：CodeVideoStudio Skill 为 Apache-2.0，Three.js 为 MIT，Noto Sans SC 为 OFL，HyperFrames 为 ISC；完整清单见 [NOTICE](NOTICE)。这些组件不会被重新标为 AGPL。
+- `lessons/` 课程正文、`build/` 成片与仓库外音频/模型资产不在 AGPL 范围内，除非文件另有声明。
+- 贡献前需按 [CONTRIBUTING.md](CONTRIBUTING.md) 完成 CLA；这是维持双许可的前提。
+
 ## 边界
 
 - 课程正文归作者所有；自动化只做格式与路径处理。
