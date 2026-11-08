@@ -3,7 +3,7 @@
 - **盘点日期**：2026-11-03
 - **最近更新**：2026-11-08（旧 Manim 镜头统一、ContentQA 默认后端、文档/路径卫生）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `37b0716` + 2026-11-08 未提交改动
-- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 410 个用例（404 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
+- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 416 个用例（410 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -34,6 +34,7 @@
 | Ken Burns 真实核对 | `build/01-transformer-demo/slides/`、`build/01-transformer-demo/final/motion-test.mp4` | 12 页真实截图；150 帧 CourseTimeline；首末帧可见推近与 1.2% 平移 |
 | 运行时版式检查 | `ManimSandbox/common/scene_checks.py` | 文本安全区/重叠检查；`STRICT_LAYOUT=1` 下 5 个旧镜头全部 clean |
 | 4K60 渲染基准 | `build/01-transformer-demo/final/motion-4k60.mp4` | 3840×2160 / 60fps / 60 帧；slides capture 已按课程分辨率参数化 |
+| AudioPlan | `CourseControl/src/course_control/audio_plan.py`、`audio-plan` CLI | 内容类型/许可/署名/电平闸门；6 个单测；输出 `build/<slug>/audio/audio_plan.json` |
 | ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
 | 路径与文档 | 全部 README、`docs/` | `path check ok`；清除控制字符与个人路径；补全 `VOICE_REF_WAV`、junction、配色说明 |
 
@@ -201,7 +202,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 科学图形 POC | `ScientificFigures/` | SymPy + Matplotlib + SciencePlots；连续性方程 LaTeX + Poiseuille SVG/PDF/PNG |
 | Formula Pipeline | `formulas.py`、`Formula.tsx`、`formula-render.mjs`、Manim smoke | 唯一 LaTeX 源；KaTeX HTML/PNG；四类 validation；三路冒烟 |
 | 技术雷达 | `docs/技术雷达-视频生产.md`、`docs/课程生产交付物规范.md`、`docs/评估-DeepSeek Harness.md`、`docs/评估-四后端对比.md` | 评分/许可证/硬门槛/交付归档规范；Claude Code/dsh 对比与受控代理决策（不接入运行时） |
-| 测试 | 五套单测 | **410 个用例（404 通过 + 6 跳过）**：CourseControl 298（293+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
+| 测试 | 五套单测 | **416 个用例（410 通过 + 6 跳过）**：CourseControl 304（299+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
 
 **暂缓**：具体课件内容、整课 TTS、实测字幕与最终成片（按用户要求先做仓库/接入优化）。**已完成**：Code2Video P2（含 QC 门）、HyperFrames POC、VideoZero POC、技术雷达与交付物规范、DeepSeek Harness CLI 对比、四后端镜头生成对比、Claude Code 全量默认后端接入、汽车空气动力学课（制作中）。
 
@@ -276,7 +277,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 410 个用例（404 通过 + 6 跳过；298+33+50+18+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 416 个用例（410 通过 + 6 跳过；304+33+50+18+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |

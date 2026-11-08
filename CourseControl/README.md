@@ -45,6 +45,9 @@ uv run course-control subtitles-build --lesson 01-transformer-demo --workspace .
 uv run course-control subtitles-accept --lesson 01-transformer-demo --workspace ..
 uv run course-control burn-subs --lesson 01-transformer-demo --workspace ..
 
+# 音频策略
+uv run course-control audio-plan --lesson 01-transformer-demo --workspace ..
+
 # 版式 / 模拟
 uv run course-control layout-templates
 uv run course-control layout-validate --template process_flow
@@ -104,6 +107,7 @@ uv run course-control scene-schema
 - 导演计划：`director-plan`，输出 `director_plan.json`、`storyboard.director.yaml`、`directions/`、`shot_specs/`、`director_review.md`；
 - 制片：`producer-order` / `producer-run` / `producer-status` / `producer-rebuild`，输出订单、状态和七项交付清单；
 - 版式与配色：8 个模板、安全区/重叠/容量/字幕带校验；
+- 音频：`audio-plan` 按内容类型校验 BGM（正式课程/新闻禁用；许可/署名/电平硬闸门）；
 - 模拟：`SimulationSpec` → `SimulationData`，Blender/Three.js 共用；
 - `build --storyboard` / `--shots` 可显式加载导演 handoff 并局部重渲染。
 

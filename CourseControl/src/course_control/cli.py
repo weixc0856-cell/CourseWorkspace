@@ -133,6 +133,7 @@ def schemas_command(
     from .blender_scene import BlenderSceneTask
     from .contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
     from .animation_direction import AnimationDirection
+    from .audio_plan import AudioPlan
     from .director.schema import DirectorPlan
     from .layout.schema import LayoutTemplate
     from .simulation import SimulationSpec
@@ -151,6 +152,7 @@ def schemas_command(
         "evidence": EvidenceManifest,
         "formula": FormulaSpec,
         "animation-direction": AnimationDirection,
+        "audio-plan": AudioPlan,
         "director-plan": DirectorPlan,
         "production-order": ProductionOrder,
         "production-state": ProductionState,
@@ -1086,6 +1088,7 @@ def formula_validate_command(
 ) -> None:
     """Validate one FormulaSpec without rendering."""
     from .animation_direction import AnimationDirection
+    from .audio_plan import AudioPlan
     from .formulas import FormulaSpec, load_spec, source_problems
 
     try:
@@ -1158,6 +1161,7 @@ def formula_video_qc_command(
 def direction_validate_command(spec: Path = typer.Option(..., "--spec")) -> None:
     """Validate an AnimationDirection shot list before writing renderer code."""
     from .animation_direction import AnimationDirection
+    from .audio_plan import AudioPlan
 
     try:
         direction = AnimationDirection.model_validate_json(spec.read_text(encoding="utf-8"))
@@ -1529,3 +1533,29 @@ def simulation_run_command(
     typer.echo(f"cells={len(data.cells)} frames={len(data.frames_species)}")
     typer.echo(f"fractions={ranges}")
     typer.echo(f"data: {out}")
+
+
+@app.command("audio-plan")
+def audio_plan_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Validate the content-kind/BGM policy and write audio_plan.json."""
+    from .audio_plan import write_audio_plan
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    plan, target = write_audio_plan(paths.build_root, paths.lesson)
+    typer.echo(f"content_kind: {plan.content_kind}")
+    typer.echo(f"bgm_allowed: {plan.bgm_allowed}")
+    typer.echo(f"cues: {len(plan.cues)}")
+    for warning in plan.warnings:
+        typer.echo(f"warning: {warning}")
+    for error in plan.errors:
+        typer.echo(f"error: {error}", err=True)
+    typer.echo(f"audio_plan: {target}")
+    raise typer.Exit(0 if plan.status == "ready" else 2)

@@ -23,7 +23,7 @@
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11（10 通过 + 1 跳过） | 10 通过，1 跳过 |
 
-合计 **410** 个用例（404 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **416** 个用例（410 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -311,7 +311,7 @@ python ManimSandbox/05-multi-head/assemble.py
 | V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
 | V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
 
-R1 测试计数：五套合计 **410 个用例（404 通过 + 6 跳过）**：CourseControl 298（293+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
+R1 测试计数：五套合计 **416 个用例（410 通过 + 6 跳过）**：CourseControl 304（299+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
 
 R1 真实产物：
 

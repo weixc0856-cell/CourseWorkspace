@@ -24,6 +24,31 @@
       "title": "Acceptance",
       "type": "object"
     },
+    "AudioPolicy": {
+      "additionalProperties": false,
+      "description": "Content-kind policy; formal courses and news never carry BGM.",
+      "properties": {
+        "content_kind": {
+          "default": "formal_course",
+          "enum": [
+            "popular_science",
+            "formal_course",
+            "news"
+          ],
+          "title": "Content Kind",
+          "type": "string"
+        },
+        "bgm": {
+          "items": {
+            "$ref": "#/$defs/BgmCue"
+          },
+          "title": "Bgm",
+          "type": "array"
+        }
+      },
+      "title": "AudioPolicy",
+      "type": "object"
+    },
     "Authoring": {
       "additionalProperties": false,
       "description": "Optional paths to AI-drafted, human-approved authoring artifacts.",
@@ -102,6 +127,76 @@
         }
       },
       "title": "Authoring",
+      "type": "object"
+    },
+    "BgmCue": {
+      "additionalProperties": false,
+      "description": "One music bed interval; licence and level are part of the contract.",
+      "properties": {
+        "track_id": {
+          "minLength": 1,
+          "title": "Track Id",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "exclusiveMinimum": 0,
+          "title": "End S",
+          "type": "number"
+        },
+        "gain_db": {
+          "default": -25.0,
+          "maximum": 0.0,
+          "minimum": -60.0,
+          "title": "Gain Db",
+          "type": "number"
+        },
+        "duck_db": {
+          "default": 6.0,
+          "maximum": 24.0,
+          "minimum": 0.0,
+          "title": "Duck Db",
+          "type": "number"
+        },
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "license_status": {
+          "default": "unknown",
+          "enum": [
+            "public_domain",
+            "cc_by",
+            "owner_authorized_unverified",
+            "unknown"
+          ],
+          "title": "License Status",
+          "type": "string"
+        },
+        "commercial_allowed": {
+          "default": false,
+          "title": "Commercial Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "track_id",
+        "start_s",
+        "end_s"
+      ],
+      "title": "BgmCue",
       "type": "object"
     },
     "BuildOptions": {
@@ -550,6 +645,13 @@
         "slides": "ken_burns",
         "scale": 1.05,
         "pan_percent": 1.2
+      }
+    },
+    "audio": {
+      "$ref": "#/$defs/AudioPolicy",
+      "default": {
+        "content_kind": "formal_course",
+        "bgm": []
       }
     },
     "duration": {

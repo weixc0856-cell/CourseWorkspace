@@ -89,6 +89,7 @@ uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-
 uv run --project CourseControl course-control director-plan --lesson 01-transformer-demo
 uv run --project CourseControl course-control producer-run --lesson 01-transformer-demo
 uv run --project CourseControl course-control producer-rebuild --lesson 01-transformer-demo
+uv run --project CourseControl course-control audio-plan --lesson 01-transformer-demo
 uv run --project CourseControl course-control layout-templates
 uv run --project CourseControl course-control layout-validate --template process_flow
 uv run --project CourseControl course-control simulation-run `

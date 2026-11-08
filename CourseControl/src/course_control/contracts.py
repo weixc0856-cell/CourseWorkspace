@@ -109,6 +109,37 @@ class BuildOptions(StrictModel):
     allow_manual_animation_export: bool = True
 
 
+class BgmCue(StrictModel):
+    """One music bed interval; licence and level are part of the contract."""
+
+    track_id: str = Field(min_length=1)
+    start_s: float = Field(ge=0)
+    end_s: float = Field(gt=0)
+    gain_db: float = Field(-25.0, ge=-60.0, le=0.0)
+    duck_db: float = Field(6.0, ge=0.0, le=24.0)
+    attribution: str | None = None
+    license_status: Literal[
+        "public_domain",
+        "cc_by",
+        "owner_authorized_unverified",
+        "unknown",
+    ] = "unknown"
+    commercial_allowed: bool = False
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.end_s <= self.start_s:
+            raise ValueError("end_s must be greater than start_s")
+        return self
+
+
+class AudioPolicy(StrictModel):
+    """Content-kind policy; formal courses and news never carry BGM."""
+
+    content_kind: Literal["popular_science", "formal_course", "news"] = "formal_course"
+    bgm: list[BgmCue] = Field(default_factory=list)
+
+
 class MotionPolicy(StrictModel):
     """Slow still-image camera move for captured slides."""
 
@@ -132,6 +163,7 @@ class LessonConfig(StrictModel):
     acceptance: Acceptance = Acceptance()
     build: BuildOptions = BuildOptions()
     motion: MotionPolicy = MotionPolicy()
+    audio: AudioPolicy = AudioPolicy()
     duration: DurationPolicy | None = None
     authoring: Authoring | None = None
 
