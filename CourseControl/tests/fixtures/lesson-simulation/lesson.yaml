@@ -1,0 +1,23 @@
+schema_version: 1
+lesson_id: lesson-simulation
+title_en: Simulation shot
+title_zh: 模拟镜头
+status: draft
+content:
+  slides: slides.md
+  notes: lecture_notes.md
+  storyboard: storyboard.yaml
+  assets: assets/
+outputs:
+  fps: 30
+  resolution: [1920, 1080]
+  slides_canvas: [1280, 720]
+  animation_canvas: [1920, 1080]
+engines: [code_video]
+compose:
+  mode: deck
+  renderer: timeline
+narration:
+  enabled: false
+subtitles:
+  enabled: false

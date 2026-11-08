@@ -1,0 +1,13 @@
+schema_version: 1
+lesson: lesson-simulation
+shots:
+- id: primer_rps
+  slide: 1
+  engine: code_video
+  scene: shots/primer-rps/SPEC.md
+  cue_seconds: 0.0
+  expected_duration_s: 30.0
+  engine_profile: code_video
+  inputs:
+    simulation_spec: BlenderStudio/scenes/primer-poc/simulation.spec.json
+    simulation_out: simulation.json

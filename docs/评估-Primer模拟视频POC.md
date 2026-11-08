@@ -4,6 +4,7 @@
 参考：Primer《Simulating the Evolution of Rock, Paper, Scissors》（15:00，Godot 制作）
 产物：`build/primer-poc/poc.mp4`（1920×1080 / 30 fps / 30 s）
 产物（Three.js 版）：`build/primer-poc/poc-three.mp4`
+端到端：`build/lesson-simulation/animation/primer-rps.mp4`（adapter capture + QC PASS）
 源码：`BlenderStudio/scenes/primer-poc/`、`CodeVideoStudio/shots/primer-rps/`、`RemotionStudio/src/compositions/PrimerPoc.tsx`
 
 ## 1. 结论
@@ -63,7 +64,7 @@ Blender 5.2 当前构建没有 `file_format=FFMPEG` 枚举，POC 改为 PNG 序�
 
 1. `SimulationSpec` 契约（seed、网格、规则、帧数、每帧状态）已实现；
 2. Blender 侧只保留 `world.py` 这类“数据 → 场景”任务，不直接在 Blender 里写模拟；
-3. 长序列用 Three.js/CodeVideo 实时渲染（已验证 900 帧 45.7 秒、双次哈希一致），Blender 做特写/材质/灯光；
+3. 长序列用 Three.js/CodeVideo 实时渲染（已接入 CodeVideo adapter：ShotSpec.inputs.simulation_spec → simulation.json → capture → QC PASS），Blender 做特写/材质/灯光；
 4. 2×2 面板、三元图、表格、字幕全部交给 Remotion；
 5. 音频单独做，先解决授权音乐与中文旁白。
 

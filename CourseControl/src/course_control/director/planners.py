@@ -61,6 +61,7 @@ CAMERA_BY_KIND = {
     "layout": "static, hold",
     "recap": "slow pull back",
     "diagram": "slow push in",
+    "simulation": "slow orbit",
 }
 
 SIZE_BY_KIND = {
@@ -71,6 +72,7 @@ SIZE_BY_KIND = {
     "layout": "wide",
     "recap": "wide",
     "diagram": "medium",
+    "simulation": "wide",
 }
 
 PURPOSE_BY_KIND = {
@@ -81,6 +83,7 @@ PURPOSE_BY_KIND = {
     "layout": "summarize",
     "recap": "recap",
     "diagram": "explain",
+    "simulation": "demonstrate",
 }
 
 SPEECH_WORDS_PER_SECOND = 2.5

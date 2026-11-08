@@ -39,6 +39,7 @@ CODE_VIDEO_KINDS = {
     "webgl",
     "shader",
     "infographic",
+    "simulation",
 }
 REMOTION_KINDS = {
     "layout",

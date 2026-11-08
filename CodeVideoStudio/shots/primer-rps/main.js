@@ -1,7 +1,7 @@
 import * as THREE from './three.module.js';
 
-const W = 1280;
-const H = 720;
+const W = window.innerWidth;
+const H = window.innerHeight;
 const BG = 0x2d3033;
 const FPS = 30;
 
