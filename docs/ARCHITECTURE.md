@@ -114,7 +114,7 @@ modeling-studio run
 
 每个阶段：申请跨进程锁 → 确保模型在 8080 → 发送请求（预算检查）→ 写任务记录 → 释放锁/停止自有服务。
 
-### 3.4 在线审查
+### 3.4 内容审查
 
 ```text
 content-qa review
@@ -142,7 +142,7 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | Blender 任务 v2 | 场景任务 | `shared/schemas/blender-scene-task.schema.json` |
 | 代码/终端会话 | 执行、录制、证据 | `shared/schemas/session.schema.json`、`evidence.schema.json` |
 | 模型任务记录 | 任务状态与预算 | `shared/schemas/model-task.schema.json` |
-| 内容审查报告 | 在线审查输出 | `ContentQA/schemas/content-review.schema.json` |
+| 内容审查报告 | ContentQA 输出 | `ContentQA/schemas/content-review.schema.json` |
 | 规范化运行时 V1（V1-B/C/F 已实现；V1-D 证据适配器、V1-E 兼容层已实现；Remotion/Session 原生切换未完成） | `LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifestV1 / RenderManifest` | `shared/schemas/*-v1.schema.json` |
 
 Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output shared/schemas`，V1 用 `course-control schemas-v1 --output shared/schemas`。提交前必须与模型一致（有测试锁定）。V1 是 `lesson.yaml` / `storyboard.yaml` 之上的规范化运行时层，不替换作者文件。

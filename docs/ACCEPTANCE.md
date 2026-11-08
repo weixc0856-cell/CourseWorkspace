@@ -224,7 +224,7 @@ python ManimSandbox/05-multi-head/assemble.py
 
 ---
 
-## 5. 模型运行时与在线审查
+## 5. 模型运行时与内容审查
 
 | 项 | 命令 | 结果 |
 | --- | --- | --- |
@@ -236,9 +236,9 @@ python ManimSandbox/05-multi-head/assemble.py
 | 重试绕过预算 | `test_budget.py::test_retry_cannot_bypass_budget` | 通过：每次请求前重新检查 |
 | 任务失败落盘 | `test_job_state.py` | `job.json` 与任务记录均为 `failed` |
 | 上下文预算 | `test_runtime.py` | 文本/CJK/图片/超限拆分 |
-| 在线审查成功 | `test_content_qa.py`（mock） | 2 页 → 2 请求 → completed；报告字段完整 |
+| 内容审查成功 | `test_content_qa.py`（mock API 后端） | 2 页 → 2 请求 → completed；报告字段完整 |
 | 审查 Schema 漂移 | `test_schemas.py` | 4 份 Schema 与 Pydantic 模型一致 |
-| 在线审查非法 JSON | 同上 | failed + raw 保存 |
+| 内容审查非法 JSON | 同上 | failed + raw 保存 |
 | 多页中途失败 | 同上（flaky） | 第 1 页 findings 保留，第 2 页 failed |
 | 在线请求超时 | 同上（slow） | failed，任务记录终态 |
 | 只读边界 | 同上 | 课程文件字节不变；未生成 shots.json / build-report.json |
@@ -262,7 +262,7 @@ python ManimSandbox/05-multi-head/assemble.py
 | 项 | 原因 | 影响 |
 | --- | --- | --- |
 | 真实课程成片 | Motion Canvas 8 段未导出（人工） | `01-shell-for-ai-era` 为 `incomplete` |
-| 真实在线模型调用 | ContentQA 已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
+| 真实审查调用 | ContentQA 默认 Claude Code；API 后端已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
 | 本轮重跑 ModelingStudio 全链路 | 需独占 8080 约 10–30 分钟，且会与用户其他任务冲突 | 仅有历史作业证据 |
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |

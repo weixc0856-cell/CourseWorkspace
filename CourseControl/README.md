@@ -12,7 +12,7 @@
 
 - 只写 `build/<slug>/` 与各工程的 `.venv` / `node_modules` 缓存。
 - 不修改课程正文、`CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`BlenderStudio/` 的源码。
-- 不调用 LLM，不自动发布，不自动提交 Git。
+- 课程文本/审查经 `shared/ai_runtime` 显式调用 Claude Code 或配置的后端；不自动发布，不自动提交 Git。
 - 课程 YAML 由本层解析；Blender 只接收 JSON 任务。
 
 ## 环境
@@ -38,6 +38,12 @@ uv run course-control director-plan --lesson 01-transformer-demo --workspace ..
 uv run course-control director-validate --plan ../build/01-transformer-demo/director/director_plan.json
 uv run course-control producer-run --lesson 01-transformer-demo --workspace ..
 uv run course-control producer-rebuild --lesson 01-transformer-demo --workspace ..
+
+# 旁白 / 字幕
+uv run course-control narration-build --lesson 01-transformer-demo --workspace ..
+uv run course-control subtitles-build --lesson 01-transformer-demo --workspace ..
+uv run course-control subtitles-accept --lesson 01-transformer-demo --workspace ..
+uv run course-control burn-subs --lesson 01-transformer-demo --workspace ..
 
 # 版式 / 模拟
 uv run course-control layout-templates
@@ -162,8 +168,8 @@ build/<slug>/animation/<scene-stem>.mp4
 - 旁白是可选输入：`build/<slug>/narration/<source>`，在 `lesson.yaml` 用 `narration.enabled` / `narration.source` 打开。
 - 合成时 `collect` 探测音频时长，Remotion 混音，`verify` 用 V-15 检查音画差。
 - 字幕是可选输入：`lessons/<slug>/subtitles.srt`，由 `subtitles.enabled` 打开；`collect` 复制到 `build/<slug>/subtitles.srt`。
-- 合成与配音运行时都在 `<AI_ROOT>`，接入流程见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
-- 本层不做 TTS、不做语音识别。
+- 配音走本地 VoxCPM2（50000，唯一实例，谁启动谁停止）；合成与运行时接入见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
+- 本层不做 ASR / 词级对齐；字幕由实测旁白时间轴生成，人工 `subtitles-accept` 后才进入正式字幕。
 
 ## 报告与日志
 

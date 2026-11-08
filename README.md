@@ -70,7 +70,7 @@ verify                                 → build/<slug>/final/build-report.json�
 | `BlenderStudio/` | 课程渲染任务（v1）+ 场景系统（v2） | `blender/*.png|mp4|blend` | 是（可选引擎） |
 | `RemotionStudio/` | 截图、staging、合成 | `final/course-video.mp4` | 是 |
 | `ModelingStudio/` | 图片 → Blender 模型 | `workspace/jobs/<job>/` | 否（内部能力） |
-| `ContentQA/` | 在线模型内容审查 | `build/<slug>/review/` | 否（内部能力） |
+| `ContentQA/` | 内容审查（默认 Claude Code，API 可选） | `build/<slug>/review/` | 否（内部能力） |
 | `CourseDemo/` | VS Code 会话驱动扩展 | `vscode-result.json` | 否（内部能力） |
 | `shared/ai_runtime/` | 跨进程锁、服务生命周期、任务记录、上下文预算 | `runtime/` | 支撑 |
 | `shared/scene_expr/` | 受限表达式：AST 白名单 + 解释器 | — | 支撑 |
@@ -165,7 +165,7 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 
 - 课程正文归作者所有；自动化只做格式与路径处理。
 - 本地模型严格串行：跨进程锁 + 单一 8080 服务；谁启动谁停止。
-- 在线模型只产出候选意见；无凭据时 `blocked`，不降级冒充。
+- 内容审查只产出候选意见；Claude Code 不可用或 API 无凭据时 `blocked`，不降级冒充。
 - 所有 AI 输出都要经程序校验；最终事实判断由人工与来源证据负责。
 - 不在 `<AI_ROOT>` 写入、迁移或删除任何内容。
 

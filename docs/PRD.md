@@ -42,7 +42,7 @@
 | 动画作者 | 在 Motion Canvas 编辑器制作并导出动画 | 导出文件校验与自动接轨 |
 | 三维作者 | 编写 IR v2 场景任务或使用 ModelingStudio | 场景执行、验收、manifest |
 | 构建者 | 一键构建并验收 | `build-lesson.ps1`、`build-report.json` |
-| 审稿人 | 核对内容与来源 | 在线审查报告（候选意见，人工裁决） |
+| 审稿人 | 核对内容与来源 | 内容审查报告（候选意见，人工裁决） |
 
 主流程：
 
@@ -64,7 +64,7 @@
 | `BlenderStudio/` | 核心（三维能力） | 是（可选引擎） | IR v2 场景系统 + 课程渲染任务 |
 | `ModelingStudio/` | 内部能力 | 否 | 图片→Blender 模型；产出可转为三维素材 |
 | `ManimSandbox/` | 可选能力 | 否 | 数学动画备选；当前无课程使用，保活但不接入主流程 |
-| `ContentQA/` | 内部能力 | 否 | 在线模型内容审查；只读课程，不影响构建判定 |
+| `ContentQA/` | 内部能力 | 否 | 内容审查（默认 Claude Code，API 可选）；只读课程，不影响构建判定 |
 | `shared/` | 共享层 | 是 | Schema、设计令牌、AI 运行时 |
 | `config/`、`scripts/` | 支撑 | 是 | 本机配置与工作区入口 |
 | `docs/` | 指导 | — | 权威文档与归档 |
@@ -222,7 +222,7 @@
 - 结论状态：`completed` / `blocked` / `failed`；单条意见：`supported` / `unsupported` / `disputed` / `needs_human_review` / `not_checked`。
 - **凭据**：仅 API 后端需要；只从环境变量或本机忽略配置读取。Claude Code 不可用或 API 缺凭据时 `blocked`，退出码 3，绝不静默改用其他后端。
 - **只读**：不得修改 `lessons/`、`shots.json`、`build-report.json`，不得影响构建 `verdict`。
-- 在线模型不可用时明确标记，不降级冒充同等质量。
+- Claude Code 或远程 API 不可用时明确标记，不降级冒充同等质量。
 
 **验收**：mock 服务下的成功、不可用、非法 JSON、超预算测试；无凭据时 `blocked`。
 
@@ -365,17 +365,17 @@
 
 ## 6. 模型职责
 
-| 工作 | 在线模型 | 本地模型 | 程序 | 人工 |
+| 工作 | Claude Code / 远程 API | 本地模型 | 程序 | 人工 |
 | --- | --- | --- | --- | --- |
 | 课程资料理解、知识体系、复杂分析 | 是 | 否 | 拆分与预算 | 采纳 |
 | 事实/公式/参数/引用核查 | 是（候选） | 否 | 结构与证据定位 | 最终裁决 |
 | 多来源交叉验证 | 是 | 否 | 来源清单与哈希 | 裁决 |
 | 文档预处理、结构化提取、格式转换 | 否 | 是 | 校验 | 抽查 |
-| 建模规划、脚本生成 | 否 | 是 | AST 检查、执行、验收 | 审阅结果 |
+| 建模规划、脚本生成 | 是（文本规划） | 视觉分析可用 | AST 检查、执行、验收 | 审阅结果 |
 | 常规规则检查 | 否 | 可用 | 是 | — |
 | 最终内容正确性 | 否 | 否 | 否 | 是 |
 
-在线模型与本地模型不得互相冒充。在线不可用时记录 `blocked`；本地模型失败时记录 `failed`。
+Claude Code、远程 API 与本地模型不得互相冒充。外部后端不可用时记录 `blocked`；本地模型失败时记录 `failed`。
 
 ---
 
@@ -394,7 +394,7 @@ validate（程序，任意失败即中止）
 [自动] render:blender（可选，v1）           │
 [独立] scene-run（IR v2）───────────────────┘（产物可被课程引用）
 [独立] modeling-studio（图片→模型）
-[独立] content-qa review（在线审查，不影响 verdict）
+[独立] content-qa review（默认 Claude Code，不影响 verdict）
 ```
 
 人工节点必须出现在交付报告中：未导出 = `skipped` + `incomplete`；未配置凭据 = `blocked`。
@@ -411,8 +411,8 @@ validate（程序，任意失败即中止）
 | 本地模型超时/中断 | 释放锁；任务记录 `failed`；服务只停自己启动的实例 |
 | 8080 被他人占用 | 等待到超时；仍不可用 → `blocked`，不杀进程 |
 | 陈旧锁 | 超过阈值且 PID 不存在时回收 |
-| 在线模型无凭据 | `blocked`，退出码 3 |
-| 在线模型返回非法 JSON | 重试后 `failed`，保存原始响应 |
+| Claude Code 不可用或 API 无凭据 | `blocked`，退出码 3 |
+| 模型返回非法 JSON | 重试后 `failed`，保存原始响应 |
 | 上下文超限 | 报错并要求拆分，禁止静默截断 |
 
 ---
@@ -427,7 +427,7 @@ validate（程序，任意失败即中止）
 4. 夹具 `lesson-smoke` 全链路 `verdict=pass`（真实 Blender + Remotion）。
 5. 真实课程 `01-shell-for-ai-era` 至少完成截图与全部可自动阶段，并如实输出 `incomplete` 及原因（Motion 未导出）。
 6. 本地模型串行有真实多进程测试证据。
-7. 在线审查在 mock 服务下通过；无凭据时 `blocked`。
+7. 内容审查在 mock 服务下通过；Claude Code 不可用或 API 无凭据时 `blocked`。
 8. 维度预算测试通过，所有模型调用记录预算。
 9. 失败/取消/阻塞状态均可从任务记录读回。
 10. 文档与代码一致，无 P0 遗留。
@@ -450,7 +450,7 @@ R1 增量完成条件：
 | --- | --- | --- |
 | OPEN-01 | Motion Canvas 是否自建 headless 导出 | 本期不做；人工节点是正式设计 |
 | OPEN-02 | 真实课程内容补全（4 页占位、3 页中文、8 段动画导出） | 用户负责；系统如实报告 `incomplete` |
-| OPEN-03 | 在线模型供应商与凭据 | 由用户配置；未配置时 `blocked` |
+| OPEN-03 | 审查后端供应商与凭据 | 默认 Claude Code；API 由用户配置，不可用时 `blocked` |
 | OPEN-04 | Manim 是否接入课程 | 保持可选，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式验证/证据语料） | 本期只交付审查内核 |
 | OPEN-06 | 多课程并行构建 | 不设计；构建串行即可 |

@@ -281,7 +281,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
 | 6 | 本地模型串行有真实证据 | COMPLETED | 双进程竞争测试 |
-| 7 | 在线审查 mock + 无凭据 blocked | COMPLETED | ContentQA 测试 + 真实课程 exit 3 |
+| 7 | 内容审查 mock + 不可用 blocked | COMPLETED | ContentQA 测试 + 真实课程 exit 3；默认 Claude Code，API 路径测试显式固定 |
 | 8 | 预算测试通过并记录 | COMPLETED | 每次请求前检查并写任务记录 |
 | 9 | 失败/阻塞/取消可读回 | COMPLETED | 任务记录终态 |
 | 10 | 文档一致、无 P0 | COMPLETED | 本轮盘点 |
@@ -292,7 +292,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | --- | --- | --- | --- |
 | OPEN-01 | Motion Canvas headless 导出 | DEFERRED | 人工节点是正式设计 |
 | OPEN-02 | 真实课程内容补全 | BLOCKED | 4 页占位、3 页中文、8 段动画导出，责任在作者 |
-| OPEN-03 | 在线模型供应商与凭据 | BLOCKED | 未配置；`blocked` 语义已实现 |
+| OPEN-03 | 审查后端供应商与凭据 | BLOCKED | 默认 Claude Code；API 未配置时 `blocked` 语义已实现 |
 | OPEN-04 | Manim 接入课程 | DEFERRED | 无课程使用，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式/语料） | OUT_OF_SCOPE | 本期只交付审查内核 |
 | OPEN-06 | 多课程并行构建 | OUT_OF_SCOPE | 单机单用户，无需求 |
