@@ -1,0 +1,42 @@
+schema_version: 1
+lesson_id: lesson-authoring
+title_en: Authoring fixture
+title_zh: 创作夹具
+status: draft
+
+content:
+  slides: slides.md
+  notes: lecture_notes.md
+  outline: null
+  storyboard: storyboard.yaml
+  assets: assets/
+  subtitles: null
+
+outputs:
+  fps: 30
+  resolution: [1920, 1080]
+  slides_canvas: [1280, 720]
+  animation_canvas: [1920, 1080]
+
+engines: [manim]
+
+compose:
+  mode: deck
+  base_video: null
+
+narration:
+  enabled: false
+  source: null
+
+subtitles:
+  enabled: false
+
+duration:
+  profile: news
+  target_seconds: 6
+  min_seconds: 5
+  max_seconds: 7
+
+acceptance:
+  notes_total_seconds: null
+  duration_tolerance_seconds: 1

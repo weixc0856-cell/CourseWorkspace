@@ -1,15 +1,24 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-07（E6.5 V1 契约，见 §0.8；同日完成全链路基线核实与计数校正）
-- **代码基线**：分支 `feat/p1-teaching-primitives` = `1e3374f`（已推送）；`origin/main` = `c2ad196`（PR #3 合并至 `876d40a`）；本地 `main` = `9ddb23f`（落后 `origin/main` 24 个提交）
-- **基线核实**：2026-11-07 实跑 `check.ps1` = `check ok`；五套单测 203 个用例（201 通过 + 2 跳过）
+- **最近更新**：2026-11-08（导演层/制片层落地、计数校正）
+- **代码基线**：`origin/main` = `577501e`；当前分支 `feat/v1-pipeline-remote-fallback` 的功能提交 = `d95d887`（未推送）；本地 `main` 已同步 `origin/main`
+- **基线核实**：2026-11-08 实跑 `check.ps1` = `check ok`；五套单测 383 个用例（377 通过 + 6 跳过）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
 状态词：`COMPLETED`（实现且有真实证据）/ `PARTIAL`（有缺口）/ `NOT_IMPLEMENTED` / `BLOCKED`（外部条件限制）/ `NOT_RUN` / `DEFERRED` / `OUT_OF_SCOPE`。
 
 ---
+
+## 0.1 2026-11-08 增量：导演层与制片层
+
+| 能力 | 契约 / 代码 | 证据 | 状态 |
+| --- | --- | --- | --- |
+| FR-28 导演层 | `CourseControl/src/course_control/director/`、`docs/导演层.md` | 01-transformer-demo：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 9 warning；5 个真实渲染镜头 | COMPLETED（POC） |
+| FR-29 制片层 | `CourseControl/src/course_control/producer/`、`docs/制片层.md` | 订单 + 七项交付清单：blocked，4 项缺失；增量检测实测 | COMPLETED（POC，交付未完成） |
+
+边界：导演层不写场景代码、不渲染；制片层不读密钥、不触发渲染/TTS/发布；成片未产出，交付清单如实 blocked。
 
 ## 0. 2026-11-04 增量（P1–P4）
 
@@ -125,35 +134,86 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 
 全项目现为 **203 个用例（201 通过 + 2 跳过）**。E6.5 未并入 `pipeline.py` / `lessons/`；未做逐字强制对齐；未改 E6.1–E6.4；未触碰 8080。
 
+### 0.9 2026-11-07 路径卫生、远程回退与 V1-D/E
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| 本机路径清理 | `e65.py`、`session_runner.py`、`vscode_runner.py`、文档与示例 | 去掉硬编码盘符；本机路径只存在于被忽略的 `config/*.yaml` / `.env` |
+| 路径卫生检查 | `scripts/check_paths.py`、`scripts/check-paths.ps1` | 已接入 `check.ps1`；本轮 `path check ok` |
+| AI 后端/回退 | `claude_code.py`、`remote.py`、`routing.py` | Claude Code 默认；本地/远程仅在显式允许时回退；任务记录写 `provider` |
+| ModelingStudio 接入 | `config.py`、`server.py`、`llm.py`、四个阶段模块 | 真实值由本地 `.env` / `config/model-routing.yaml` 提供；视觉阶段使用 `deepseek-flash`，不降级到文本模型 |
+| V1-E 兼容层 | `CourseControl/src/course_control/v1_timeline.py` | `shots.json ↔ TimelineSpec` 双向；`collect` 已写 `contracts/timeline.spec.json`；Remotion 仍读旧文件 |
+| V1-D 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py` | 现有 `evidence.json` → `EvidenceManifestV1`；缺失录屏不伪造 |
+| 测试 | 各套新增用例 | 全项目 **328 个用例（326 通过 + 2 跳过）** |
+| 远程真实冒烟 | 本地 `.env`、`DeepSeek-API` | 2026-11-07 可达；`deepseek-flash` 文本返回 `OK`，图片返回“红色”；密钥未落盘、未打印 |
+| DeepSeek 模型策略 | `remote.py`、ModelingStudio `config.py`、ContentQA `config.py`、测试 | 所有 DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 在三个配置层均被拒绝 |
+| 环境文件 | 本地 `.env`（忽略）、`.env.example`（跟踪） | 通用 `REMOTE_*` / DeepSeek `DEEPSEEK_*`；key 只从系统环境变量读取，不落盘；仓库只保留不含 key 的参考文件 |
+
+V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩展 `session/simulation/graphics`、Remotion 直接消费 `TimelineSpec`。本轮只做只读适配与兼容桥接，未改 `shots.json` 的消费方。
+
+---
+
+### 0.10 2026-11-07 R1 混合动画与课程生产闭环（进行中）
+
+| 内容 | 文件 | 状态 |
+| --- | --- | --- |
+| R1-0 基线 | `docs/R1-基线报告.md` | 已完成；`check ok`；240 用例基线 |
+| R1-1 引擎验证 | `ManimSandbox/00-r1-smoke/`、`RemotionStudio/src/compositions/R1Smoke.tsx`、`docs/R1-1-引擎验证报告.md` | Manim 3.8s / Blender Eevee 5s / Remotion 5s 真实出片；Motion Canvas 无 headless CLI |
+| R1-2 性能基准 | `scripts/benchmark_render.py`、`docs/R1-性能基准报告.md`、`build/r1/benchmark/` | Eevee 20.92s / Cycles CPU 346.56s / Cycles oneAPI 291.78s（2s 片段）；Manim final 5.38s；Remotion 19.66s；QSV 5.34s vs libx264 2.91s |
+| 时长契约 | `duration.py`、V-26/V-27 | 已实现；`lesson-authoring` 夹具 |
+| 引擎路由 | `engine_router.py` | 已实现；内容决定引擎 |
+| TimelineSpec 合成 | `CourseTimeline.tsx`、`stage-assets.mjs --timeline`、`adapters/remotion.py` | 已实现；`build/r1/timeline-smoke.mp4` 6.016s 真实合成 |
+| 输入/草稿/批准 | `authoring/`、`CourseControl/prompts/` | 已实现；Transformer 候选已批准并提升 |
+| Transformer 内容 | `lessons/01-transformer-demo/` | 12 页 / 1200s；英文口播 2964 词；5 个动画镜头 |
+| 动画 | `ManimSandbox/01-transformer-demo/`、`BlenderStudio/scenes|tasks/01-transformer-demo/` | 4 个 Manim 已测试渲染；Blender shot 25s 已真实渲染 |
+| 整课旁白 | `narration_course.py`、`scripts/generate_voice_ref.py` | 已实现；英文参考音已生成；01-transformer-demo 第 1 页样片 43.92 s（计划 45 s，style_applied），整课未跑 |
+| 双语字幕 | `subtitles.py`、`authoring/glossary.yaml` | 已实现；计划版 357 cue 全部翻译，2 条临界警告（cue 273 时长 0.94 s、cue 317 中文 3 行）；实测旁白后严格重排 |
+| 双版本成片 | `adapters/burn.py`、V-28 | 已实现；真实 5s ASS 烧录 pass |
+| Code2Video | `CodeVideoStudio/`、`adapters/code_video.py`、`code_video_qc.py` | 生产化目录；30s Canvas 镜头，check_video OK，900/900 帧哈希一致；adapter 真实跑通；QC 门输出 `*.qc.json` + `*.contact.jpg`（`build/code-video-qc2/`） |
+| HyperFrames POC | `CodeVideoStudio/backends/hyperframes/hf-poc/` | 10s HTML/GSAP，check 0 error/0 warning，27.1s 渲染；仅作为可选 HTML 后端 |
+| VideoZero POC | `build/videozero-poc/`（临时） | agent 连接/seek/screenshot 成功；image sequence 自动导出 3007 PNG → ffmpeg 100.2s MP4；FFmpeg exporter 直接导出挂起 |
+| 汽车空气动力学课 | `lessons/02-car-aerodynamics/`（本地，不入库） | 12 页 / 2,835 词 / 4 个 Manim 镜头；13 条来源；22:00 成片；clean + captioned；V-26..V-31 pass |
+| Claude Code 后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`config/claude-code.example.yaml` | 课程文本/字幕/ContentQA/ModelingStudio 文本规划/Code2Video 默认走 Claude Code；文本阶段 `--tools=`；任务记录 `provider=claude_code`；真实 smoke 通过 |
+| 动画视觉导演 | `AnimationDirection`、`direction-validate`、`ManimSandbox/03-vector-intro/` | 90 秒竖切片 1920×1080/30fps；分镜字段与视觉门 |
+| 导演层 | `director/`、`director-plan`、`director-validate` | 12 镜头 / 1200 s / 0 error / 9 warning；storyboard、directions、shot_specs、review |
+| 制片层 | `producer/`、`producer-order/run/status/affected` | 七项交付清单 blocked（4 项缺失）；订单、限额、指纹与增量 |
+| 科学图形 POC | `ScientificFigures/` | SymPy + Matplotlib + SciencePlots；连续性方程 LaTeX + Poiseuille SVG/PDF/PNG |
+| Formula Pipeline | `formulas.py`、`Formula.tsx`、`formula-render.mjs`、Manim smoke | 唯一 LaTeX 源；KaTeX HTML/PNG；四类 validation；三路冒烟 |
+| 技术雷达 | `docs/技术雷达-视频生产.md`、`docs/课程生产交付物规范.md`、`docs/评估-DeepSeek Harness.md`、`docs/评估-四后端对比.md` | 评分/许可证/硬门槛/交付归档规范；Claude Code/dsh 对比与受控代理决策（不接入运行时） |
+| 测试 | 五套单测 | **383 个用例（377 通过 + 6 跳过）**：CourseControl 271（266+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1） |
+
+**暂缓**：具体课件内容、整课 TTS、实测字幕与最终成片（按用户要求先做仓库/接入优化）。**已完成**：Code2Video P2（含 QC 门）、HyperFrames POC、VideoZero POC、技术雷达与交付物规范、DeepSeek Harness CLI 对比、四后端镜头生成对比、Claude Code 全量默认后端接入、汽车空气动力学课（制作中）。
+
 ---
 
 ## 1. 基线核实
 
 - 核实日期：2026-11-07；工作树干净；`check.ps1` 实跑 `check ok`。
+- E6.5 的 3 个提交已合并进 `main`；无关的 `django.yml` 已删除并推送。
 
 | 项 | 事实 |
 | --- | --- |
-| 当前分支 | `feat/p1-teaching-primitives` |
-| 本地 HEAD | `1e3374f feat: E6.5 V1 契约适配与统一 RenderManifest` |
-| 远程同名分支 | `origin/feat/p1-teaching-primitives` = `1e3374f`（已推送） |
-| `origin/main` | `c2ad196 Merge pull request #3`；PR #3 合并的是 `876d40a` |
-| 未合并提交 | `919ac93` / `37152ec` / `1e3374f` 只在 feature 分支，尚未进入 `main` |
-| 本地 `main` | `9ddb23f`，落后 `origin/main` 24 个提交，未同步 |
+| 当前分支 | `feat/v1-pipeline-remote-fallback` |
+| 功能提交 | `d95d887 feat: 路径卫生、远程模型回退与 V1-D/E 兼容层`；本文件为随后的基线同步提交 |
+| `origin/main` | `577501e chore: 移除与本项目无关的 Django CI 模板` |
+| 本地 `main` | `577501e`，与 `origin/main` 同步 |
+| 未推送提交 | 当前 feature 分支的提交尚未推送（见 `git log origin/main..HEAD`） |
 | `d53ebd1` | 干净的初始工作流快照（无父提交）；仍是最早基线 |
 | `converge/v1` | `dd1d7f2`，完整收敛历史（含早期课程内容），**仅本地** |
 | `archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |
-| 远程内容 | `origin/main` 358 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
-| 本地 HEAD 内容 | 375 个文件；相对 `origin/main` 新增 18 个（E6.5 与 V1 适配文件），删除 1 个（`django.yml`） |
+| 远程内容 | `origin/main` 375 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
+| 本地 HEAD 内容 | 387 个文件；相对 `origin/main` 新增 12 个（远程回退、V1-D/E、路径检查与配置示例） |
 
-**说明**：`d53ebd1` 是干净快照；当前代码已经过 E0–E6.5 与 V1-B/C/F 增量，不再等同于 `d53ebd1`。
+**说明**：`d53ebd1` 是干净快照；当前代码已经过 E0–E6.5、V1-B/C/D/E 与远程回退增量。
 
 **仓库元数据**：Description 与 9 个 Topics 已通过 `gh repo edit` 写入并回读确认。
 
 **待处理（未擅自修改）**：
 
-1. `origin/main` 仍含 `.github/workflows/django.yml`（GitHub 通用 Django CI 模板，与本项目无关，无 `requirements.txt` / `manage.py`），每次推送都会运行并失败；建议在 GitHub 删除。
-2. 最新 3 个 E6.5 提交已推送到 feature 分支，但尚未合并 `main`；需要 PR/合并。
-3. 本地 `main` 停在 `9ddb23f` 且落后 24 个提交；确定合并策略后再同步，不要直接 `reset --hard`。
+1. 当前 feature 分支尚未推送/合并到 `main`；需要 PR 或直接合并。
+2. V1-D 的 Session runner 原生写 V1、`ShotSpec` 扩展 `session/simulation/graphics` 未做。
+3. V1-E 的 Remotion 直接消费 `TimelineSpec` 未做；目前仍读 `shots.json`。
+4. 真实课程仍缺 8 段 Motion 导出；`01-transformer-demo` 未构建。
 
 ---
 
@@ -169,7 +229,7 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
 | FR-07 | 时间线收集 | `collect.py`（含 `annotations[]`） | `lesson-smoke` shots.json 通过 verify；V-22 标注检查 | COMPLETED | — |
 | FR-08 | 合成与成片验收 | `verify.py`、`report.py`、`adapters/remotion.py` | `lesson-smoke`、`lesson-blender-only` verdict pass | COMPLETED | — |
-| FR-09 | 本地模型严格串行 | `shared/ai_runtime` | 22 个 ai_runtime 测试（含双进程、服务生命周期） | COMPLETED | — |
+| FR-09 | 本地模型严格串行 | `shared/ai_runtime`（含 `remote.py` / `routing.py`） | 41 个 ai_runtime 测试（双进程、生命周期、远程回退、flash-only 策略、env 覆盖）；真实 DeepSeek 文本/图片冒烟 | COMPLETED | — |
 | FR-10 | 任务状态与恢复 | `tasks.py`、`job.py`、`--resume` | 失败落盘、断点续跑测试 | COMPLETED | — |
 | FR-11 | 上下文预算 | `budget.py` + 各阶段预算 | 预算/超限/重试绕过测试 | COMPLETED | — |
 | FR-12 | 在线内容审查 | `ContentQA/` | 11 个 mock 测试；真实课程 `blocked` exit 3 | PARTIAL | 真实供应商与凭据未配置 |
@@ -188,13 +248,14 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | NFR-06 | 可中断 | COMPLETED | 锁释放、陈旧锁回收 |
 | NFR-07 | 最小依赖 | COMPLETED | ai_runtime 零第三方依赖 |
 | NFR-08 | 文档一致 | COMPLETED | 本轮再次核对计数、链接与 Schema |
+| NFR-09 | 路径卫生 | COMPLETED | `scripts/check-paths.ps1`；跟踪文件无本机绝对路径 |
 
 ### 验收条件（PRD §9）
 
 | # | 条件 | 状态 | 证据 |
 | --- | --- | --- | --- |
 | 1 | `check.ps1` 打印 `check ok` | COMPLETED | 本地与干净工作树各一次 exit 0 |
-| 2 | 单测真实通过且数量一致 | COMPLETED | 203 个用例（201 通过 + 2 跳过；131+28+22+11+11） |
+| 2 | 单测真实通过且数量一致 | COMPLETED | 383 个用例（377 通过 + 6 跳过；271+33+50+18+11） |
 | 3 | 5 课程 + 20 场景契约 | COMPLETED | `check.ps1` |
 | 4 | `lesson-smoke` 全链路 pass | COMPLETED | 真实 Blender + Remotion |
 | 5 | 真实课程如实 `incomplete` | COMPLETED | `manual_export_required` |
@@ -219,9 +280,9 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 
 | 类别 | 数量 |
 | --- | --- |
-| FR 已完成 | 11 / 14 |
-| FR 部分完成 | 3 / 14（FR-04、FR-06、FR-12） |
-| FR 未实现 | 0 |
+| FR-01..14 已完成 | 11 / 14 |
+| FR-01..14 部分完成 | 3 / 14（FR-04、FR-06、FR-12） |
+| FR-15..29 | 逐条跟踪见 [TRACEABILITY.md](TRACEABILITY.md)；FR-28/29 见下方增量 |
 | FR 阻塞 | 0（阻塞发生在 PARTIAL 项的子环节） |
 | NFR 完成 | 7 / 8 |
 | 验收条件完成 | 10 / 10 |
@@ -235,11 +296,11 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 
 | 编号 | 冲突/偏差 | 证据 | 处理建议 |
 | --- | --- | --- | --- |
-| C-01 | 远程 `main` 含无关的 `django.yml` CI | `origin/main = c2ad196`；工作流引用 `requirements.txt`、`manage.py` | 在 GitHub 删除；如需 CI，另写本项目工作流 |
-| C-02 | 本地 `main` 落后 `origin/main` 24 个提交 | `git rev-list --left-right --count main...origin/main` | 确定合并策略后再同步；不要直接 `reset --hard` |
+| C-01 | 远程 `main` 含无关的 `django.yml` CI | 已删除并推送（`577501e`） | **已解决**；如需 CI，另写本项目工作流 |
+| C-02 | 本地 `main` 落后 `origin/main` | 已快进同步到 `577501e` | **已解决** |
 | C-03 | PRD FR-10 要求“产物存在且**校验通过**才算完成”；`stage_done` 只检查状态 + 文件存在 | `ModelingStudio/src/modeling_studio/job.py::stage_done` | 当前产物为 JSON/Markdown，无独立校验器；建议在 PRD 中把措辞改为“产物存在且可由后续阶段解析”，或补校验 |
 | C-04 | `ManimSandbox/requirements.txt` 与 `pyproject.toml` 重复声明依赖 | 两个文件同时存在 | 保留 `pyproject.toml`，把 `requirements.txt` 降级为可选导出，或删除 |
-| C-05 | 最新 3 个 E6.5 提交只在 feature 分支 | `1e3374f` 不是 `origin/main` 的祖先；`git log 1e3374f..origin/main` 有 4 个提交 | 发起 PR 合并；合并前处理 `django.yml` |
+| C-05 | 最新 E6.5 提交只在 feature 分支 | 已合并进 `origin/main`（`b230306`） | **已解决**；当前新增工作仍需合并 |
 
 ---
 

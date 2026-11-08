@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from .contracts import CheckRecord, ShotsFile, Status
+from .duration import resolve, window_problem
 from .paths import LessonPaths, path_problem
-from .utils import page_budgets, probe_media
+from .subtitles import CuePolicy
+from .utils import count_srt_cues, page_budgets, probe_media
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _check(check_id: str, ok: bool, expected: str, actual: str, detail: str | None = None) -> CheckRecord:
@@ -103,6 +110,18 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
                 None,
             )
         if parent is None:
+            # Scene mode uses one full-length base video without a slide id.
+            parent = next(
+                (
+                    item
+                    for item in base
+                    if item.slide is None
+                    and item.start_s - 1e-6 <= overlay.start_s
+                    and overlay.start_s + overlay.duration_s <= item.start_s + item.duration_s + 1e-6
+                ),
+                None,
+            )
+        if parent is None:
             timeline_errors.append(f"{overlay.id} is not inside a base segment")
     for index, first in enumerate(overlays):
         for second in overlays[index + 1:]:
@@ -192,6 +211,203 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
             f"{final_info.duration:.3f}s" if final_info.duration is not None else "unknown",
         )
     )
+
+    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.render == "burn_in":
+        captioned = build_root / "final" / "course-video-captioned.mp4"
+        if not captioned.is_file():
+            checks.append(
+                CheckRecord(
+                    id="V-28",
+                    status=Status.FAIL,
+                    expected="captioned video exists",
+                    actual="missing",
+                    detail=str(captioned),
+                )
+            )
+        else:
+            try:
+                captioned_info = probe_media(captioned)
+            except Exception as exc:  # noqa: BLE001
+                checks.append(
+                    CheckRecord(
+                        id="V-28",
+                        status=Status.FAIL,
+                        expected="readable captioned video",
+                        actual="probe failed",
+                        detail=str(exc),
+                    )
+                )
+            else:
+                frame = 1.0 / (fps or 30)
+                problems: list[str] = []
+                if (
+                    final_info.duration is not None
+                    and captioned_info.duration is not None
+                    and abs(captioned_info.duration - final_info.duration) > frame + 0.05
+                ):
+                    problems.append(
+                        f"duration {captioned_info.duration:.3f}s vs {final_info.duration:.3f}s"
+                    )
+                if (captioned_info.width, captioned_info.height) != (width, height):
+                    problems.append("resolution differs")
+                if captioned_info.fps != final_info.fps:
+                    problems.append("fps differs")
+                if captioned_info.has_audio != final_info.has_audio:
+                    problems.append("audio stream presence differs")
+                burn = build_root / "final" / "burn.json"
+                if not burn.is_file():
+                    problems.append("burn.json missing")
+                checks.append(
+                    _check(
+                        "V-28",
+                        not problems,
+                        "captioned output matches clean master within one frame",
+                        f"{captioned_info.duration:.3f}s" if captioned_info.duration is not None else "unknown",
+                        "; ".join(problems) if problems else None,
+                    )
+                )
+    else:
+        checks.append(
+            CheckRecord(id="V-28", status=Status.NOT_APPLICABLE, detail="burn-in disabled")
+        )
+
+    policy = resolve(paths.lesson)
+    if policy is None:
+        checks.append(
+            CheckRecord(id="V-27", status=Status.NOT_APPLICABLE, detail="no duration policy")
+        )
+    else:
+        problem = window_problem(final_info.duration or 0.0, policy)
+        checks.append(
+            _check(
+                "V-27",
+                problem is None,
+                f"{policy.minimum:.1f}-{policy.maximum:.1f}s (target {policy.target:.1f}s)",
+                f"{final_info.duration:.3f}s" if final_info.duration is not None else "unknown",
+                problem.message if problem is not None else None,
+            )
+        )
+
+    if paths.lesson.narration.enabled and paths.lesson.narration.timing == "measured":
+        meta_path = build_root / "narration" / "narration.meta.json"
+        if not meta_path.is_file():
+            checks.append(
+                CheckRecord(
+                    id="V-30",
+                    status=Status.FAIL,
+                    expected="narration.meta.json exists",
+                    actual="missing",
+                    detail=str(meta_path),
+                )
+            )
+        else:
+            import json
+
+            problems: list[str] = []
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                problems.append(f"cannot read meta: {exc}")
+                meta = {}
+            if meta.get("schema_version") != 2:
+                problems.append("meta schema_version is not 2")
+            assembly = meta.get("assembly") or {}
+            assembly_path = build_root / str(assembly.get("file") or "")
+            if not assembly_path.is_file():
+                problems.append("assembly file missing")
+            else:
+                assembly_duration = assembly.get("duration_s")
+                if assembly_duration is None or abs(
+                    float(assembly_duration) - shots_file.timeline.total_duration_s
+                ) > 1.0 / (fps or 30) + 0.05:
+                    problems.append("assembly duration differs from the frozen timeline")
+            source = meta.get("source") or {}
+            script_rel = paths.lesson.authoring.script if paths.lesson.authoring else None
+            if script_rel:
+                script_path = paths.content_path(script_rel)
+                if not script_path.is_file() or _sha256(script_path) != source.get("script_sha256"):
+                    problems.append("script hash is stale or missing")
+            notes_path = paths.content_path(paths.lesson.content.notes)
+            if not notes_path.is_file() or _sha256(notes_path) != source.get("notes_sha256"):
+                problems.append("notes hash is stale or missing")
+            pages = meta.get("pages") or []
+            for previous, current in zip(pages, pages[1:]):
+                if abs(float(current.get("start_s", 0)) - float(previous.get("end_s", 0))) > 0.01:
+                    problems.append("page spans are not contiguous")
+                    break
+            for segment in meta.get("segments") or []:
+                rel = segment.get("raw_wav")
+                if rel and not (build_root / rel).is_file():
+                    problems.append(f"segment file missing: {rel}")
+            checks.append(
+                _check(
+                    "V-30",
+                    not problems,
+                    "narration meta, hashes, page spans and timeline are consistent",
+                    "ok" if not problems else "; ".join(problems[:6]),
+                )
+            )
+    else:
+        checks.append(
+            CheckRecord(id="V-30", status=Status.NOT_APPLICABLE, detail="narration disabled")
+        )
+
+    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.render == "burn_in":
+        draft_path = build_root / "subtitles" / "bilingual.draft.json"
+        if not draft_path.is_file():
+            checks.append(
+                CheckRecord(
+                    id="V-31",
+                    status=Status.FAIL,
+                    expected="bilingual subtitle draft exists",
+                    actual="missing",
+                    detail=str(draft_path),
+                )
+            )
+        else:
+            import json
+
+            from .subtitles import BilingualDraft, validate_cues
+
+            problems: list[str] = []
+            try:
+                draft = BilingualDraft.model_validate(
+                    json.loads(draft_path.read_text(encoding="utf-8"))
+                )
+            except Exception as exc:  # noqa: BLE001
+                problems.append(f"cannot read draft: {exc}")
+                draft = None
+            if draft is not None:
+                total_ms = int(shots_file.timeline.total_duration_s * 1000)
+                problems.extend(
+                    validate_cues(
+                        [cue.model_dump(mode="json") for cue in draft.cues],
+                        CuePolicy(),
+                        float(fps or 30),
+                        total_ms,
+                    )
+                )
+                srt_path = build_root / "subtitles.srt"
+                if not srt_path.is_file():
+                    problems.append("built subtitles.srt missing")
+                else:
+                    actual = count_srt_cues(srt_path)
+                    if actual != len(draft.cues):
+                        problems.append(
+                            f"SRT has {actual} cues but draft has {len(draft.cues)}"
+                        )
+            checks.append(
+                _check(
+                    "V-31",
+                    not problems,
+                    "bilingual cues are complete and within policy",
+                    "ok" if not problems else "; ".join(problems[:6]),
+                )
+            )
+    else:
+        checks.append(
+            CheckRecord(id="V-31", status=Status.NOT_APPLICABLE, detail="subtitles disabled")
+        )
 
     if paths.lesson.narration.enabled:
         audio_ok = final_info.has_audio and abs(

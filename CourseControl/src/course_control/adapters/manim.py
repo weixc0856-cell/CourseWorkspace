@@ -7,11 +7,11 @@ from pathlib import Path
 from ..contracts import Status
 from ..paths import LessonPaths
 from ..utils import probe_media, run_command, which_command
-from .base import StageOutcome
+from .base import StageOutcome, selected
 
 
 def run(paths: LessonPaths) -> StageOutcome:
-    shots = [shot for shot in paths.storyboard.shots if shot.engine == "manim"]
+    shots = [shot for shot in paths.storyboard.shots if selected(paths, shot.id) and shot.engine == "manim"]
     if not shots:
         return StageOutcome("render:manim", Status.NOT_APPLICABLE)
 

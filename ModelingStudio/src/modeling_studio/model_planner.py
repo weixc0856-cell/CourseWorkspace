@@ -4,9 +4,9 @@ import json
 
 from .config import PROJECT_ROOT, WorkflowConfig
 from .contracts import ModelPlan, VisualAnalysis
-from .job import Job, read_json, stage_task, update_metadata, write_json
+from .job import Job, read_json, save_task, stage_task, update_metadata, write_json
 from .llm import LLMClient
-from .server import managed_server
+from .server import managed_model
 
 PROMPT = PROJECT_ROOT / "prompts" / "modeling_plan.md"
 
@@ -82,9 +82,14 @@ def plan_model(config: WorkflowConfig, job: Job) -> ModelPlan:
             output_artifacts=["model_plan.json"],
             context_budget=budget_report.as_dict(),
             timeout_s=config.llm.request_timeout_s,
-        ):
-            with managed_server(config, "planner", job.logs_dir / "server-planner.log") as mode:
-                plan, usage = client.chat_json(messages, "planner", ModelPlan, max_tokens=3000)
+        ) as record:
+            with managed_model(config, "planner", job.logs_dir / "server-planner.log") as route:
+                record.assigned_model = route.model
+                record.provider = route.provider
+                save_task(config, job, record)
+                plan, usage = client.chat_json(
+                    messages, "planner", ModelPlan, max_tokens=3000, route=route
+                )
     except Exception:
         if client.last_raw:
             (job.logs_dir / "plan-last-response.txt").write_text(
@@ -97,8 +102,9 @@ def plan_model(config: WorkflowConfig, job: Job) -> ModelPlan:
         job,
         stage="plan",
         status="pass",
-        model=config.model("planner").alias,
-        server=mode,
+        model=route.model,
+        provider=route.provider,
+        server=route.mode,
         usage=usage,
         parts=len(plan.parts),
     )

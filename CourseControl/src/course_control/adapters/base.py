@@ -6,6 +6,12 @@ from pathlib import Path
 from ..contracts import Status
 
 
+def selected(paths, shot_id: str) -> bool:
+    """Shot filter for partial renders; mocks without the method select all."""
+    checker = getattr(paths, "selects", None)
+    return checker(shot_id) if checker is not None else True
+
+
 @dataclass
 class StageOutcome:
     name: str

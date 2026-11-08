@@ -32,6 +32,7 @@ class E65AdapterTest(unittest.TestCase):
                 E65 / "manifest.json",
                 workspace=WORKSPACE,
                 output_dir=output,
+                voice_ref=E65 / "narration" / "segments" / "e65-b1.wav",
                 run_id="20261107T130000Z-deadbeef",
                 now=datetime(2026, 11, 7, 13, 0, 0, tzinfo=timezone.utc),
             )

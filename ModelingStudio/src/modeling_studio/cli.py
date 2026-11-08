@@ -56,6 +56,13 @@ def audit() -> None:
     config = _config()
     status = probe(config)
     typer.echo(f"base_url: {config.llm.base_url}")
+    remote = config.remote
+    key_present = bool(remote.runtime().resolved_key())
+    typer.echo(
+        f"remote: {remote.provider} enabled={remote.enabled} "
+        f"model={remote.model} key={'set' if key_present else 'missing'} "
+        f"vision={remote.supports_vision} ({remote.vision_model or 'none'})"
+    )
     typer.echo(f"healthy: {status['healthy']}  port_in_use: {status['port_in_use']}")
     typer.echo(f"models_on_server: {status['models']}")
     typer.echo(f"lock: {status.get('lock')}")

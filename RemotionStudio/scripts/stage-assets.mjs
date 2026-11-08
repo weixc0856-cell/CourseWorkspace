@@ -18,20 +18,33 @@ const parseArgs = (argv) => {
 };
 
 const args = parseArgs(process.argv.slice(2));
-const lesson = args.lesson;
+const timelinePath = args.timeline ? path.resolve(args.timeline) : null;
+const timeline = timelinePath ? JSON.parse(await readFile(timelinePath, 'utf8')) : null;
+const lesson = args.lesson ?? timeline?.lesson_id;
 if (!lesson) {
-  console.error('ERROR: --lesson <slug> is required');
+  console.error('ERROR: --lesson <slug> or --timeline <timeline.spec.json> is required');
   process.exit(2);
 }
 
 const buildRoot = path.join(workspaceRoot, 'build', lesson);
-const shotsPath = path.resolve(args.shots ?? path.join(buildRoot, 'shots.json'));
+const shotsPath = timeline ? null : path.resolve(args.shots ?? path.join(buildRoot, 'shots.json'));
 const stagingDir = path.join(projectRoot, 'public', 'staging', lesson);
 
-const shots = JSON.parse(await readFile(shotsPath, 'utf8'));
-const sources = new Set(shots.shots.map((shot) => shot.source));
-if (shots.narration?.path) sources.add(shots.narration.path);
-if (shots.subtitles?.path) sources.add(shots.subtitles.path);
+let sources;
+if (timeline) {
+  const prefix = `build/${lesson}/`;
+  const toBuildRelative = (assetPath) =>
+    assetPath.startsWith(prefix) ? assetPath.slice(prefix.length) : assetPath;
+  sources = new Set([
+    ...(timeline.video ?? []).map((item) => toBuildRelative(item.asset.path)),
+    ...(timeline.audio ?? []).map((item) => toBuildRelative(item.asset.path)),
+  ]);
+} else {
+  const shots = JSON.parse(await readFile(shotsPath, 'utf8'));
+  sources = new Set(shots.shots.map((shot) => shot.source));
+  if (shots.narration?.path) sources.add(shots.narration.path);
+  if (shots.subtitles?.path) sources.add(shots.subtitles.path);
+}
 
 await rm(stagingDir, {recursive: true, force: true});
 await mkdir(stagingDir, {recursive: true});
@@ -52,7 +65,18 @@ for (const source of sources) {
 
 await writeFile(
   path.join(stagingDir, 'staging-manifest.json'),
-  JSON.stringify({lesson, shots: shotsPath, files: copied, staged_at: new Date().toISOString()}, null, 2) + '\n',
+  JSON.stringify(
+    {
+      lesson,
+      mode: timeline ? 'timeline' : 'legacy',
+      shots: shotsPath,
+      timeline: timelinePath,
+      files: copied,
+      staged_at: new Date().toISOString(),
+    },
+    null,
+    2,
+  ) + '\n',
   'utf8',
 );
 

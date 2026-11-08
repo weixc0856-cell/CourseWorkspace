@@ -435,6 +435,19 @@ class TimelineVideo(V1Model):
     role: Literal["base", "overlay"] = "base"
     z: int = Field(0, ge=-100, le=100)
     asset: AssetRef
+    # ``track``/``metadata`` are the compatibility bridge to the existing
+    # shots.json. They are optional so legacy standalone timelines still fit.
+    track: Literal[
+        "slide",
+        "motion_canvas",
+        "manim",
+        "blender",
+        "session",
+        "simulation",
+        "graphics",
+        "recording",
+    ] | None = None
+    metadata: dict[str, Any] | None = None
 
     @field_validator("shot_id")
     @classmethod
@@ -498,6 +511,9 @@ class TimelineSpec(V1Model):
     audio: list[TimelineAudio] = Field(default_factory=list)
     subtitles: list[SubtitleCue] = Field(default_factory=list)
     sync: SyncRules = SyncRules()
+    # Transitional compatibility payload (for example legacy 2D annotations);
+    # timing and assets remain authoritative in this contract.
+    metadata: dict[str, Any] | None = None
 
     @field_validator("lesson_id")
     @classmethod

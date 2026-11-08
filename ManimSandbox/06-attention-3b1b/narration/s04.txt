@@ -1,0 +1,1 @@
+The query is what this word is looking for. A key is what another word has to offer. And the value carries the information itself.

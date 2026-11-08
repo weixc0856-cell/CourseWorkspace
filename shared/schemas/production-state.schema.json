@@ -1,0 +1,229 @@
+{
+  "$defs": {
+    "ShotFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "shot_id": {
+          "title": "Shot Id",
+          "type": "string"
+        },
+        "slide": {
+          "minimum": 1,
+          "title": "Slide",
+          "type": "integer"
+        },
+        "engine": {
+          "title": "Engine",
+          "type": "string"
+        },
+        "scene": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene"
+        },
+        "fingerprint": {
+          "maxLength": 64,
+          "minLength": 64,
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "content_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "narration_sha256": {
+          "maxLength": 64,
+          "minLength": 64,
+          "title": "Narration Sha256",
+          "type": "string"
+        },
+        "scene_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Sha256"
+        },
+        "direction_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction Sha256"
+        },
+        "narration_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Narration Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "shot_id",
+        "slide",
+        "engine",
+        "fingerprint",
+        "content_sha256",
+        "narration_sha256"
+      ],
+      "title": "ShotFingerprint",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "wall_seconds": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Wall Seconds",
+          "type": "number"
+        },
+        "api_cost_usd": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Api Cost Usd",
+          "type": "number"
+        },
+        "local_model_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Local Model Calls",
+          "type": "integer"
+        },
+        "disk_gb": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Disk Gb",
+          "type": "number"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        }
+      },
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson_id": {
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "order_id": {
+      "title": "Order Id",
+      "type": "string"
+    },
+    "status": {
+      "default": "new",
+      "enum": [
+        "new",
+        "planning",
+        "blocked",
+        "awaiting_approval",
+        "delivered"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "updated_at": {
+      "title": "Updated At",
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    },
+    "stages": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Stages",
+      "type": "object"
+    },
+    "director_plan_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Director Plan Sha256"
+    },
+    "delivery_status": {
+      "anyOf": [
+        {
+          "enum": [
+            "delivered",
+            "awaiting_approval",
+            "blocked"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Delivery Status"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/ShotFingerprint"
+      },
+      "title": "Shots",
+      "type": "array"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "order_id",
+    "updated_at"
+  ],
+  "title": "ProductionState",
+  "type": "object"
+}

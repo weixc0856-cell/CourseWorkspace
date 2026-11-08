@@ -47,6 +47,10 @@ try {
         uv run --project CourseControl course-control audit --workspace .
     }
 
+    Invoke-Checked "path hygiene" {
+        & (Join-Path $PSScriptRoot "check-paths.ps1")
+    }
+
     Invoke-Checked "unit tests: CourseControl" -Quiet {
         uv run --project CourseControl python -m unittest discover `
             -s CourseControl/tests -t CourseControl
@@ -74,6 +78,7 @@ try {
         @{Lesson = "lesson-smoke"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-blender-only"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-manual"; Dir = "CourseControl/tests/fixtures"}
+        @{Lesson = "lesson-authoring"; Dir = "CourseControl/tests/fixtures"}
     )
     foreach ($lesson in $lessons) {
         $name = $lesson.Lesson
@@ -84,6 +89,14 @@ try {
         Invoke-Checked "validate $name" {
             uv run --project CourseControl course-control validate `
                 --lesson $name --lesson-dir $lesson.Dir --workspace .
+        }
+    }
+
+    if (Test-Path "lessons/01-transformer-demo") {
+        Invoke-Checked "director plan 01-transformer-demo" {
+            uv run --project CourseControl course-control director-plan `
+                --lesson 01-transformer-demo --workspace . `
+                --out build/01-transformer-demo/director 2>&1 | Out-Null
         }
     }
 

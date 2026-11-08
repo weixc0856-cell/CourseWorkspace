@@ -31,6 +31,12 @@ RemotionStudio/public/staging/
 
 # ---------------------------------------------------------------------------
 # 本机配置（凭据与本机绝对路径）
+config/*.yaml
+!config/*.example.yaml
+# 环境变量文件
+.env
+.env.*
+!.env.example
 # ---------------------------------------------------------------------------
 config/tools.yaml
 config/local-paths.yaml
@@ -57,3 +63,15 @@ desktop.ini
 ModelingStudio/workspace/
 ManimSandbox/media/
 MotionStudio/output/
+
+# CodeVideoStudio generated outputs (specs and source stay tracked)
+CodeVideoStudio/shots/*/out/
+CodeVideoStudio/backends/hyperframes/*/out/
+CodeVideoStudio/backends/hyperframes/hf-poc/.hyperframes/
+
+# Course-specific pilot sources (real course content stays local)
+/BlenderStudio/scenes/01-transformer-demo/
+/BlenderStudio/tasks/01-transformer-demo/
+/ManimSandbox/01-transformer-demo/
+/ManimSandbox/02-car-aerodynamics/
+ScientificFigures/output/

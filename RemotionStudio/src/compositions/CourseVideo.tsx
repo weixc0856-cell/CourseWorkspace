@@ -141,7 +141,9 @@ export const CourseVideo: React.FC<ShotsFile> = (props) => {
         <OverlayShot key={shot.id} lesson={props.lesson} shot={shot} fps={fps} />
       ))}
       <Annotations annotations={props.annotations ?? null} />
-      <Captions lesson={props.lesson} subtitles={props.subtitles ?? null} />
+      {props.captions !== false ? (
+        <Captions lesson={props.lesson} subtitles={props.subtitles ?? null} />
+      ) : null}
       <Narration lesson={props.lesson} narration={props.narration ?? null} />
     </AbsoluteFill>
   );

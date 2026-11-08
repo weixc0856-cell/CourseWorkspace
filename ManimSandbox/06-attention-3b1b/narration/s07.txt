@@ -1,0 +1,1 @@
+Score every word against every other word, and you get a grid. One row per word, one column per key.

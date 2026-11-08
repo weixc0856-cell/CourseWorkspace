@@ -1,0 +1,1 @@
+Large and positive when the directions agree. Near zero when they are unrelated. Negative when they point away from each other.

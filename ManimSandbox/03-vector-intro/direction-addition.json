@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "lesson_id": "vector-addition-direction",
+  "title": "Vector addition: the tail-to-tip move",
+  "total_seconds": 81.6,
+  "style": {
+    "palette": {
+      "bg": "#0B1220",
+      "ink": "#E8EEF7",
+      "muted": "#8494A8",
+      "a": "#4CC2FF",
+      "b": "#FF8A5B",
+      "result": "#5BE3B0"
+    },
+    "grammar": [
+      "grow",
+      "travel",
+      "trace",
+      "camera push/pan",
+      "single hold"
+    ]
+  },
+  "shots": [
+    {
+      "shot_id": "s1_vectors",
+      "start_s": 0,
+      "end_s": 18,
+      "learning_intent": "Two arrows share one origin; each is a displacement.",
+      "visual_metaphor": "Two glowing paths grow out of the same point on a dark grid.",
+      "composition": "Origin left-of-center; arrows open into negative space; labels outside tips.",
+      "focus": "a first, then b.",
+      "camera": "Slow push-in.",
+      "motion": [
+        "grid fades",
+        "a grows",
+        "b grows"
+      ],
+      "continuity": "Same origin and grid throughout.",
+      "on_screen_text": [
+        "a",
+        "b"
+      ],
+      "reference": "3Blue1Brown: one visual action per sentence.",
+      "acceptance": [
+        "arrows never cross labels",
+        "grid subordinate"
+      ]
+    },
+    {
+      "shot_id": "s2_travel",
+      "start_s": 18,
+      "end_s": 40,
+      "learning_intent": "Addition means moving b so its tail sits on a's tip.",
+      "visual_metaphor": "A copy of b travels to a's tip, leaving a faint trail.",
+      "composition": "Triangle opens right; formula card enters lower-right.",
+      "focus": "The traveling b copy.",
+      "camera": "Pan right, slight widen.",
+      "motion": [
+        "b copy translates",
+        "trail draws",
+        "arrival pulse"
+      ],
+      "continuity": "Original b remains at origin; a remains fixed.",
+      "on_screen_text": [
+        "b moved tail-to-tip"
+      ],
+      "reference": "3Blue1Brown vector addition",
+      "acceptance": [
+        "travel direction unambiguous",
+        "no label collision"
+      ]
+    },
+    {
+      "shot_id": "s3_result",
+      "start_s": 40,
+      "end_s": 60,
+      "learning_intent": "The resultant closes the triangle and equals component-wise addition.",
+      "visual_metaphor": "A green resultant snaps from origin to the open corner.",
+      "composition": "Resultant dominates; formula card lower-right; ghost parallelogram.",
+      "focus": "Green resultant tip.",
+      "camera": "Hold, tiny drift.",
+      "motion": [
+        "resultant grows",
+        "parallelogram ghosts",
+        "formula writes"
+      ],
+      "continuity": "Same triangle; b copy stays visible.",
+      "on_screen_text": [
+        "a + b = (4,5)"
+      ],
+      "reference": "3Blue1Brown",
+      "acceptance": [
+        "resultant clearly brightest",
+        "formula clear of triangle"
+      ]
+    },
+    {
+      "shot_id": "s4_commute",
+      "start_s": 60,
+      "end_s": 74,
+      "learning_intent": "Order does not change the sum.",
+      "visual_metaphor": "Swap which arrow travels; the same corner lights up.",
+      "composition": "Mirror path; same endpoint flash.",
+      "focus": "Same endpoint.",
+      "camera": "Slight pull-back.",
+      "motion": [
+        "a copy travels to b tip",
+        "resultant re-draws",
+        "endpoint pulse"
+      ],
+      "continuity": "Endpoint and grid fixed.",
+      "on_screen_text": [
+        "a + b = b + a"
+      ],
+      "reference": "3Blue1Brown",
+      "acceptance": [
+        "endpoint identical",
+        "no double labels"
+      ]
+    },
+    {
+      "shot_id": "s5_hold",
+      "start_s": 74,
+      "end_s": 81.6,
+      "learning_intent": "Hold the complete picture.",
+      "visual_metaphor": "The triangle and formula remain; camera settles.",
+      "composition": "Triangle left, formula right.",
+      "focus": "Whole diagram.",
+      "camera": "Pull back 5%.",
+      "motion": [
+        "camera settle"
+      ],
+      "continuity": "No new objects.",
+      "on_screen_text": [],
+      "reference": "3Blue1Brown",
+      "acceptance": [
+        "no blank frames",
+        "end card readable"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+To compare a query with a key, take the dot product. Geometrically, it is the length of one vector, times the shadow the other casts along it.

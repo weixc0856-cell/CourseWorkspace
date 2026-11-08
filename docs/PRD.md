@@ -12,7 +12,7 @@
 
 把**人工撰写的课程内容**稳定、可复现地转换成**带动画与三维场景的成片视频**，并在每一步给出可核验的证据。
 
-产品解决的是“内容已经写好，但排版、动画、三维、合成、验收仍是手工拼接”的问题；不解决“从零生成课程知识”的问题。
+产品解决的是“内容已经写好，但排版、动画、三维、合成、验收仍是手工拼接”的问题；R1 起也支持从用户提供的来源生成课程候选稿，但**不替代人工确认与事实裁决**，也不做无来源的知识生产。
 
 ### 1.1 目标
 
@@ -24,7 +24,9 @@
 
 ### 1.2 非目标（本版本明确不做）
 
-- 自动语音识别（ASR）、自动整课 TTS、自动发布。
+- 自动语音识别（ASR）、自动发布。
+- 无人工确认的整课内容直接落盘（R1 起 AI 只产出候选稿，人工批准后才进入正式课程）。
+- 不部署 Code2Video 27B 权重；不引入第二套课程编排流水线；外部引擎只做镜头级能力。
 - 云端渲染、ComfyUI 图像生成流水线。
 - Motion Canvas headless 自动导出（见 FR-04，人工节点是正式设计）。
 - 让 LLM 直接判定课程事实正确性或替代人工审稿。
@@ -181,8 +183,9 @@
 - 8080 被其他模型占用时：等待（有超时）或明确 `blocked`，不得杀死他人进程。
 - 模型切换顺序：停止旧实例 → 等待端口释放 → 启动新实例 → 健康且别名匹配。
 - 不改变用户既有启动方式与硬件配置（`start_server.bat` 仍可用）。
+- **远程回退（可选）**：仅当 `config/model-routing.yaml` 显式启用且配置了 API key 环境变量时，本地 8080 因占用、启动失败或锁超时才可切换到远程 OpenAI 兼容 API。任务记录必须写 `provider=remote` 与实际模型；远程无凭据/不可达时仍为 `blocked`，不得冒充本地。视觉阶段只有在配置 `vision_model` 时才允许回退；默认 `deepseek-flash` 支持图像。**所有 DeepSeek 调用固定 `deepseek-flash`；`deepseek-v4-pro` 已禁用，配置层会拒绝。**
 
-**验收**：多进程竞争测试（两个进程同时申请，必须串行）；超时释放测试；他人占用时 `blocked` 测试。
+**验收**：多进程竞争测试（两个进程同时申请，必须串行）；超时释放测试；他人占用时 `blocked` 测试；本地繁忙时 mock 远程回退测试；真实远程端点连通性冒烟（凭据缺失时如实 `blocked`）。
 
 ### FR-10 模型任务状态与恢复
 
@@ -236,11 +239,110 @@
 
 1. 工具链探测；
 2. CourseControl / ModelingStudio / shared / ContentQA 单测；
-3. 5 个课程/夹具契约校验；
+3. 6 个课程/夹具契约校验；
 4. IR v2 契约校验（不渲染）；
 5. 无网络依赖。
 
 **验收**：在干净 shell 中 exit 0 且输出 `check ok`。
+
+### FR-15 输入摄取与来源摘要（R1）
+
+**目标**：把用户提供的网页 / Markdown / TXT 变成可追溯的课程来源。
+
+- 支持 URL、Markdown、TXT；PDF/DOCX 暂不支持。
+- 保存正文到 `lessons/<slug>/authoring/sources/<id>.md`，记录 origin、抓取时间、HTTP 状态、sha256、提取器。
+- 生成稳定引用的来源摘要（如 `S1-3.2`），供大纲、脚本、审查引用。
+- 抓取失败、空正文、非文本内容必须如实失败，不伪造来源。
+
+**验收**：`course-control ingest` / `digest` 有真实来源与摘要；摘要哈希可复算。
+
+### FR-16 课程草稿与人工批准门（R1）
+
+**目标**：AI 生成候选 brief / 大纲 / 英文口播稿 / 幻灯片 / 讲师手册；人工按 sha256 批准后才成为正式课程。
+
+- 候选写入 `build/<slug>/authoring/candidates/`；`author-accept` 提升到 `lessons/<slug>/` 并记录批准。
+- `narration-build` 与 `subtitles-build` 必须验证批准哈希；正文变更后旧批准失效。
+- 脚本必须与 `lecture_notes.md` 的 `逐字口播` 一致；不得把情绪提示写进正文或字幕。
+
+**验收**：批准门有单测；未批准/篡改时 TTS/字幕拒绝执行。
+
+### FR-17 课程时长契约（R1）
+
+**目标**：时长成为课程生产的正式约束，而不是后期估算。
+
+- `lesson.yaml.duration` 声明 profile（standard/short/news）、target/min/max、页面容差。
+- 页面级时间只有一个权威：计划模式读 `lecture_notes.md` 的 `时长预算`；实测模式读 `narration.meta.json` 的页跨度。
+- 最终以成片时间轴为准；不允许用重复、停顿、空镜凑时长。
+
+**验收**：V-26 计划/实测时长检查；V-27 成片时长窗口；越窗失败。
+
+### FR-18 整课旁白（R1）
+
+**目标**：一门课一次 TTS 运行，逐段缓存、可增量重建、实测时长回写时间线。
+
+- 一个 `TtsService` 持 50000 锁跑完整课；逐段 `.meta.json`、48 kHz mono 归一化、拼接与停顿。
+- 默认英文；VoxCPM2 `reference_only` + 句首英文括号情绪提示；`prompt_reference` 为显式回退（忽略情绪提示）。
+- 保留单段 `narrate`；整课命令为 `narration-build`。
+
+**验收**：真实 VoxCPM2 音频；缓存命中；页跨度与 `narration.meta.json` 一致；V-30。
+
+### FR-19 双语字幕与双版本成片（R1）
+
+**目标**：英文在上、简体中文在下；输出 SRT/ASS/VTT；成片同时提供干净版与烧录字幕版。
+
+- 字幕 cue 来自实测音频段边界；段内按文本比例切分。
+- 中文 ≤15 字/行、英文 ≤42 字/行、最多 2 行、1–6 秒/条、相邻 ≥2 帧、中文 CPS ≤9。
+- 翻译逐 cue 编号，条数/顺序不符即 blocked。
+- `final/course-video.mp4` 为干净母版；`final/course-video-captioned.mp4` 为 ffmpeg ASS 烧录版（QSV，失败回退 libx264）。
+- Remotion 合成由 `TimelineSpec` 驱动；旧 `shots.json` 路径保留兼容。
+
+**验收**：V-28/V-31；真实烧录片段；双语字幕草稿与批准 SRT。
+
+### FR-20 代码驱动镜头与 Code2Video Skill（R1）
+
+**目标**：为动效/信息图/HTML-SVG 类镜头提供“写代码 → 逐帧渲染 → Contact Sheet → 验证”的生产能力。
+
+- 镜头类型：`ShotSpec.engine = code_video`；`scene` 指向镜头项目的 `SPEC.md`。
+- 工作流：`SPEC.md` → `window.READY` + `window.seek(t)`（`frame(t)` 纯函数）→ 本地 Playwright/ffmpeg 渲染 → Contact Sheet → `VERIFY.md`。
+- 产物：`build/<slug>/animation/<project>.mp4`；必须通过 `probe_media`，且 `VERIFY.md` 不得含 `| fail |`。
+- 不部署 27B；Agent 默认使用 Claude Code，本地/远程仅在显式配置允许时回退。
+- 不把 Code2Video 作为最终合成层或第二编排层；它只产出镜头级 MP4。
+
+**验收**：真实 30 秒 Canvas 镜头；两次独立渲染帧哈希一致；`check_video.sh` 通过；adapter 单测通过。
+
+### FR-21 外部技术接入与许可评估（技术雷达）
+
+**目标**：外部开源项目先评估后接入，避免“发现即集成”。
+
+- 评估维度：课程适用性 30%、技术成熟度 20%、Agent 适配度 20%、集成成本 15%、商业许可 15%。
+- 硬门槛：许可证不明、无复现案例、特殊硬件不可用、与现有能力重复且无收益 → 不进入生产。
+- 收录：Code2Video、video-production-skill、HyperFrames、VideoZero 及后续项目；记录许可证、POC 结果与决策。
+- 当前决策：Code2Video 接入镜头级；video-production-skill 只吸收规范；HyperFrames 作为可选 HTML 渲染/lint 后端；VideoZero 作为 Motion Canvas 图像序列自动导出的候选。
+
+**验收**：`docs/技术雷达-视频生产.md` 持续更新；每个接入项有许可证与 POC 证据。
+
+### FR-22 交付包、QC 与归档
+
+**目标**：每门课程交付可验证、可归档、可复现的完整包。
+
+- 交付包至少含：干净版、字幕版、SRT/ASS/VTT、`build-report.json`、`burn.json`、旁白 meta、镜头证据、日志。
+- QC 门：抽帧/Contact Sheet（Code2Video 自动证据，不是人工抽帧关卡）、音轨与音画同步、字幕行宽/CPS、时长窗口、编码规格、证据完整性。
+- 归档：最终包复制到仓库外/忽略目录，记录 sha256；唯一副本不得留在临时目录。
+
+**验收**：`docs/课程生产交付物规范.md`；真实课程构建产物满足清单。
+
+### FR-23 Claude Code 作为默认生产后端（R1）
+
+**目标**：把课程文本生产与代码镜头默认交给 Claude Code，同时保留显式回退与可追溯记录。
+
+- 默认走 Claude Code 的环节：brief / outline / script / content-draft、字幕翻译、ContentQA 审查、ModelingStudio 文本规划、Code2Video 镜头。
+- 文本阶段以 `claude -p --tools=` 纯生成模式调用，不开放文件/命令工具；镜头阶段才允许 `Read/Write/Edit/Glob/Grep`，且工作目录必须是 `build/<slug>/agent/` 或镜头目录。
+- 任务记录 `provider=claude_code`，并记录上游模型；Claude Code 的 `total_cost_usd` 只作参考，不当作实际账单。
+- 凭据只从环境变量注入（默认 cc-switch 的 `ANTHROPIC_AUTH_TOKEN`，或直连 DeepSeek 的 `DeepSeek-API`），不写入配置、日志或任务记录。
+- 不可用时必须显式 `blocked`；只有配置 `claude_code_fallback: local_first` 才允许回退本地/远程，禁止静默降级。
+- Vision 阶段（ModelingStudio 图像分析/修订）仍使用本地或远程视觉模型，不交给纯文本 Claude Code。
+
+**验收**：`docs/评估-四后端对比.md`、`docs/DECISIONS.md` D-041/D-042；`claude_code` 后端单测；真实 brief/镜头调用各一次。
 
 ---
 
@@ -256,6 +358,7 @@
 | NFR-06 | 可中断：Ctrl-C、超时、进程被杀后，锁与服务不残留（陈旧锁可回收） |
 | NFR-07 | 最小依赖：优先标准库与既有依赖，不引入 Agent 框架 |
 | NFR-08 | 文档一致：测试数量、命令、状态以实际运行为准 |
+| NFR-09 | 路径卫生：跟踪文件不出现本机绝对路径；本机路径只允许出现在被忽略的 `config/*.yaml` / `.env`，并提供 `.example` 参考文件 |
 
 ---
 
@@ -319,7 +422,7 @@ validate（程序，任意失败即中止）
 
 1. `scripts/check.ps1` 在 PowerShell 5.1 下 exit 0 并打印 `check ok`。
 2. 全部单测真实通过，数量与 `docs/ACCEPTANCE.md` 一致。
-3. 5 个课程/夹具 validate 通过；11 个 IR v2 夹具结论正确。
+3. 6 个课程/夹具 validate 通过；11 个 IR v2 夹具结论正确。
 4. 夹具 `lesson-smoke` 全链路 `verdict=pass`（真实 Blender + Remotion）。
 5. 真实课程 `01-shell-for-ai-era` 至少完成截图与全部可自动阶段，并如实输出 `incomplete` 及原因（Motion 未导出）。
 6. 本地模型串行有真实多进程测试证据。
@@ -327,6 +430,16 @@ validate（程序，任意失败即中止）
 8. 维度预算测试通过，所有模型调用记录预算。
 9. 失败/取消/阻塞状态均可从任务记录读回。
 10. 文档与代码一致，无 P0 遗留。
+
+R1 增量完成条件：
+
+11. 一门真实课程完成来源 → 候选稿 → 人工批准 → 整课旁白 → 双语字幕 → 干净版 + 字幕版成片。
+12. R1 检查 V-26–V-33 全部有实现与真实证据；`check.ps1` 仍为 `check ok`。
+13. 时长、旁白、字幕、烧录结论以真实产物为准；缺少证据的项写 `PARTIAL` / `NOT_RUN`，不得写成 `pass`。
+14. `code_video` 镜头有真实 30 秒产物，两次渲染帧哈希一致；adapter 与 `VERIFY.md` 门禁通过。
+15. 外部项目（Code2Video / video-production-skill / HyperFrames / VideoZero）均有许可证、POC 结果与接入决策记录。
+16. 课程交付包符合 `docs/课程生产交付物规范.md`；干净版与字幕版都存在且可 probe。
+17. Claude Code 默认后端在 authoring / ContentQA / ModelingStudio 文本规划 / Code2Video 各有一条真实调用或等价 smoke；文本阶段未开放工具；`provider=claude_code` 可读回。
 
 ---
 
@@ -340,3 +453,76 @@ validate（程序，任意失败即中止）
 | OPEN-04 | Manim 是否接入课程 | 保持可选，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式验证/证据语料） | 本期只交付审查内核 |
 | OPEN-06 | 多课程并行构建 | 不设计；构建串行即可 |
+
+### FR-24 Scene-first 合成模式（R1）
+
+**目标**：课程不再以幻灯片为每页底图，而是以全屏镜头作为 base，解决“PPT 展示”问题。
+
+- `compose.mode` 支持 `deck` / `scene` / `recording`；scene 模式跳过 `capture_slides`。
+- 每页 scene 视频来自 `build/<slug>/scenes/manifest.json`，由 Remotion `ScenePage` 渲染；Manim/Blender 镜头作为 overlay。
+- ScenePage 使用逐句大字、公式/章节标识、流动线背景；底部保留字幕安全区。
+- 字幕、旁白、时长与 QC 契约不变。
+- **验收**：同一课程的 scene 版与 deck 版都可通过 V-26..V-31；scene 版每页 base 为全屏视频而非幻灯片截图。
+
+### FR-25 公式质量模块（Formula Pipeline）
+
+**目标**：公式作为一等资产，统一 LaTeX 源，静态/动态渲染分工，数学与视觉分别验收。
+
+- `FormulaSpec`：`formula_id`、`latex`、`display`、`meaning`、`symbols`、`source`、四类 `validation`。
+- 静态公式：KaTeX → HTML + PNG；Remotion `Formula` 组件合成。
+- 动态公式：Manim `MathTex`，源与 FormulaSpec 一致。
+- 自动检查：未转义 `%`、括号、`$` 定界符、全文档命令、KaTeX 编译、PNG 非空。
+- 半自动：SymPy 恒等检查只作辅助；`mathematical_review` / `dimensional_check` 保持 `pending`，不得自动 pass。
+- 最终成片必须检查实际编码帧（必要时按时间点定位单帧）；公式错误不得进入成片。
+
+**验收**：`docs/公式排版规范.md`；`test_formulas.py`；KaTeX/Remotion/Manim 三路冒烟。
+
+### FR-26 科学图形资产（ScientificFigures）
+
+**目标**：公式与数据图分开生产；静态科学图由 Python 科学栈生成，Manim 只做动画。
+
+- 独立环境 `ScientificFigures/.venv`，依赖 SymPy、Matplotlib、SciencePlots。
+- 图脚本是唯一源；输出 SVG/PDF/PNG（≥2K），由 Remotion 引用。
+- SciencePlots 默认 `["science","no-latex"]`；开启 LaTeX 必须显式记录依赖。
+- Plotly/Seaborn 暂缓；不引入交互式运行时。
+- 图表必须有数据/参数/脚本来源；最终成片检查字号/线宽/图例/公式清晰度（必要时定位单帧）。
+
+**验收**：`docs/科学图形与图表接入评估.md`；`continuity_figure.py` 真实输出 SVG/PDF/PNG。
+
+### FR-27 动画视觉导演层
+
+**目标**：动画先设计、再渲染；不以“渲染成功”代替视觉验收。
+
+- `AnimationDirection`：每个镜头记录学习意图、视觉隐喻、构图、焦点、镜头、运动、连续性、参考与验收。
+- `direction-validate` 校验时间连续、总时长、必填意图/参考/验收。
+- 动画原语限定：draw/grow、trace、transform、camera、hold、highlight；禁止用淡入替换冒充变换。
+- 90 秒竖切片验证通过后，才扩展长课程。
+- 视觉验收：直接观看最终成片，检查构图、标签、公式、连续性与节奏；不以抽帧/关键帧评审代替看片。
+
+**验收**：`docs/动画视觉导演规范.md`；`direction.json` 与 90 秒切片。
+
+### FR-28 导演层
+
+**目标**：把已批准的 brief / outline / narration script / storyboard 收敛成一份可执行、可校验的制作计划，再交给引擎执行。
+
+- `director-plan` 输出 `director_plan.json`、`storyboard.director.yaml`、`directions/*.json`、`director_review.md`。
+- 输入必须通过 `authoring/approval.json` 的 sha256 校验；不匹配只生成 draft 并告警。
+- 硬闸门：时长窗口、章节与镜头时间轴连续、slide 覆盖、引擎与 3D 路由、scene 存在、旁白覆盖与页面预算、至少一个可渲染镜头。
+- 不写场景代码、不直接调用渲染引擎；复用 `engine_router` 与 `AnimationDirection`。
+- `build --storyboard` / `--shots` 可显式加载 handoff 并按镜头过滤渲染；不自动替换课程 storyboard。
+- 视觉验收仍为看完成片，不设抽帧关卡（D-047）。
+
+**验收**：`docs/导演层.md`、`test_director.py`、`01-transformer-demo` 真实计划（12 镜头 / 1200 s / 12 ready）与 5 个真实渲染镜头。
+
+### FR-29 制片层
+
+**目标**：以出品人订单为输入，管理资源授权、用量、阶段状态、交付包和增量重建，不替代人工验收。
+
+- `ProductionOrder`：受众、语言、时长、必须覆盖/禁止内容、风格、授权与限额；人工批准字段。
+- `producer-run` 自动执行 validate → director plan → delivery package → state；不触发渲染、TTS 或发布。
+- `producer-rebuild` 把受影响镜头映射为 `build --storyboard --shots`；默认只打印，`--execute` 需 `allow_render`。
+- 七项交付物按文件存在性与 sha256 判定；`skip` 不写成 `pass`；全部 present 且订单已批准才是 `delivered`。
+- 每个镜头保存内容/旁白/场景/方向指纹，`producer-affected` 给出 redesign / re-render / re-narrate / recompose。
+- 不读密钥；授权只记录能力布尔值与模型后端。
+
+**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 7 项）与增量检测实测。

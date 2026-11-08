@@ -1,0 +1,1 @@
+Then softmax turns each row into shares. Positive numbers, summing to one.

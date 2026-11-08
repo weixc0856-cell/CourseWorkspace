@@ -31,6 +31,13 @@
       "type": "string",
       "minLength": 1
     },
+    "provider": {
+      "enum": [
+        "local",
+        "remote",
+        "claude_code"
+      ]
+    },
     "status": {
       "enum": [
         "pending",

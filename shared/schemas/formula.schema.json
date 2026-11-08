@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "FormulaSource": {
+      "additionalProperties": false,
+      "properties": {
+        "document": {
+          "minLength": 1,
+          "title": "Document",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "document",
+        "locator"
+      ],
+      "title": "FormulaSource",
+      "type": "object"
+    },
+    "FormulaValidation": {
+      "additionalProperties": false,
+      "properties": {
+        "latex_compile": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "pass",
+            "fail",
+            "not_applicable",
+            "unverified"
+          ],
+          "title": "Latex Compile",
+          "type": "string"
+        },
+        "mathematical_review": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "pass",
+            "fail",
+            "not_applicable",
+            "unverified"
+          ],
+          "title": "Mathematical Review",
+          "type": "string"
+        },
+        "dimensional_check": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "pass",
+            "fail",
+            "not_applicable",
+            "unverified"
+          ],
+          "title": "Dimensional Check",
+          "type": "string"
+        },
+        "visual_review": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "pass",
+            "fail",
+            "not_applicable",
+            "unverified"
+          ],
+          "title": "Visual Review",
+          "type": "string"
+        },
+        "video_review": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "pass",
+            "fail",
+            "not_applicable",
+            "unverified"
+          ],
+          "title": "Video Review",
+          "type": "string"
+        }
+      },
+      "title": "FormulaValidation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "formula_id": {
+      "pattern": "^[A-Z][A-Z0-9-]{2,63}$",
+      "title": "Formula Id",
+      "type": "string"
+    },
+    "latex": {
+      "minLength": 1,
+      "title": "Latex",
+      "type": "string"
+    },
+    "display": {
+      "default": "block",
+      "enum": [
+        "block",
+        "inline"
+      ],
+      "title": "Display",
+      "type": "string"
+    },
+    "engine": {
+      "default": "katex",
+      "enum": [
+        "katex",
+        "mathjax"
+      ],
+      "title": "Engine",
+      "type": "string"
+    },
+    "meaning": {
+      "minLength": 1,
+      "title": "Meaning",
+      "type": "string"
+    },
+    "symbols": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Symbols",
+      "type": "object"
+    },
+    "source": {
+      "$ref": "#/$defs/FormulaSource"
+    },
+    "validation": {
+      "$ref": "#/$defs/FormulaValidation"
+    },
+    "font_size": {
+      "default": 48,
+      "maximum": 160,
+      "minimum": 12,
+      "title": "Font Size",
+      "type": "integer"
+    },
+    "color": {
+      "default": "#14213D",
+      "title": "Color",
+      "type": "string"
+    }
+  },
+  "required": [
+    "formula_id",
+    "latex",
+    "meaning",
+    "source"
+  ],
+  "title": "FormulaSpec",
+  "type": "object"
+}

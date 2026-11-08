@@ -40,26 +40,30 @@ from .session_runner import (
 CREATE_NEW_CONSOLE = 0x00000010
 
 
+def _program_files(*parts: str) -> Path | None:
+    root = os.environ.get("ProgramFiles")
+    return Path(root).joinpath(*parts) if root else None
+
+
 def _code_command() -> str:
-    candidate = Path(
-        os.environ.get("ProgramFiles", r"C:/Program Files")
-    ) / "Microsoft VS Code/bin/code.cmd"
-    if candidate.is_file():
+    candidate = _program_files("Microsoft VS Code", "bin", "code.cmd")
+    if candidate is not None and candidate.is_file():
         return str(candidate)
     executable = shutil.which("code")
     if executable:
         return executable
-    raise SessionRunError("VS Code code.cmd not found")
+    raise SessionRunError("VS Code code.cmd not found; add VS Code to PATH")
 
 
 def _bash_path() -> str:
-    candidate = Path(os.environ.get("ProgramFiles", r"C:/Program Files")) / "Git/bin/bash.exe"
-    if candidate.is_file():
+    # Prefer Git for Windows over a WSL bash that may also be on PATH.
+    candidate = _program_files("Git", "bin", "bash.exe")
+    if candidate is not None and candidate.is_file():
         return str(candidate)
     executable = shutil.which("bash")
     if executable:
         return executable
-    raise SessionRunError("Git Bash not found")
+    raise SessionRunError("Git Bash not found; add Git Bash to PATH")
 
 
 def _prepare(workspace: Path, lesson_dir: Path, spec: SessionSpec, session_id: str) -> tuple[Path, dict[str, str]]:

@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.3（2026-11-07）
+- **版本**：v1.4（2026-11-08）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -10,20 +10,20 @@
 
 ```powershell
 .\scripts\check.ps1
-# 期望：五套单测 + 课程契约（本地有课程时 5 个，干净克隆时 3 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
+# 期望：五套单测 + 课程契约（本地有课程时 6 个，干净克隆时 4 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
-最近一次执行（2026-11-07）：**`check ok`，exit 0**。
+最近一次执行（2026-11-08）：**`check ok`，exit 0**。
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 131（129 通过 + 2 跳过；含 V1-B/C 与 E6.5 契约） | 129 通过，2 跳过 |
-| ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 28 | 全部通过 |
-| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 22 | 全部通过 |
-| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 11 | 全部通过 |
-| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11 | 全部通过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 271（266 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 266 通过，5 跳过 |
+| ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
+| ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
+| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
+| ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 11（10 通过 + 1 跳过） | 10 通过，1 跳过 |
 
-合计 **203** 个用例（201 通过 + 2 跳过）；跳过的 2 个 Docker/录制集成测试不计为通过。
+合计 **383** 个用例（377 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -38,6 +38,8 @@ uv run --project CourseControl course-control e65-adapt --workspace . --manifest
 - `schemas-v1`：导出 7 份 V1 JSON Schema。
 - `contract-v1-validate`：按 `kind` 校验单个 V1 文件；非法输入 exit 1，未知 kind exit 2。
 - 时间换算边界测试见 `CourseControl/tests/test_timecode.py`；模型与示例测试见 `CourseControl/tests/test_contracts_v1.py`；E6 V0 只读适配见 `CourseControl/tests/test_legacy_e6.py`。
+- V1-E：`course-control timeline-v1 --lesson <slug>` 从现有 `shots.json` 写 `build/<slug>/contracts/timeline.spec.json`；`collect` 已自动写出。
+- V1-D：`course-control session-evidence-v1 --spec <session.json> --workspace .` 把现有 `evidence.json` 升级为 `EvidenceManifestV1`。
 
 ---
 
@@ -241,6 +243,14 @@ python ManimSandbox/05-multi-head/assemble.py
 | 在线请求超时 | 同上（slow） | failed，任务记录终态 |
 | 只读边界 | 同上 | 课程文件字节不变；未生成 shots.json / build-report.json |
 | 无凭据 | 同上 | blocked |
+| 远程回退（mock） | `test_remote.py` | 本地繁忙 → `provider=remote`；本地正常不切换；无远程/无 key/无 vision 模型均不伪造 |
+| 远程凭据隔离 | `test_remote.py`、`test_remote_routing.py` | key 只从环境变量读取；健康输出不含 key；任务记录 `provider` 可追溯 |
+| 远程真实文本冒烟 | `config/model-routing.yaml` + `DeepSeek-API` | 2026-11-07 可达；`deepseek-flash` 返回 `OK`；未打印密钥 |
+| 远程真实图片冒烟 | 256×256 PNG + `deepseek-flash` | 2026-11-07 返回“红色”；`deepseek-v4-pro` 已禁用 |
+| DeepSeek 模型策略 | `test_remote.py`、`test_remote_routing.py`、`test_model_policy.py` | flash 接受；pro 在 ai_runtime / ModelingStudio / ContentQA 配置层均被拒绝 |
+| 环境变量优先 | `test_env.py`、`test_remote.py::EnvironmentOverrideTest`、`test_env_overrides.py` | `.env` 自动加载；shell env 优先；通用 `REMOTE_*` 与 DeepSeek `DEEPSEEK_*` 覆盖本地 YAML；env 设 pro 仍被拒绝 |
+| 密钥隔离 | 系统环境变量 `DeepSeek-API` | key 不写入 `.env`/YAML/日志/跟踪文件；跟踪文件只含不含 key 的 `.env.example` |
+| 路径卫生 | `scripts/check-paths.ps1` | `path check ok`；跟踪文件中无本机盘符/用户目录绝对路径 |
 | 真实课程无配置 | `content-qa review --lesson 01-shell-for-ai-era` | **blocked，exit 3**；报告写入 `build/01-shell-for-ai-era/review/review.json` |
 
 本地模型的真实作业证据（历史记录，本轮未重跑）：`ModelingStudio/workspace/jobs/sample-001` 六阶段 completed；`sample-002` 停在 generate；`fallback-test` build+validate 通过。
@@ -252,11 +262,29 @@ python ManimSandbox/05-multi-head/assemble.py
 | 项 | 原因 | 影响 |
 | --- | --- | --- |
 | 真实课程成片 | Motion Canvas 8 段未导出（人工） | `01-shell-for-ai-era` 为 `incomplete` |
-| 真实在线模型调用 | 未配置供应商与凭据 | ContentQA 真实课程为 `blocked` |
+| 真实在线模型调用 | ContentQA 已配置 DeepSeek，但本轮未重跑真实课程审查 | 保留历史 `blocked` 证据；远程路由冒烟已单独完成 |
 | 本轮重跑 ModelingStudio 全链路 | 需独占 8080 约 10–30 分钟，且会与用户其他任务冲突 | 仅有历史作业证据 |
 | V-05/V-06/V-09/V-16/V-19/V-20 的失败注入 | 会破坏真实课程或已由正常路径覆盖 | 未新增故障样本 |
 | 两门真实课程重复构建一致性 | 第二门未构建 | 夹具已验证文件集合稳定 |
 | VoxCPM2 / ComfyUI | 运行时未启动/未部署 | 不在本期范围 |
+| V1-D 原生写入 | Session runner 仍写旧 `evidence.json`；V1 由适配器生成 | 新 session 不会自动产出 `EvidenceManifestV1` |
+| V1-E Remotion 切换 | Remotion 仍读 `shots.json`；V1 时间线是并列视图 | 尚未用 V1 直接驱动合成 |
+| 远程完整作业 | 只验证了单轮文本/图片；未跑完整 ModelingStudio 远程作业 | 远程回退的路由与协议已测，作业级证据待补 |
+
+---
+
+## 6.9 导演层与制片层（2026-11-08）
+
+| 检查 | 命令 | 预期 |
+| --- | --- | --- |
+| 导演计划 | `course-control director-plan --lesson 01-transformer-demo --workspace .` | `status: ready`；12 镜头 / 5 章 / 1200 s；0 error，9 warning |
+| 结构校验 | `course-control director-validate --plan build/01-transformer-demo/director/director_plan.json` | `no issues` |
+| 交付清单 | `course-control producer-run --lesson 01-transformer-demo --workspace .` | exit 1；`blocked`；4 项缺失（成片、旁白、字幕、build-report） |
+| 增量检测 | `course-control producer-affected --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots` |
+| 增量命令 | `course-control producer-rebuild --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots`；有修改时打印 `--shots` 命令与 `allow_render` 授权 |
+| 旁白样片 | `course-control narration-build --lesson 01-transformer-demo --workspace . --sample-pages 1` | 第 1 页 43.92 s（计划 45 s，drift -1.08 s），`style_applied=true`，服务自动停止 |
+
+边界：这两层是设计与制片校验，不是成片验收；不设抽帧关卡（D-047），渲染与 TTS 仍需显式命令。`build --storyboard` / `--shots` 已接入，可在已有构建上手动局部重渲染。
 
 ---
 
@@ -267,3 +295,32 @@ python ManimSandbox/05-multi-head/assemble.py
 3. `.\scripts\build-lesson.ps1 -Lesson lesson-smoke -LessonDir CourseControl/tests/fixtures`
 4. `.\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era`（预期 `incomplete`）
 5. `uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era`（预期 `blocked`，exit 3）
+
+---
+
+## 8. R1 增量检查（2026-11-07）
+
+| 编号 | 检查 | 实现 | 适用条件 |
+| --- | --- | --- | --- |
+| V-26 | 时长契约一致性（计划/实测/重复权威） | `validators.py` + `collect.py` | `lesson.yaml.duration` 存在 |
+| V-27 | 成片时长在窗口内 | `verify.py` | duration 存在且成片存在 |
+| V-28 | 字幕版与干净版时长/流/分辨率/帧率一致 | `verify.py` + `adapters/burn.py` | `subtitles.render=burn_in` |
+| V-29 | 脚本与逐字口播一致、style 语法 | `validators.py` | `authoring.script` 存在 |
+| V-30 | 旁白 meta/哈希/页跨度/时间轴一致 | `verify.py` | `narration.timing=measured` |
+| V-31 | 双语字幕条数/完整/行宽/CPS/间隔 | `verify.py` | `subtitles.render=burn_in` |
+| V-32 | 来源引用完整性 | `validators.py` | `authoring.digest` 存在 |
+| V-33 | 批准门（sha256 匹配） | `validators.py` | `authoring` 块存在 |
+
+R1 测试计数：五套合计 **383 个用例（377 通过 + 6 跳过）**：CourseControl 271（266+5）、ModelingStudio 33、ai_runtime 50、ContentQA 18、ManimSandbox 11（10+1）。
+
+R1 真实产物：
+
+- `docs/R1-基线报告.md`、`docs/R1-1-引擎验证报告.md`、`docs/R1-性能基准报告.md`
+- `docs/R1-5-候选稿索引.md`
+- `build/r1/manim/.../SmokeScene.mp4`、`build/r1-smoke/blender/smoke.mp4`、`build/r1/remotion/smoke.mp4`
+- `build/r1/timeline-smoke.mp4`（TimelineSpec 驱动 Remotion 的 6 秒真实片段）
+- `build/01-transformer-demo/blender/stack_explode.mp4`（1920×1080 / 30 fps / 750 帧 / 25 s）
+- `CodeVideoStudio/shots/attention-flow/out/final.mp4`（30s / 900 帧 / 两次渲染 900/900 帧哈希一致）
+- `CodeVideoStudio/backends/hyperframes/hf-poc/out/hf-poc.mp4`（10s / 300 帧 / check 0 error 0 warning / 27.1s）
+- `build/videozero-poc/output/attention-flow.mp4`（Motion Canvas image sequence → ffmpeg，1920×1080 / 30fps / 3007 帧 / 100.2s）
+- `build/01-transformer-demo/narration/audition/s001-p1.wav`、`s001-p2.wav`（VoxCPM2 真实合成）

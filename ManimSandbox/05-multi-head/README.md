@@ -28,7 +28,7 @@ uv run --project ManimSandbox manim render -r 1920,1080 --fps 30 `
 uv run --project CourseControl course-control narrate --workspace . `
   --lesson e6.5-multi-head --segment-id e65-b1 `
   --text-file ManimSandbox/05-multi-head/narration/b1.txt `
-  --voice-ref "D:/Local-Drama-Studio/assets/audio/prompts/my_voice_clean_v1.wav" `
+  --voice-ref "<VOICE_REF_WAV>" `
   --prompt-text "希望你以后能够做的比我还好呦。" `
   --out build/manim-multi-head/e6.5/narration/segments/e65-b1.wav
 
@@ -37,3 +37,10 @@ python ManimSandbox/05-multi-head/assemble.py
 
 - 成片：`build/manim-multi-head/e6.5/final.mp4`（86.929 s）。
 - 自动检查写入 `build/manim-multi-head/e6.5/manifest.json`。
+
+## 轨道归属
+
+E6.5 是 **standalone render track**，不在 `lessons/` 下，因为它没有作者维护的
+`lesson.yaml` / `storyboard.yaml` / 双文件正文。`e65-adapt` 生成 V1 契约时
+`source.lesson_spec=null`，但仍提供 `TimelineSpec`、`NarrationSpec` 与
+`RenderManifest`；后续若作者补齐课程文件，再按 V1-E 接入主链。

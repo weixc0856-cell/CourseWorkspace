@@ -1,0 +1,1 @@
+Finally, each row mixes the value vectors in those proportions. That mixture is the new vector for the word. Its context.

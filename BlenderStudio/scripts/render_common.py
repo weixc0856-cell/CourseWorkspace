@@ -73,6 +73,10 @@ def validate_task(task):
     if engine not in ALLOWED_ENGINES:
         fail(f"engine must be one of: {sorted(ALLOWED_ENGINES)}")
 
+    device = str(task.get("device", "CPU")).upper()
+    if device not in {"CPU", "GPU"}:
+        fail("device must be CPU or GPU")
+
     output = task["output"]
     if not isinstance(output, str) or not output.strip():
         fail("output must be a non-empty path")
@@ -100,6 +104,7 @@ def validate_task(task):
     return {
         "lesson": lesson,
         "engine": engine,
+        "device": device,
         "resolution": resolution,
         "fps": fps,
         "frames": frames,
@@ -162,7 +167,19 @@ def configure_scene(task):
 
     if engine == "CYCLES":
         scene.cycles.samples = task["samples"]
-        scene.cycles.device = "CPU"
+        if task.get("device", "CPU") == "GPU":
+            prefs = bpy.context.preferences.addons["cycles"].preferences
+            prefs.compute_device_type = "ONEAPI"
+            prefs.get_devices()
+            for device in prefs.devices:
+                device.use = device.type == "ONEAPI"
+            scene.cycles.device = "GPU"
+            enabled = [d.name for d in prefs.devices if d.use]
+            print(f"BLENDER_TASK_DEVICES {enabled}")
+            if not enabled:
+                fail("Cycles GPU requested but no ONEAPI device is enabled")
+        else:
+            scene.cycles.device = "CPU"
     elif engine == "BLENDER_EEVEE":
         scene.eevee.taa_render_samples = task["samples"]
 

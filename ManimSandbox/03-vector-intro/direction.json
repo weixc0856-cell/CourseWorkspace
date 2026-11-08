@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "lesson_id": "vector-direction-slice",
+  "title": "Vectors: three moves",
+  "total_seconds": 90,
+  "style": {
+    "palette": {"ink": "#14213D", "muted": "#5C677D", "accent": "#0077B6", "warm": "#E76F51", "green": "#2A9D8F", "paper": "#FFFFFF"},
+    "typography": "Arial + KaTeX/Manim math fonts",
+    "grammar": ["draw", "trace", "transform", "camera push/pan", "one hold per idea"]
+  },
+  "shots": [
+    {
+      "shot_id": "s1_establish",
+      "start_s": 0,
+      "end_s": 7,
+      "learning_intent": "A vector is a displacement arrow, not a point.",
+      "visual_metaphor": "A pencil line grows out of the origin on graph paper.",
+      "composition": "Origin low-left, arrow into negative space, title small and off-axis.",
+      "focus": "The growing arrow tip.",
+      "camera": "Slow push-in from width 16 to 13 around the origin.",
+      "motion": ["grid fades in", "arrow draws with eased growth", "camera push-in"],
+      "continuity": "The same origin and grid persist into the next shot.",
+      "on_screen_text": ["Vectors, visually"],
+      "reference": "3Blue1Brown: concept first, labels later; no title card.",
+      "acceptance": ["arrow tip never leaves frame", "grid is subordinate", "no full-screen title card"]
+    },
+    {
+      "shot_id": "s2_components",
+      "start_s": 7,
+      "end_s": 28,
+      "learning_intent": "Components and magnitude explain both direction and length.",
+      "visual_metaphor": "Shadow projections onto the axes reveal (3,2).",
+      "composition": "Arrow centered left; dashed components connect to axes; formula in right panel.",
+      "focus": "Arrow, then the dashed component path, then the magnitude label.",
+      "camera": "Hold at width 13 with a tiny lateral drift.",
+      "motion": ["dashed drop lines draw", "x/y labels appear", "magnitude writes once", "arrow pulse"],
+      "continuity": "Same arrow and origin; no cut.",
+      "on_screen_text": ["a = (3, 2)", "|a| = sqrt(3^2 + 2^2)"],
+      "reference": "3Blue1Brown vector series: components as projections, not bullets.",
+      "acceptance": ["labels do not sit on the arrow", "formula is legible at 1080p"]
+    },
+    {
+      "shot_id": "s3_addition",
+      "start_s": 28,
+      "end_s": 52,
+      "learning_intent": "Addition is placing the tail of b at the tip of a.",
+      "visual_metaphor": "A second pencil travels to the first tip, then the resultant closes the triangle.",
+      "composition": "Triangle grows right; formula sits in lower-right negative space.",
+      "focus": "The moving b tail → a tip, then the green resultant.",
+      "camera": "Pan right and widen slightly to keep the triangle in frame.",
+      "motion": ["b draws from origin", "b clone translates to a tip", "parallelogram ghost lines draw", "resultant draws"],
+      "continuity": "a stays fixed while b moves; same grid.",
+      "on_screen_text": ["a + b = (4, 5)", "a + b = b + a"],
+      "reference": "3Blue1Brown: show the operation as a spatial action, not a formula swap.",
+      "acceptance": ["no arrow-label overlap", "resultant clearly distinct", "formula does not cover axes"]
+    },
+    {
+      "shot_id": "s4_scalar",
+      "start_s": 52,
+      "end_s": 70,
+      "learning_intent": "Scalar multiplication changes length; negative flips direction.",
+      "visual_metaphor": "A rubber band anchored at the origin stretches to 2a and snaps through the origin to -a.",
+      "composition": "Vertical breathing room above/below; labels beside arrow tips.",
+      "focus": "Arrow tip distance from origin.",
+      "camera": "Pull back to width 15 so 2a and -a both fit.",
+      "motion": ["arrow transforms a → 2a", "hold", "arrow transforms a → -a", "length label updates"],
+      "continuity": "Same arrow object; no replacement.",
+      "on_screen_text": ["2a", "-a", "|λa| = |λ||a|"],
+      "reference": "3Blue1Brown: continuous transformation preserves object identity.",
+      "acceptance": ["2a and -a both inside frame", "arrow head does not collide with labels"]
+    },
+    {
+      "shot_id": "s5_dot",
+      "start_s": 70,
+      "end_s": 90,
+      "learning_intent": "The dot product measures projection times length; angle controls the sign.",
+      "visual_metaphor": "A light drops perpendicular from b onto a, leaving a shadow segment; the angle arc explains cosine.",
+      "composition": "a horizontal-ish, b above; projection shadow in green; formula upper-right.",
+      "focus": "The dropped perpendicular, then the angle arc, then the formula.",
+      "camera": "Slow orbit-like drift without rotating the grid.",
+      "motion": ["a and b draw", "perpendicular drops", "projection segment highlights", "angle arc draws", "formula writes"],
+      "continuity": "Same origin; a/b colors persist from earlier shots.",
+      "on_screen_text": ["proj_a b", "theta", "a·b = |a||b|cos(theta)", "3·1 + 2·3 = 9"],
+      "reference": "3Blue1Brown dot-product intuition; Reducible-style projection clarity.",
+      "acceptance": ["projection drop is visually perpendicular", "formula readable", "no formula covers the triangle"]
+    }
+  ]
+}

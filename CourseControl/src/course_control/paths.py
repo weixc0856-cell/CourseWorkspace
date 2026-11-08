@@ -67,9 +67,18 @@ class LessonPaths:
     lesson_dir: Path
     lesson: LessonConfig
     storyboard: Storyboard
+    storyboard_source: Path | None = None
+    selected_shot_ids: set[str] | None = None
+    build_root_override: Path | None = None
 
     @classmethod
-    def load(cls, workspace: Path, lesson_dir: Path) -> "LessonPaths":
+    def load(
+        cls,
+        workspace: Path,
+        lesson_dir: Path,
+        storyboard_override: Path | None = None,
+        build_root_override: Path | None = None,
+    ) -> "LessonPaths":
         workspace = workspace.resolve()
         lesson_dir = lesson_dir.resolve()
         lesson_file = lesson_dir / "lesson.yaml"
@@ -83,6 +92,13 @@ class LessonPaths:
                 f"lesson_id '{lesson.lesson_id}' does not match directory '{lesson_dir.name}'"
             )
         storyboard_file = lesson_dir / lesson.content.storyboard
+        if storyboard_override is not None:
+            candidate = Path(storyboard_override)
+            if not candidate.is_absolute():
+                candidate = (workspace / candidate).resolve()
+            if not candidate.is_file():
+                raise ContractError(f"storyboard override not found: {candidate}")
+            storyboard_file = candidate
         raw_story = load_yaml(storyboard_file)
         try:
             storyboard = Storyboard.model_validate(raw_story)
@@ -92,7 +108,10 @@ class LessonPaths:
             raise ContractError(
                 f"storyboard.lesson '{storyboard.lesson}' does not match lesson_id"
             )
-        return cls(workspace, lesson_dir, lesson, storyboard)
+        return cls(workspace, lesson_dir, lesson, storyboard, storyboard_file, build_root_override=build_root_override)
+
+    def selects(self, shot_id: str) -> bool:
+        return self.selected_shot_ids is None or shot_id in self.selected_shot_ids
 
     @property
     def slug(self) -> str:
@@ -100,6 +119,8 @@ class LessonPaths:
 
     @property
     def build_root(self) -> Path:
+        if self.build_root_override is not None:
+            return self.build_root_override.resolve()
         return self.workspace / "build" / self.slug
 
     def content_path(self, relative: str) -> Path:
@@ -113,6 +134,7 @@ class LessonPaths:
             "motion_canvas": "MotionStudio",
             "manim": "ManimSandbox",
             "blender": "BlenderStudio",
+            "code_video": "CodeVideoStudio",
         }
         try:
             return (self.workspace / roots[engine]).resolve()

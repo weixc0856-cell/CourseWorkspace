@@ -1,0 +1,1 @@
+These raw scores are not weights yet. And in a language model, a word must not see the future. So everything above the diagonal is masked out.

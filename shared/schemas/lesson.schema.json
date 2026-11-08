@@ -24,6 +24,86 @@
       "title": "Acceptance",
       "type": "object"
     },
+    "Authoring": {
+      "additionalProperties": false,
+      "description": "Optional paths to AI-drafted, human-approved authoring artifacts.",
+      "properties": {
+        "sources": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sources"
+        },
+        "digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest"
+        },
+        "brief": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brief"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outline"
+        },
+        "script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Script"
+        },
+        "approval": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approval"
+        }
+      },
+      "title": "Authoring",
+      "type": "object"
+    },
     "BuildOptions": {
       "additionalProperties": false,
       "properties": {
@@ -42,6 +122,7 @@
         "mode": {
           "enum": [
             "deck",
+            "scene",
             "recording"
           ],
           "title": "Mode",
@@ -58,6 +139,15 @@
           ],
           "default": null,
           "title": "Base Video"
+        },
+        "renderer": {
+          "default": "timeline",
+          "enum": [
+            "timeline",
+            "legacy"
+          ],
+          "title": "Renderer",
+          "type": "string"
         }
       },
       "required": [
@@ -119,6 +209,69 @@
       "title": "Content",
       "type": "object"
     },
+    "DurationPolicy": {
+      "additionalProperties": false,
+      "description": "Course-level duration contract (R1-5B).",
+      "properties": {
+        "profile": {
+          "default": "standard",
+          "enum": [
+            "standard",
+            "short",
+            "news"
+          ],
+          "title": "Profile",
+          "type": "string"
+        },
+        "target_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Seconds"
+        },
+        "min_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Seconds"
+        },
+        "max_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Seconds"
+        },
+        "page_tolerance_seconds": {
+          "default": 1.5,
+          "minimum": 0,
+          "title": "Page Tolerance Seconds",
+          "type": "number"
+        }
+      },
+      "title": "DurationPolicy",
+      "type": "object"
+    },
     "Narration": {
       "additionalProperties": false,
       "properties": {
@@ -138,6 +291,41 @@
           ],
           "default": null,
           "title": "Source"
+        },
+        "timing": {
+          "default": "planned",
+          "enum": [
+            "planned",
+            "measured"
+          ],
+          "title": "Timing",
+          "type": "string"
+        },
+        "mode": {
+          "default": "reference_only",
+          "enum": [
+            "reference_only",
+            "prompt_reference"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "style_enabled": {
+          "default": true,
+          "title": "Style Enabled",
+          "type": "boolean"
+        },
+        "text_frontend": {
+          "default": true,
+          "title": "Text Frontend",
+          "type": "boolean"
+        },
+        "speed": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.5,
+          "maximum": 2.0,
+          "title": "Speed",
+          "type": "number"
         }
       },
       "title": "Narration",
@@ -216,6 +404,25 @@
           "default": false,
           "title": "Enabled",
           "type": "boolean"
+        },
+        "render": {
+          "default": "remotion",
+          "enum": [
+            "remotion",
+            "burn_in"
+          ],
+          "title": "Render",
+          "type": "string"
+        },
+        "top_language": {
+          "default": "en",
+          "title": "Top Language",
+          "type": "string"
+        },
+        "bottom_language": {
+          "default": "zh-Hans",
+          "title": "Bottom Language",
+          "type": "string"
         }
       },
       "title": "Subtitles",
@@ -261,7 +468,8 @@
         "enum": [
           "motion_canvas",
           "manim",
-          "blender"
+          "blender",
+          "code_video"
         ],
         "type": "string"
       },
@@ -275,13 +483,21 @@
       "$ref": "#/$defs/Narration",
       "default": {
         "enabled": false,
-        "source": null
+        "source": null,
+        "timing": "planned",
+        "mode": "reference_only",
+        "style_enabled": true,
+        "text_frontend": true,
+        "speed": 1.0
       }
     },
     "subtitles": {
       "$ref": "#/$defs/Subtitles",
       "default": {
-        "enabled": false
+        "enabled": false,
+        "render": "remotion",
+        "top_language": "en",
+        "bottom_language": "zh-Hans"
       }
     },
     "acceptance": {
@@ -296,6 +512,28 @@
       "default": {
         "allow_manual_animation_export": true
       }
+    },
+    "duration": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DurationPolicy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "authoring": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Authoring"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

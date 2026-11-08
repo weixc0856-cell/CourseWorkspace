@@ -1,0 +1,270 @@
+{
+  "$defs": {
+    "LabelLifecycle": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "appears_s": {
+          "minimum": 0,
+          "title": "Appears S",
+          "type": "number"
+        },
+        "follows": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Follows"
+        },
+        "disappears_s": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Disappears S"
+        }
+      },
+      "required": [
+        "label",
+        "appears_s"
+      ],
+      "title": "LabelLifecycle",
+      "type": "object"
+    },
+    "MotionBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "easing": {
+          "default": "ease_in_out",
+          "title": "Easing",
+          "type": "string"
+        },
+        "target": {
+          "default": "",
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "start_s",
+        "duration_s"
+      ],
+      "title": "MotionBeat",
+      "type": "object"
+    },
+    "ShotDirection": {
+      "additionalProperties": false,
+      "properties": {
+        "shot_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,63}$",
+          "title": "Shot Id",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "exclusiveMinimum": 0,
+          "title": "End S",
+          "type": "number"
+        },
+        "learning_intent": {
+          "minLength": 1,
+          "title": "Learning Intent",
+          "type": "string"
+        },
+        "visual_metaphor": {
+          "minLength": 1,
+          "title": "Visual Metaphor",
+          "type": "string"
+        },
+        "composition": {
+          "minLength": 1,
+          "title": "Composition",
+          "type": "string"
+        },
+        "focus": {
+          "minLength": 1,
+          "title": "Focus",
+          "type": "string"
+        },
+        "camera": {
+          "minLength": 1,
+          "title": "Camera",
+          "type": "string"
+        },
+        "shot_size": {
+          "default": "medium",
+          "enum": [
+            "wide",
+            "medium",
+            "closeup"
+          ],
+          "title": "Shot Size",
+          "type": "string"
+        },
+        "camera_anchor": {
+          "default": "",
+          "title": "Camera Anchor",
+          "type": "string"
+        },
+        "motion": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Motion",
+          "type": "array"
+        },
+        "motion_beats": {
+          "items": {
+            "$ref": "#/$defs/MotionBeat"
+          },
+          "title": "Motion Beats",
+          "type": "array"
+        },
+        "label_lifecycle": {
+          "items": {
+            "$ref": "#/$defs/LabelLifecycle"
+          },
+          "title": "Label Lifecycle",
+          "type": "array"
+        },
+        "object_state": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Object State",
+          "type": "object"
+        },
+        "transition": {
+          "default": "continuous",
+          "title": "Transition",
+          "type": "string"
+        },
+        "end_state": {
+          "default": "",
+          "title": "End State",
+          "type": "string"
+        },
+        "continuity": {
+          "minLength": 1,
+          "title": "Continuity",
+          "type": "string"
+        },
+        "on_screen_text": {
+          "items": {
+            "type": "string"
+          },
+          "title": "On Screen Text",
+          "type": "array"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "acceptance": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Acceptance",
+          "type": "array"
+        }
+      },
+      "required": [
+        "shot_id",
+        "start_s",
+        "end_s",
+        "learning_intent",
+        "visual_metaphor",
+        "composition",
+        "focus",
+        "camera",
+        "motion",
+        "continuity",
+        "reference",
+        "acceptance"
+      ],
+      "title": "ShotDirection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson_id": {
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "title": "Lesson Id",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "total_seconds": {
+      "exclusiveMinimum": 0,
+      "title": "Total Seconds",
+      "type": "number"
+    },
+    "style": {
+      "additionalProperties": true,
+      "title": "Style",
+      "type": "object"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/ShotDirection"
+      },
+      "minItems": 1,
+      "title": "Shots",
+      "type": "array"
+    }
+  },
+  "required": [
+    "lesson_id",
+    "title",
+    "total_seconds",
+    "shots"
+  ],
+  "title": "AnimationDirection",
+  "type": "object"
+}

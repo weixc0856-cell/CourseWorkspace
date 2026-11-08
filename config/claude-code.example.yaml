@@ -1,0 +1,22 @@
+schema_version: 1
+
+# Claude Code as the primary authoring/review backend.
+# Copy to config/claude-code.yaml (ignored) and keep credentials in the
+# environment only. Never put a token in this file.
+enabled: true
+executable: "claude"
+model: "deepseek-flash"
+timeout_s: 900
+max_turns: 1
+
+# Default route: cc-switch proxy. To bypass it, use the direct DeepSeek
+# Anthropic endpoint instead:
+#   base_url: "https://api.deepseek.com/anthropic"
+#   auth_token_env: "DeepSeek-API"
+base_url: "http://127.0.0.1:15721"
+auth_token_env: "ANTHROPIC_AUTH_TOKEN"
+
+# Text generation uses --tools "" (all tools disabled). Agent mode is opt-in
+# by naming tools here; only use it in a staged workspace, never lessons/.
+allowed_tools: []
+permission_mode: "acceptEdits"

@@ -6,5 +6,9 @@ tts:
   runtime_dir: "<AI_ROOT>/VoxCPM-Runtime"
   voice_ref: "<VOICE_REF_WAV>"
   prompt_text: "<REFERENCE_TRANSCRIPT>"
+  # Optional English reference for English narration (3-5 s, clean, authorized).
+  # Falls back to voice_ref when empty.
+  voice_ref_en: "<EN_VOICE_REF_WAV>"
+  prompt_text_en: "<EN_REFERENCE_TRANSCRIPT>"
   auto_start: true
   wait_timeout_s: 1800

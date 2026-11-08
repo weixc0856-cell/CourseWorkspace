@@ -1,0 +1,38 @@
+schema_version: 1
+
+# Copy to config/model-routing.yaml (git-ignored) and fill local values.
+# This is provider-agnostic: any OpenAI-compatible endpoint works.
+# NEVER put an API key in this file; name the environment variable instead.
+remote:
+  enabled: true
+  provider: "openai-compatible"   # or "deepseek", "openai", etc.
+  base_url: "<OPENAI_COMPATIBLE_BASE_URL>"
+  model: "<MODEL_ID>"
+  api_key_env: "<API_KEY_ENV_VAR_NAME>"
+  timeout_s: 120
+  supports_vision: false
+  vision_model: null
+
+fallback:
+  # Local 8080 busy/unavailable -> remote. Keep this explicit.
+  on: ["busy", "start_error", "lock_timeout", "missing_executable"]
+
+# DeepSeek example (current local setup; pinned to flash, pro disabled):
+# remote:
+#   enabled: true
+#   provider: "deepseek"
+#   base_url: "https://api.deepseek.com/v1"
+#   model: "deepseek-flash"
+#   api_key_env: "DeepSeek-API"
+#   supports_vision: true
+#   vision_model: "deepseek-flash"
+#
+# OpenAI-compatible example:
+# remote:
+#   enabled: true
+#   provider: "openai-compatible"
+#   base_url: "https://api.openai.com/v1"
+#   model: "gpt-4o-mini"
+#   api_key_env: "OPENAI_API_KEY"
+#   supports_vision: true
+#   vision_model: "gpt-4o-mini"

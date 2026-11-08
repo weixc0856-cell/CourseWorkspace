@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import unittest
 import unittest.mock
@@ -20,6 +21,29 @@ class StagingLifecycleTest(unittest.TestCase):
         shutil.rmtree(self.staging, ignore_errors=True)
         self.staging.mkdir(parents=True)
         (self.staging / "marker.txt").write_text("staged", encoding="utf-8")
+        # Keep the test independent of generated build artifacts: compose only
+        # needs a timeline file to select the CourseTimeline path.
+        timeline = self.paths.build_root / "contracts" / "timeline.spec.json"
+        timeline.parent.mkdir(parents=True, exist_ok=True)
+        if not timeline.is_file():
+            timeline.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "kind": "timeline_spec",
+                        "lesson_id": "lesson-smoke",
+                        "fps": {"fps_num": 30, "fps_den": 1},
+                        "width": 1920,
+                        "height": 1080,
+                        "total_frames": 180,
+                        "video": [],
+                        "audio": [],
+                        "subtitles": [],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
 
     def tearDown(self):
         shutil.rmtree(self.staging, ignore_errors=True)
