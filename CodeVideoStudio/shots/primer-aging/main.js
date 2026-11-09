@@ -10,6 +10,7 @@ import { OutputPass } from './vendor/three/addons/postprocessing/OutputPass.js';
 import { ColorCorrectionShader } from './vendor/three/addons/shaders/ColorCorrectionShader.js';
 import { VignetteShader } from './vendor/three/addons/shaders/VignetteShader.js';
 import { FXAAShader } from './vendor/three/addons/shaders/FXAAShader.js';
+import { Water } from './vendor/three/addons/objects/Water.js';
 
 const W = window.innerWidth;
 const H = window.innerHeight;
@@ -80,12 +81,17 @@ for (let i = 0; i < pos.count; i += 1) {
 domeGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 scene.add(new THREE.Mesh(domeGeo, new THREE.MeshBasicMaterial({vertexColors: true, side: THREE.BackSide, depthWrite: false, fog: false})));
 
-// terrain: a shallow basin that rises away from the plateau
+// terrain: a shallow basin that rises away from the plateau, with one lake
+// hollow cut into the rim.
+const LAKE = {x: -10.5, z: 6.5, r: 5.6, depth: 2.1, level: -0.55};
 function terrainHeight(x, z) {
   const r = Math.hypot(x, z);
   const edge = Math.min(1, Math.max(0, (r - 7) / 9));
   const wave = 0.55 * Math.sin(x * 0.42) + 0.45 * Math.cos(z * 0.37) + 0.5;
-  return edge * wave * 0.28;
+  const base = edge * wave * 0.28;
+  const lakeDistance = Math.hypot(x - LAKE.x, z - LAKE.z) / LAKE.r;
+  const bowl = Math.max(0, 1 - lakeDistance * lakeDistance);
+  return base - LAKE.depth * bowl * bowl;
 }
 
 const terrainGeometry = new THREE.PlaneGeometry(64, 42, 96, 64).rotateX(-Math.PI / 2);
@@ -133,6 +139,70 @@ for (let i = 0; i < 46; i += 1) {
 }
 scene.add(rocks);
 
+// vegetation: instanced grass tufts and shrubs on the dry ring around the field
+let grassSeed = 9173;
+function grassRand() {
+  grassSeed = (grassSeed * 1664525 + 1013904223) >>> 0;
+  return grassSeed / 4294967296;
+}
+const bladeGeometry = new THREE.ConeGeometry(0.026, 0.26, 3);
+bladeGeometry.translate(0, 0.15, 0);
+const grassMaterial = new THREE.MeshStandardMaterial({color: 0x2f4436, roughness: 0.95});
+const GRASS = 6000;
+const grass = new THREE.InstancedMesh(bladeGeometry, grassMaterial, GRASS);
+grass.receiveShadow = true;
+const blade = new THREE.Object3D();
+let blades = 0;
+for (let clump = 0; clump < GRASS && blades < GRASS; clump += 1) {
+  const angle = grassRand() * Math.PI * 2;
+  const radius = 5.6 + grassRand() * 17.0;
+  const cx = Math.cos(angle) * radius;
+  const cz = Math.sin(angle) * radius;
+  const ground = terrainHeight(cx, cz);
+  if (ground < LAKE.level + 0.06) continue;
+  const perClump = 3 + Math.floor(grassRand() * 3);
+  for (let bladeIndex = 0; bladeIndex < perClump && blades < GRASS; bladeIndex += 1) {
+    const bx = cx + (grassRand() - 0.5) * 0.35;
+    const bz = cz + (grassRand() - 0.5) * 0.35;
+    const h = terrainHeight(bx, bz);
+    if (h < LAKE.level + 0.04) continue;
+    blade.position.set(bx, h, bz);
+    blade.rotation.set((grassRand() - 0.5) * 0.35, grassRand() * Math.PI * 2, (grassRand() - 0.5) * 0.35);
+    const size = 0.55 + grassRand() * 0.8;
+    blade.scale.set(size, size * (0.8 + grassRand() * 0.6), size);
+    blade.updateMatrix();
+    grass.setMatrixAt(blades, blade.matrix);
+    blades += 1;
+  }
+}
+grass.count = blades;
+scene.add(grass);
+
+const shrubGeometry = new THREE.IcosahedronGeometry(0.34, 0);
+shrubGeometry.scale(1.0, 0.72, 1.0);
+const shrubMaterial = new THREE.MeshStandardMaterial({color: 0x33473a, roughness: 0.9, flatShading: true});
+const SHRUBS = 70;
+const shrubs = new THREE.InstancedMesh(shrubGeometry, shrubMaterial, SHRUBS);
+shrubs.castShadow = true;
+let shrubCount = 0;
+for (let i = 0; i < SHRUBS * 3 && shrubCount < SHRUBS; i += 1) {
+  const angle = grassRand() * Math.PI * 2;
+  const radius = 6.4 + grassRand() * 15.0;
+  const x = Math.cos(angle) * radius;
+  const z = Math.sin(angle) * radius;
+  const ground = terrainHeight(x, z);
+  if (ground < LAKE.level + 0.12) continue;
+  blade.position.set(x, ground + 0.12, z);
+  blade.rotation.set(0, grassRand() * Math.PI * 2, 0);
+  const size = 0.7 + grassRand() * 0.7;
+  blade.scale.set(size, size, size);
+  blade.updateMatrix();
+  shrubs.setMatrixAt(shrubCount, blade.matrix);
+  shrubCount += 1;
+}
+shrubs.count = shrubCount;
+scene.add(shrubs);
+
 // lights
 scene.add(new THREE.HemisphereLight(0xa9bccb, 0x161a1d, 1.0));
 const key = new THREE.DirectionalLight(0xfff0dd, 2.3);
@@ -151,6 +221,36 @@ scene.add(key);
 const rim = new THREE.DirectionalLight(0x7fb0c8, 0.9);
 rim.position.set(-10, 8, 10);
 scene.add(rim);
+
+// water: official three.js Water addon (reflective plane, no hand-written shader)
+const waterNormals = await new THREE.TextureLoader().loadAsync('./vendor/three/textures/waternormals.jpg');
+waterNormals.wrapS = THREE.RepeatWrapping;
+waterNormals.wrapT = THREE.RepeatWrapping;
+let waterRadius = LAKE.r;
+for (let ray = 0; ray < 96; ray += 1) {
+  const angle = (ray / 96) * Math.PI * 2;
+  let reach = 0.2;
+  while (reach < LAKE.r) {
+    const h = terrainHeight(LAKE.x + Math.cos(angle) * reach, LAKE.z + Math.sin(angle) * reach);
+    if (h >= LAKE.level) break;
+    reach += 0.04;
+  }
+  waterRadius = Math.min(waterRadius, reach * 0.98);
+}
+const water = new Water(new THREE.CircleGeometry(waterRadius, 48), {
+  textureWidth: 512,
+  textureHeight: 512,
+  waterNormals,
+  sunDirection: key.position.clone().normalize(),
+  sunColor: 0x93aab8,
+  waterColor: 0x16333b,
+  distortionScale: 2.6,
+  fog: scene.fog !== undefined,
+});
+water.material.uniforms['size'].value = 3.2;
+water.rotation.x = -Math.PI / 2;
+water.position.set(LAKE.x, LAKE.level, LAKE.z);
+scene.add(water);
 
 // data
 const data = await (await fetch('./aging.json')).json();
@@ -427,6 +527,7 @@ function update(t) {
   // pure function of time (FilmPass would otherwise accumulate its own clock).
   bokeh.uniforms.focus.value = camera.position.distanceTo(look);
   grain.uniforms.time.value = t;
+  water.material.uniforms['time'].value = t * 0.6;
   composer.render(0);
   drawOverlay(t, scenario, frames[index], progress);
 }

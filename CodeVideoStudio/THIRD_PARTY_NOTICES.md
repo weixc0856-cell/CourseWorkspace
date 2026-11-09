@@ -26,7 +26,9 @@
   unmodified: `EffectComposer`, `Pass`, `MaskPass`, `ShaderPass`, `RenderPass`,
   `BokehPass`, `UnrealBloomPass`, `FilmPass`, `OutputPass`, `CopyShader`,
   `LuminosityHighPassShader`, `BokehShader`, `OutputShader`, `FilmShader`,
-  `ColorCorrectionShader`, `VignetteShader`, `FXAAShader`.
+  `ColorCorrectionShader`, `VignetteShader`, `FXAAShader`, `Water`.
+- Vendored: `shots/primer-aging/vendor/three/textures/waternormals.jpg` — stock
+  three.js r160 example texture (MIT).
 - Note: the addons must stay on the same release as the vendored core. The
   upstream version gap is tracked in `docs/第三方依赖准入规范.md`.
 - License: MIT.

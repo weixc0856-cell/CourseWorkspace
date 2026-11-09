@@ -43,6 +43,8 @@
    clock is set from `t` so `FilmPass` cannot accumulate its own time.
 8. `capture.json` may switch the capture to `--gpu` and `--jpeg`; the switch
    must keep two captures byte-identical and is recorded in `VERIFY.md`.
+9. The world is grounded: a lake hollow with the official `Water` addon and
+   instanced grass/shrub vegetation; the water drives its ripple clock from `t`.
 
 ## Out of scope
 

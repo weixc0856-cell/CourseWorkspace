@@ -43,7 +43,8 @@ the start of `s08`.
 ## Look
 
 Scene: gradient dome, soft shadows, rim light, exponential fog, a shallow basin
-terrain with scattered rocks, four-legged agents (capsule body, head with muzzle
+terrain with a lake hollow (official `Water` addon), scattered rocks, instanced
+grass tufts and shrubs, four-legged agents (capsule body, head with muzzle
 and ears, tapered tail, two-segment legs) whose gait is driven by the recorded
 speed, heads that dip while nearly still (a visual idiom, not a modelled
 variable), newborn scale-in, camera set

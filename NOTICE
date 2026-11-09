@@ -13,8 +13,9 @@ Third-party components retain their own licenses:
   Three.js r160, MIT, Copyright 2010-2023 Three.js Authors.
 - CodeVideoStudio/shots/primer-aging/three.module.js and
   CodeVideoStudio/shots/primer-aging/vendor/three/addons/:
-  Three.js r160 (core and official examples/jsm post-processing addons,
-  unmodified), MIT, Copyright 2010-2023 Three.js Authors.
+  Three.js r160 (core, official examples/jsm addons and the stock
+  waternormals.jpg texture, unmodified), MIT, Copyright 2010-2023 Three.js
+  Authors.
 - CodeVideoStudio/backends/hyperframes:
   ISC, upstream HyperFrames package.
 - RemotionStudio/public/fonts/NotoSansSC:

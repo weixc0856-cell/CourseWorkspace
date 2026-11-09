@@ -16,7 +16,14 @@ addons/postprocessing/  EffectComposer, Pass, MaskPass, ShaderPass, RenderPass,
 addons/shaders/         CopyShader, LuminosityHighPassShader, BokehShader,
                         OutputShader, FilmShader, ColorCorrectionShader,
                         VignetteShader, FXAAShader
+addons/objects/         Water
+textures/               waternormals.jpg (Water.js normal map)
 ```
+
+`textures/waternormals.jpg` is the stock r160 example asset (same MIT
+license); the npm tarball ships only `examples/jsm`, so it was taken from
+<https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/textures/waternormals.jpg>
+on 2026-11-09.
 
 `index.html` maps the bare `three` specifier to `../../three.module.js` with an
 import map, so the addons resolve to the vendored core (and to the same module
