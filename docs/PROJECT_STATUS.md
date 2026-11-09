@@ -13,7 +13,7 @@
 | --- | --- | --- | --- |
 | 叙事契约 | `CourseControl/src/course_control/narrative.py`、`narrative-validate` | 5 分钟课六段骨架 `pass`；`build/05-transformer-5min/quality/narrative.json` | COMPLETED（P0） |
 | BGM 混音 | `audio_mix.py`、`audio-mix` | Schubert D.664（PD）；−15.9 LUFS / −1.4 dBTP；`audio/mix.json` | COMPLETED（P0） |
-| 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 58 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
+| 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 59 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
 | 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
 | 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（27 镜头）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
 | 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |
@@ -21,6 +21,7 @@
 | Teaching QA | `teaching_qa.py`、`teaching-qa` | 结构 WARN；`learner_evidence=missing` | COMPLETED（结构层） |
 | Claim Registry / 双审 | `ContentQA/src/content_qa/claims.py`、`cross_review.py` | A 23 / B 24；43 claim：3 supported、38 需人工、2 冲突、26 有来源缺口 | COMPLETED（P1 契约） |
 | 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个镜头对齐 12 段实测旁白；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
+| 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 86/100（冻结 1/15）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
 ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。

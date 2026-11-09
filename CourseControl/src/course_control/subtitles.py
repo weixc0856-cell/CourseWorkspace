@@ -505,7 +505,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Bilingual,Arial,34,&H001A1A1A,&H001A1A1A,&H00FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,3,1,2,80,80,200,1
+Style: Bilingual,Arial,34,&H00111111,&H00111111,&H00F7FAFB,&H00F7FAFB,1,0,0,0,100,100,0,0,1,0,0,2,80,80,200,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
