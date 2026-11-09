@@ -39,13 +39,13 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 
 验收：构建 pass；字幕/音画对齐；媒体 QC 无 FAIL；`animation-score` ≥85；人工完整看一遍。
 
-### P1——质感对齐
+### P1——质感对齐（进行中）
 
-1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。
-2. 地形与生物群系：地表纹理、植被、水面；世界不再悬在暗色虚空。
-3. 后处理：景深、泛光、色调分级、颗粒。
-4. 叠加层：死亡曲线、基因示意、时间轴，交给 Remotion 统一排版。
-5. 音频：音乐与音效，词级对齐。
+1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。已完成第一版：身体 + 四条腿的行走摆动；仍无觅食/繁殖动作。
+2. 地形与生物群系：已完成第一版：浅盆地地形 + 散石；仍缺植被/水面。
+3. 后处理：未做；景深、泛光、色调分级仍是下一步。
+4. 叠加层：当前 HUD 内嵌在世界片里；统一的 Remotion 图表层未做。
+5. 音频：已接入 Schubert D.664（公版）BGM，ducking 由 `audio-mix` 完成；音效与词级对齐未做。
 
 ### P2——内容深度
 
@@ -69,8 +69,8 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 ## 6. 本轮结果（2026-11-09）
 
 - 成片：`build/aging-evolution/final/course-video-captioned.mp4`（1920×1080 / 30 fps / 145.37 s / 4,361 帧，含旁白与双语字幕）。
-- 构建：`verdict=pass`；`QUALITY_PASS=True`（Q1/Q2/Q3/Q5 为 WARN，Q4 PASS）；`RELEASE_APPROVED=False`（人工审校未做）。
-- 媒体 QC：解码/格式/响度/静音/黑帧/字幕/ASR 语音匹配均通过检查路径；`freeze=0`；静音 1 段（片尾留白 2 s，WARN）；BGM 未配置（`status=skipped`）。
+- 构建：`verdict=pass`；`QUALITY_PASS=True`（Q1/Q2/Q5 为 WARN，Q3/Q4 PASS）；`RELEASE_APPROVED=False`（人工审校未做）。
+- 媒体 QC：全部 PASS；`freeze=0`；静音 0（BGM 填充片尾）；BGM 混音 `status=pass`；字幕 32 cue；ASR 覆盖 0.935。
 - 字幕：32 cue，按策略拆分（≤6 s、英文 ≤2 行 42 字符、中文 ≤2 行 15 字符、CPS ≤9）；ASR `small.en` 覆盖 0.935，0 条 cue 不一致。
 - 对齐评分：100/100（运动 25、连续性 20、节奏 15、相机 10、门禁 15、冻结 15）。
 - 旁白：12 段，VoxCPM2 reference-only 模式；共 285 词；本地合成约 35 分钟。

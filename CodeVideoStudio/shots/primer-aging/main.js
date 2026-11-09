@@ -36,10 +36,23 @@ for (let i = 0; i < pos.count; i += 1) {
 domeGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 scene.add(new THREE.Mesh(domeGeo, new THREE.MeshBasicMaterial({vertexColors: true, side: THREE.BackSide, depthWrite: false, fog: false})));
 
-// ground + grid
+// terrain: a shallow basin that rises away from the plateau
+function terrainHeight(x, z) {
+  const r = Math.hypot(x, z);
+  const edge = Math.min(1, Math.max(0, (r - 7) / 9));
+  const wave = 0.55 * Math.sin(x * 0.42) + 0.45 * Math.cos(z * 0.37) + 0.5;
+  return edge * wave * 0.28;
+}
+
+const terrainGeometry = new THREE.PlaneGeometry(64, 42, 96, 64).rotateX(-Math.PI / 2);
+const terrainPosition = terrainGeometry.attributes.position;
+for (let i = 0; i < terrainPosition.count; i += 1) {
+  terrainPosition.setY(i, terrainHeight(terrainPosition.getX(i), terrainPosition.getZ(i)));
+}
+terrainGeometry.computeVertexNormals();
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(40, 26).rotateX(-Math.PI / 2),
-  new THREE.MeshStandardMaterial({color: 0x20262b, roughness: 1})
+  terrainGeometry,
+  new THREE.MeshStandardMaterial({color: 0x1e2429, roughness: 1, metalness: 0})
 );
 ground.position.set(0, -0.02, 0);
 ground.receiveShadow = true;
@@ -47,9 +60,34 @@ scene.add(ground);
 
 const grid = new THREE.GridHelper(24, 24, 0x3a4650, 0x2a3238);
 grid.position.set(0, 0.0, 0);
-grid.material.opacity = 0.35;
+grid.material.opacity = 0.18;
 grid.material.transparent = true;
 scene.add(grid);
+
+let rockSeed = 2024;
+function rockRand() {
+  rockSeed = (rockSeed * 1664525 + 1013904223) >>> 0;
+  return rockSeed / 4294967296;
+}
+const rockGeometry = new THREE.DodecahedronGeometry(0.22, 0);
+const rockMaterial = new THREE.MeshStandardMaterial({color: 0x2b3238, roughness: 0.95});
+const rocks = new THREE.InstancedMesh(rockGeometry, rockMaterial, 46);
+rocks.castShadow = true;
+rocks.receiveShadow = true;
+const rockDummy = new THREE.Object3D();
+for (let i = 0; i < 46; i += 1) {
+  const angle = rockRand() * Math.PI * 2;
+  const radius = 8.5 + rockRand() * 9.0;
+  const x = Math.cos(angle) * radius;
+  const z = Math.sin(angle) * radius;
+  rockDummy.position.set(x, terrainHeight(x, z) + 0.08, z);
+  rockDummy.rotation.set(rockRand() * 2, rockRand() * 3, rockRand() * 2);
+  const size = 0.6 + rockRand() * 0.9;
+  rockDummy.scale.set(size, size * 0.8, size);
+  rockDummy.updateMatrix();
+  rocks.setMatrixAt(i, rockDummy.matrix);
+}
+scene.add(rocks);
 
 // lights
 scene.add(new THREE.HemisphereLight(0xa9bccb, 0x161a1d, 1.0));
@@ -91,6 +129,13 @@ bodies.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAX_A
 bodies.castShadow = true;
 bodies.count = 0;
 scene.add(bodies);
+
+const legGeo = new THREE.CylinderGeometry(0.032, 0.045, 0.18, 5);
+const legMat = new THREE.MeshStandardMaterial({color: 0x2b3237, roughness: 0.75});
+const legs = new THREE.InstancedMesh(legGeo, legMat, MAX_AGENTS * 4);
+legs.castShadow = true;
+legs.count = 0;
+scene.add(legs);
 
 const maGeo = new THREE.IcosahedronGeometry(0.035, 1);
 const maMat = new THREE.MeshStandardMaterial({color: 0x2a2d31, roughness: 0.4});
@@ -190,6 +235,23 @@ function update(t) {
       eyes.setMatrixAt(count * 2 + side, eyeMatrix);
     }
 
+    const phase = i * 1.7 + t * 6.0;
+    const legOffsets = [
+      [-0.11, 0.07],
+      [0.11, 0.07],
+      [-0.11, -0.07],
+      [0.11, -0.07],
+    ];
+    for (let leg = 0; leg < 4; leg += 1) {
+      const [lx, lz] = legOffsets[leg];
+      const swing = 0.55 * Math.sin(phase + leg * Math.PI / 2);
+      dummy.position.set(ax + lx * scale, 0.14 * scale, az + lz * scale);
+      dummy.rotation.set(swing, yaw, 0);
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+      legs.setMatrixAt(count * 4 + leg, dummy.matrix);
+    }
+
     const mutations = Math.min(4, agent[4]);
     for (let dot = 0; dot < mutations; dot += 1) {
       const angle = (dot / 4) * Math.PI * 2 + i * 0.6;
@@ -208,6 +270,8 @@ function update(t) {
     count += 1;
   }
   bodies.count = count;
+  legs.count = count * 4;
+  legs.instanceMatrix.needsUpdate = true;
   maDots.count = maCount;
   maDots.instanceMatrix.needsUpdate = true;
   eyes.count = count * 2;

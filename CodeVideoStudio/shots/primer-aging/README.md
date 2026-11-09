@@ -40,8 +40,9 @@ the start of `s08`.
 ## Look
 
 ACES tone mapping, gradient dome, soft shadows, rim light, exponential fog,
-camera set left of the HUD, age-coded blobs (teal → orange), HUD with
+a shallow basin terrain with scattered rocks, four-legged agents with a walk
+cycle, camera set left of the HUD, age-coded blobs (teal → orange), HUD with
 population / mean death age / late-acting mutations and a 5-year binned hazard
-curve.
+curve. BGM: Schubert D.664 (public domain) mixed with ducking by `audio-mix`.
 
 Gap and next steps: `docs/evaluations/复刻-Primer衰老模拟-计划.md`.
