@@ -53,7 +53,19 @@ uv run manim -qh 01-transformer-demo/dot_product.py DotProduct
 # Attention 2 分钟样片（60fps；旁白由 gen_narration.py 生成）
 uv run manim render -r 1920,1080 --fps 60 `
   --media_dir ../build/attention-3b1b/media 06-attention-3b1b/attention.py AttentionScene
+
+# 5 分钟 Transformer 校准课（27 个镜头；镜头边界读实测旁白）
+uv run manim render -r 1920,1080 --fps 30 `
+  --media_dir ../build/05-transformer-5min/media 05-transformer-5min/attention_5min.py AttentionFiveMinuteScene
 ```
+
+`05-transformer-5min/attention_5min.py` 是搬迁到 06 样片架构的 5 分钟片：
+
+- `MovingCameraScene`：镜头是叙事手段；每个镜头在旁白空档用缓慢推拉覆盖，不出现 `wait` 定格。
+- 时间轴来自实测旁白 `build/05-transformer-5min/narration/narration.meta.json`（段落起点/时长/页面终点），
+  段落内部的镜头切点是场景里写死的比例（`SUBDIVISIONS`）；找不到旁白时回退到内置的 292.38 s 时间轴。
+- 每个镜头结束、画面最满时调用 `check_now`；`STRICT_LAYOUT=1`（构建默认）下任何文字越界/重叠直接让渲染失败。
+- 纸白底 + Arial 正文沿用课程视觉规范；Computer Modern（`MathTex`）只用于公式。
 
 产物：`media/videos/<脚本名>/<画质目录>/<场景类名>.mp4`，例如 `media/videos/dot_product/1080p60/DotProduct.mp4`。
 

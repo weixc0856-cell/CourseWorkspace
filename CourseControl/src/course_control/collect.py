@@ -404,6 +404,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
                 ass_path,
                 resolution[0],
                 resolution[1],
+                paths.lesson.subtitles.bottom_margin,
             )
             outputs.append(ass_path)
             subtitles.update(

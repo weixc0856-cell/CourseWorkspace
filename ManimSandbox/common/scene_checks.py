@@ -10,11 +10,16 @@ from __future__ import annotations
 import os
 from itertools import combinations
 
-from manim import Text, config
+from manim import ScreenRectangle, Text, config
+
+
+def _visible(mobject) -> bool:
+    """Faded-out text (opacity 0) carries no layout, so it must not fail a check."""
+    return mobject.get_fill_opacity() > 0.01 or mobject.get_stroke_opacity() > 0.01
 
 
 def _texts(mobject):
-    if isinstance(mobject, Text):
+    if isinstance(mobject, Text) and _visible(mobject):
         yield mobject
     for child in getattr(mobject, "submobjects", ()):
         yield from _texts(child)
@@ -48,9 +53,12 @@ def scene_issues(scene, safe_margin: float = 0.5, object_margin: float = 0.2) ->
     object_bottom = -config.frame_height / 2 + object_margin
     object_top = config.frame_height / 2 - object_margin
 
-    texts = list(dict.fromkeys(text for mob in scene.mobjects for text in _texts(mob)))
+    # The camera frame is a ScreenRectangle that MovingCameraScene keeps in the
+    # scene while the camera moves; it is not content and has no layout bounds.
+    content = [mob for mob in scene.mobjects if not isinstance(mob, ScreenRectangle)]
+    texts = list(dict.fromkeys(text for mob in content for text in _texts(mob)))
     issues: list[str] = []
-    for mob in scene.mobjects:
+    for mob in content:
         x0, y0, x1, y1 = _bounds(mob)
         if x0 < object_left or x1 > object_right or y0 < object_bottom or y1 > object_top:
             issues.append(
@@ -66,7 +74,9 @@ def scene_issues(scene, safe_margin: float = 0.5, object_margin: float = 0.2) ->
             )
     for first, second in combinations(texts, 2):
         if _overlap(_bounds(first), _bounds(second)):
-            issues.append(f"text overlap: {first.text!r} / {second.text!r}")
+            issues.append(
+                f"text overlap: {first.text!r} {_bounds(first)} / {second.text!r} {_bounds(second)}"
+            )
 
     # Text crossing an unrelated shape (for example an arrow over a label) is a
     # real layout defect too.  Ancestor shapes are excluded because a label
@@ -78,11 +88,11 @@ def scene_issues(scene, safe_margin: float = 0.5, object_margin: float = 0.2) ->
         for child in getattr(mob, "submobjects", ()):
             walk(child, chain | {id(mob)})
 
-    for mob in scene.mobjects:
+    for mob in content:
         walk(mob, set())
     for text in texts:
         chain = ancestors.get(id(text), set())
-        for mob in scene.mobjects:
+        for mob in content:
             if mob is text or id(mob) in chain or isinstance(mob, Text):
                 continue
             outer = _bounds(mob)
@@ -97,7 +107,9 @@ def scene_issues(scene, safe_margin: float = 0.5, object_margin: float = 0.2) ->
                 continue
             if _overlap(outer, inner, pad=0.02):
                 issues.append(
-                    f"text/shape overlap: {text.text!r} over {type(mob).__name__}"
+                    f"text/shape overlap: {text.text!r} "
+                    f"({inner[0]:.2f},{inner[1]:.2f})..({inner[2]:.2f},{inner[3]:.2f}) over "
+                    f"{type(mob).__name__} ({outer[0]:.2f},{outer[1]:.2f})..({outer[2]:.2f},{outer[3]:.2f})"
                 )
     return issues
 

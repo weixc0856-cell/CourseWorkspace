@@ -566,6 +566,13 @@
           "default": "zh-Hans",
           "title": "Bottom Language",
           "type": "string"
+        },
+        "bottom_margin": {
+          "default": 190,
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Bottom Margin",
+          "type": "integer"
         }
       },
       "title": "Subtitles",
@@ -640,7 +647,8 @@
         "enabled": false,
         "render": "remotion",
         "top_language": "en",
-        "bottom_language": "zh-Hans"
+        "bottom_language": "zh-Hans",
+        "bottom_margin": 190
       }
     },
     "acceptance": {

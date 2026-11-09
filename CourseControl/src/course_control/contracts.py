@@ -65,6 +65,10 @@ class Subtitles(StrictModel):
     render: Literal["remotion", "burn_in"] = "remotion"
     top_language: str = "en"
     bottom_language: str = "zh-Hans"
+    # Distance in pixels between the bottom of the subtitle block and the frame
+    # edge.  190 was the old fixed value; lowering it frees the lower band for
+    # diagrams (the block grows upward from this anchor).
+    bottom_margin: int = Field(default=190, ge=0, le=400)
 
 
 class DurationPolicy(StrictModel):
