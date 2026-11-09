@@ -173,6 +173,34 @@ def _check_authoring(result: ValidationResult, paths: LessonPaths, notes_text: s
                 result.add("V-32", "error", f"citation check failed: {exc}")
 
 
+def _check_beat_sheet(result: ValidationResult, paths: LessonPaths) -> None:
+    """The director beat sheet is part of the build gate when authored."""
+    sheet_path = paths.lesson_dir / "authoring" / "beats.yaml"
+    if not sheet_path.is_file():
+        if paths.lesson.video_form == "long" and paths.lesson.compose.mode == "scene":
+            result.add("V-35", "warning", "no director beat sheet: authoring/beats.yaml")
+        return
+    meta_path = paths.build_root / "narration" / "narration.meta.json"
+    if not meta_path.is_file():
+        result.add("V-35", "error", "beats.yaml requires narration.meta.json (run narration first)")
+        return
+    from . import palette_gate
+    from .beats import load_segments, load_sheet, validate_sheet
+
+    try:
+        sheet = load_sheet(sheet_path)
+        segments = load_segments(meta_path)
+    except Exception as exc:  # noqa: BLE001
+        result.add("V-35", "error", f"invalid beat sheet: {exc}")
+        return
+    try:
+        palette_ok = palette_gate.ok(palette_gate.report(paths.workspace, sheet.palette))
+    except Exception:  # noqa: BLE001
+        palette_ok = False
+    for issue in validate_sheet(sheet, segments, palette_ok=palette_ok):
+        result.add("V-35", "error", issue)
+
+
 def validate(paths: LessonPaths) -> ValidationResult:
     result = ValidationResult()
     lesson = paths.lesson
@@ -266,6 +294,7 @@ def validate(paths: LessonPaths) -> ValidationResult:
                     result.add("V-26", problem.level, problem.message)
 
     _check_authoring(result, paths, notes_text)
+    _check_beat_sheet(result, paths)
 
     for ref in _asset_references(slides_text):
         prefix = f"/lessons/{paths.slug}/assets/"

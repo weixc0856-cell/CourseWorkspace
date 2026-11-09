@@ -134,6 +134,7 @@ def schemas_command(
     from .contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
     from .animation_direction import AnimationDirection
     from .audio_plan import AudioPlan
+    from .beats import BeatSheet
     from .narrative import NarrativePlan
     from .director.schema import DirectorPlan
     from .layout.schema import LayoutTemplate
@@ -153,6 +154,7 @@ def schemas_command(
         "evidence": EvidenceManifest,
         "formula": FormulaSpec,
         "animation-direction": AnimationDirection,
+        "beats": BeatSheet,
         "audio-plan": AudioPlan,
         "narrative-plan": NarrativePlan,
         "director-plan": DirectorPlan,
@@ -1644,6 +1646,106 @@ def quality_report_command(
     if any(item["status"] == INCOMPLETE for item in report["dimensions"]):
         raise typer.Exit(3)
     raise typer.Exit(0)
+
+
+@app.command("beats-validate")
+def beats_validate_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    sheet: Path | None = typer.Option(None, "--sheet"),
+) -> None:
+    """Validate the director beat sheet against the measured narration."""
+    from . import palette_gate
+    from .beats import load_segments, load_sheet, validate_sheet
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    sheet_path = sheet or (paths.lesson_dir / "authoring" / "beats.yaml")
+    if not sheet_path.is_file():
+        typer.echo(f"missing beat sheet: {sheet_path}", err=True)
+        raise typer.Exit(1)
+    meta = paths.build_root / "narration" / "narration.meta.json"
+    if not meta.is_file():
+        typer.echo(f"missing narration meta: {meta}", err=True)
+        raise typer.Exit(1)
+
+    beat_sheet = load_sheet(sheet_path)
+    segments = load_segments(meta)
+    try:
+        palette = palette_gate.report(workspace.resolve(), beat_sheet.palette)
+        palette_ok = palette_gate.ok(palette)
+        state = "ok" if palette_ok else "FAILS contrast gates"
+        typer.echo(f"palette: {beat_sheet.palette} ({palette['label']}) {state}")
+        if not palette_ok:
+            typer.echo(f"  {palette_gate.describe(palette)}", err=True)
+    except Exception as exc:  # noqa: BLE001
+        palette_ok = False
+        typer.echo(f"palette: {beat_sheet.palette} unreadable: {exc}", err=True)
+
+    issues = validate_sheet(beat_sheet, segments, palette_ok=palette_ok)
+    for issue in issues:
+        typer.echo(f"  [fail] {issue}")
+    typer.echo(f"shots: {len(beat_sheet.shots)}; issues: {len(issues)}; sheet: {sheet_path}")
+    raise typer.Exit(0 if not issues else 1)
+
+
+@app.command("animation-score")
+def animation_score_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    sheet: Path | None = typer.Option(None, "--sheet"),
+) -> None:
+    """Score how far the film is from the 3Blue1Brown motion grammar."""
+    from . import palette_gate
+    from .animation_score import score
+    from .beats import load_segments, load_sheet
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    sheet_path = sheet or (paths.lesson_dir / "authoring" / "beats.yaml")
+    meta = paths.build_root / "narration" / "narration.meta.json"
+    if not sheet_path.is_file() or not meta.is_file():
+        typer.echo(f"missing beat sheet or narration meta: {sheet_path} / {meta}", err=True)
+        raise typer.Exit(1)
+
+    beat_sheet = load_sheet(sheet_path)
+    segments = load_segments(meta)
+    try:
+        palette_ok = palette_gate.ok(palette_gate.report(workspace.resolve(), beat_sheet.palette))
+    except Exception:  # noqa: BLE001
+        palette_ok = False
+
+    media_qc = None
+    media_path = paths.build_root / "quality" / "media-qc.json"
+    if media_path.is_file():
+        media_qc = json.loads(media_path.read_text(encoding="utf-8"))
+    build_verdict = None
+    build_path = paths.build_root / "final" / "build-report.json"
+    if build_path.is_file():
+        build_verdict = json.loads(build_path.read_text(encoding="utf-8")).get("verdict")
+
+    result = score(
+        beat_sheet,
+        segments,
+        media_qc=media_qc,
+        build_verdict=build_verdict,
+        palette_ok=palette_ok,
+    )
+    typer.echo(f"score: {result['score']}/100  verdict: {result['verdict']}")
+    for name, value in result["components"].items():
+        typer.echo(f"  {name}: {value}")
+    typer.echo("metrics: " + json.dumps(result["metrics"], ensure_ascii=False))
+    for issue in result["issues"]:
+        typer.echo(f"  [fail] {issue}")
+    raise typer.Exit(0 if result["verdict"] == "pass" else 1)
 
 
 @app.command("narrative-validate")

@@ -28,7 +28,7 @@
 - 公式与图形：[公式排版规范.md](公式排版规范.md)、[科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)
 - 三维：[Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)、[AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)
-- 流程：[WORKFLOW.md](WORKFLOW.md)、[提交前检查清单.md](提交前检查清单.md)
+- 流程：[工业化动画工作流.md](工业化动画工作流.md)、[WORKFLOW.md](WORKFLOW.md)、[提交前检查清单.md](提交前检查清单.md)
 - 创作方法：[creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)：长视频叙事骨架、Shorts、A/B 视觉与质量门禁
 - 研发审核：[ReviewRunner/README.md](../ReviewRunner/README.md)：独立只读第二意见（Phase 1 只做代码审查）
 
@@ -46,6 +46,7 @@
 - [科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
 - [课程复刻差距与稳定工作流.md](evaluations/课程复刻差距与稳定工作流.md)
 - [样片-注意力-3B1B差距与路线.md](evaluations/样片-注意力-3B1B差距与路线.md)
+- [配色方案-学科适配.md](evaluations/配色方案-学科适配.md)
 - [FRONTEND_ASSESSMENT.md](evaluations/FRONTEND_ASSESSMENT.md)
 
 ## 4. 状态与验收

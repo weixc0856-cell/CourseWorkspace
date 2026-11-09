@@ -1,0 +1,178 @@
+{
+  "$defs": {
+    "Beat": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "At",
+          "type": "number"
+        },
+        "kind": {
+          "enum": [
+            "reveal",
+            "transform",
+            "highlight",
+            "flow",
+            "camera",
+            "annotation",
+            "compare",
+            "connect"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "action": {
+          "minLength": 4,
+          "title": "Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "at",
+        "kind",
+        "action"
+      ],
+      "title": "Beat",
+      "type": "object"
+    },
+    "BeatShot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "segment": {
+          "minimum": 1,
+          "title": "Segment",
+          "type": "integer"
+        },
+        "start": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Start",
+          "type": "number"
+        },
+        "end": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "End",
+          "type": "number"
+        },
+        "engine": {
+          "enum": [
+            "manim",
+            "motion_canvas",
+            "blender",
+            "code_video",
+            "remotion"
+          ],
+          "title": "Engine",
+          "type": "string"
+        },
+        "long_lived": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Long Lived",
+          "type": "array"
+        },
+        "beats": {
+          "items": {
+            "$ref": "#/$defs/Beat"
+          },
+          "minItems": 2,
+          "title": "Beats",
+          "type": "array"
+        },
+        "camera": {
+          "items": {
+            "$ref": "#/$defs/CameraMove"
+          },
+          "title": "Camera",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "segment",
+        "start",
+        "end",
+        "engine",
+        "beats"
+      ],
+      "title": "BeatShot",
+      "type": "object"
+    },
+    "CameraMove": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "At",
+          "type": "number"
+        },
+        "width": {
+          "maximum": 14.3,
+          "minimum": 6.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "motive": {
+          "minLength": 8,
+          "title": "Motive",
+          "type": "string"
+        }
+      },
+      "required": [
+        "at",
+        "width",
+        "motive"
+      ],
+      "title": "CameraMove",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson": {
+      "minLength": 1,
+      "title": "Lesson",
+      "type": "string"
+    },
+    "palette": {
+      "default": "editorial",
+      "title": "Palette",
+      "type": "string"
+    },
+    "subtitle_safe_below": {
+      "maximum": -1.5,
+      "title": "Subtitle Safe Below",
+      "type": "number"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/BeatShot"
+      },
+      "minItems": 1,
+      "title": "Shots",
+      "type": "array"
+    }
+  },
+  "required": [
+    "lesson",
+    "subtitle_safe_below",
+    "shots"
+  ],
+  "title": "BeatSheet",
+  "type": "object"
+}
