@@ -51,6 +51,7 @@ from manim import (
     ManimColor,
     MathTex,
     MovingCameraScene,
+    Polygon,
     Rectangle,
     ReplacementTransform,
     RoundedRectangle,
@@ -538,7 +539,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
                 for index, w in enumerate(words)
             ]
         )
-        self.play(LaggedStart(*[FadeIn(w, shift=0.08 * DOWN) for w in words], lag_ratio=0.12), run_time=1.4)
+        self.play(LaggedStart(*[FadeIn(w, shift=0.7 * DOWN) for w in words], lag_ratio=0.12), run_time=1.4)
         self.play(LaggedStart(*[Create(a) for a in fan], lag_ratio=0.12), run_time=1.6)
         self.flow(fan[2], 2.2, count=3, color=ORANGE)
         self.play(
@@ -733,12 +734,18 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         )
         lanes = VGroup()
         lane_labels = VGroup()
+        lane_targets = []
         for text, color, y in (("Q", BLUE, 0.65), ("K", TEAL, -0.30), ("V", PURPLE, -1.25)):
-            lane = Line([-5.35, y, 0], [5.35, y, 0], color=color, stroke_width=1.6, stroke_opacity=0.55)
+            lane = Line([-5.35, 0, 0], [5.35, 0, 0], color=color, stroke_width=1.6, stroke_opacity=0.55)
             lanes.add(lane)
+            lane_targets.append(y)
             lane_labels.add(label(text, 24, color, BOLD).move_to([-6.0, y, 0]))
-        self.play(LaggedStart(*[Create(lane) for lane in lanes], lag_ratio=0.2), run_time=1.4)
-        self.play(FadeIn(lane_labels), run_time=0.8)
+        self.play(LaggedStart(*[Create(lane) for lane in lanes], lag_ratio=0.15), run_time=0.8)
+        self.play(
+            *[lane.animate.move_to([0, y, 0]) for lane, y in zip(lanes, lane_targets)],
+            FadeIn(lane_labels),
+            run_time=1.2,
+        )
 
         drops = VGroup()
         for row_index, (lane, color) in enumerate(zip(lanes, (BLUE, TEAL, PURPLE))):
@@ -1060,23 +1067,39 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         origin = np.array([-4.2, -1.35, 0.0])
         angles = np.linspace(18, 162, 5)
         full = VGroup()
+        beams = VGroup()
         for token, angle, weight in zip(TOKENS, angles, self.weights_vector()):
             a = np.deg2rad(angle)
-            tip = origin + 2.7 * np.array([np.cos(a), np.sin(a), 0.0])
+            direction = np.array([np.cos(a), np.sin(a), 0.0])
+            tip = origin + 2.7 * direction
             full.add(vector(origin, tip, PURPLE, 3.2, opacity=0.40 + 0.55 * float(weight)))
-        self.play(LaggedStart(*[GrowArrow(a) for a in full], lag_ratio=0.12), run_time=1.6)
+            perp = np.array([-direction[1], direction[0], 0.0])
+            beams.add(
+                Polygon(
+                    origin,
+                    tip - 0.22 * perp,
+                    tip + 0.22 * perp,
+                    stroke_width=0,
+                    fill_color=PURPLE,
+                    fill_opacity=0.13 + 0.20 * float(weight),
+                )
+            )
+        enters = []
+        for arrow, beam in zip(full, beams):
+            enters.extend([FadeIn(beam), GrowArrow(arrow)])
+        self.play(LaggedStart(*enters, lag_ratio=0.1), run_time=1.6)
 
         cursor = origin.copy()
         chain = VGroup()
         for angle, weight in zip(angles, self.weights_vector()):
             a = np.deg2rad(angle)
             step = 4.6 * float(weight) * np.array([np.cos(a), np.sin(a), 0.0])
-            seg = vector(cursor, cursor + step, ORANGE, 3.6)
+            seg = vector(cursor, cursor + step, ORANGE, 6.0)
             chain.add(seg)
             cursor = cursor + step
         self.play(LaggedStart(*[GrowArrow(s) for s in chain], lag_ratio=0.28), run_time=3.4)
 
-        context = vector(origin, cursor, INK, 6.0)
+        context = vector(origin, cursor, INK, 9.0)
         context_label = label("context", 24, INK).next_to(cursor, UP, buff=0.20)
         self.play(GrowArrow(context), FadeIn(context_label), run_time=1.2)
 
@@ -1246,7 +1269,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
             self.head_cards.add(head)
         self.play(
             ReplacementTransform(single, self.head_cards[0]),
-            LaggedStart(*[FadeIn(h, shift=0.10 * DOWN) for h in self.head_cards[1:]], lag_ratio=0.25),
+            LaggedStart(*[FadeIn(h, shift=1.2 * DOWN) for h in self.head_cards[1:]], lag_ratio=0.25),
             run_time=2.6,
         )
 
@@ -1383,7 +1406,14 @@ class AttentionFiveMinuteScene(MovingCameraScene):
                 bars.add(bar)
             head_label = label(f"head {head + 1}", 19, color).next_to(frame, UP, buff=0.10)
             self.panels.add(VGroup(frame, bars, head_label))
-        self.play(LaggedStart(*[FadeIn(p, shift=0.08 * DOWN) for p in self.panels], lag_ratio=0.25), run_time=2.8)
+        shifts = [1.2 * LEFT, 1.0 * DOWN, 1.2 * RIGHT]
+        self.play(
+            LaggedStart(
+                *[FadeIn(panel, shift=shift) for panel, shift in zip(self.panels, shifts)],
+                lag_ratio=0.25,
+            ),
+            run_time=2.8,
+        )
         self.play(
             LaggedStart(*[Indicate(p, color=p[2].get_color(), scale_factor=1.02) for p in self.panels], lag_ratio=0.2),
             run_time=1.6,
@@ -1425,7 +1455,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         colors = [BLUE, TEAL, PURPLE]
         heads = VGroup(*[card(f"head {i + 1}", colors[i], 2.1, 0.62, 19) for i in range(3)])
         heads.arrange(DOWN, buff=0.3).move_to([-5.1, -0.4, 0])
-        self.play(LaggedStart(*[FadeIn(h, shift=0.06 * RIGHT) for h in heads], lag_ratio=0.15), run_time=1.4)
+        self.play(LaggedStart(*[FadeIn(h, shift=1.6 * RIGHT) for h in heads], lag_ratio=0.15), run_time=1.4)
 
         concat = RoundedRectangle(
             width=0.7, height=2.6, corner_radius=0.08,
@@ -1433,6 +1463,17 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         ).move_to([-1.7, -0.4, 0])
         links = VGroup(*[arrow(h.get_right(), concat.get_left(), MUTED, 1.8, buff=0.08) for h in heads])
         self.play(Create(concat), LaggedStart(*[Create(a) for a in links], lag_ratio=0.1), run_time=1.5)
+        packs = VGroup()
+        for index, colour in enumerate((BLUE, TEAL, PURPLE)):
+            pack = Rectangle(
+                width=0.46, height=0.70, stroke_width=0,
+                fill_color=colour, fill_opacity=0.55,
+            ).move_to([-1.7, -1.10 + index * 0.70, 0]).scale(0.02)
+            packs.add(pack)
+        self.play(
+            LaggedStart(*[pack.animate.scale(50.0) for pack in packs], lag_ratio=0.2),
+            run_time=0.8,
+        )
 
         mix_box = RoundedRectangle(
             width=1.5, height=1.0, corner_radius=0.10,
@@ -1450,8 +1491,8 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         self.play(FadeIn(dims, shift=0.04 * UP), run_time=0.6)
 
         path = VGroup(to_mix, to_out)
-        self.flow(to_mix, 1.8, count=3, color=ORANGE, radius=0.06)
-        self.flow(to_out, 1.8, count=3, color=ORANGE, radius=0.06)
+        self.flow(to_mix, 1.6, count=3, color=ORANGE, radius=0.06)
+        self.flow(to_out, 1.6, count=3, color=ORANGE, radius=0.06)
 
         self.play(Indicate(output, color=ORANGE, scale_factor=1.12), run_time=1.6)
         check_now(self, "11a")

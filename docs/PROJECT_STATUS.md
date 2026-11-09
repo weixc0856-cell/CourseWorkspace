@@ -21,7 +21,7 @@
 | Teaching QA | `teaching_qa.py`、`teaching-qa` | 结构 WARN；`learner_evidence=missing` | COMPLETED（结构层） |
 | Claim Registry / 双审 | `ContentQA/src/content_qa/claims.py`、`cross_review.py` | A 23 / B 24；43 claim：3 supported、38 需人工、2 冲突、26 有来源缺口 | COMPLETED（P1 契约） |
 | 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个镜头对齐 12 段实测旁白；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
-| 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 86/100（冻结 1/15）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
+| 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 94.7/100（按参考样片校准冻结线）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
 ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。
