@@ -260,6 +260,18 @@
           ],
           "title": "Renderer",
           "type": "string"
+        },
+        "overlay": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overlay"
         }
       },
       "required": [

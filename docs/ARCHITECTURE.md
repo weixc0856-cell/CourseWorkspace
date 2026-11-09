@@ -271,6 +271,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | 双语字幕 | `subtitles.py` | 英上中下、SRT/ASS/VTT、逐 cue 翻译；V-31 |
 | 双版本成片 | `adapters/burn.py`、`pipeline.py` | 干净母版 + ASS 烧录版；QSV → libx264；V-28 |
 | TimelineSpec 合成 | `RemotionStudio/src/compositions/CourseTimeline.tsx`、`ScenePage.tsx`、`adapters/remotion.py` | `timeline.spec.json` 驱动；`compose.mode=scene` 用全屏 ScenePage 作为 base；`renderer: legacy` 回退 |
+| 场景叠加层 | `course_control/overlays.py`、`RemotionStudio/src/overlays/AgingHud.tsx` | 课程声明 `compose.overlay: <kind>`；`collect` 把叠加数据写进 timeline `metadata.overlay`，由 Remotion 在底片之上绘制（HUD/图表不再烧进世界片） |
 | 引擎路由 | `engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
 | Code2Video 镜头 | `adapters/code_video.py`、`CodeVideoStudio/` | 镜头级 `SPEC.md` + `frame(t)` + `VERIFY.md`；本地 Playwright/ffmpeg；不部署 27B；Agent 用 Claude Code + DeepSeek |
 | HTML 渲染/lint 备选 | `CodeVideoStudio/backends/hyperframes/` | HyperFrames POC：HTML/GSAP → MP4，`check` 提供首帧/字号/对比度检查；不替换 Remotion |

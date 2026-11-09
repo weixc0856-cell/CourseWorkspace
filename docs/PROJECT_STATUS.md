@@ -26,6 +26,7 @@
 | Primer P1 后处理 | `CodeVideoStudio/shots/primer-aging/main.js`、`vendor/three/addons/`（官方 r160，未改动）、D-061 | 景深/泛光/调色/颗粒/暗角/FXAA 全部走官方 addons；`capture.json` 开启 GPU+JPEG 后 36 ms/帧，渲染阶段 152 s（原 12 min 级）；两次捕获 sha256 一致；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | Primer P1 生物资产与动作 | `simulate.py`（schema 2，稳定 `id`）、`main.js` 生物组件 | 胶囊身体 + 头部（口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；步态由实测速度驱动、近静止低头、新生缩放；修复按数组下标插值造成的跨个体跳变；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | Primer P1 生态（水面/植被） | `main.js`（湖盆、水面、草丛、灌木）、官方 `Water` addon | 湖盆 + 按地形采样确定水线的水面（`Water` addon，水纹随 `t`）；6,000 实例草叶 + 70 灌木；`media-qc` 十项 PASS；`animation-score` 100；两次捕获 sha256 一致 | COMPLETED（POC） |
+| Primer P1 Remotion 叠加层 | `course_control/overlays.py`、`RemotionStudio/src/overlays/AgingHud.tsx`、`CourseTimeline.tsx` | `compose.overlay: aging_hud` → timeline `metadata.overlay`（约 69 KB/145 s）→ Remotion 绘制 HUD 与 5 年分箱死亡风险曲线；世界片不再烧入 HUD；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | 第三方依赖准入 | `docs/第三方依赖准入规范.md`、D-062、`CLAUDE.md` 第 12 条 | 检查表 + 依赖登记表（star/fork/推送日/许可/版本一致性）；three.js 117,923 star / 36,921 fork / 2026-11-09 仍在推送；本地 r160 落后上游 0.187.0，已登记为升级待办 | COMPLETED |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。

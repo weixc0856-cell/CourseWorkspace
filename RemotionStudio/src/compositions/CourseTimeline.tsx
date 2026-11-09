@@ -11,6 +11,7 @@ import {
 } from 'remotion';
 import {KenBurnsMotion, MotionImage} from '../components/MotionImage';
 import {Annotations} from '../overlays/Annotations';
+import {AgingHud, AgingHudOverlay} from '../overlays/AgingHud';
 import {COLORS, FONTS} from '../styles/tokens';
 import {
   Annotation,
@@ -201,6 +202,7 @@ export const CourseTimeline: React.FC<TimelineSpec> = (props) => {
   const annotations = ((props.metadata?.legacy_annotations ??
     props.metadata?.annotations ??
     null) as Annotation[] | null);
+  const sceneOverlay = props.metadata?.overlay as AgingHudOverlay | undefined;
   const showCaptions = props.captions !== false;
 
   return (
@@ -212,6 +214,9 @@ export const CourseTimeline: React.FC<TimelineSpec> = (props) => {
         <OverlayVideo key={shot.shot_id} lesson={lesson} shot={shot} />
       ))}
       <Annotations annotations={annotations} />
+      {sceneOverlay?.kind === 'aging_hud' ? (
+        <AgingHud overlay={sceneOverlay} />
+      ) : null}
       {showCaptions && props.subtitles?.length ? (
         <TimelineCaptions cues={props.subtitles} />
       ) : null}

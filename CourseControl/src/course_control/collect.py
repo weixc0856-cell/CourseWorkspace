@@ -456,5 +456,18 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
     from .v1_timeline import write_timeline_contract
 
     v1_path, _timeline = write_timeline_contract(shots_file, paths)
+
+    # Scene overlays (charts, HUD) are drawn by Remotion, not baked into the
+    # captured plate; collect embeds their payload in the timeline metadata.
+    from .overlays import build_overlay
+
+    try:
+        overlay = build_overlay(paths)
+    except Exception as exc:  # noqa: BLE001 - an overlay must never fail a build
+        overlay = None
+        warnings.append(f"overlay skipped: {exc}")
+    if overlay is not None:
+        _timeline.metadata = {**(_timeline.metadata or {}), "overlay": overlay}
+        v1_path.write_text(_timeline.model_dump_json(indent=2) + "\n", encoding="utf-8")
     outputs.append(v1_path)
     return shots_file, warnings, outputs

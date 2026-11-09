@@ -42,6 +42,8 @@ class Compose(StrictModel):
     mode: Literal["deck", "scene", "recording"]
     base_video: str | None = None
     renderer: Literal["timeline", "legacy"] = "timeline"
+    # Optional scene overlay drawn by Remotion instead of baked into the plate.
+    overlay: str | None = None
 
     @model_validator(mode="after")
     def recording_needs_base(self):
