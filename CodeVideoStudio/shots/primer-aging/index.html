@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Why aging evolves — agent simulation</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #121619; }
+    canvas.world { display: block; }
+    #hud {
+      position: fixed; top: 0; right: 0; bottom: 180px;
+      width: 31%; max-width: 430px;
+      box-sizing: border-box;
+      padding: 28px 26px 20px;
+      background: linear-gradient(90deg, rgba(10,13,15,0) 0%, rgba(10,13,15,0.86) 12%, rgba(10,13,15,0.94) 100%);
+      color: #e8eef2; font-family: Arial, sans-serif;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    #hud h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0.02em; color: #cfd9df; }
+    #scenario { font-size: 22px; font-weight: 700; letter-spacing: 0.01em; }
+    #scenario.danger { color: #e8733b; }
+    #scenario.safe { color: #8fb48a; }
+    .stat { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; }
+    .stat span:first-child { font-size: 12px; color: #9fb0ba; }
+    .stat span:last-child { font-size: 26px; font-weight: 600; }
+    #chart { width: 100%; height: 150px; margin-top: 2px; }
+    .caption { font-size: 11px; color: #7f909a; line-height: 1.5; }
+    .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+  <canvas class="world"></canvas>
+  <div id="hud">
+    <h1>WHY AGING EVOLVES</h1>
+    <div id="scenario">dangerous world</div>
+    <div class="stat"><span>population</span><span id="pop">0</span></div>
+    <div class="stat"><span>mean age at death</span><span id="meanage">—</span></div>
+    <div class="stat"><span>late-acting mutations / agent</span><span id="maloci">0.0</span></div>
+    <canvas id="chart"></canvas>
+    <div class="caption">
+      Agent-based model. Every blob carries a genome, ages and reproduces.
+      <br /><br />
+      <span class="swatch" style="background:#6e8f6a"></span>young
+      <span class="swatch" style="background:#c06a3a; margin-left:12px"></span>old
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

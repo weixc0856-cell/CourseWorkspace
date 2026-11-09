@@ -495,7 +495,17 @@ def _ass_escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
 
 
-def write_ass(cues: list[dict], path: Path, width: int, height: int, bottom_margin: int = 190) -> None:
+def _ass_color(value: str) -> str:
+    value = value.lstrip("#")
+    if len(value) != 6:
+        raise ValueError(f"subtitle colour must be #RRGGBB: {value}")
+    red, green, blue = value[0:2], value[2:4], value[4:6]
+    return f"&H00{blue}{green}{red}".upper()
+
+
+def write_ass(cues: list[dict], path: Path, width: int, height: int, bottom_margin: int = 190, text_color: str = "#111111", outline_color: str = "#FBFAF7", outline_width: int = 0) -> None:
+    primary = _ass_color(text_color)
+    outline = _ass_color(outline_color)
     header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {width}
@@ -505,7 +515,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Bilingual,Arial,34,&H00111111,&H00111111,&H00F7FAFB,&H00F7FAFB,1,0,0,0,100,100,0,0,1,0,0,2,80,80,200,1
+Style: Bilingual,Arial,34,{primary},{primary},{outline},{outline},1,0,0,0,100,100,0,0,1,{outline_width},0,2,80,80,200,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

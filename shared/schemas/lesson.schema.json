@@ -573,6 +573,23 @@
           "minimum": 0,
           "title": "Bottom Margin",
           "type": "integer"
+        },
+        "text_color": {
+          "default": "#111111",
+          "title": "Text Color",
+          "type": "string"
+        },
+        "outline_color": {
+          "default": "#FBFAF7",
+          "title": "Outline Color",
+          "type": "string"
+        },
+        "outline_width": {
+          "default": 0,
+          "maximum": 6,
+          "minimum": 0,
+          "title": "Outline Width",
+          "type": "integer"
         }
       },
       "title": "Subtitles",
@@ -648,7 +665,10 @@
         "render": "remotion",
         "top_language": "en",
         "bottom_language": "zh-Hans",
-        "bottom_margin": 190
+        "bottom_margin": 190,
+        "text_color": "#111111",
+        "outline_color": "#FBFAF7",
+        "outline_width": 0
       }
     },
     "acceptance": {

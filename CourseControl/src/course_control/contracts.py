@@ -69,6 +69,11 @@ class Subtitles(StrictModel):
     # edge.  190 was the old fixed value; lowering it frees the lower band for
     # diagrams (the block grows upward from this anchor).
     bottom_margin: int = Field(default=190, ge=0, le=400)
+    # Subtitle colours are per-lesson: light text for dark simulation plates,
+    # dark text for paper slides.
+    text_color: str = "#111111"
+    outline_color: str = "#FBFAF7"
+    outline_width: int = Field(default=0, ge=0, le=6)
 
 
 class DurationPolicy(StrictModel):

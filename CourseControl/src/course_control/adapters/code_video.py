@@ -83,38 +83,49 @@ def run(paths: LessonPaths) -> StageOutcome:
         if simulated is not None:
             warnings.append(f"{shot.id}: simulation data {simulated.name}")
 
-        temp = build_root / "tmp" / "code-video" / f"{project.name}.mp4"
-        temp.parent.mkdir(parents=True, exist_ok=True)
-        command = [
-            *which_command("node"),
-            str(skill),
-            str(project),
-            "--fps",
-            str(fps),
-            "--size",
-            f"{width}x{height}",
-            "--out",
-            str(temp),
-        ]
-        if shot.expected_duration_s:
-            command.extend(["--dur", str(shot.expected_duration_s)])
-        result = run_command(
-            command,
-            project,
-            timeout=1800,
-            log_path=build_root / "logs" / f"code-video-{shot.id}.log",
-        )
-        if result.exit_code != 0:
-            errors.append(
-                f"{shot.id}: capture exited {result.exit_code}: {result.stderr[-1500:]}"
-            )
-            continue
-        if not temp.is_file():
-            errors.append(f"{shot.id}: capture produced no file: {temp}")
-            continue
         target = build_root / "animation" / f"{project.name}.mp4"
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(temp, target)
+        sources = [
+            path
+            for path in project.rglob("*")
+            if path.is_file()
+            and "node_modules" not in path.parts
+            and "out" not in path.parts
+        ]
+        newest = max((path.stat().st_mtime for path in sources), default=0.0)
+        if target.is_file() and target.stat().st_mtime >= newest:
+            warnings.append(f"{shot.id}: reused cached capture")
+        else:
+            temp = build_root / "tmp" / "code-video" / f"{project.name}.mp4"
+            temp.parent.mkdir(parents=True, exist_ok=True)
+            command = [
+                *which_command("node"),
+                str(skill),
+                str(project),
+                "--fps",
+                str(fps),
+                "--size",
+                f"{width}x{height}",
+                "--out",
+                str(temp),
+            ]
+            if shot.expected_duration_s:
+                command.extend(["--dur", str(shot.expected_duration_s)])
+            result = run_command(
+                command,
+                project,
+                timeout=1800,
+                log_path=build_root / "logs" / f"code-video-{shot.id}.log",
+            )
+            if result.exit_code != 0:
+                errors.append(
+                    f"{shot.id}: capture exited {result.exit_code}: {result.stderr[-1500:]}"
+                )
+                continue
+            if not temp.is_file():
+                errors.append(f"{shot.id}: capture produced no file: {temp}")
+                continue
+            shutil.copy2(temp, target)
 
         expected = shot.expected_duration_s
         qc = check_video(
