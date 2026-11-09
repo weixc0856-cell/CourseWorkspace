@@ -124,6 +124,18 @@
           ],
           "default": null,
           "title": "Approval"
+        },
+        "narrative": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Narrative"
         }
       },
       "title": "Authoring",
@@ -205,6 +217,11 @@
         "allow_manual_animation_export": {
           "default": true,
           "title": "Allow Manual Animation Export",
+          "type": "boolean"
+        },
+        "strict_layout": {
+          "default": false,
+          "title": "Strict Layout",
           "type": "boolean"
         }
       },
@@ -549,6 +566,13 @@
           "default": "zh-Hans",
           "title": "Bottom Language",
           "type": "string"
+        },
+        "bottom_margin": {
+          "default": 190,
+          "maximum": 400,
+          "minimum": 0,
+          "title": "Bottom Margin",
+          "type": "integer"
         }
       },
       "title": "Subtitles",
@@ -623,7 +647,8 @@
         "enabled": false,
         "render": "remotion",
         "top_language": "en",
-        "bottom_language": "zh-Hans"
+        "bottom_language": "zh-Hans",
+        "bottom_margin": 190
       }
     },
     "acceptance": {
@@ -636,7 +661,8 @@
     "build": {
       "$ref": "#/$defs/BuildOptions",
       "default": {
-        "allow_manual_animation_export": true
+        "allow_manual_animation_export": true,
+        "strict_layout": false
       }
     },
     "motion": {
@@ -653,6 +679,15 @@
         "content_kind": "formal_course",
         "bgm": []
       }
+    },
+    "video_form": {
+      "default": "long",
+      "enum": [
+        "long",
+        "short"
+      ],
+      "title": "Video Form",
+      "type": "string"
     },
     "duration": {
       "anyOf": [

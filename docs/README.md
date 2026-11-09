@@ -16,6 +16,10 @@
 - [NOTICE](../NOTICE)：第三方许可
 - [CONTRIBUTING.md](../CONTRIBUTING.md)：贡献与 CLA
 
+## 1.2 产品能力边界
+
+- [product/跨学科生产能力矩阵与能力边界规范.md](product/跨学科生产能力矩阵与能力边界规范.md)：学科 × 内容类型 × 能力边界（产品认知文档，不产生开发需求）
+
 ## 2. 生产规范
 
 - 内容与课程：[课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)、[课程生产交付物规范.md](课程生产交付物规范.md)、[课程交付清单模板.md](课程交付清单模板.md)
@@ -25,6 +29,7 @@
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)
 - 三维：[Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)、[AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)
 - 流程：[WORKFLOW.md](WORKFLOW.md)、[提交前检查清单.md](提交前检查清单.md)
+- 创作方法：[creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)：长视频叙事骨架、Shorts、A/B 视觉与质量门禁
 - 研发审核：[ReviewRunner/README.md](../ReviewRunner/README.md)：独立只读第二意见（Phase 1 只做代码审查）
 
 ## 3. 评估与雷达（`evaluations/`）

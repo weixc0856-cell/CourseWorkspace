@@ -15,6 +15,9 @@ dependencies = [
     "typer>=0.12,<1",
 ]
 
+[project.optional-dependencies]
+asr = ["faster-whisper>=1.0,<2", "av>=11,<16"]
+
 [tool.uv.sources]
 ai-runtime = { path = "../shared/ai_runtime", editable = true }
 scene-expr = { path = "../shared/scene_expr", editable = true }

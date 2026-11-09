@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -60,13 +61,18 @@ def run_command(
     *,
     timeout: int = 1800,
     log_path: Path | None = None,
+    env: dict[str, str] | None = None,
 ) -> CommandResult:
     started = time.monotonic()
     timed_out = False
     try:
+        child_env = os.environ.copy()
+        if env:
+            child_env.update(env)
         process = subprocess.run(
             command,
             cwd=str(cwd),
+            env=child_env,
             capture_output=True,
             text=True,
             encoding="utf-8",

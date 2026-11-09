@@ -495,7 +495,7 @@ def _ass_escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
 
 
-def write_ass(cues: list[dict], path: Path, width: int, height: int) -> None:
+def write_ass(cues: list[dict], path: Path, width: int, height: int, bottom_margin: int = 190) -> None:
     header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {width}
@@ -515,7 +515,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         en = "\\N".join(_ass_escape(line) for line in cue["en_lines"])
         zh = "\\N".join(_ass_escape(line) for line in cue["zh_lines"])
         text = (
-            f"{{\\an2\\pos({width // 2},{height - 190})}}"
+            f"{{\\an2\\pos({width // 2},{height - bottom_margin})}}"
             f"{en}\\N{{\\fnMicrosoft YaHei\\fs30}}{zh}"
         )
         lines.append(

@@ -7,6 +7,24 @@
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
+## 0.0 2026-11-09 增量：五条质量防线 P0 与 5 分钟校准课
+
+| 能力 | 代码 / 契约 | 证据 | 状态 |
+| --- | --- | --- | --- |
+| 叙事契约 | `CourseControl/src/course_control/narrative.py`、`narrative-validate` | 5 分钟课六段骨架 `pass`；`build/05-transformer-5min/quality/narrative.json` | COMPLETED（P0） |
+| BGM 混音 | `audio_mix.py`、`audio-mix` | Schubert D.664（PD）；−15.9 LUFS / −1.4 dBTP；`audio/mix.json` | COMPLETED（P0） |
+| 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 58 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
+| 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
+| 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（27 镜头）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
+| 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |
+| ASR/语音对齐 | `CourseControl/src/course_control/alignment.py`、`asr-align` | faster-whisper `small.en`；80 cue，覆盖 0.992，0 不一致/0 未覆盖 | COMPLETED（P1） |
+| Teaching QA | `teaching_qa.py`、`teaching-qa` | 结构 WARN；`learner_evidence=missing` | COMPLETED（结构层） |
+| Claim Registry / 双审 | `ContentQA/src/content_qa/claims.py`、`cross_review.py` | A 23 / B 24；43 claim：3 supported、38 需人工、2 冲突、26 有来源缺口 | COMPLETED（P1 契约） |
+| 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个镜头对齐 12 段实测旁白；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
+
+边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
+ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。
+
 状态词：`COMPLETED`（实现且有真实证据）/ `PARTIAL`（有缺口）/ `NOT_IMPLEMENTED` / `BLOCKED`（外部条件限制）/ `NOT_RUN` / `DEFERRED` / `OUT_OF_SCOPE`。
 
 ---

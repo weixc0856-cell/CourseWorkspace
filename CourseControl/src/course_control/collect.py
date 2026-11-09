@@ -230,6 +230,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
     warnings: list[str] = []
     shots: list[Shot] = []
     outputs: list[Path] = []
+    skip_overlays = False
     fps = paths.lesson.outputs.fps
     resolution = paths.lesson.outputs.resolution
 
@@ -244,6 +245,10 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
         total_duration = sum(budgets)
         base_file = manifest.get("base_file")
         if base_file:
+            # A single base video already carries the whole course animation.
+            # Storyboard shots are authoring metadata, not overlays to stack on
+            # top of it.
+            skip_overlays = True
             shots.append(
                 Shot(
                     id="scene_base",
@@ -319,7 +324,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
             outputs.append(plan_path)
 
     overlays_by_slide: dict[int, list[tuple[float, float, str]]] = {}
-    for spec in paths.storyboard.shots:
+    for spec in ([] if skip_overlays else paths.storyboard.shots):
         if spec.slide > len(budgets):
             raise ContractError(f"{spec.id}: slide {spec.slide} exceeds {len(budgets)}")
         source = _animation_source(paths, spec)
@@ -399,6 +404,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
                 ass_path,
                 resolution[0],
                 resolution[1],
+                paths.lesson.subtitles.bottom_margin,
             )
             outputs.append(ass_path)
             subtitles.update(

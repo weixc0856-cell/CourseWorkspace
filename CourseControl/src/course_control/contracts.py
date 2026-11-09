@@ -65,6 +65,10 @@ class Subtitles(StrictModel):
     render: Literal["remotion", "burn_in"] = "remotion"
     top_language: str = "en"
     bottom_language: str = "zh-Hans"
+    # Distance in pixels between the bottom of the subtitle block and the frame
+    # edge.  190 was the old fixed value; lowering it frees the lower band for
+    # diagrams (the block grows upward from this anchor).
+    bottom_margin: int = Field(default=190, ge=0, le=400)
 
 
 class DurationPolicy(StrictModel):
@@ -98,6 +102,7 @@ class Authoring(StrictModel):
     outline: str | None = None
     script: str | None = None
     approval: str | None = None
+    narrative: str | None = None
 
 
 class Acceptance(StrictModel):
@@ -108,6 +113,8 @@ class Acceptance(StrictModel):
 class BuildOptions(StrictModel):
     # Legacy switch; the Motion Canvas adapter now renders headlessly and ignores it.
     allow_manual_animation_export: bool = True
+    # Fail the Manim render when runtime layout checks find overlaps/out-of-frame text.
+    strict_layout: bool = False
 
 
 class BgmCue(StrictModel):
@@ -165,6 +172,7 @@ class LessonConfig(StrictModel):
     build: BuildOptions = BuildOptions()
     motion: MotionPolicy = MotionPolicy()
     audio: AudioPolicy = AudioPolicy()
+    video_form: Literal["long", "short"] = "long"
     duration: DurationPolicy | None = None
     authoring: Authoring | None = None
 

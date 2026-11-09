@@ -272,6 +272,13 @@ uv run --project CourseControl course-control validate --lesson <slug>
 | 字幕 | `subtitles-build [--planned] [--remote]` | `subtitles/bilingual.draft.{json,srt,vtt}` |
 | 字幕批准 | `subtitles-accept` | `lessons/<slug>/subtitles.srt` |
 | 构建 | `build-lesson.ps1`；可选 `build --storyboard <path> [--shots shot_007]` | `final/course-video.mp4` + `final/course-video-captioned.mp4` |
+| 叙事契约 | `narrative-validate --lesson <slug>` | `build/<slug>/quality/narrative.json`（六段叙事骨架与时长校验） |
+| BGM 混音 | `audio-mix --lesson <slug>` | `final/course-video-mixed.mp4`、`audio/mix.json`（ducking + -16 LUFS） |
+| 全片 QC | `media-qc --lesson <slug>` | `quality/media-qc.json`（解码/格式/帧数/响度/静音/黑帧/冻结/字幕） |
+| 质量报告 | `quality-report --lesson <slug>` | `quality/quality-report.{json,md,html}`（五维独立状态与 BUILD/QUALITY/RELEASE） |
+| 教学结构 | `teaching-qa --lesson <slug>` | `quality/teaching-qa.json`（结构检查；learner_evidence=missing） |
+| 语音对齐 | `--extra asr asr-align --lesson <slug>` | `quality/asr-alignment.json`（ASR 转写与 cue 文本覆盖；缺 ASR 即 INCOMPLETE） |
+| 主张审查 | `content-qa claims` / `content-qa cross-review --a --b` | `review/claim_registry.json`、`review_cross.json`、`conflict_report.md` |
 
 **边界**：`build`/`validate`/`check.ps1` 不调用 8080/50000/网络；TTS 与翻译是显式命令。本地模型默认优先；远程只在 `config/model-routing.yaml` 显式启用且 key 存在时回退，任务记录写 `provider`。`--remote` 是显式远程开关。
 
@@ -294,3 +301,7 @@ PATH="CodeVideoStudio/bin:$PATH" sh CodeVideoStudio/skills/code-video/scripts/ch
 - 生产目录：`CodeVideoStudio/shots/attention-flow/`（30s、900 帧、900/900 帧哈希一致）。
 
 可选后端：`CodeVideoStudio/backends/hyperframes/hf-poc/`（HTML/GSAP，10s，check 通过）；`build/videozero-poc/`（Motion Canvas agent，image sequence + ffmpeg）。
+
+**创作规范**：所有长视频与 Shorts 的选题、六段叙事骨架、A/B 视觉生产方式与留存指标见
+[docs/creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)。
+长视频与 Shorts 都必须提供 `authoring/narrative-plan.json`，并由 `narrative-validate` 校验。

@@ -487,3 +487,61 @@
 **决策**：新增独立 `ReviewRunner/`（不进入生产主链，不接 `check.ps1` 门禁，不自动 apply）。默认用 `codex exec --ignore-user-config` 加显式 provider 配置：`base_url/model/api_key_env` 来自 `config/model-routing.yaml`，key 只由子进程从环境变量读取，不进入 argv/日志/manifest。审核输入全部来自 Git 对象，落在临时目录，运行前后校验 SHA256；输出按执行轴与审核轴分别记录，`production_effect: none`。隔离实测基线 14,243 tokens，因此系统预留 18,000、文件内容预算 35,536；用户配置模式保留 24,000/29,536。超出预算直接 `BLOCKED`，不静默缩减范围。
 
 **后果**：本机 MCP 与插件默认不参与审核；宿主 skill frontmatter 告警作为噪声过滤并计数。Windows 沙箱隔离强度未验证，工具只声称“临时目录 + 前后哈希”，不声称绝对沙箱。Phase 1 只做代码审查，Docs/Course 仅保留隐私门与接口；Course 外发必须逐次授权。
+
+## D-056 五条质量防线 P0 落地；5 分钟校准课与 Shorts 分开
+
+**背景**：差距审查确认五条质量防线中 Q1 只有单模型候选审查、Q2 基本没有、Q3 缺全片音视频检查、Q5 只按文件存在性判定；真实课程 `01-transformer-demo` 的交付仍为 `blocked`。规范要求先打通一门真实课程闭环，再扩展模块。
+
+**决策**：
+1. 新建本地校准课 `05-transformer-5min`，从已批准的 `01-transformer-demo` 第 1、3、5 页逐字取用，只做分页与编号调整；旁白复用同参数缓存，12 段全部命中；审批记录写 `user-instruction` 与 subset 来源，不冒充新的语义审查。该课程属于**短课/校准片**，不是 YouTube Shorts。
+2. 在 `CourseControl` 内新增 `narrative.py`、`audio_mix.py`、`media_qc.py`、`quality.py` 与四个 CLI 命令：`narrative-validate`、`audio-mix`、`media-qc`、`quality-report`；不新建 TeachingQA/MediaQA 顶层工程。
+3. 长视频必须提供 `authoring/narrative-plan.json`（六段骨架）；Shorts 使用 `video_form: short`、30–90 秒、9:16、独立脚本。方法论文档为 `docs/creative/叙事设计与观众留存规范.md`。
+4. BGM 只消费本地授权库：曲目缺失、许可未知、CC BY 缺署名一律 blocked；混音固定 sidechain ducking + `loudnorm I=-16:TP=-1.5`。
+5. 质量状态保持五维独立；`BUILD_PASS`、`QUALITY_PASS`、`RELEASE_APPROVED` 三层分离，最后一层必须有人工批准文件。叙事结构通过只把 Q2 记为 WARN，不证明教学有效。
+
+**后果**：5 分钟校准课可以跑通旁白、字幕、两种动画、BGM、全片 QC 与质量报告；ASR/强制对齐仍未接入，因此“字幕与语音一致”保持 INCOMPLETE。Shorts 不通过裁切长视频生成，后续单独建课。
+
+## D-057 校准课改为动画驱动的 scene 模式；deck 模式不再用于机制解释
+
+**背景**：5 分钟校准课首版使用 `compose.mode: deck`，3 页幻灯片占 94% 时长，只有两段 8–10 秒的 Manim cutaway。实测音轨与 `narration.wav` 零偏移、字幕与 ASR 覆盖 0.992，说明时间轴没有漂移；问题在视觉契约：静态 PPT 无法承担机制解释，动画内容与旁白段落也没有语义对齐。
+
+**决策**：
+1. 新增 292 秒连续 Manim 动画 `ManimSandbox/05-transformer-5min/attention_5min.py`，按 12 段旁白实测时间编排 12 个 beat；每个 beat 的动画、停顿与转场相加等于该段旁白时长。
+2. 校准课切到 `compose.mode: scene`，`scenes/manifest.json` 的 `base_file` 指向 `animation/attention_5min.mp4`；`collect` 在 scene + base_file 模式下不再把 storyboard 镜头当覆盖层叠加。
+3. Manim 适配器增加缓存：目标 MP4 比源场景新时直接复用，避免重建时重复渲染 5 分钟动画。
+4. 机制解释类课程默认用 scene/动画作为底；deck 模式只用于以静态图文为主、允许逐页阅读的内容。
+
+**后果**：5 分钟课从“幻灯片 + 两段短片”变为连续动画；字幕/旁白时间轴沿用 ASR 对齐结果。代价是 Manim 渲染时间显著增加，因此加入缓存并要求后续 scene 模式课程先做低分辨率预渲染。
+
+## D-058 运行时版式检查逐 beat 执行，并可作为渲染硬门禁
+
+**背景**：连续动画把 `enforce(self)` 放在 `construct` 末尾，此时所有对象已淡出，检查对象为空；旧检查也只比较文字与文字，且适配器从不设置 `STRICT_LAYOUT=1`。结果 `RNN` 被回环箭头穿过、`V2–V5` 被求和箭头穿过都没有报错。
+
+**决策**：新增 `check_now(scene, label)`，在每个 beat 结束、淡出之前检查；增加文字/无关图形穿过的检测（排除标签自身容器与高亮框包含）；`BuildOptions.strict_layout` 控制 Manim 适配器传 `STRICT_LAYOUT=1`，开启后版式问题直接让渲染失败。校准课已开启。
+
+**后果**：场景作者必须在每个 beat 调用检查；旧的单次 `enforce` 保留但只作为末尾兜底，不能替代逐 beat 检查。scene 模式不再绕过版式门禁。
+
+## D-059 校准课迁移到样片架构：MovingCameraScene + 实测时钟 + 逐动画相机漂移
+
+**背景**：D-057 的 12 beat 连续动画已经对齐旁白，但仍是普通 `Scene` + 硬编码 beat 时长，平均 24 秒一个 beat；成片 QC 记录 69 个 ≥1.5 s 的冻结区间。2 分钟样片 `06-attention-3b1b` 的架构是 `MovingCameraScene`、每镜头 8–12 秒、用相机运动填满旁白空档。
+
+**决策**：
+1. `attention_5min.py` 重写为 27 个镜头：每段旁白按固定比例切成 2–3 个镜头，切点写在场景的 `SUBDIVISIONS`；时间轴单一来源是实测旁白 `build/<lesson>/narration/narration.meta.json`（段落起点/时长/页面终点），缺失时才回退到内置的 292.38 s 常量。
+2. 每个镜头结束、画面最满时调用 `check_now`；镜头内的剩余旁白时间由相机推拉覆盖，不再出现 `wait` 定格。
+3. 覆写 `Scene.play`：凡是不包含相机动画的 play，自动附带 1.4 %/s 的相机缩放漂移，在 13.0–14.2 画幅之间往返。实测低于约 1.2 %/s 时 `freezedetect(n=0.002,d=1.5)` 仍判定为冻结。（**该条已被 D-060 撤回**：用户反馈无动机缩放导致眩晕。）
+4. `common/scene_checks.py` 排除相机画框 `ScreenRectangle` 与完全透明的文字（淡出对象不是版式问题），并在重叠信息中附带包围盒，便于定位。
+5. 语义图表保持在 y ≥ ≈-1.5：双语字幕按 ASS `n2@890` 烧录，字幕块占住画面底部约 1.9 个单位；原本在字幕带内的读数、柱状图、评分矩阵与结论行整体上移，8b 的装饰性标签直接删除。
+
+**后果**：27 个镜头全部通过严格版式检查，零时长溢出，动画总长 292.398 s；1080p 动画与成片 `media-qc` 的冻结区间都从 69 降到 2，剩余两处都在镜头开场的近空白过渡。代价是每个 play 多一条相机动画，动画缓存整体失效一次；低分辨率预览仍是首选验证手段。
+
+## D-060 撤回补偿性相机漂移；用导演节拍与字幕分层解决静止与遮挡
+
+**背景**：D-059 用“每个 play 附带 1.4 %/s 相机缩放”把冻结指标压到 2 段，但这不是导演设计：观众看到的是无动机的持续缩放与移动，产生眩晕。同一版成片还有两个问题：底部灰色说明行与烧录字幕重复；双语字幕块与图表下半部重叠。
+
+**决策**：
+1. 删除 `Scene.play` 的相机漂移覆写与 `zoom_fill`；全片相机固定在 14.22 画幅。需要镜头运动时再按“全景 → 推近 → 拉远”的动机单独设计，不以填满时间为目的。
+2. 删除 21 条底部 `caption()`（与旁白/字幕重复）；每个镜头改为“指认式”视觉动作（逐行扫亮、逐层高亮、轮流压暗/恢复、分开再合并），并写入 `ManimSandbox/05-transformer-5min/beats.md` 作为导演节拍表。
+3. `Subtitles.bottom_margin` 可配置（默认 190 px，本课 60 px）：ASS 锚点从 `height-190` 改为 `height-bottom_margin`，双语字幕块整体下沉，图形主体回到字幕带之上。
+4. 冻结指标只作为技术检查，不再用运镜凑数；接受镜头末尾 ≤1.5 s 的停顿。
+
+**后果**：成片不再有无动机运镜，字幕与图形分层，镜头内等待时间从最长 8.4 s 降到 ≤2 s（多数 ≤1.5 s）。`media-qc` 的冻结区间为 58 段（WARN）：`freezedetect(n=0.002)` 把稀疏线段生长、慢淡入都算作冻结，原来的 2 段是相机漂移把整帧“推”过阈值的结果；不为此重新加入假运动。3B1B 式“同一场景图持续变形”仍需把句子行、focus token、分数矩阵做成跨镜头长寿命对象，并把图表放大到覆盖更多画幅，见 `docs/evaluations/样片-注意力-3B1B差距与路线.md` 第 6 节。

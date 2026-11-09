@@ -36,6 +36,8 @@
 - 内容类型与音频策略：[docs/内容类型与音频策略.md](docs/内容类型与音频策略.md)
 - 项目差距清单：[docs/项目差距清单.md](docs/项目差距清单.md)
 - 课程质量防线差距审查：[docs/课程质量保障体系-差距审查.md](docs/课程质量保障体系-差距审查.md)
+- 跨学科能力边界：[docs/product/跨学科生产能力矩阵与能力边界规范.md](docs/product/跨学科生产能力矩阵与能力边界规范.md)
+- 叙事与留存方法：[docs/creative/叙事设计与观众留存规范.md](docs/creative/叙事设计与观众留存规范.md)
 - 独立代码审核（只读第二意见）：[ReviewRunner/README.md](ReviewRunner/README.md)、[scripts/review.ps1](scripts/review.ps1)
 - Attention 两分钟样片与 3B1B 差距：[docs/evaluations/样片-注意力-3B1B差距与路线.md](docs/evaluations/样片-注意力-3B1B差距与路线.md)
 - 动画/音频/口播整合：[docs/evaluations/评估-动画音频口播-整合.md](docs/evaluations/评估-动画音频口播-整合.md)
@@ -54,6 +56,7 @@
 8. **远程仓库只放工作流。** `lessons/` 真实课程、`build/`、`runtime/`、模型权重与媒体文件不入库；远程仓库必须保持可克隆、可测试、无课程内容。
 9. **Claude Code 默认后端。** 课程文本生产（brief/outline/script/content）、字幕翻译、ContentQA 与 ModelingStudio 文本规划默认走 Claude Code；文本阶段必须禁用工具（`--tools=`），镜头 Agent 阶段只允许写 `build/` 暂存目录。不可用即 `blocked`；只有 `claude_code_fallback: local_first` 才可回退本地/远程，禁止静默降级。
 10. **远程回退必须显式。** 8080 被占用或本地启动失败时，只有 `config/model-routing.yaml` 明确启用且 key 环境变量存在才可回退远程 OpenAI 兼容 API；任务记录必须写 `provider`，不得冒充本地；视觉阶段没有 `vision_model` 时不得回退。**所有 DeepSeek 调用固定 `deepseek-flash`，禁用 `deepseek-v4-pro`；配置层会拒绝 pro。API key 只从系统环境变量读取（本机 `DeepSeek-API`），不写入 `.env`、YAML、日志或跟踪文件；仓库只保留不含 key 的 `.env.example`。远程 provider 可为 `deepseek` / `openai-compatible` 等；通用变量为 `REMOTE_*`，DeepSeek 兼容 `DEEPSEEK_*`。**
+11. **创作规范是硬约束。** 长视频与 Shorts 必须提供 `authoring/narrative-plan.json` 并通过 `narrative-validate`；Shorts 30–90 秒、竖屏、独立脚本，不从长视频裁切；A/B 画面必须标注 `real_data / simulation / schematic`。规范见 `docs/creative/叙事设计与观众留存规范.md`。
 
 ## 3. 常用入口
 

@@ -1,0 +1,17 @@
+schema_version: 1
+
+# Independent reviewer B: a local OpenAI-compatible endpoint (8080).
+# Copy to config/content-qa-local.yaml. Never put a real key here.
+backend: "api"
+
+model:
+  base_url: "http://127.0.0.1:8080/v1"
+  model: "Qwen3-30B-A3B-Instruct-2507"
+  api_key_env: "CONTENT_QA_LOCAL_KEY"
+  timeout_s: 900
+  max_tokens: 4096
+  temperature: 0.2
+  retries: 1
+
+context_limit: 16384
+sources_file: "sources.yaml"
