@@ -44,6 +44,10 @@
       <span class="swatch" style="background:#c06a3a; margin-left:12px"></span>old
     </div>
   </div>
+  <!-- three.js addons import the bare specifier "three"; map it to the vendored r160 build. -->
+  <script type="importmap">
+    { "imports": { "three": "./three.module.js" } }
+  </script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>

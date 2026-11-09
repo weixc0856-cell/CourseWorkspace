@@ -1,9 +1,9 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-08（旧 Manim 镜头统一、ContentQA 默认后端、文档/路径卫生）
+- **最近更新**：2026-11-09（Primer P1 后处理、第三方依赖准入规范）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `eaea74e`
-- **基线核实**：2026-11-08 实跑 `check.ps1`（`UV_NO_SYNC=1`）= `check ok`；五套单测 421 个用例（415 通过 + 6 跳过）；`check-paths.ps1` = `path check ok`
+- **基线核实**：2026-11-09 实跑 `check.ps1` = `check ok`；CourseControl 单测 352 个用例（含新增 capture.json 与缓存失效用例）
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -23,6 +23,8 @@
 | 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个镜头对齐 12 段实测旁白；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
 | 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 94.7/100（按参考样片校准冻结线）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
 | Primer 衰老模拟复刻（POC） | `CodeVideoStudio/shots/primer-aging/`、本地 `lessons/aging-evolution` | 145.4 s / 4,361 帧；32 cue；ASR 0.935；冻结 0、静音 0；BGM 混音 pass；`animation-score` 100；`QUALITY_PASS=True`、`RELEASE_APPROVED=False` | POC（本地） |
+| Primer P1 后处理 | `CodeVideoStudio/shots/primer-aging/main.js`、`vendor/three/addons/`（官方 r160，未改动）、D-061 | 景深/泛光/调色/颗粒/暗角/FXAA 全部走官方 addons；`capture.json` 开启 GPU+JPEG 后 36 ms/帧，渲染阶段 152 s（原 12 min 级）；两次捕获 sha256 一致；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
+| 第三方依赖准入 | `docs/第三方依赖准入规范.md`、D-062、`CLAUDE.md` 第 12 条 | 检查表 + 依赖登记表（star/fork/推送日/许可/版本一致性）；three.js 117,923 star / 36,921 fork / 2026-11-09 仍在推送；本地 r160 落后上游 0.187.0，已登记为升级待办 | COMPLETED |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
 ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。

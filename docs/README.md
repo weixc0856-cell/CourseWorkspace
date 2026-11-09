@@ -15,6 +15,7 @@
 - [LICENSE](../LICENSE)：AGPL-3.0-or-later
 - [NOTICE](../NOTICE)：第三方许可
 - [CONTRIBUTING.md](../CONTRIBUTING.md)：贡献与 CLA
+- [第三方依赖准入规范.md](第三方依赖准入规范.md)：复用优先、口碑/活跃度校核、更新节奏与依赖登记表
 
 ## 1.2 产品能力边界
 

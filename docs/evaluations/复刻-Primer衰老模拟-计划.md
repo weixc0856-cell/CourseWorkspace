@@ -43,7 +43,7 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 
 1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。已完成第一版：身体 + 四条腿的行走摆动；仍无觅食/繁殖动作。
 2. 地形与生物群系：已完成第一版：浅盆地地形 + 散石；仍缺植被/水面。
-3. 后处理：未做；景深、泛光、色调分级仍是下一步。
+3. 后处理：已完成第一版——官方 three.js r160 addons 链（`BokehPass` 景深、`UnrealBloomPass` 泛光、`ColorCorrectionShader` 调色、`FilmPass` 颗粒、`VignetteShader` 暗角、`OutputPass` ACES/sRGB、`FXAAShader`）。捕获改为 `capture.json` 显式开启 GPU + JPEG 中间帧：36 ms/帧（SwiftShader + PNG 777 ms/帧）。详见 D-061。
 4. 叠加层：当前 HUD 内嵌在世界片里；统一的 Remotion 图表层未做。
 5. 音频：已接入 Schubert D.664（公版）BGM，ducking 由 `audio-mix` 完成；音效与词级对齐未做。
 
@@ -80,3 +80,18 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 ## 7. 结论
 
 P0 完成：我们已经有能力用现有流水线端到端复刻该参考片的**机制与视觉语言**（模拟世界 + HUD + 旁白 + 双语字幕 + QC/评分），并且这条链路是可复现、可校验的。下一步按 P1 提升质感，再按 P2 增强内容深度。
+
+## 8. P1 后处理增量结果（2026-11-09）
+
+| 项 | 结果 |
+| --- | --- |
+| 成片 | `build/aging-evolution/final/course-video-mixed.mp4`：1920×1080 / 30 fps / 145.4 s / 4,361 帧 |
+| 构建 | `verdict=pass`；`render:code_video` 152 s（此前为 12 分钟级）；`compose` / `burn_subtitles` / `verify` 全部 pass |
+| 后处理 | 官方 r160 addons：`BokehPass` 景深（焦点跟随世界中心）、`UnrealBloomPass`（阈值 1.8，线性 HDR）、`ColorCorrectionShader`、`FilmPass` 颗粒（时钟绑定 `t`）、`VignetteShader`、`OutputPass`（ACES + sRGB）、`FXAAShader` |
+| 捕获 | `capture.json` 开启 `--gpu --jpeg`：36 ms/帧；SwiftShader + PNG 为 777 ms/帧。JPEG 中间帧与 PNG 同一帧对比 40.34 dB vs 40.56 dB |
+| 确定性 | GPU 路径两次 30 帧捕获 sha256 一致 |
+| 媒体 QC | 十项全 PASS：解码、格式、帧数、响度 −16.2 LUFS / −3.2 dBTP、电平策略、静音 0、黑帧 0、冻结 0、字幕 32 cue、ASR 覆盖 0.935 |
+| 质量报告 | `BUILD_PASS=True`、`QUALITY_PASS=True`（Q3/Q4 PASS，Q1/Q2/Q5 WARN）、`RELEASE_APPROVED=False`（人工审校未做） |
+| 对齐评分 | `animation-score = 100/100` |
+
+已知缺口：生物仍是程序化低模（无觅食/繁殖动作）；地形已有但缺植被与水面；HUD 仍内嵌在世界片里，Remotion 叠加层未做；旁白为候选稿，未经人工逐字审校。

@@ -1,5 +1,15 @@
 // Aging-evolution world: agent-based simulation + hazard overlay, pure f(t).
 import * as THREE from './three.module.js';
+import { EffectComposer } from './vendor/three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from './vendor/three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from './vendor/three/addons/postprocessing/BokehPass.js';
+import { UnrealBloomPass } from './vendor/three/addons/postprocessing/UnrealBloomPass.js';
+import { FilmPass } from './vendor/three/addons/postprocessing/FilmPass.js';
+import { ShaderPass } from './vendor/three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from './vendor/three/addons/postprocessing/OutputPass.js';
+import { ColorCorrectionShader } from './vendor/three/addons/shaders/ColorCorrectionShader.js';
+import { VignetteShader } from './vendor/three/addons/shaders/VignetteShader.js';
+import { FXAAShader } from './vendor/three/addons/shaders/FXAAShader.js';
 
 const W = window.innerWidth;
 const H = window.innerHeight;
@@ -21,6 +31,40 @@ scene.fog = new THREE.FogExp2(0x1d2226, 0.020);
 const camera = new THREE.PerspectiveCamera(34, W / H, 0.1, 200);
 camera.setViewOffset(W, H, Math.round(W * 0.14), 0, W, H);
 const look = new THREE.Vector3(0, 0.2, 0);
+
+// Post chain — all official three.js r160 addons (see vendor/three/README.md):
+// depth of field, bloom, colour correction, film grain, vignette, ACES output
+// and FXAA. No hand-written shaders.
+const composer = new EffectComposer(renderer);
+composer.setPixelRatio(1);
+composer.setSize(W, H);
+composer.addPass(new RenderPass(scene, camera));
+
+const bokeh = new BokehPass(scene, camera, {focus: 14.0, aperture: 0.0004, maxblur: 0.006});
+composer.addPass(bokeh);
+
+const bloom = new UnrealBloomPass(new THREE.Vector2(W * 0.5, H * 0.5), 0.28, 0.4, 1.8);
+composer.addPass(bloom);
+
+const grade = new ShaderPass(ColorCorrectionShader);
+grade.uniforms.powRGB.value.set(1.02, 1.02, 1.02);
+grade.uniforms.mulRGB.value.set(1.03, 1.0, 0.965);
+grade.uniforms.addRGB.value.set(0.0, 0.0006, 0.0016);
+composer.addPass(grade);
+
+const grain = new FilmPass(0.05, false);
+composer.addPass(grain);
+
+const vignette = new ShaderPass(VignetteShader);
+vignette.uniforms.offset.value = 0.9;
+vignette.uniforms.darkness.value = 0.95;
+composer.addPass(vignette);
+
+composer.addPass(new OutputPass());
+
+const fxaa = new ShaderPass(FXAAShader);
+fxaa.uniforms.resolution.value.set(1 / W, 1 / H);
+composer.addPass(fxaa);
 
 // dome
 const domeGeo = new THREE.SphereGeometry(90, 32, 16);
@@ -282,7 +326,11 @@ function update(t) {
   blobs.instanceMatrix.needsUpdate = true;
 
   updateCamera(t);
-  renderer.render(scene, camera);
+  // Focus rides the world centre; grain is keyed to t so the plate stays a
+  // pure function of time (FilmPass would otherwise accumulate its own clock).
+  bokeh.uniforms.focus.value = camera.position.distanceTo(look);
+  grain.uniforms.time.value = t;
+  composer.render(0);
   drawOverlay(t, scenario, frames[index], progress);
 }
 
@@ -356,9 +404,13 @@ function drawOverlay(t, scenario, frame, progress) {
 }
 
 window.addEventListener('resize', () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  fxaa.uniforms.resolution.value.set(1 / w, 1 / h);
   fitChart();
 });
 

@@ -545,3 +545,40 @@
 4. 冻结指标只作为技术检查，不再用运镜凑数；接受镜头末尾 ≤1.5 s 的停顿。
 
 **后果**：成片不再有无动机运镜，字幕与图形分层，镜头内等待时间从最长 8.4 s 降到 ≤2 s（多数 ≤1.5 s）。`media-qc` 的冻结区间为 59 段（WARN）：`freezedetect(n=0.002)` 把稀疏线段生长、慢淡入都算作冻结，原来的 2 段是相机漂移把整帧“推”过阈值的结果；不为此重新加入假运动。3B1B 式“同一场景图持续变形”仍需把句子行、focus token、分数矩阵做成跨镜头长寿命对象，并把图表放大到覆盖更多画幅，见 `docs/evaluations/样片-注意力-3B1B差距与路线.md` 第 6 节。
+
+## D-061 后处理复用 three.js 官方 addons；捕获增加 GPU/JPEG 显式开关
+
+**背景**：P1 要给衰老模拟镜头加景深、泛光、调色与颗粒。第一版自写了 `postfx.js`（自研五段式合成链）。自研 shader 没有经过社区验证，且同样的效果在 three.js r160 官方 addons 里已有成熟实现（`EffectComposer`、`BokehPass`、`UnrealBloomPass`、`FilmPass`、`VignetteShader`、`ColorCorrectionShader`、`OutputPass`、`FXAAShader`）。按 D-062 的准入规则，删除自研模块，改为 vendored 官方 addons。
+
+**决策**：
+1. 后处理链全部使用 three.js r160 官方 addons（版本与已 vendored 的 `three.module.js` 一致），文件放在 `CodeVideoStudio/shots/primer-aging/vendor/three/addons/`，`index.html` 用 import map 把 `three` 指回本地核心。链序：`RenderPass → BokehPass → UnrealBloomPass → ColorCorrection → FilmPass → Vignette → OutputPass → FXAA`。
+2. 保留唯一一处自定义逻辑：`FilmPass` 自带累加时钟，渲染前把 `time` 覆盖为 `t`，保证整片仍是 `t` 的纯函数。
+3. `capture.mjs` 增加 `--gpu`（宿主 GPU 光栅，默认仍 SwiftShader）与既有 `--jpeg`；适配器读镜头目录下的 `capture.json` 决定是否传这两个开关，未知键直接失败。每个开启的镜头必须在 `VERIFY.md` 重新验证确定性。
+4. 不改变课程内容与 HUD 布局；后处理只作用于世界片。
+
+**实测（1080p，1920×1080）**：
+
+| 路径 | 捕获耗时 | 全片（4,362 帧） |
+| --- | --- | --- |
+| SwiftShader + PNG（原路径） | 777 ms/帧 | ≈56 min，超适配器 1800 s 上限 |
+| 宿主 GPU（A750 / ANGLE D3D11）+ PNG | 352 ms/帧 | ≈26 min |
+| 宿主 GPU + JPEG 中间帧 | 36 ms/帧 | ≈3 min |
+
+分项成本（SwiftShader，仅渲染）：基准 68 ms；Bokeh 约 252 ms、Bloom 119 ms、Vignette 54 ms、FXAA 45 ms、调色 8 ms、颗粒 <1 ms。
+
+JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.56 dB（差 0.2 dB）。JPEG 输入是全范围 `yuvj420p`，必须在 ffmpeg 里用 `scale=in_range=pc:out_range=tv` 转有限范围并标 `-color_range tv`；否则镜头 QC 会因 `pix_fmt yuvj420p` 直接失败（首轮重建即因此中断）。确定性：GPU 路径两次 30 帧捕获 sha256 一致（`b99e2782…`）。
+
+**后果**：后处理可在 3 分钟内整体重渲，景深不再受性能预算挤压；代价是捕获结果依赖宿主 GPU 驱动，`capture.json` 与 `VERIFY.md` 必须成对维护。未启用该开关的镜头行为不变。
+
+## D-062 第三方依赖准入：复用优先、负面效果否决、更新要校核
+
+**背景**：本轮出现两次“要不要自己写”的判断：一是后处理 shader，二是为性能改渲染路径。自写实现缺少验证、维护成本和回归风险都由本项目承担；但盲目引入同样会带来许可、体积、确定性和维护停滞问题。
+
+**决策**：
+1. 能由成熟实现完成的，不自己写；自写仅限：无对应实现、许可不兼容、或与本项目数据契约冲突且有实测证据。
+2. 引入前按 `docs/第三方依赖准入规范.md` 的检查表逐项核：上游身份、SPDX 许可、口碑（star/fork/open issues）、近 6 个月活跃度、与既有版本的契约一致性、负面效果实测。
+3. **负面效果一票否决**：引入后若造成性能回退、产物不可确定性复现、许可污染或离线不可用，直接 pass 掉或降级为显式开关。
+4. 依赖登记表记录锁定版本、来源、校核日期与判定；每次迭代开始重新取数（`gh api` / `npm view`），落后 ≥2 个 minor 版本必须开升级任务或写明不升级理由。
+5. 版本一致优先于“用最新”：three 核心与 addons 必须同版本；当前锁定 r160，落后上游 0.187.0，升级作为独立任务并需重跑 `VERIFY.md`。
+
+**后果**：不再出现未登记的即兴依赖；依赖带来的收益与代价都有实测数字。代价是每个新依赖多一道评估工序，且升级需要回归验证。
