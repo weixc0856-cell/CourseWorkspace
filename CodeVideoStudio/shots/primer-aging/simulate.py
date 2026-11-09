@@ -30,9 +30,10 @@ MAX_AP = 10
 
 
 class Agent:
-    __slots__ = ("x", "y", "age", "alive", "ma", "ap", "dx", "dy")
+    __slots__ = ("id", "x", "y", "age", "alive", "ma", "ap", "dx", "dy")
 
-    def __init__(self, x: float, y: float, age: int, ma=None, ap=None):
+    def __init__(self, agent_id: int, x: float, y: float, age: int, ma=None, ap=None):
+        self.id = agent_id
         self.x = x
         self.y = y
         self.age = age
@@ -58,8 +59,8 @@ def hazard(agent: Agent, extrinsic: float) -> float:
     return value
 
 
-def spawn(rng: random.Random, x: float, y: float, age: int, ma, ap) -> Agent:
-    child = Agent(x, y, age, list(ma), list(ap))
+def spawn(rng: random.Random, agent_id: int, x: float, y: float, age: int, ma, ap) -> Agent:
+    child = Agent(agent_id, x, y, age, list(ma), list(ap))
     if len(child.ma) < MAX_MA and rng.random() < P_MA:
         child.ma.append((rng.randint(0, MAX_AGE), rng.uniform(0.004, 0.014)))
     if len(child.ap) < MAX_AP and rng.random() < P_AP:
@@ -70,10 +71,13 @@ def spawn(rng: random.Random, x: float, y: float, age: int, ma, ap) -> Agent:
 def run(extrinsic: float, seed: int) -> dict:
     rng = random.Random(seed)
     agents = [
-        Agent(rng.uniform(-FIELD_X, FIELD_X), rng.uniform(-FIELD_Y, FIELD_Y), rng.randint(0, 16))
-        for _ in range(130)
+        Agent(i, rng.uniform(-FIELD_X, FIELD_X), rng.uniform(-FIELD_Y, FIELD_Y), rng.randint(0, 16))
+        for i in range(130)
     ]
     roster: list[Agent] = list(agents)
+    # Stable identity: frames are a sliding tail of ``roster``, so the viewer
+    # must match agents by id, not by array index.
+    next_id = 130
     frames = []
     deaths: list[int] = []
     exposed = [0] * (MAX_AGE + 1)
@@ -98,7 +102,8 @@ def run(extrinsic: float, seed: int) -> dict:
                 if rng.random() < chance:
                     cx = min(FIELD_X, max(-FIELD_X, agent.x + rng.gauss(0, 0.7)))
                     cy = min(FIELD_Y, max(-FIELD_Y, agent.y + rng.gauss(0, 0.5)))
-                    next_generation.append(spawn(rng, cx, cy, 0, agent.ma, agent.ap))
+                    next_generation.append(spawn(rng, next_id, cx, cy, 0, agent.ma, agent.ap))
+                    next_id += 1
                     born_total += 1
             agent.age += 1
             agent.dx = 0.85 * agent.dx + rng.gauss(0, 0.22)
@@ -116,6 +121,7 @@ def run(extrinsic: float, seed: int) -> dict:
                     "born": born_total,
                     "agents": [
                         [
+                            agent.id,
                             round(agent.x, 3),
                             round(agent.y, 3),
                             agent.age,
@@ -158,7 +164,7 @@ def main() -> int:
     parser.add_argument("--out", default="aging.json")
     args = parser.parse_args()
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "fps": 30,
         "steps": STEPS,
         "record_every": RECORD_EVERY,

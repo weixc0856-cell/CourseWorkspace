@@ -20,9 +20,10 @@
 
 ## Inputs
 
-- `aging.json` from `simulate.py`: two scenarios (`danger`, `safe`), per-frame
-  agents `[x, y, age, alive, ma_loci, ap_loci]`, population, mean death age and
-  a hazard-by-age array.
+- `aging.json` (schema 2) from `simulate.py`: two scenarios (`danger`, `safe`),
+  per-frame agents `[id, x, y, age, alive, ma_loci, ap_loci]`, population, mean
+  death age and a hazard-by-age array. Frames are a sliding tail of the roster,
+  so agents must be matched by `id`, never by array index.
 - `timing.json` from `gen_narration.py`: segment starts, durations, total.
 
 ## Must-haves
@@ -30,7 +31,8 @@
 1. Every frame is a pure function of `t`; seeded PRNG; two captures are
    byte-identical.
 2. Scenario switches at the start of narration segment `s08` (danger → safe).
-3. Agent colour and size follow age; dead agents fade out.
+3. Agent colour and size follow age; dead agents fade out; agents are matched
+   by stable `id` between frames (no index interpolation), and newborns scale in.
 4. HUD shows scenario label, population, mean age at death and late-acting
    mutations per agent; hazard-by-age chart is binned in 5-year groups.
 5. Camera holds the world left of the HUD; no clipping of the field.

@@ -33,7 +33,8 @@ then composes narration, burned subtitles and QC.
 ## Data
 
 `aging.json`: two scenarios (`danger` μ=0.030, `safe` μ=0.008), 420 steps,
-recorded every 2 steps. Agents are `[x, y, age, alive, ma_loci, ap_loci]`;
+recorded every 2 steps. Frames are a sliding tail of the roster, so agents are
+`[id, x, y, age, alive, ma_loci, ap_loci]` and must be matched by `id`;
 frames carry population, mean age at death and a yearly hazard array.
 
 `timing.json`: one segment per narration beat; the page switches scenario at
@@ -42,7 +43,10 @@ the start of `s08`.
 ## Look
 
 Scene: gradient dome, soft shadows, rim light, exponential fog, a shallow basin
-terrain with scattered rocks, four-legged agents with a walk cycle, camera set
+terrain with scattered rocks, four-legged agents (capsule body, head with muzzle
+and ears, tapered tail, two-segment legs) whose gait is driven by the recorded
+speed, heads that dip while nearly still (a visual idiom, not a modelled
+variable), newborn scale-in, camera set
 left of the HUD, age-coded blobs (teal → orange), HUD with population / mean
 death age / late-acting mutations and a 5-year binned hazard curve. BGM:
 Schubert D.664 (public domain) mixed with ducking by `audio-mix`.

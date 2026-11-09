@@ -41,7 +41,7 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 
 ### P1——质感对齐（进行中）
 
-1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。已完成第一版：身体 + 四条腿的行走摆动；仍无觅食/繁殖动作。
+1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。已完成第二版：胶囊身体 + 头部（口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；步态由数据中的实测速度驱动，近静止时低头（视觉编排，不是模型变量），新生个体缩放出现。同时修掉一个真实缺陷：帧数组是 roster 的滑动尾部，旧代码按数组下标插值等于把不同个体连起来；数据升到 schema 2，每个体带稳定 `id`，按 id 匹配与插值。
 2. 地形与生物群系：已完成第一版：浅盆地地形 + 散石；仍缺植被/水面。
 3. 后处理：已完成第一版——官方 three.js r160 addons 链（`BokehPass` 景深、`UnrealBloomPass` 泛光、`ColorCorrectionShader` 调色、`FilmPass` 颗粒、`VignetteShader` 暗角、`OutputPass` ACES/sRGB、`FXAAShader`）。捕获改为 `capture.json` 显式开启 GPU + JPEG 中间帧：36 ms/帧（SwiftShader + PNG 777 ms/帧）。详见 D-061。
 4. 叠加层：当前 HUD 内嵌在世界片里；统一的 Remotion 图表层未做。
@@ -95,3 +95,18 @@ P0 完成：我们已经有能力用现有流水线端到端复刻该参考片�
 | 对齐评分 | `animation-score = 100/100` |
 
 已知缺口：生物仍是程序化低模（无觅食/繁殖动作）；地形已有但缺植被与水面；HUD 仍内嵌在世界片里，Remotion 叠加层未做；旁白为候选稿，未经人工逐字审校。
+
+## 9. P1 生物资产与动作增量结果（2026-11-09）
+
+| 项 | 结果 |
+| --- | --- |
+| 资产 | 胶囊身体 + 臀部 + 头部（含口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；全部为 `InstancedMesh`，190 个体约 12 个 draw call |
+| 动作 | 朝向来自记录位移，步频由实测速度换算（`2π·speed/0.55`），近静止时低头（视觉编排，不是模型变量）；新生个体缩放出现并带短暂地面环 |
+| 数据契约 | `aging.json` 升到 schema 2：每帧 `[id, x, y, age, alive, ma_loci, ap_loci]`；`main.js` 按 `id` 匹配与插值 |
+| 修复 | 帧数组是 roster 的滑动尾部，旧代码按数组下标插值等于连接不同个体；现已按 id 匹配，跨帧无跳变 |
+| 构建 | `verdict=pass`；`render:code_video` 约 152 s；`compose` / `burn_subtitles` / `verify` 全 pass |
+| 媒体 QC | 十项全 PASS：4,361 帧、−16.2 LUFS / −3.2 dBTP、静音 0、黑帧 0、冻结 0、字幕 32 cue、ASR 覆盖 0.935 |
+| 质量报告 | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`；`animation-score = 100/100` |
+| 确定性 | GPU 路径两次 30 帧捕获 sha256 `06605d162b…` 一致 |
+
+已知缺口：无植被与水面；HUD 仍内嵌在世界片里；繁殖只表现为新生个体缩放，没有双亲互动；旁白仍为候选稿。

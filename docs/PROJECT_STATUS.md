@@ -24,6 +24,7 @@
 | 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 94.7/100（按参考样片校准冻结线）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
 | Primer 衰老模拟复刻（POC） | `CodeVideoStudio/shots/primer-aging/`、本地 `lessons/aging-evolution` | 145.4 s / 4,361 帧；32 cue；ASR 0.935；冻结 0、静音 0；BGM 混音 pass；`animation-score` 100；`QUALITY_PASS=True`、`RELEASE_APPROVED=False` | POC（本地） |
 | Primer P1 后处理 | `CodeVideoStudio/shots/primer-aging/main.js`、`vendor/three/addons/`（官方 r160，未改动）、D-061 | 景深/泛光/调色/颗粒/暗角/FXAA 全部走官方 addons；`capture.json` 开启 GPU+JPEG 后 36 ms/帧，渲染阶段 152 s（原 12 min 级）；两次捕获 sha256 一致；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
+| Primer P1 生物资产与动作 | `simulate.py`（schema 2，稳定 `id`）、`main.js` 生物组件 | 胶囊身体 + 头部（口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；步态由实测速度驱动、近静止低头、新生缩放；修复按数组下标插值造成的跨个体跳变；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | 第三方依赖准入 | `docs/第三方依赖准入规范.md`、D-062、`CLAUDE.md` 第 12 条 | 检查表 + 依赖登记表（star/fork/推送日/许可/版本一致性）；three.js 117,923 star / 36,921 fork / 2026-11-09 仍在推送；本地 r160 落后上游 0.187.0，已登记为升级待办 | COMPLETED |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
