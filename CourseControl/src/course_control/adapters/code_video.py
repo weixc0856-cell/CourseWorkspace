@@ -19,6 +19,28 @@ def _project_for(paths: LessonPaths, shot) -> Path:
     return scene_path.parent
 
 
+CAPTURE_FLAGS = {"gpu": "--gpu", "jpeg": "--jpeg"}
+
+
+def capture_flags(project: Path) -> list[str]:
+    """Optional capture switches from ``capture.json`` next to the shot's SPEC.
+
+    Both switches change the frame pipe, not the page: ``gpu`` rasterises on the
+    host GPU instead of SwiftShader and ``jpeg`` writes JPEG frames instead of
+    PNG. Each shot that opts in must re-verify determinism on the host (VERIFY.md).
+    """
+    path = project / "capture.json"
+    if not path.is_file():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{path.name} must be a JSON object")
+    unknown = sorted(set(data) - set(CAPTURE_FLAGS) - {"note"})
+    if unknown:
+        raise ValueError(f"{path.name} has unknown keys: {', '.join(unknown)}")
+    return [flag for key, flag in CAPTURE_FLAGS.items() if data.get(key) is True]
+
+
 def materialize_simulation(workspace: Path, project: Path, inputs: dict | None) -> Path | None:
     """Run SimulationSpec from ShotSpec.inputs and write data into the project."""
     if not inputs:
@@ -92,7 +114,9 @@ def run(paths: LessonPaths) -> StageOutcome:
             and "node_modules" not in path.parts
             and "out" not in path.parts
         ]
-        newest = max((path.stat().st_mtime for path in sources), default=0.0)
+        # The capture script is outside the shot directory but still determines
+        # the pixels: changes to it must invalidate the cached capture.
+        newest = max(path.stat().st_mtime for path in [*sources, skill])
         if target.is_file() and target.stat().st_mtime >= newest:
             warnings.append(f"{shot.id}: reused cached capture")
         else:
@@ -111,6 +135,11 @@ def run(paths: LessonPaths) -> StageOutcome:
             ]
             if shot.expected_duration_s:
                 command.extend(["--dur", str(shot.expected_duration_s)])
+            try:
+                command.extend(capture_flags(project))
+            except ValueError as exc:
+                errors.append(f"{shot.id}: {exc}")
+                continue
             result = run_command(
                 command,
                 project,

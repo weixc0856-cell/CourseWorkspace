@@ -30,6 +30,7 @@ CodeVideoStudio/
 3. 渲染：`skills/code-video/scripts/capture.mjs`。
 4. 检查：`check_video.sh` + Contact Sheet + `VERIFY.md`。
 5. CourseControl：`ShotSpec.engine="code_video"`，`scene` 指向 `SPEC.md`；`adapters/code_video.py` 要求 `VERIFY.md` 无 `| fail |`。
+6. `capture.json`（可选）：`{"gpu": true, "jpeg": true}` 让适配器给捕获追加 `--gpu` / `--jpeg`，未知键直接失败。默认仍是 SwiftShader + PNG（跨机器可复现）；开启 GPU 的镜头必须在 `VERIFY.md` 重新验证两次捕获一致。
 
 ## 复现 attention-flow
 
@@ -47,6 +48,7 @@ uv run --project CourseControl python ../../scripts/contact_sheet.py out/final.m
 - 30s / 1920×1080 / 30fps / 900 帧；`check_video.sh` OK；两次独立渲染 900/900 帧哈希一致。
 - `adapters/code_video.py` 真实跑通：`build/code-video-studio/animation/attention-flow.mp4`。
 - `primer-rps`：ShotSpec `inputs.simulation_spec` → adapter 自动生成 `simulation.json` → 1920×1080/30s capture → QC PASS（`build/lesson-simulation/animation/primer-rps.mp4`）；导演层 `visual_kind: simulation` 可直接路由到该镜头。
+- `primer-aging`：官方 r160 addons 后处理链（景深/泛光/调色/颗粒/暗角/FXAA）；`capture.json` 开启 GPU + JPEG 中间帧后 36 ms/帧（SwiftShader + PNG 为 777 ms/帧），同一帧与 PNG 路径成片对比 40.34 dB vs 40.56 dB，两次捕获 sha256 一致。
 - HyperFrames POC：10s / 300 帧，`check` 0 error/0 warning，27.1s 渲染；仅作为可选 HTML/lint 后端。
 
 ## 外部项目边界

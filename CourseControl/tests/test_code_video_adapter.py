@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import tempfile
+import time
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -55,6 +57,7 @@ class CodeVideoAdapterTest(unittest.TestCase):
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_bytes(b"fake")
             output_box["out"] = output
+            output_box["command"] = list(command)
             return result(0)
 
         def fake_qc(*args, **kwargs):
@@ -69,7 +72,9 @@ class CodeVideoAdapterTest(unittest.TestCase):
         ), unittest.mock.patch.object(
             code_video, "contact_sheet", side_effect=fake_contact
         ), unittest.mock.patch.object(code_video, "which_command", return_value=["node"]):
-            return code_video.run(self.paths)
+            outcome = code_video.run(self.paths)
+        self.command = output_box.get("command", [])
+        return outcome
 
     def test_render_pass_copies_to_animation(self):
         outcome = self._run()
@@ -116,6 +121,53 @@ class CodeVideoAdapterTest(unittest.TestCase):
         outcome = self._run()
         self.assertEqual(outcome.status.value, "fail")
         self.assertIn("failing must-have", " ".join(outcome.errors))
+
+
+
+    def test_capture_config_forwards_switches(self):
+        (self.project / "capture.json").write_text('{"gpu": true, "jpeg": true}', encoding="utf-8")
+        outcome = self._run()
+        self.assertEqual(outcome.status.value, "pass")
+        self.assertIn("--gpu", self.command)
+        self.assertIn("--jpeg", self.command)
+
+    def test_unknown_capture_switch_fails(self):
+        (self.project / "capture.json").write_text('{"turbo": true}', encoding="utf-8")
+        outcome = self._run()
+        self.assertEqual(outcome.status.value, "fail")
+        self.assertIn("unknown keys", " ".join(outcome.errors))
+
+    def test_cached_capture_reused_until_a_source_changes(self):
+        self._run()
+        self.assertIn("--out", self.command)
+        self._run()
+        self.assertEqual(self.command, [], "unchanged shot should reuse the cached capture")
+        skill = self.root / "CodeVideoStudio" / "skills" / "code-video" / "scripts" / "capture.mjs"
+        later = time.time() + 10
+        os.utime(skill, (later, later))
+        self._run()
+        self.assertIn("--out", self.command, "capture script change must invalidate the cache")
+
+
+class CaptureFlagsTest(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.project = Path(self._tmp.name)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_absent_config_means_no_flags(self):
+        self.assertEqual(code_video.capture_flags(self.project), [])
+
+    def test_switches_follow_config(self):
+        (self.project / "capture.json").write_text('{"gpu": true, "jpeg": false, "note": "x"}', encoding="utf-8")
+        self.assertEqual(code_video.capture_flags(self.project), ["--gpu"])
+
+    def test_unknown_key_rejected(self):
+        (self.project / "capture.json").write_text('{"turbo": true}', encoding="utf-8")
+        with self.assertRaises(ValueError):
+            code_video.capture_flags(self.project)
 
 
 if __name__ == "__main__":

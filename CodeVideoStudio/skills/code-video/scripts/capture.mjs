@@ -1,8 +1,11 @@
 // Capture a deterministic web page to MP4, frame by frame.
 // The page must set window.READY = true when loaded and expose window.seek(t) (may return a Promise).
 // usage: node capture.mjs PROJECT_DIR [--page index.html] [--fps 30] [--dur 12] [--size 1920x1080]
-//                         [--out out/video.mp4] [--start 0] [--frames N] [--selector canvas] [--jpeg]
+//                         [--out out/video.mp4] [--start 0] [--frames N] [--selector canvas] [--jpeg] [--gpu]
 // Uses Playwright if installed, otherwise Puppeteer. Needs ffmpeg on PATH.
+// Rasterisation defaults to SwiftShader (portable, machine-independent).
+// --gpu opts into the host GPU; only use it when the capture is re-verified on
+// that machine (see each shot's VERIFY.md determinism row).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,7 +33,10 @@ const url = `http://127.0.0.1:${server.address().port}/${page_}`;
 const { createRequire } = await import('node:module');
 const req = createRequire(path.join(dir, 'package.json'));
 const load = async name => { try { return req(name); } catch { return import(name); } };
-const glArgs = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
+const gpu = argv.includes('--gpu');
+const glArgs = gpu
+  ? ['--ignore-gpu-blocklist', '--enable-gpu']
+  : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 let browser, page, lib;
 try { lib = await load('playwright'); } catch { lib = null; }
 if (lib) {
@@ -51,7 +57,11 @@ if (!dur) throw new Error('give --dur or set window.DUR');
 const start = +opt('start', 0), total = +opt('frames', 0) || Math.round(dur * fps) - start;
 
 fs.mkdirSync(path.dirname(out), { recursive: true });
-const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), '-i', '-',
+// JPEG frames arrive as full-range yuvj420p; convert to limited range so the
+// encode stays plain yuv420p (QC and downstream burns expect tv range).
+const ffIn = ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), '-i', '-'];
+const ffRange = jpeg ? ['-vf', 'scale=in_range=pc:out_range=tv', '-color_range', 'tv'] : [];
+const ff = spawn('ffmpeg', [...ffIn, ...ffRange,
   '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'medium', '-movflags', '+faststart', '-an', out],
   { stdio: ['pipe', 'inherit', 'inherit'] });
 const target = sel ? await page.$(sel) : page;

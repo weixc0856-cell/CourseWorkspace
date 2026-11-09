@@ -41,9 +41,9 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 
 ### P1——质感对齐（进行中）
 
-1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。已完成第一版：身体 + 四条腿的行走摆动；仍无觅食/繁殖动作。
-2. 地形与生物群系：已完成第一版：浅盆地地形 + 散石；仍缺植被/水面。
-3. 后处理：未做；景深、泛光、色调分级仍是下一步。
+1. 生物资产：低模身体/肢体、觅食/繁殖动作，替换“球 + 眼睛”。已完成第二版：胶囊身体 + 头部（口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；步态由数据中的实测速度驱动，近静止时低头（视觉编排，不是模型变量），新生个体缩放出现。同时修掉一个真实缺陷：帧数组是 roster 的滑动尾部，旧代码按数组下标插值等于把不同个体连起来；数据升到 schema 2，每个体带稳定 `id`，按 id 匹配与插值。
+2. 地形与生物群系：已完成第二版：浅盆地 + 散石 + 湖盆（官方 `Water` addon，水线按地形采样确定）+ 6,000 实例草叶 + 70 株灌木；仍缺生物群系分区（不同区域的地形/植被差异）。
+3. 后处理：已完成第一版——官方 three.js r160 addons 链（`BokehPass` 景深、`UnrealBloomPass` 泛光、`ColorCorrectionShader` 调色、`FilmPass` 颗粒、`VignetteShader` 暗角、`OutputPass` ACES/sRGB、`FXAAShader`）。捕获改为 `capture.json` 显式开启 GPU + JPEG 中间帧：36 ms/帧（SwiftShader + PNG 777 ms/帧）。详见 D-061。
 4. 叠加层：当前 HUD 内嵌在世界片里；统一的 Remotion 图表层未做。
 5. 音频：已接入 Schubert D.664（公版）BGM，ducking 由 `audio-mix` 完成；音效与词级对齐未做。
 
@@ -80,3 +80,47 @@ CourseControl build ──► 合成旁白、烧录字幕、QC、评分
 ## 7. 结论
 
 P0 完成：我们已经有能力用现有流水线端到端复刻该参考片的**机制与视觉语言**（模拟世界 + HUD + 旁白 + 双语字幕 + QC/评分），并且这条链路是可复现、可校验的。下一步按 P1 提升质感，再按 P2 增强内容深度。
+
+## 8. P1 后处理增量结果（2026-11-09）
+
+| 项 | 结果 |
+| --- | --- |
+| 成片 | `build/aging-evolution/final/course-video-mixed.mp4`：1920×1080 / 30 fps / 145.4 s / 4,361 帧 |
+| 构建 | `verdict=pass`；`render:code_video` 152 s（此前为 12 分钟级）；`compose` / `burn_subtitles` / `verify` 全部 pass |
+| 后处理 | 官方 r160 addons：`BokehPass` 景深（焦点跟随世界中心）、`UnrealBloomPass`（阈值 1.8，线性 HDR）、`ColorCorrectionShader`、`FilmPass` 颗粒（时钟绑定 `t`）、`VignetteShader`、`OutputPass`（ACES + sRGB）、`FXAAShader` |
+| 捕获 | `capture.json` 开启 `--gpu --jpeg`：36 ms/帧；SwiftShader + PNG 为 777 ms/帧。JPEG 中间帧与 PNG 同一帧对比 40.34 dB vs 40.56 dB |
+| 确定性 | GPU 路径两次 30 帧捕获 sha256 一致 |
+| 媒体 QC | 十项全 PASS：解码、格式、帧数、响度 −16.2 LUFS / −3.2 dBTP、电平策略、静音 0、黑帧 0、冻结 0、字幕 32 cue、ASR 覆盖 0.935 |
+| 质量报告 | `BUILD_PASS=True`、`QUALITY_PASS=True`（Q3/Q4 PASS，Q1/Q2/Q5 WARN）、`RELEASE_APPROVED=False`（人工审校未做） |
+| 对齐评分 | `animation-score = 100/100` |
+
+已知缺口：生物仍是程序化低模（无觅食/繁殖动作）；地形已有但缺植被与水面；HUD 仍内嵌在世界片里，Remotion 叠加层未做；旁白为候选稿，未经人工逐字审校。
+
+## 9. P1 生物资产与动作增量结果（2026-11-09）
+
+| 项 | 结果 |
+| --- | --- |
+| 资产 | 胶囊身体 + 臀部 + 头部（含口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；全部为 `InstancedMesh`，190 个体约 12 个 draw call |
+| 动作 | 朝向来自记录位移，步频由实测速度换算（`2π·speed/0.55`），近静止时低头（视觉编排，不是模型变量）；新生个体缩放出现并带短暂地面环 |
+| 数据契约 | `aging.json` 升到 schema 2：每帧 `[id, x, y, age, alive, ma_loci, ap_loci]`；`main.js` 按 `id` 匹配与插值 |
+| 修复 | 帧数组是 roster 的滑动尾部，旧代码按数组下标插值等于连接不同个体；现已按 id 匹配，跨帧无跳变 |
+| 构建 | `verdict=pass`；`render:code_video` 约 152 s；`compose` / `burn_subtitles` / `verify` 全 pass |
+| 媒体 QC | 十项全 PASS：4,361 帧、−16.2 LUFS / −3.2 dBTP、静音 0、黑帧 0、冻结 0、字幕 32 cue、ASR 覆盖 0.935 |
+| 质量报告 | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`；`animation-score = 100/100` |
+| 确定性 | GPU 路径两次 30 帧捕获 sha256 `06605d162b…` 一致 |
+
+已知缺口：无植被与水面；HUD 仍内嵌在世界片里；繁殖只表现为新生个体缩放，没有双亲互动；旁白仍为候选稿。
+
+## 10. P1 生态增量结果（2026-11-09）
+
+| 项 | 结果 |
+| --- | --- |
+| 水面 | 地形边缘切出湖盆；水面半径由 96 条采样射线取最小水线确定，避免悬空硬边；官方 `Water` addon + 原版 `waternormals.jpg`（均 MIT，r160） |
+| 植被 | 6,000 实例草叶（按簇分布）+ 70 株低模灌木，避开水面与湖岸 |
+| 动画 | 水面 `time` 由 `t` 驱动；1 秒间隔的水面区域 PSNR 36.6 dB，确认在动 |
+| 构建 | `verdict=pass`；`compose` / `burn_subtitles` / `verify` 全 pass；捕获仍为 ~35 ms/帧（水面反射未拖慢） |
+| 媒体 QC | 十项全 PASS：4,361 帧、−16.2 LUFS / −3.2 dBTP、静音 0、黑帧 0、冻结 0、字幕 32 cue、ASR 0.935 |
+| 质量报告 | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`；`animation-score = 100/100` |
+| 确定性 | GPU 路径两次 30 帧捕获 sha256 `4d9b9d632b…` 一致 |
+
+已知缺口：生物群系仍是一整片（没有按区域区分植被/地形）；水下无内容（水面不透明）；繁殖只有新生缩放；HUD 仍内嵌在世界片里。

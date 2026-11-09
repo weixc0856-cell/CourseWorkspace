@@ -20,4 +20,15 @@
 
 - Source: https://github.com/mrdoob/three.js
 - Vendored: `shots/primer-rps/three.module.js` (r160)
+- Vendored: `shots/primer-aging/three.module.js` (r160, core)
+- Vendored: `shots/primer-aging/vendor/three/addons/` — official
+  `examples/jsm` post-processing passes and shaders from the same r160 release,
+  unmodified: `EffectComposer`, `Pass`, `MaskPass`, `ShaderPass`, `RenderPass`,
+  `BokehPass`, `UnrealBloomPass`, `FilmPass`, `OutputPass`, `CopyShader`,
+  `LuminosityHighPassShader`, `BokehShader`, `OutputShader`, `FilmShader`,
+  `ColorCorrectionShader`, `VignetteShader`, `FXAAShader`, `Water`.
+- Vendored: `shots/primer-aging/vendor/three/textures/waternormals.jpg` — stock
+  three.js r160 example texture (MIT).
+- Note: the addons must stay on the same release as the vendored core. The
+  upstream version gap is tracked in `docs/第三方依赖准入规范.md`.
 - License: MIT.
