@@ -13,7 +13,7 @@
 | --- | --- | --- | --- |
 | 叙事契约 | `CourseControl/src/course_control/narrative.py`、`narrative-validate` | 5 分钟课六段骨架 `pass`；`build/05-transformer-5min/quality/narrative.json` | COMPLETED（P0） |
 | BGM 混音 | `audio_mix.py`、`audio-mix` | Schubert D.664（PD）；−15.9 LUFS / −1.4 dBTP；`audio/mix.json` | COMPLETED（P0） |
-| 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 58 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
+| 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 59 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
 | 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
 | 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（27 镜头）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
 | 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |

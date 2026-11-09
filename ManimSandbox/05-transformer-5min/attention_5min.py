@@ -371,8 +371,12 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         self.play(tracker.animate.set_value(1.0), run_time=seconds, rate_func=linear)
         self.remove(tracker, dots)
 
-    def clear_all(self, run_time: float = 0.8) -> None:
-        content = [mob for mob in self.mobjects if mob is not self.camera.frame]
+    def clear_all(self, run_time: float = 0.5, keep: tuple = ()) -> None:
+        content = [
+            mob
+            for mob in self.mobjects
+            if mob is not self.camera.frame and all(mob is not item for item in keep)
+        ]
         if content:
             self.play(*[FadeOut(mob) for mob in content], run_time=run_time)
 
@@ -415,10 +419,10 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         )
         self.title = VGroup(title)
 
-        src = card("source sequence", BLUE, 3.0, 0.85, 20).move_to([-4.1, 1.35, 0])
-        dst = card("target sequence", TEAL, 3.0, 0.85, 20).move_to([4.1, 1.35, 0])
+        src = card("source sequence", BLUE, 3.7, 0.85, 19).move_to([-4.1, 1.35, 0])
+        dst = card("target sequence", TEAL, 3.7, 0.85, 19).move_to([4.1, 1.35, 0])
         link = arrow(src.get_right(), dst.get_left(), MUTED, 2.6, buff=0.15)
-        self.play(Create(src), Create(dst), Create(link), run_time=1.5)
+        self.play(FadeIn(src, shift=0.06 * UP), FadeIn(dst, shift=0.06 * UP), Create(link), run_time=1.5)
         self.flow(link, 1.2, count=3, color=ORANGE)
 
         # recurrence: a chain with a loop
@@ -436,7 +440,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
             tip_length=0.12,
         )
         recurrence = VGroup(chain, chain_links, loop)
-        recurrence_label = label("recurrence", 18, MUTED).move_to([-4.2, -2.35, 0])
+        recurrence_label = label("recurrence", 18, MUTED).move_to([-4.2, -1.98, 0])
 
         # convolution: a 3x3 filter grid
         conv = VGroup()
@@ -445,7 +449,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
                 cell = Square(0.34, stroke_color=MUTED, stroke_width=1.4)
                 cell.move_to([(col - 1) * 0.36, (1 - row) * 0.36 - 1.35, 0])
                 conv.add(cell)
-        conv_label = label("convolution", 18, MUTED).move_to([0, -2.35, 0])
+        conv_label = label("convolution", 18, MUTED).move_to([0, -1.98, 0])
 
         # attention: a hub with radiating links
         hub = VGroup(
@@ -455,7 +459,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
                 for a in np.linspace(0, 2 * PI, 7)[:-1]
             ],
         ).move_to([4.2, -1.35, 0])
-        attention_label = label("attention", 18, ORANGE).move_to([4.2, -2.35, 0])
+        attention_label = label("attention", 18, ORANGE).move_to([5.55, -1.2, 0])
 
         self.play(
             LaggedStart(
@@ -503,10 +507,10 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
         self.play(
             FadeOut(src), FadeOut(dst), FadeOut(link),
-            recurrence.animate.scale(0.62).move_to([-5.4, -2.3, 0]).set_opacity(0.22),
-            recurrence_label.animate.scale(0.8).move_to([-5.4, -3.05, 0]).set_opacity(0.3),
-            conv.animate.scale(0.62).move_to([5.4, -2.3, 0]).set_opacity(0.22),
-            conv_label.animate.scale(0.8).move_to([5.4, -3.05, 0]).set_opacity(0.3),
+            recurrence.animate.scale(0.62).move_to([-5.4, -1.5, 0]).set_opacity(0.22),
+            recurrence_label.animate.scale(0.8).move_to([-5.4, -1.96, 0]).set_opacity(0.3),
+            conv.animate.scale(0.62).move_to([5.4, -1.5, 0]).set_opacity(0.22),
+            conv_label.animate.scale(0.8).move_to([5.4, -1.96, 0]).set_opacity(0.3),
             FadeOut(cross_r), FadeOut(cross_c),
             run_time=1.6,
         )
@@ -619,12 +623,12 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     # ================================================================ page 2
     def shot_3a(self) -> None:
         """Every word against every other word."""
-        self.clear_all(0.7)
+        self.clear_all(0.5)
         title = self.heading_at("every word against every other word", 34)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
 
-        self.tokens = token_row(TOKENS, y=1.85, width=1.85, height=0.8, size=24)
-        self.play(LaggedStart(*[Create(box) for box in self.tokens], lag_ratio=0.10), run_time=1.2)
+        self.tokens = token_row(TOKENS, y=1.95, width=2.05, height=0.92, size=27)
+        self.play(LaggedStart(*[FadeIn(box, shift=0.05 * UP) for box in self.tokens], lag_ratio=0.10), run_time=1.2)
         self.focus_ring = ring(self.tokens[FOCUS], ORANGE, 3.0, 0.12)
         self.play(Create(self.focus_ring), run_time=0.6)
 
@@ -645,13 +649,13 @@ class AttentionFiveMinuteScene(MovingCameraScene):
             line = []
             for col in range(5):
                 cell = Square(
-                    0.55,
+                    0.64,
                     stroke_color=MUTED,
                     stroke_width=0.9,
                     stroke_opacity=0.6,
                     fill_color=SURFACE,
                     fill_opacity=0.55,
-                ).move_to([(col - 2) * 0.60, -0.30 + (2 - row) * 0.60, 0])
+                ).move_to([(col - 2) * 0.69, -0.35 + (2 - row) * 0.69, 0])
                 line.append(cell)
                 self.grid.add(cell)
             self.cells.append(line)
@@ -770,14 +774,16 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     def shot_4b(self) -> None:
         """What each of the three vectors means."""
         self.play(
-            FadeOut(self.lanes), FadeOut(self.drops), FadeOut(self.lane_labels), FadeOut(self.tokens),
-            run_time=0.8,
+            FadeOut(self.lanes), FadeOut(self.drops), FadeOut(self.lane_labels),
+            self.tokens.animate.scale(0.62).move_to([0, 3.08, 0]),
+            run_time=0.9,
         )
+        self.sentence = self.tokens
 
-        origin = np.array([-4.2, -0.7, 0.0])
-        q_end = origin + 3.5 * np.array([np.cos(np.deg2rad(38)), np.sin(np.deg2rad(38)), 0])
-        k_end = origin + 3.5 * np.array([np.cos(np.deg2rad(-6)), np.sin(np.deg2rad(-6)), 0])
-        v_end = origin + 3.5 * np.array([np.cos(np.deg2rad(-50)), np.sin(np.deg2rad(-50)), 0])
+        origin = np.array([-4.4, 0.2, 0.0])
+        q_end = origin + 3.2 * np.array([np.cos(np.deg2rad(45)), np.sin(np.deg2rad(45)), 0])
+        k_end = origin + 3.2 * np.array([np.cos(np.deg2rad(-10)), np.sin(np.deg2rad(-10)), 0])
+        v_end = origin + 3.2 * np.array([np.cos(np.deg2rad(-40)), np.sin(np.deg2rad(-40)), 0])
         q_arrow = vector(origin, q_end, BLUE, 5.2)
         k_arrow = vector(origin, k_end, TEAL, 5.2)
         v_arrow = vector(origin, v_end, PURPLE, 5.2)
@@ -865,7 +871,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     # ================================================================ page 2 · scoring
     def shot_5a(self) -> None:
         """A query scored against a key."""
-        self.clear_all(0.8)
+        self.clear_all(0.5, keep=(self.sentence,))
 
         plane = Line([-6.2, 0, 0], [6.2, 0, 0], color=DIVIDER, stroke_width=1)
         self.play(FadeIn(plane), run_time=0.4)
@@ -899,7 +905,9 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         self.play(FadeIn(k_arrow), FadeIn(k_lab), FadeIn(shadow), FadeIn(drop), run_time=0.8)
 
         formula = math(r"\vec{q}\cdot\vec{k}\;=\;|\vec{q}|\,|\vec{k}|\cos\theta", 34).move_to([3.3, 2.4, 0])
-        self.play(Write(formula), run_time=1.0)
+        self.play(FadeIn(formula, scale=0.98), run_time=1.0)
+        scaled = math(r"\text{scaled: }\frac{\vec{q}\cdot\vec{k}}{\sqrt{d_k}}", 26, MUTED).move_to([3.3, 1.62, 0])
+        self.play(FadeIn(scaled, shift=0.05 * UP), run_time=0.8)
 
         readout = VGroup(
             math(r"\vec{q}\cdot\vec{k}=", 30),
@@ -921,13 +929,14 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
     def shot_5b(self) -> None:
         """Repeat the comparison for every word: a full score matrix."""
-        self.clear_all(0.7)
+        self.clear_all(0.5, keep=(self.sentence,))
 
         title = self.heading_at("one row of scores per word", 32)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
 
-        self.tokens = token_row(TOKENS, y=2.45, width=1.7, height=0.62, size=20)
-        self.play(LaggedStart(*[FadeIn(b, shift=0.05 * DOWN) for b in self.tokens], lag_ratio=0.08), run_time=1.0)
+        # the same sentence strip expands back into the matrix headers
+        self.tokens = self.sentence
+        self.play(self.tokens.animate.scale(1 / 0.62).move_to([0, 2.40, 0]), run_time=1.0)
 
         rng = np.random.default_rng(11)
         scores = rng.uniform(0.05, 1.0, (5, 5))
@@ -943,11 +952,11 @@ class AttentionFiveMinuteScene(MovingCameraScene):
             for col in range(5):
                 value = float(scores[row][col])
                 cell = Square(
-                    0.55,
+                    0.64,
                     stroke_color=MUTED,
                     stroke_width=0.8,
                     stroke_opacity=0.35,
-                ).move_to([(col - 2) * 0.60, -0.30 + (2 - row) * 0.60, 0])
+                ).move_to([(col - 2) * 0.69, -0.35 + (2 - row) * 0.69, 0])
                 cell.set_fill(heat(value), opacity=0.15 + 0.85 * value)
                 line.append(cell)
                 self.grid.add(cell)
@@ -996,7 +1005,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         bars = VGroup()
         bar_labels = VGroup()
         for x, token in zip(xs, TOKENS):
-            bar = Rectangle(width=0.72, height=0.02, stroke_width=0, fill_color=ORANGE, fill_opacity=0.85)
+            bar = Rectangle(width=0.90, height=0.02, stroke_width=0, fill_color=ORANGE, fill_opacity=0.85)
             bar.move_to([x, base + 0.01, 0], aligned_edge=DOWN)
             bars.add(bar)
             bar_labels.add(label(token, 17, MUTED).move_to([x, base - 0.30, 0]))
@@ -1008,7 +1017,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
         grown = VGroup()
         for x, value in zip(xs, raw):
-            height = max(0.06, float(value) * 2.4)
+            height = max(0.06, float(value) * 2.6)
             bar = Rectangle(width=0.72, height=height, stroke_width=0, fill_color=ORANGE, fill_opacity=0.55)
             bar.move_to([x, base + height / 2, 0])
             grown.add(bar)
@@ -1016,7 +1025,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
         normalised = VGroup()
         for x, value in zip(xs, weights):
-            height = max(0.06, float(value) * 3.0)
+            height = max(0.06, float(value) * 3.3)
             bar = Rectangle(width=0.72, height=height, stroke_width=0, fill_color=ORANGE, fill_opacity=0.9)
             bar.move_to([x, base + height / 2, 0])
             normalised.add(bar)
@@ -1025,7 +1034,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         formula = math(
             r"\mathrm{softmax}(\vec{s})_i=\frac{e^{s_i}}{\sum_j e^{s_j}}", 32
         ).move_to([3.5, 2.2, 0])
-        self.play(Write(formula), run_time=1.0)
+        self.play(FadeIn(formula, scale=0.98), run_time=1.0)
 
         top = int(np.argmax(weights))
         pct = MathTex(rf"{weights[top]*100:.0f}\%", font_size=26, color=ORANGE)
@@ -1043,7 +1052,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     # ================================================================ page 2 · mixing
     def shot_6a(self) -> None:
         """Weighted sum of value vectors."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         title = self.heading_at("weighted sum of the value vectors", 32)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
@@ -1072,7 +1081,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         self.play(GrowArrow(context), FadeIn(context_label), run_time=1.2)
 
         formula = math(r"\text{context}=\sum_i w_i\,\vec{v}_i", 34).move_to([3.5, 2.2, 0])
-        self.play(Write(formula), run_time=1.4)
+        self.play(FadeIn(formula, scale=0.98), run_time=1.4)
 
         self.play(
             LaggedStart(*[Indicate(seg, color=ORANGE, scale_factor=1.03) for seg in chain], lag_ratio=0.15),
@@ -1122,10 +1131,9 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     # ================================================================ page 2 · roles
     def shot_7a(self) -> None:
         """Two roles: where to look, and what to bring back."""
-        self.clear_all(0.8)
+        outgoing = [mob for mob in self.mobjects if mob is not self.camera.frame]
 
         title = self.heading_at("two roles, one operation", 32)
-        self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
 
         left = RoundedRectangle(
             width=5.2, height=2.3, corner_radius=0.10,
@@ -1151,6 +1159,8 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         )
         right_group = VGroup(right, right_title, right_marks)
 
+        # cross-fade: the previous diagram leaves while the new title arrives
+        self.play(*[FadeOut(mob) for mob in outgoing], FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
         self.play(FadeIn(left_group, shift=0.08 * UP), run_time=1.2)
         self.play(FadeIn(right_group, shift=0.08 * UP), run_time=1.2)
 
@@ -1165,12 +1175,12 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
     def shot_7b(self) -> None:
         """Each word scores every other word, then builds a new representation."""
-        self.clear_all(0.8)
+        outgoing = [mob for mob in self.mobjects if mob is not self.camera.frame]
 
         title = self.heading_at("the core of query, key and value", 32)
-        self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
 
         words = token_row(TOKENS, y=2.65, width=1.5, height=0.55, size=18)
+        self.play(*[FadeOut(mob) for mob in outgoing], FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
         self.play(LaggedStart(*[FadeIn(w, shift=0.04 * DOWN) for w in words], lag_ratio=0.06), run_time=1.0)
 
         row_scores = VGroup()
@@ -1218,7 +1228,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     # ================================================================ page 3 · multi-head
     def shot_8a(self) -> None:
         """One computation becomes several, in parallel."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         title = self.heading_at("multi-headed attention: several in parallel", 32)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
@@ -1292,7 +1302,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
     def shot_9a(self) -> None:
         """Each head can emphasise a different relationship."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         self.tokens = token_row(TOKENS, y=1.55, width=1.8, height=0.72, size=21)
         self.play(LaggedStart(*[FadeIn(b, shift=0.05 * UP) for b in self.tokens], lag_ratio=0.08), run_time=1.2)
@@ -1344,7 +1354,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
     def shot_10a(self) -> None:
         """The benefit: the layer can focus on more than one pattern."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         title = self.heading_at("more patterns to work with", 32)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
@@ -1407,7 +1417,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
     def shot_11a(self) -> None:
         """Concatenate and project the heads into one output."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         title = self.heading_at("concatenate, project, combine", 32)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
@@ -1436,6 +1446,8 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         output = card("output", INK, 1.9, 0.9, 20).move_to([4.0, -0.4, 0])
         to_out = arrow(mix.get_right(), output.get_left(), ORANGE, 2.6, buff=0.08)
         self.play(FadeIn(output), Create(to_out), run_time=1.0)
+        dims = math(r"h\cdot d_v \to d_{model}", 22, MUTED).move_to([1.0, -1.15, 0])
+        self.play(FadeIn(dims, shift=0.04 * UP), run_time=0.6)
 
         path = VGroup(to_mix, to_out)
         self.flow(to_mix, 1.8, count=3, color=ORANGE, radius=0.06)
@@ -1483,7 +1495,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
     # ================================================================ page 3 · recap
     def shot_12a(self) -> None:
         """Two things to keep: parallel, then combined."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         title = self.heading_at("two things to keep in mind", 34)
         self.play(FadeIn(title, shift=0.1 * DOWN), run_time=0.9)
@@ -1518,7 +1530,7 @@ class AttentionFiveMinuteScene(MovingCameraScene):
 
     def shot_12b(self) -> None:
         """More heads, more capacity: the closing claim."""
-        self.clear_all(0.8)
+        self.clear_all(0.5)
 
         title = Text("several heads, more capacity", font="Arial", font_size=44, color=INK, weight=MEDIUM)
         title.move_to([0, 2.7, 0])
@@ -1556,10 +1568,10 @@ class AttentionFiveMinuteScene(MovingCameraScene):
         for arc, color in zip(multi_arcs, (BLUE, TEAL, PURPLE)):
             self.play(Indicate(arc, color=color, scale_factor=1.06), run_time=1.0)
 
-        closing = label("several heads, working together, give the layer more capacity", 22, MUTED).move_to([0, -1.42, 0])
+        closing = label("several heads, working together, give the layer more capacity", 22, INK).move_to([0, -1.42, 0])
         self.play(FadeIn(closing, shift=0.06 * UP), run_time=1.0)
 
-        source = label("Vaswani et al., 2017", 18, MUTED).move_to([0, -3.25, 0])
+        source = label("Vaswani et al., 2017", 18, MUTED).move_to([0, -1.85, 0])
         self.play(FadeIn(source), run_time=0.8)
         check_now(self, "12b")
 
