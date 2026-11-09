@@ -109,6 +109,8 @@ class Acceptance(StrictModel):
 class BuildOptions(StrictModel):
     # Legacy switch; the Motion Canvas adapter now renders headlessly and ignores it.
     allow_manual_animation_export: bool = True
+    # Fail the Manim render when runtime layout checks find overlaps/out-of-frame text.
+    strict_layout: bool = False
 
 
 class BgmCue(StrictModel):

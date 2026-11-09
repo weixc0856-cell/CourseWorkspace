@@ -67,12 +67,61 @@ def scene_issues(scene, safe_margin: float = 0.5, object_margin: float = 0.2) ->
     for first, second in combinations(texts, 2):
         if _overlap(_bounds(first), _bounds(second)):
             issues.append(f"text overlap: {first.text!r} / {second.text!r}")
+
+    # Text crossing an unrelated shape (for example an arrow over a label) is a
+    # real layout defect too.  Ancestor shapes are excluded because a label
+    # normally sits inside its own box/group.
+    ancestors: dict[int, set[int]] = {}
+
+    def walk(mob, chain: set[int]) -> None:
+        ancestors[id(mob)] = chain
+        for child in getattr(mob, "submobjects", ()):
+            walk(child, chain | {id(mob)})
+
+    for mob in scene.mobjects:
+        walk(mob, set())
+    for text in texts:
+        chain = ancestors.get(id(text), set())
+        for mob in scene.mobjects:
+            if mob is text or id(mob) in chain or isinstance(mob, Text):
+                continue
+            outer = _bounds(mob)
+            inner = _bounds(text)
+            contained = (
+                outer[0] <= inner[0] + 0.02
+                and outer[1] <= inner[1] + 0.02
+                and outer[2] >= inner[2] - 0.02
+                and outer[3] >= inner[3] - 0.02
+            )
+            if contained:
+                continue
+            if _overlap(outer, inner, pad=0.02):
+                issues.append(
+                    f"text/shape overlap: {text.text!r} over {type(mob).__name__}"
+                )
+    return issues
+
+
+def check_now(
+    scene,
+    label: str,
+    *,
+    safe_margin: float = 0.5,
+    object_margin: float = 0.2,
+) -> list[str]:
+    """Check the current scene state, before objects are faded out."""
+    issues = scene_issues(scene, safe_margin=safe_margin, object_margin=object_margin)
+    for issue in issues:
+        print(f"[layout] {label}: {issue}", flush=True)
+    if issues and os.environ.get("STRICT_LAYOUT") == "1":
+        raise RuntimeError(f"{label}: layout check failed: " + "; ".join(issues))
     return issues
 
 
 def enforce(scene, safe_margin: float = 0.5, object_margin: float = 0.2) -> None:
-    issues = scene_issues(scene, safe_margin=safe_margin, object_margin=object_margin)
-    for issue in issues:
-        print(f"[layout] {issue}", flush=True)
-    if issues and os.environ.get("STRICT_LAYOUT") == "1":
-        raise RuntimeError("layout check failed: " + "; ".join(issues))
+    check_now(
+        scene,
+        "final",
+        safe_margin=safe_margin,
+        object_margin=object_margin,
+    )

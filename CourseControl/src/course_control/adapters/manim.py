@@ -55,6 +55,11 @@ def run(paths: LessonPaths) -> StageOutcome:
             paths.engine_root("manim"),
             timeout=1800,
             log_path=log_dir / f"manim-{shot.id}.log",
+            env={
+                "STRICT_LAYOUT": "1"
+                if paths.lesson.build.strict_layout
+                else "0"
+            },
         )
         if result.exit_code != 0:
             errors.append(f"{shot.id}: manim exited {result.exit_code}: {result.stderr[-1500:]}")

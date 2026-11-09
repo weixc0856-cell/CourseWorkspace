@@ -35,7 +35,7 @@ from manim import (
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from common.scene_checks import enforce  # noqa: E402
+from common.scene_checks import check_now, enforce  # noqa: E402
 from common.design_system import BG, BLUE, INK, MUTED, ORANGE, PURPLE, TEAL  # noqa: E402
 
 config.background_color = BG
@@ -166,6 +166,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 1.2
         self.wait_remaining(used, beats[0], tail=1.0)
         self.mark("beat1")
+        check_now(self, "beat1")
         self.fade(mid)
 
         # ---------------------------------------------------------------- 2
@@ -178,8 +179,7 @@ class AttentionFiveMinuteScene(Scene):
         self.play(Create(source), Create(target_box), Create(line), run_time=2.0)
         used += 2.0
         rnn = block("RNN", MUTED, 1.9, 1.0).shift(LEFT * 3.4 + DOWN * 0.9)
-        loop = Arrow(rnn.get_right(), rnn.get_top(), buff=0.1, stroke_width=2.5, color=MUTED)
-        self.play(Create(rnn), Create(loop), run_time=1.2)
+        self.play(Create(rnn), run_time=1.2)
         used += 1.2
         cross1 = Line(rnn.get_corner(DOWN + LEFT), rnn.get_corner(UP + RIGHT), color=ORANGE, stroke_width=5)
         self.play(Create(cross1), run_time=0.8)
@@ -212,8 +212,9 @@ class AttentionFiveMinuteScene(Scene):
         used += 10.0
         self.wait_remaining(used, beats[1], tail=1.0)
         self.mark("beat2")
+        check_now(self, "beat2")
         self.fade(
-            source, target_box, line, rnn, loop, cross1, cnn, cnn_label, cross2,
+            source, target_box, line, rnn, cross1, cnn, cnn_label, cross2,
             attention, attention_line, claim, dots, title,
         )
         used = 1.0
@@ -241,6 +242,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 8.0
         self.wait_remaining(used, beats[2], tail=1.0)
         self.mark("beat3")
+        check_now(self, "beat3")
         self.fade(tokens, ring, spread, note, dots)
         used = 1.0
 
@@ -252,30 +254,42 @@ class AttentionFiveMinuteScene(Scene):
             block("Q  what it seeks", BLUE, 3.0, 0.8),
             block("K  what it offers", TEAL, 3.0, 0.8),
             block("V  what it passes on", PURPLE, 3.0, 0.8),
-        ).arrange(DOWN, buff=0.3).shift(LEFT * 4.3 + DOWN * 0.8)
-        fans = VGroup()
-        for item in qkv:
-            fans.add(Arrow(target.get_left(), item.get_right(), buff=0.12, stroke_width=2.5, color=MUTED))
+        ).arrange(DOWN, buff=0.22).shift(LEFT * 4.8 + DOWN * 0.35)
+        proj = block("W_Q · W_K · W_V", MUTED, 2.6, 0.7).shift(LEFT * 1.2 + DOWN * 0.35)
+        animal_to_proj = Arrow(
+            target.get_bottom(), proj.get_top(),
+            buff=0.12, stroke_width=2.5, color=MUTED,
+        )
+        starts = [proj.get_corner(UP + LEFT), proj.get_left(), proj.get_corner(DOWN + LEFT)]
+        fans = VGroup(
+            *[
+                Arrow(start, item.get_right(), buff=0.10, stroke_width=2.3, color=MUTED)
+                for start, item in zip(starts, qkv)
+            ]
+        )
         self.play(LaggedStart(*[Create(box) for box in tokens], lag_ratio=0.08), run_time=1.4)
         used = 1.4
         self.play(Create(ring), run_time=0.5)
         used += 0.5
+        self.play(Create(animal_to_proj), FadeIn(proj), run_time=1.0)
+        used += 1.0
         self.play(
             LaggedStart(*[Create(arrow) for arrow in fans], lag_ratio=0.18),
             LaggedStart(*[FadeIn(item) for item in qkv], lag_ratio=0.18),
-            run_time=3.0,
+            run_time=2.4,
         )
-        used += 3.0
+        used += 2.4
         role_note = label("three learned projections from the same token", 24, MUTED).to_edge(DOWN, buff=0.75)
         self.play(FadeIn(role_note), run_time=0.8)
         used += 0.8
-        dots = moving_dots(fans[0], 3)
+        dots = moving_dots(animal_to_proj, 3)
         self.add(dots)
-        self.play(*[MoveAlongPath(dot, fans[0], rate_func=linear) for dot in dots], run_time=10.0)
+        self.play(*[MoveAlongPath(dot, animal_to_proj, rate_func=linear) for dot in dots], run_time=10.0)
         used += 10.0
         self.wait_remaining(used, beats[3], tail=1.0)
         self.mark("beat4")
-        self.fade(tokens, ring, qkv, fans, role_note, dots)
+        check_now(self, "beat4")
+        self.fade(tokens, ring, qkv, fans, proj, animal_to_proj, role_note, dots)
         used = 1.0
 
         # ---------------------------------------------------------------- 5
@@ -319,6 +333,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 2.0
         self.wait_remaining(used, beats[4], tail=1.0)
         self.mark("beat5")
+        check_now(self, "beat5")
         self.fade(title5, bars, bar_labels, score_note, weight_note)
         used = 1.0
 
@@ -332,18 +347,19 @@ class AttentionFiveMinuteScene(Scene):
             item.set_opacity(0.35 + 0.65 * weight)
             vblocks.add(item)
         context = block("new representation", ORANGE, 3.2, 1.0).shift(RIGHT * 4.2 + DOWN * 0.6)
-        streams = VGroup()
-        for item in vblocks:
-            streams.add(Arrow(item.get_right(), context.get_left(), buff=0.1, stroke_width=2.4, color=ORANGE))
+        streams = Arrow(
+            vblocks.get_right(), context.get_left(),
+            buff=0.18, stroke_width=3.2, color=ORANGE,
+        )
         self.play(FadeIn(title6), LaggedStart(*[FadeIn(item) for item in vblocks], lag_ratio=0.1), run_time=1.4)
         used = 1.4
-        self.play(LaggedStart(*[Create(arrow) for arrow in streams], lag_ratio=0.1), run_time=2.0)
+        self.play(Create(streams), run_time=2.0)
         used += 2.0
         self.play(FadeIn(context), run_time=1.0)
         used += 1.0
-        dots = moving_dots(streams[1], 4)
+        dots = moving_dots(streams, 4)
         self.add(dots)
-        self.play(*[MoveAlongPath(dot, streams[1], rate_func=linear) for dot in dots], run_time=8.0)
+        self.play(*[MoveAlongPath(dot, streams, rate_func=linear) for dot in dots], run_time=8.0)
         used += 8.0
         note6 = label("the output blends information from the words it attended to", 24, MUTED).to_edge(DOWN, buff=0.75)
         self.play(FadeIn(note6), run_time=0.8)
@@ -352,6 +368,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 2.0
         self.wait_remaining(used, beats[5], tail=1.0)
         self.mark("beat6")
+        check_now(self, "beat6")
         self.fade(title6, vblocks, context, streams, note6, dots)
         used = 1.0
 
@@ -372,6 +389,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 0.8
         self.wait_remaining(used, beats[6], tail=1.0)
         self.mark("beat7")
+        check_now(self, "beat7")
         self.fade(title7, qk, vv, note7)
         used = 1.0
 
@@ -403,6 +421,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 8.0
         self.wait_remaining(used, beats[7], tail=1.0)
         self.mark("beat8")
+        check_now(self, "beat8")
         self.fade(title8, base, heads, fan, note8, dots)
         used = 1.0
 
@@ -434,6 +453,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 8.0
         self.wait_remaining(used, beats[8], tail=1.0)
         self.mark("beat9")
+        check_now(self, "beat9")
         self.fade(title9, words9, arcs9, note9, dots)
         used = 1.0
 
@@ -457,6 +477,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 3.0
         self.wait_remaining(used, beats[9], tail=1.0)
         self.mark("beat10")
+        check_now(self, "beat10")
         self.fade(title10, lanes, note10)
         used = 1.0
 
@@ -485,6 +506,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 8.0
         self.wait_remaining(used, beats[10], tail=1.0)
         self.mark("beat11")
+        check_now(self, "beat11")
         self.fade(title11, heads11, concat, mix, output, merge, dots, concat_mix, mix_output)
         used = 1.0
 
@@ -533,6 +555,7 @@ class AttentionFiveMinuteScene(Scene):
         used += 2.0
         self.wait_remaining(used, beats[11], tail=0.85)
         self.mark("beat12")
+        check_now(self, "beat12")
         self.fade(
             title12, recap_heads, recap_concat, recap_output, recap_merge,
             recap_final, recap_note, line1, line2, final, recap_dots,

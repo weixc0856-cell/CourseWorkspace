@@ -218,6 +218,11 @@
           "default": true,
           "title": "Allow Manual Animation Export",
           "type": "boolean"
+        },
+        "strict_layout": {
+          "default": false,
+          "title": "Strict Layout",
+          "type": "boolean"
         }
       },
       "title": "BuildOptions",
@@ -648,7 +653,8 @@
     "build": {
       "$ref": "#/$defs/BuildOptions",
       "default": {
-        "allow_manual_animation_export": true
+        "allow_manual_animation_export": true,
+        "strict_layout": false
       }
     },
     "motion": {
