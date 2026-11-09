@@ -95,6 +95,32 @@ shots:
         self.assertEqual(result.status, Status.SKIPPED)
         self.assertTrue(result.report_path.is_file())
 
+    def test_mix_normalises_loudness_without_bgm(self) -> None:
+        import shutil
+        import subprocess
+
+        if not shutil.which("ffmpeg"):
+            self.skipTest("ffmpeg is not available")
+        final_dir = self.paths.build_root / "final"
+        final_dir.mkdir(parents=True, exist_ok=True)
+        source = final_dir / "course-video.mp4"
+        subprocess.run(
+            [
+                "ffmpeg", "-hide_banner", "-y",
+                "-f", "lavfi", "-i", "color=c=black:s=64x64:d=1:r=30",
+                "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                "-shortest", str(source),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        result = mix_lesson(self.workspace, self.paths)
+        self.assertEqual(result.status, Status.PASS, result.errors)
+        self.assertEqual(result.report.get("mode"), "loudness_only")
+        self.assertIsNotNone(result.output)
+        self.assertTrue(result.output.is_file())
+
     def test_teaching_qa_never_claims_learner_evidence(self) -> None:
         report, target = run_teaching_qa(self.workspace, self.paths)
         self.assertEqual(report["status"], "WARN")
