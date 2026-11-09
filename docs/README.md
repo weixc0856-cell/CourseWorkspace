@@ -30,6 +30,7 @@
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)
 - 三维：[Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)、[AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)
 - 流程：[工业化动画工作流.md](工业化动画工作流.md)、[WORKFLOW.md](WORKFLOW.md)、[提交前检查清单.md](提交前检查清单.md)
+- 新闻视频：[新闻视频生产流程.md](新闻视频生产流程.md)：从一条新闻到一集成片的可复现步骤（Type-C 样片 nvda-gpu-control）
 - 创作方法：[creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)：长视频叙事骨架、Shorts、A/B 视觉与质量门禁
 - 研发审核：[ReviewRunner/README.md](../ReviewRunner/README.md)：独立只读第二意见（Phase 1 只做代码审查）
 
@@ -50,6 +51,7 @@
 - [配色方案-学科适配.md](evaluations/配色方案-学科适配.md)
 - [评估-Primer-3D-hero-v2.md](evaluations/评估-Primer-3D-hero-v2.md)
 - [复刻-Primer衰老模拟-计划.md](evaluations/复刻-Primer衰老模拟-计划.md)
+- [评估-Blender写实渲染能力.md](evaluations/评估-Blender写实渲染能力.md)
 - [FRONTEND_ASSESSMENT.md](evaluations/FRONTEND_ASSESSMENT.md)
 
 ## 4. 状态与验收
