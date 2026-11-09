@@ -13,7 +13,7 @@ TARGETS = {
     "beats_per_10s": 2.5,
     "long_lived": 0.6,
     "shot_seconds": (8.0, 12.0),
-    "freeze_per_minute": 4.0,
+    "freeze_per_minute": 9.0,
 }
 
 WEIGHTS = {
