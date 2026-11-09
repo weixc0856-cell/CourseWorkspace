@@ -47,6 +47,7 @@
 - [课程复刻差距与稳定工作流.md](evaluations/课程复刻差距与稳定工作流.md)
 - [样片-注意力-3B1B差距与路线.md](evaluations/样片-注意力-3B1B差距与路线.md)
 - [配色方案-学科适配.md](evaluations/配色方案-学科适配.md)
+- [评估-Primer-3D-hero-v2.md](evaluations/评估-Primer-3D-hero-v2.md)
 - [FRONTEND_ASSESSMENT.md](evaluations/FRONTEND_ASSESSMENT.md)
 
 ## 4. 状态与验收
