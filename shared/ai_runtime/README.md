@@ -1,5 +1,7 @@
 # shared/ai_runtime
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本机 AI 运行时：跨进程锁、单一模型服务生命周期、任务记录、上下文预算。纯标准库实现。
 
 - 需求：`docs/PRD.md` FR-09 / FR-10 / FR-11

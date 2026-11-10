@@ -1,5 +1,7 @@
 # Motion Studio
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 **首选动画引擎。** 基于 Motion Canvas 3.17（TypeScript + Vite），负责课件里"盒子、箭头、序列、流程"这一类离散结构的动画。与 [../CourseSlides](../CourseSlides) 同属前端技术栈，配色令牌直接共用。
 
 ## 适用与不适用

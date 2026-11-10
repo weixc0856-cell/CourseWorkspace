@@ -1,5 +1,7 @@
 # CourseControl
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`。
 
 在上游还包含三个设计/管理层：
@@ -183,6 +185,34 @@ build/<slug>/animation/<scene-stem>.mp4
 - 合成时间线：`build/<slug>/shots.json`
 
 报告包含 `stages[]`、`checks[]`、`artifacts[]`、`toolchain`、`verdict` 与 `failures[]`。
+
+## V1 收敛命令（2026-11-10）
+
+```powershell
+# 配置解析：来源、冲突、指纹；build 也会自动写 logs/config-resolution.json
+course-control config-resolve --lesson <slug>
+
+# 顶层恢复：只复用输入/配置/输出哈希都一致的阶段
+course-control build --lesson <slug> --resume
+course-control build --lesson <slug> --resume-from compose
+
+# 统计与字幕 QC
+course-control stats --lesson <slug> --write
+course-control subtitles-qc --lesson <slug>
+
+# 审查裁决与交付包
+course-control review-status --lesson <slug>
+course-control review-decide --lesson <slug> --id <finding> --decision fixed --by <name>
+course-control package --lesson <slug>
+course-control package-verify --package build/<slug>/package
+
+# Blender 任务入口 / three.js / 镜头分类
+course-control blender-task-validate --task BlenderStudio/tasks/<lesson>/<task>.json
+course-control vendor-check
+course-control shot-taxonomy
+```
+
+细节见 `docs/stabilization/CONFIGURATION_STANDARD.md`、`TASK_EXECUTION_STANDARD.md`、`QUALITY_STANDARD.md`。
 
 ## 质量闭环（P0）
 
