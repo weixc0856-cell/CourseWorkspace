@@ -96,7 +96,7 @@
           "items": {
             "$ref": "#/$defs/Beat"
           },
-          "minItems": 2,
+          "minItems": 1,
           "title": "Beats",
           "type": "array"
         },
@@ -135,15 +135,14 @@
           "type": "number"
         },
         "motive": {
-          "minLength": 8,
+          "default": "",
           "title": "Motive",
           "type": "string"
         }
       },
       "required": [
         "at",
-        "width",
-        "motive"
+        "width"
       ],
       "title": "CameraMove",
       "type": "object"

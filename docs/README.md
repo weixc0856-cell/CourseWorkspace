@@ -44,6 +44,8 @@
 - 导演/制片：[导演层.md](导演层.md)、[制片层.md](制片层.md)、[动画渲染适配器.md](动画渲染适配器.md)
 - 版式/配色/运镜：[版式系统.md](版式系统.md)、[配色规范.md](配色规范.md)、[运镜与剪辑.md](运镜与剪辑.md)、[动画视觉导演规范.md](动画视觉导演规范.md)
 - 品牌：[品牌与片头片尾.md](品牌与片头片尾.md)：WAYNE 标识、三种内容形态的片头片尾、流水线位置与 V-33
+- [品牌片头-3D桌面戏-设计.md](品牌片头-3D桌面戏-设计.md)：12 秒独立 3D 桌面片头设计稿 v1.1（Gate 1 粗剪已出）
+- [../BrandIntro/README.md](../BrandIntro/README.md)：片头美术方向工程（参考板、角色/场景概念、美术 Gate）
 - 教材知识库：[KnowledgeStudio.md](KnowledgeStudio.md)：PDF 拆页、目录校准、提取质检、按页检索、claim 引用与 QA
 - 公式与图形：[公式排版规范.md](公式排版规范.md)、[科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)
@@ -79,6 +81,25 @@
 - [ACCEPTANCE.md](ACCEPTANCE.md)：验收规则、命令与证据
 - [项目差距清单.md](项目差距清单.md)：P0–P2 缺口
 - [课程质量保障体系-差距审查.md](课程质量保障体系-差距审查.md)：五条质量防线的实现差距与 P0/P1 路线
+
+## 4.1 项目审计（2026-11-10）
+
+- [audit/EXECUTIVE_SUMMARY.md](audit/EXECUTIVE_SUMMARY.md)：一页结论
+- [audit/PROJECT_REALITY_AUDIT.md](audit/PROJECT_REALITY_AUDIT.md)：项目现状、模块核对、成熟度、文档偏差
+- [audit/ARCHITECTURE_CONFLICTS.md](audit/ARCHITECTURE_CONFLICTS.md)：架构矛盾、规则冲突、优先级
+- [audit/AUTOMATION_CAPABILITY_MATRIX.md](audit/AUTOMATION_CAPABILITY_MATRIX.md)：A0–A4 自动化等级与恢复能力
+- [audit/SUPPORTED_CAPABILITIES.md](audit/SUPPORTED_CAPABILITIES.md)：内容与软件开发的能力边界
+- [audit/OUTPUT_QUALITY_ASSESSMENT.md](audit/OUTPUT_QUALITY_ASSESSMENT.md)：真实成片的内容/视觉/声音/交付质量
+- [audit/NEXT_STAGE_ROADMAP.md](audit/NEXT_STAGE_ROADMAP.md)：必须做、值得做、保留、停止、未来
+
+## 4.2 Production Stabilization（2026-11-10）
+
+- [stabilization/PRODUCTION_CONTRACT.md](stabilization/PRODUCTION_CONTRACT.md)：两种生产模式、单一权威、导演/build 接入
+- [stabilization/QUALITY_STATE_MACHINE.md](stabilization/QUALITY_STATE_MACHINE.md)：BUILD/VERIFY/QUALITY/REVIEW/RELEASE 状态与签核
+- [stabilization/ANIMATION_QUALITY_MODEL.md](stabilization/ANIMATION_QUALITY_MODEL.md)：结构/像素/人工三分，D-071 与评分修正
+- [stabilization/DELIVERY_CONTRACT.md](stabilization/DELIVERY_CONTRACT.md)：`package` / `package-verify`、哈希与缺项失败
+- [stabilization/MIGRATION_PLAN.md](stabilization/MIGRATION_PLAN.md)：R0–R5 状态、未完成项、回滚与待批准事项
+- [stabilization/SESSION_2026-11-10.md](stabilization/SESSION_2026-11-10.md)：本轮实际改动、01 结果、矛盾点修复状态与操作教训
 
 ## 5. 本地归档（不入远程）
 

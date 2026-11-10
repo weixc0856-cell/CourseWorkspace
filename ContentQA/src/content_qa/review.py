@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -142,6 +143,11 @@ def run_review(
     lesson = lesson_dir.name
     review_dir = workspace / "build" / lesson / "review"
     report_path = review_dir / "review.json"
+    run_id = (
+        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        + "-"
+        + uuid.uuid4().hex[:6]
+    )
 
     config = load_config(config_path)
     if config is None:
@@ -206,7 +212,7 @@ def run_review(
     errors: list[str] = []
 
     for chunk in chunks:
-        task_id = f"contentqa-{lesson}-{chunk.task_id}"
+        task_id = f"contentqa-{lesson}-{chunk.task_id}-{run_id}"
         messages = _messages(chunk, sources_text)
         try:
             budget_report = budget.check(messages)
@@ -273,6 +279,7 @@ def run_review(
 
     status = "failed" if any(task.status == "failed" for task in tasks) else "completed"
     report = ReviewReport(
+        run_id=run_id,
         lesson=lesson,
         generated_at=_now(),
         model=config.model.model,

@@ -44,7 +44,7 @@ class Beat(StrictModel):
 class CameraMove(StrictModel):
     at: float = Field(ge=0.0, le=1.0)
     width: float = Field(ge=6.0, le=14.3)
-    motive: str = Field(min_length=8)
+    motive: str = ""
 
 
 class BeatShot(StrictModel):
@@ -55,7 +55,7 @@ class BeatShot(StrictModel):
     end: float = Field(gt=0.0, le=1.0)
     engine: Engine
     long_lived: list[str] = Field(default_factory=list)
-    beats: list[Beat] = Field(min_length=2)
+    beats: list[Beat] = Field(min_length=1)
     camera: list[CameraMove] = Field(default_factory=list)
 
     @model_validator(mode="after")
@@ -94,33 +94,39 @@ def _legacy_constraints():
     }
 
 
-def validate_sheet(
+def validate_sheet_report(
     sheet: BeatSheet,
     segments: list[tuple[float, float]],
     *,
     palette_ok: bool = True,
     registry=None,
-) -> list[str]:
-    """Return a list of gate violations; empty means the sheet is shippable.
+) -> dict:
+    """Split beat-sheet diagnostics into structural errors and creative warnings.
 
-    Without ``registry`` the legacy long-take constants apply, so existing
-    beat sheets and tests keep their exact behaviour.  With a registry each
-    shot is checked against its own grammar.
+    Structural errors break coverage or geometry (missing pages, gaps,
+    overlaps, unknown grammar).  Creative thresholds (shot length, action
+    density, long-lived objects, camera motive) are warnings: D-071 makes them
+    diagnostic, not release conditions.
     """
-    issues: list[str] = []
-    if not palette_ok:
-        issues.append("palette: accessibility gates failed")
-    if not sheet.subtitle_safe_below <= -1.5:
-        issues.append("subtitle band: subtitle_safe_below must be <= -1.5")
+    errors: list[str] = []
+    warnings: list[str] = []
 
-    durations = _segment_durations(segments)
-    if len(durations) != len(segments):
-        return issues + ["narration: no measured segments"]
+    def add(severity: str, message: str) -> None:
+        (errors if severity == "error" else warnings).append(message)
+
+    if not palette_ok:
+        add("error", "palette: accessibility gates failed")
+    if not sheet.subtitle_safe_below <= -1.5:
+        add("error", "subtitle band: subtitle_safe_below must be <= -1.5")
+
+    if not segments:
+        add("error", "narration: no measured segments")
+        return {"errors": errors, "warnings": warnings, "issues": errors + warnings}
 
     ids = [shot.id for shot in sheet.shots]
     duplicates = sorted({shot_id for shot_id in ids if ids.count(shot_id) > 1})
     if duplicates:
-        issues.append(f"shots: duplicate ids {duplicates}")
+        add("error", f"shots: duplicate ids {duplicates}")
 
     def constraints_for(shot: BeatShot) -> dict:
         if registry is None:
@@ -129,7 +135,7 @@ def validate_sheet(
         try:
             spec = registry.get(name)
         except KeyError:
-            issues.append(f"{shot.id}: unknown grammar '{name}'")
+            add("error", f"{shot.id}: unknown grammar '{name}'")
             return _legacy_constraints()
         window = spec.shot_seconds
         item = spec.constraints
@@ -143,58 +149,67 @@ def validate_sheet(
             "min_actions": item.min_actions,
         }
 
-    for segment_index, duration in enumerate(durations, start=1):
+    for segment_index, duration in enumerate(_segment_durations(segments), start=1):
         shot_list = sorted(
             (shot for shot in sheet.shots if shot.segment == segment_index),
             key=lambda shot: shot.start,
         )
         if not shot_list:
-            issues.append(f"segment {segment_index}: not covered by any shot")
+            add("error", f"segment {segment_index}: not covered by any shot")
             continue
         cursor = 0.0
         for shot in shot_list:
             limits = constraints_for(shot)
             if abs(shot.start - cursor) > 1e-6:
-                issues.append(
+                add(
+                    "error",
                     f"segment {segment_index}: gap/overlap before {shot.id} "
-                    f"(expected {cursor:.3f}, got {shot.start:.3f})"
+                    f"(expected {cursor:.3f}, got {shot.start:.3f})",
                 )
             cursor = shot.end
             span = (shot.end - shot.start) * duration
             if span < limits["shot_min"]:
-                issues.append(
+                add(
+                    "warning",
                     f"{shot.id}: {span:.1f}s is shorter than {limits['shot_min']:.2f}s "
-                    f"({shot.grammar or sheet.grammar})"
+                    f"({shot.grammar or sheet.grammar})",
                 )
             if span > limits["shot_max"]:
-                issues.append(
+                add(
+                    "warning",
                     f"{shot.id}: {span:.1f}s is longer than {limits['shot_max']:.1f}s "
-                    f"({shot.grammar or sheet.grammar})"
+                    f"({shot.grammar or sheet.grammar})",
                 )
             if len(shot.beats) < limits["min_actions"]:
-                issues.append(
-                    f"{shot.id}: {len(shot.beats)} actions, grammar needs "
-                    f"{limits['min_actions']}"
+                add(
+                    "warning",
+                    f"{shot.id}: {len(shot.beats)} actions, grammar suggests "
+                    f"{limits['min_actions']}",
                 )
-            first = shot.beats[0].at
+            first = shot.beats[0].at if shot.beats else 0.0
             if first > limits["first_action_by"]:
-                issues.append(f"{shot.id}: first beat at {first:.2f} (> {limits['first_action_by']:.2f})")
+                add(
+                    "warning",
+                    f"{shot.id}: first beat at {first:.2f} (> {limits['first_action_by']:.2f})",
+                )
             points = [beat.at for beat in shot.beats] + [1.0]
             for before, after in zip(points, points[1:]):
                 gap = (after - before) * span
                 if gap > limits["max_action_gap_s"]:
-                    issues.append(
+                    add(
+                        "warning",
                         f"{shot.id}: {gap:.1f}s without a beat "
-                        f"({before:.2f}->{after:.2f})"
+                        f"({before:.2f}->{after:.2f})",
                     )
             if limits["camera_motive_required"]:
                 for move in shot.camera:
                     if len(move.motive.strip()) < 8:
-                        issues.append(f"{shot.id}: camera move at {move.at:.2f} needs a motive")
+                        add(
+                            "warning",
+                            f"{shot.id}: camera move at {move.at:.2f} needs a motive",
+                        )
         if abs(cursor - 1.0) > 1e-6:
-            issues.append(
-                f"segment {segment_index}: shots end at {cursor:.3f}, not 1.0"
-            )
+            add("error", f"segment {segment_index}: shots end at {cursor:.3f}, not 1.0")
 
     required = [shot for shot in sheet.shots if constraints_for(shot)["long_lived_ratio_min"] > 0]
     if required:
@@ -202,12 +217,25 @@ def validate_sheet(
         declared = sum(1 for shot in required if shot.long_lived)
         ratio = declared / len(required)
         if ratio < ratio_needed:
-            issues.append(
+            add(
+                "warning",
                 f"continuity: {declared}/{len(required)} shots declare long-lived objects "
-                f"({ratio:.0%} < {ratio_needed:.0%})"
+                f"({ratio:.0%} < {ratio_needed:.0%})",
             )
-    return issues
+    return {"errors": errors, "warnings": warnings, "issues": errors + warnings}
 
+
+def validate_sheet(
+    sheet: BeatSheet,
+    segments: list[tuple[float, float]],
+    *,
+    palette_ok: bool = True,
+    registry=None,
+) -> list[str]:
+    """Return all diagnostics (errors and warnings) as flat strings."""
+    return validate_sheet_report(
+        sheet, segments, palette_ok=palette_ok, registry=registry
+    )["issues"]
 
 def shot_seconds(sheet: BeatSheet, segments: list[tuple[float, float]]) -> list[float]:
     durations = _segment_durations(segments)

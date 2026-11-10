@@ -200,6 +200,27 @@ class ReviewTest(unittest.TestCase):
             server.server_close()
             os.environ.pop("CONTENT_QA_API_KEY", None)
 
+    def test_two_runs_keep_distinct_task_records(self):
+        server, handler = _serve("ok")
+        try:
+            self._write_config(f"http://127.0.0.1:{server.server_port}/v1")
+            os.environ["CONTENT_QA_API_KEY"] = "test-key"
+            first, _ = run_review(
+                self.root, self.lesson_dir, config_path=self.config_dir / "content-qa.yaml"
+            )
+            second, _ = run_review(
+                self.root, self.lesson_dir, config_path=self.config_dir / "content-qa.yaml"
+            )
+            self.assertNotEqual(first.run_id, second.run_id)
+            records = sorted((self.root / "runtime" / "tasks").glob("*.json"))
+            self.assertGreaterEqual(len(records), 4)
+            ids = [json.loads(path.read_text(encoding="utf-8"))["task_id"] for path in records]
+            self.assertEqual(len(ids), len(set(ids)))
+        finally:
+            server.shutdown()
+            server.server_close()
+            os.environ.pop("CONTENT_QA_API_KEY", None)
+
     def test_invalid_json_marks_run_failed(self):
         server, handler = _serve("invalid")
         try:

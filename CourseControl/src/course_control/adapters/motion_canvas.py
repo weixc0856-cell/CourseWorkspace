@@ -6,8 +6,8 @@ from pathlib import Path
 
 from ..contracts import Status
 from ..paths import LessonPaths
-from ..utils import MediaInfo, probe_media, run_command, which_command
-from .base import StageOutcome, selected
+from ..utils import MediaInfo, run_command, which_command
+from .base import StageOutcome, selected, verify_media
 
 MAX_ATTEMPTS = 2
 DEFAULT_VITE_PORT = 4173
@@ -67,25 +67,14 @@ def _render_once(
 
 
 def _verify(target: Path, paths: LessonPaths, expected_duration_s: float | None = None) -> tuple[MediaInfo, list[str]]:
-    info = probe_media(target)
-    warnings: list[str] = []
     width, height = paths.lesson.outputs.animation_canvas
-    if info.width != width or info.height != height:
-        raise ValueError(
-            f"resolution {info.width}x{info.height} does not match {width}x{height}"
-        )
-    if info.fps is None or abs(info.fps - paths.lesson.outputs.fps) > 0.01:
-        raise ValueError(f"fps {info.fps} does not match {paths.lesson.outputs.fps}")
-    if info.duration is None or info.duration <= 0:
-        raise ValueError("duration is missing or zero")
-    if expected_duration_s:
-        delta = abs(info.duration - expected_duration_s)
-        if delta > max(1.0, expected_duration_s * 0.25):
-            raise ValueError(
-                f"duration {info.duration:.2f}s differs from expected {expected_duration_s:.2f}s "
-                "by more than 25% (or 1s)"
-            )
-    return info, warnings
+    return verify_media(
+        target,
+        width=width,
+        height=height,
+        fps=float(paths.lesson.outputs.fps),
+        expected_duration_s=expected_duration_s,
+    )
 
 
 def run(paths: LessonPaths) -> StageOutcome:

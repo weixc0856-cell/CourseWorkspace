@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -46,6 +48,11 @@ def toolchain_versions(workspace: Path) -> dict[str, str]:
 class ReportBuilder:
     def __init__(self, paths: LessonPaths):
         self.paths = paths
+        self.run_id = (
+            datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            + "-"
+            + uuid.uuid4().hex[:8]
+        )
         self.started_at = _now()
         self.stages: list[StageRecord] = []
         self.checks: list[CheckRecord] = []
@@ -94,11 +101,16 @@ class ReportBuilder:
                     probe = probe_media(path).as_dict()
                 except Exception:  # noqa: BLE001
                     probe = None
+            digest = hashlib.sha256()
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
             self.artifacts.append(
                 Artifact(
                     path=relative,
                     kind=path.suffix.lower().lstrip(".") or "file",
                     size_bytes=path.stat().st_size,
+                    sha256=digest.hexdigest(),
                     probe=probe,
                 )
             )
@@ -145,8 +157,8 @@ class ReportBuilder:
             errors.append("V-28 must be not_applicable when burn-in is disabled")
         if not (self.paths.lesson.narration.enabled and self.paths.lesson.narration.timing == "measured") and checks.get("V-30") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
             errors.append("V-30 must be not_applicable unless measured narration is enabled")
-        if not (self.paths.lesson.subtitles.enabled and self.paths.lesson.subtitles.render == "burn_in") and checks.get("V-31") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
-            errors.append("V-31 must be not_applicable unless burn-in subtitles are enabled")
+        if not self.paths.lesson.subtitles.enabled and checks.get("V-31") not in (None, Status.NOT_RUN, Status.NOT_APPLICABLE):
+            errors.append("V-31 must be not_applicable when subtitles are disabled")
         return errors
 
     def finalize(self) -> BuildReport:
@@ -188,6 +200,7 @@ class ReportBuilder:
             failures.append(f"verdict is {verdict} but no failure detail was recorded")
 
         return BuildReport(
+            run_id=self.run_id,
             lesson=self.paths.slug,
             started_at=self.started_at,
             finished_at=_now(),

@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from course_control import adapters
+from course_control.adapters import base as adapter_base
 from course_control.contracts import Status
 from course_control.paths import LessonPaths
 from course_control.utils import MediaInfo
@@ -50,7 +51,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
     def test_auto_render_passes_without_manual_export(self):
         with patch.object(adapters.motion_canvas, "which_command", return_value=["node"]), \
              patch.object(adapters.motion_canvas, "run_command", side_effect=self.fake_success) as command, \
-             patch.object(adapters.motion_canvas, "probe_media", return_value=media()):
+             patch.object(adapter_base, "probe_media", return_value=media()):
             outcome = adapters.motion_canvas.run(self.paths)
         self.assertEqual(outcome.status, Status.PASS)
         self.assertEqual(len(outcome.outputs), 1)
@@ -65,7 +66,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
                  "run_command",
                  return_value=SimpleNamespace(exit_code=1, stdout="", stderr="boom"),
              ) as command, \
-             patch.object(adapters.motion_canvas, "probe_media", return_value=media()):
+             patch.object(adapter_base, "probe_media", return_value=media()):
             outcome = adapters.motion_canvas.run(self.paths)
         self.assertEqual(outcome.status, Status.FAIL)
         self.assertEqual(command.call_count, 2)
@@ -74,7 +75,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
     def test_invalid_media_is_not_reported_as_pass(self):
         with patch.object(adapters.motion_canvas, "which_command", return_value=["node"]), \
              patch.object(adapters.motion_canvas, "run_command", side_effect=self.fake_success), \
-             patch.object(adapters.motion_canvas, "probe_media", side_effect=ValueError("bad media")):
+             patch.object(adapter_base, "probe_media", side_effect=ValueError("bad media")):
             outcome = adapters.motion_canvas.run(self.paths)
         self.assertEqual(outcome.status, Status.FAIL)
         self.assertTrue(any("bad media" in error for error in outcome.errors))
@@ -82,7 +83,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
     def test_short_output_is_not_reused_or_passed(self):
         self.target.parent.mkdir(parents=True)
         self.target.write_bytes(b"truncated")
-        with patch.object(adapters.motion_canvas, "which_command", return_value=["node"]),              patch.object(adapters.motion_canvas, "run_command", side_effect=self.fake_success),              patch.object(adapters.motion_canvas, "probe_media", return_value=media(1.0)):
+        with patch.object(adapters.motion_canvas, "which_command", return_value=["node"]),              patch.object(adapters.motion_canvas, "run_command", side_effect=self.fake_success),              patch.object(adapter_base, "probe_media", return_value=media(1.0)):
             outcome = adapters.motion_canvas.run(self.paths)
         self.assertEqual(outcome.status, Status.FAIL)
         self.assertTrue(any("duration" in error for error in outcome.errors))
@@ -92,7 +93,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
         self.target.parent.mkdir(parents=True)
         self.target.write_bytes(b"existing")
         with patch.object(adapters.motion_canvas, "run_command") as command, \
-             patch.object(adapters.motion_canvas, "probe_media", return_value=media()):
+             patch.object(adapter_base, "probe_media", return_value=media()):
             outcome = adapters.motion_canvas.run(self.paths)
         self.assertEqual(outcome.status, Status.PASS)
         command.assert_not_called()

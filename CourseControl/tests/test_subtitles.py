@@ -10,6 +10,7 @@ from course_control.subtitles import (
     CuePolicy,
     _wrap,
     _wrap_zh,
+    rewrap_srt,
     build_subtitles,
     plan_cues,
     validate_cues,
@@ -101,8 +102,22 @@ class WrapTest(unittest.TestCase):
 
     def test_chinese_wrap(self):
         lines = _wrap_zh("这是一个很长的中文字幕句子，" * 4, 15, 2)
-        self.assertTrue(lines)
-        self.assertTrue(all(len(line) <= 15 for line in lines))
+
+    def test_chinese_wrap_does_not_split_words_or_start_with_punctuation(self):
+        lines = _wrap_zh("因此该层仍为每个位置产生单一表示，随后进入下一层。", 15, 2)
+        self.assertFalse(any(line.endswith("表") for line in lines[:-1]))
+        self.assertFalse(any(line.startswith(("，", "。", "、", "；")) for line in lines[1:]))
+
+    def test_rewrap_keeps_timing_and_wraps_chinese(self):
+        source = """1
+00:00:00,000 --> 00:00:05,000
+因此该层仍为每个位置产生单一表示，随后进入下一层。
+"""
+        result = rewrap_srt(source, CuePolicy(), bilingual=False)
+        self.assertIn("00:00:00,000 --> 00:00:05,000", result)
+        body = [line for line in result.splitlines()[2:] if line.strip()]
+        self.assertTrue(all(len(line) <= 15 for line in body))
+        self.assertEqual("".join(body), "因此该层仍为每个位置产生单一表示，随后进入下一层。")
 
 
 class WriterTest(unittest.TestCase):

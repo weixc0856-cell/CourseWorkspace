@@ -1,0 +1,11 @@
+# Vendored dependencies are pinned for deterministic rendering; they are not
+# project-authored code and must not dominate the GitHub language stats.
+CodeVideoStudio/shots/*/three.module.js linguist-vendored
+CodeVideoStudio/shots/*/vendor/** linguist-vendored
+CodeVideoStudio/backends/**/vendor/** linguist-vendored
+*.min.js linguist-vendored
+*.min.css linguist-generated
+
+# Lockfiles are generated for reproducible installs.
+*/package-lock.json linguist-generated
+*/uv.lock linguist-generated

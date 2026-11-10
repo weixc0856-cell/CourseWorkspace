@@ -310,8 +310,8 @@ def plan_rebuild(
             "build",
             "--lesson",
             inputs.paths.slug,
-            "--storyboard",
-            str(relative),
+            "--storyboard-source",
+            "director",
         ]
         for shot_id in shot_ids:
             command += ["--shots", shot_id]

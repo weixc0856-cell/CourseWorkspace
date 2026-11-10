@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from course_control.animation_score import score
-from course_control.beats import Beat, BeatSheet, BeatShot
+from course_control.beats import Beat, BeatSheet, BeatShot, CameraMove
 from course_control.grammar import load_registry
 from course_control.quality_gates import decide
 
@@ -28,6 +28,11 @@ def kinetic_sheet() -> BeatSheet:
                         Beat(at=0.1, kind="reveal", action="first change"),
                         Beat(at=0.6, kind="highlight", action="second change"),
                     ],
+                    camera=(
+                        [CameraMove(at=0.5, width=12.0, motive="follow the cut")]
+                        if segment == 1 and index == 0
+                        else []
+                    ),
                 )
             )
     return BeatSheet(
@@ -59,10 +64,30 @@ class QualityGateTest(unittest.TestCase):
         self.assertTrue(report["grammar_ok"])
         self.assertTrue(report["releasable"])
 
+    def test_incomplete_check_blocks_release(self) -> None:
+        report = decide(
+            hard=[],
+            grammar=[],
+            incomplete=[{"source": "media-qc", "id": "media.speech_match"}],
+        )
+        self.assertEqual(report["verification_status"], "incomplete")
+        self.assertFalse(report["releasable"])
+
+    def test_grammar_warnings_do_not_block_release(self) -> None:
+        report = decide(
+            hard=[],
+            grammar=[],
+            grammar_warnings=["shot-001: 3.0s is shorter than 5.00s (long_take)"],
+        )
+        self.assertEqual(report["verification_status"], "pass")
+        self.assertTrue(report["releasable"])
+        self.assertTrue(report["grammar_warnings"])
+
     def test_kinetic_profile_scores_full_and_is_metric_only(self) -> None:
         result = score(
             kinetic_sheet(),
             SEGMENTS,
+            media_qc={"freeze_intervals": []},
             registry=load_registry(ROOT),
         )
         self.assertEqual(result["score"], 100.0)

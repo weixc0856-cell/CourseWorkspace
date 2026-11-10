@@ -55,7 +55,7 @@ CourseWorkspace/
 | `CourseControl/director` | 把已批准内容收敛为章节/镜头/引擎/旁白计划并做硬校验 | 不写场景代码、不调用渲染引擎 |
 | `CourseControl/producer` | 生产订单、资源授权、用量、交付清单、增量指纹 | 不读密钥、不渲染、不自动发布 |
 | `CourseSlides` | 加载指定课程为 Reveal 页面 | 不写 `build/` |
-| `MotionStudio` | 动画场景源码 | 不自动导出 |
+| `MotionStudio` | 动画场景源码 | 不做最终合成；无头导出由 `render-headless.mjs` 完成（D-054） |
 | `ManimSandbox` | 数学动画备选 | 不进入主流程 |
 | `BlenderStudio` | v1 课程渲染任务、v2 场景系统、GN 资产、场景验收 | 不读取 `lesson.yaml` |
 | `RemotionStudio` | 截图、staging、合成、字幕/旁白渲染 | 不做时间线推导 |

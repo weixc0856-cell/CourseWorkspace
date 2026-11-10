@@ -7,7 +7,7 @@ It is a gate for the *workflow*, not a substitute for watching the film.
 
 from __future__ import annotations
 
-from .beats import BeatSheet, shot_seconds, validate_sheet
+from .beats import BeatSheet, shot_seconds, validate_sheet_report
 
 TARGETS = {
     "beats_per_10s": 2.5,
@@ -59,7 +59,11 @@ def _profile_score(
     beats = sum(len(shot.beats) for shot in sheet.shots)
     beats_per_10s = beats / max(total, 0.1) * 10.0
     cut_rate = shots / max(total, 0.1) * 10.0
-    issues = validate_sheet(sheet, segments, palette_ok=palette_ok, registry=registry)
+    report = validate_sheet_report(
+        sheet, segments, palette_ok=palette_ok, registry=registry
+    )
+    errors = report["errors"]
+    issues = errors + report["warnings"]
 
     specs = {}
     for shot in sheet.shots:
@@ -99,7 +103,8 @@ def _profile_score(
     motion = motion / max(total, 0.1)
     moves = [(shot.id, move) for shot in sheet.shots for move in shot.camera]
     if not moves:
-        camera = 1.0
+        # No camera move is no evidence of camera work.  It is not a free pass.
+        camera = 0.0
     else:
         needs_motive = any(spec.constraints.camera_motive_required for _, spec in specs.values())
         if not needs_motive:
@@ -110,15 +115,16 @@ def _profile_score(
 
     freeze_intervals = len((media_qc or {}).get("freeze_intervals", []))
     freeze_rate = freeze_intervals / max(total / 60.0, 0.1)
-    freeze_counts = any(spec.constraints.freeze_counts_against for _, spec in specs.values())
-    freeze = _freeze(freeze_intervals, total / 60.0) if freeze_counts else 1.0
+    # Pixel evidence is required.  A missing media QC report earns no freeze
+    # points; every grammar is measured, not exempted.
+    freeze = _freeze(freeze_intervals, total / 60.0) if media_qc is not None else 0.0
 
     components = {
         "motion": motion * WEIGHTS["motion"],
         "continuity": continuity * WEIGHTS["continuity"],
         "pacing": pacing * WEIGHTS["pacing"],
         "camera": camera * WEIGHTS["camera"],
-        "gates": (0.0 if issues or build_verdict == "fail" else WEIGHTS["gates"]),
+        "gates": (0.0 if errors or build_verdict == "fail" else WEIGHTS["gates"]),
         "freeze": freeze * WEIGHTS["freeze"],
     }
     return {
@@ -137,12 +143,17 @@ def _profile_score(
             "camera_moves": len(moves),
             "freeze_intervals": freeze_intervals,
             "freeze_per_minute": round(freeze_rate, 2),
+            "freeze_evidence": "media-qc" if media_qc is not None else "missing",
             "build_verdict": build_verdict,
+            "issue_errors": len(errors),
+            "issue_warnings": len(report["warnings"]),
         },
         "grammars": {shot.id: specs[shot.id][0] for shot in sheet.shots},
         "issues": issues,
-        "verdict": "pass" if not issues and build_verdict != "fail" else "fail",
+        "errors": errors,
+        "verdict": "pass" if not errors and build_verdict != "fail" else "fail",
         "release_gate": "metric_only",
+        "score_source": "beats.yaml self-report + media-qc freeze + build verdict",
     }
 
 
@@ -176,7 +187,9 @@ def score(
     average_shot = total / max(shots, 1)
     moves = [(shot.id, move) for shot in sheet.shots for move in shot.camera]
     motivated = sum(1 for _, move in moves if len(move.motive.strip()) >= 8)
-    issues = validate_sheet(sheet, segments, palette_ok=palette_ok)
+    report = validate_sheet_report(sheet, segments, palette_ok=palette_ok)
+    errors = report["errors"]
+    issues = errors + report["warnings"]
 
     freeze_intervals = len((media_qc or {}).get("freeze_intervals", []))
     freeze_rate = freeze_intervals / max(total / 60.0, 0.1)
@@ -185,9 +198,10 @@ def score(
         "motion": min(1.0, beats_per_10s / TARGETS["beats_per_10s"]) * WEIGHTS["motion"],
         "continuity": min(1.0, long_lived / TARGETS["long_lived"]) * WEIGHTS["continuity"],
         "pacing": _pacing(average_shot) * WEIGHTS["pacing"],
-        "camera": (motivated / len(moves) if moves else 1.0) * WEIGHTS["camera"],
-        "gates": (0.0 if issues or build_verdict == "fail" else WEIGHTS["gates"]),
-        "freeze": _freeze(freeze_intervals, total / 60.0) * WEIGHTS["freeze"],
+        "camera": (motivated / len(moves) if moves else 0.0) * WEIGHTS["camera"],
+        "gates": (0.0 if errors or build_verdict == "fail" else WEIGHTS["gates"]),
+        "freeze": (_freeze(freeze_intervals, total / 60.0) if media_qc is not None else 0.0)
+        * WEIGHTS["freeze"],
     }
     total_score = round(sum(components.values()), 1)
     return {
@@ -204,8 +218,13 @@ def score(
             "camera_motivated": motivated,
             "freeze_intervals": freeze_intervals,
             "freeze_per_minute": round(freeze_rate, 2),
+            "freeze_evidence": "media-qc" if media_qc is not None else "missing",
             "build_verdict": build_verdict,
+            "issue_errors": len(errors),
+            "issue_warnings": len(report["warnings"]),
         },
         "issues": issues,
-        "verdict": "pass" if not issues and build_verdict != "fail" else "fail",
+        "errors": errors,
+        "verdict": "pass" if not errors and build_verdict != "fail" else "fail",
+        "score_source": "beats.yaml self-report + media-qc freeze + build verdict",
     }

@@ -169,6 +169,41 @@ def _wrap(text: str, max_chars: int, max_lines: int) -> list[str]:
     return lines or [""]
 
 
+# Common two-character words that should not be split across subtitle lines.
+# This is a small heuristic, not a tokenizer; it covers the vocabulary used by
+# the current courses without adding a dictionary dependency.
+ZH_WORDS = {
+    "表示", "提出", "注意", "意力", "计算", "模型", "训练", "输入", "输出",
+    "查询", "键值", "向量", "矩阵", "权重", "位置", "编码", "残差", "归一",
+    "连接", "网络", "语言", "序列", "预测", "概率", "分布", "梯度", "损失",
+    "函数", "参数", "多头", "自注", "注意力", "解释", "机制", "结构", "数据",
+    "结果", "问题", "方法", "过程", "信息", "上下文", "解码", "编码器",
+}
+
+
+def _adjust_zh_cut(remaining: str, cut: int) -> int:
+    """Move a Chinese line cut to a word/punctuation boundary."""
+    cut = max(1, min(len(remaining) - 1, cut))
+    while (
+        0 < cut < len(remaining)
+        and re.match(r"[A-Za-z0-9]", remaining[cut - 1])
+        and re.match(r"[A-Za-z0-9]", remaining[cut])
+    ):
+        cut -= 1
+    for _ in range(3):
+        if 0 < cut < len(remaining) and remaining[cut - 1 : cut + 1] in ZH_WORDS:
+            cut -= 1
+        elif cut > 1 and remaining[cut - 2 : cut] in ZH_WORDS:
+            cut += 1
+        else:
+            break
+    if 0 < cut < len(remaining) and remaining[cut] in "，。！？；：、）】》”’":
+        cut += 1
+    if cut > 0 and remaining[cut - 1] in "（【《“‘":
+        cut -= 1
+    return max(1, min(len(remaining) - 1, cut))
+
+
 def _wrap_zh(text: str, max_chars: int, max_lines: int) -> list[str]:
     text = text.replace("\n", "").strip()
     if len(text) <= max_chars:
@@ -185,17 +220,22 @@ def _wrap_zh(text: str, max_chars: int, max_lines: int) -> list[str]:
             if pos >= max_chars // 2:
                 cut = min(pos + 1, max_chars)
                 break
-        # Do not split a Latin word such as "Transformer" across lines.
-        while (
-            0 < cut < len(remaining)
-            and re.match(r"[A-Za-z0-9]", remaining[cut - 1])
-            and re.match(r"[A-Za-z0-9]", remaining[cut])
-        ):
-            cut -= 1
-        if cut <= 0:
-            cut = max_chars
+        cut = _adjust_zh_cut(remaining, cut)
         lines.append(remaining[:cut])
         remaining = remaining[cut:]
+    if max_lines > 0 and len(lines) > max_lines:
+        # The normal pass prefers punctuation and can produce one line too
+        # many.  Re-distribute evenly so the cue respects the line limit.
+        lines = []
+        remaining = text
+        for slots in range(max_lines, 0, -1):
+            if slots == 1 or len(remaining) <= max_chars:
+                lines.append(remaining)
+                break
+            target = math.ceil(len(remaining) / slots)
+            cut = _adjust_zh_cut(remaining, min(target, max_chars))
+            lines.append(remaining[:cut])
+            remaining = remaining[cut:]
     return lines or [""]
 
 
@@ -234,6 +274,19 @@ def _best_split_zh(text: str, ratio: float) -> int:
     return target
 
 
+def display_width(text: str) -> float:
+    """Approximate subtitle width: CJK = 1, Latin/digits = 0.5, spaces = 0."""
+    width = 0.0
+    for char in text:
+        if char.isspace():
+            continue
+        if "一" <= char <= "鿿":
+            width += 1.0
+        else:
+            width += 0.5
+    return width
+
+
 def _cue_overflow(cue: dict, policy: CuePolicy) -> bool:
     duration = (cue["end_ms"] - cue["start_ms"]) / 1000.0
     if duration < policy.min_seconds - 0.05 or duration > policy.max_seconds + 0.05:
@@ -244,7 +297,7 @@ def _cue_overflow(cue: dict, policy: CuePolicy) -> bool:
         return True
     if any(len(line) > policy.en_max_chars_per_line for line in cue.get("en_lines") or []):
         return True
-    if any(len(line) > policy.zh_max_chars_per_line for line in cue.get("zh_lines") or []):
+    if any(display_width(line) > policy.zh_max_chars_per_line for line in cue.get("zh_lines") or []):
         return True
     zh_chars = len(re.sub(r"\s", "", cue.get("zh", "")))
     return duration > 0 and zh_chars / duration > policy.zh_cps_max
@@ -445,8 +498,10 @@ def validate_cues(cues: list[dict], policy: CuePolicy, fps: float, total_ms: int
             if len(line) > policy.en_max_chars_per_line:
                 problems.append(f"cue {cue['index']}: English line {len(line)} chars")
         for line in zh_lines:
-            if len(line) > policy.zh_max_chars_per_line:
-                problems.append(f"cue {cue['index']}: Chinese line {len(line)} chars")
+            if display_width(line) > policy.zh_max_chars_per_line:
+                problems.append(
+                    f"cue {cue['index']}: Chinese line width {display_width(line):.1f}"
+                )
         zh_chars = len(re.sub(r"\s", "", cue.get("zh", "")))
         if duration > 0 and zh_chars / duration > policy.zh_cps_max:
             problems.append(
@@ -455,6 +510,33 @@ def validate_cues(cues: list[dict], policy: CuePolicy, fps: float, total_ms: int
     return problems
 
 
+def rewrap_srt(text: str, policy: CuePolicy, bilingual: bool = True) -> str:
+    """Rewrap SRT lines without changing cue text or timing.
+
+    ``bilingual`` keeps an upper non-CJK block and a lower CJK block.  A
+    single-language cue is wrapped with the matching rule.
+    """
+    blocks = re.split(r"\r?\n\s*\r?\n", text.strip())
+    output: list[str] = []
+    for block in blocks:
+        lines = [line for line in block.splitlines() if line.strip()]
+        if len(lines) < 2:
+            continue
+        timing = lines[1]
+        if "-->" not in timing:
+            continue
+        body = lines[2:]
+        en = [line for line in body if not re.search(r"[一-鿿]", line)]
+        zh = [line for line in body if re.search(r"[一-鿿]", line)]
+        if bilingual:
+            new_lines = _wrap(" ".join(en), policy.en_max_chars_per_line, policy.max_lines)
+            new_lines += _wrap_zh("".join(zh), policy.zh_max_chars_per_line, policy.max_lines)
+        elif zh:
+            new_lines = _wrap_zh("".join(zh), policy.zh_max_chars_per_line, policy.max_lines)
+        else:
+            new_lines = _wrap(" ".join(en), policy.en_max_chars_per_line, policy.max_lines)
+        output.append(lines[0] + "\n" + timing + "\n" + "\n".join(new_lines))
+    return "\n\n".join(output) + "\n"
 def _ts_srt(ms: int) -> str:
     ms = max(0, ms)
     hours, rem = divmod(ms, 3_600_000)
@@ -652,6 +734,113 @@ def build_subtitles(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     return draft, target / "bilingual.draft.srt"
+
+
+def retime_draft(
+    draft: BilingualDraft, meta: dict, policy: CuePolicy, fps: float
+) -> BilingualDraft:
+    """Fit existing cue text to the measured narration segments.
+
+    Translation is not repeated. Cues keep their order and segment; only the
+    timings are redistributed by English text length within each segment.
+    """
+    segments = {
+        item["segment_id"]: (float(item["start_s"]), float(item["duration_s"]))
+        for item in meta.get("segments", [])
+        if "segment_id" in item
+    }
+    groups: dict[str, list[dict]] = {}
+    order: list[str] = []
+    for cue in draft.cues:
+        item = cue.model_dump(mode="json")
+        if item["segment_id"] not in groups:
+            groups[item["segment_id"]] = []
+            order.append(item["segment_id"])
+        groups[item["segment_id"]].append(item)
+    gaps = policy.gap_ms(fps) / 1000.0
+    cues: list[dict] = []
+    for segment_id in order:
+        items = groups[segment_id]
+        start_s, duration_s = segments.get(segment_id, (0.0, 0.0))
+        if duration_s <= 0:
+            cues.extend(items)
+            continue
+        weights = [
+            max(1, len(item["en"]), len(item["zh"]) * 3) for item in items
+        ]
+        total_weight = sum(weights)
+        cursor = start_s
+        for position, (item, weight) in enumerate(zip(items, weights)):
+            allocated = duration_s * weight / total_weight
+            end = cursor + allocated - (gaps if position < len(items) - 1 else 0.0)
+            end = min(start_s + duration_s, max(cursor + 0.3, end))
+            item["start_ms"] = int(round(cursor * 1000))
+            item["end_ms"] = int(round(end * 1000))
+            cues.append(item)
+            cursor = cursor + allocated
+    for position, cue in enumerate(cues, start=1):
+        cue["index"] = position
+    cues = merge_short_cues(cues, policy, fps)
+    cues = enforce_limits(cues, policy, fps)
+    for cue in cues:
+        cue["en_lines"] = _wrap(cue["en"], policy.en_max_chars_per_line, policy.max_lines)
+        cue["zh_lines"] = _wrap_zh(cue["zh"], policy.zh_max_chars_per_line, policy.max_lines)
+    counts = dict(draft.counts)
+    counts["cues"] = len(cues)
+    counts["problems"] = 0
+    return draft.model_copy(
+        update={"cues": [BilingualCue(**cue) for cue in cues], "counts": counts}
+    )
+
+
+def merge_short_cues(cues: list[dict], policy: CuePolicy, fps: float) -> list[dict]:
+    """Merge a too-short cue into the previous cue of the same slide/segment."""
+    merged: list[dict] = []
+    gap = policy.gap_ms(fps)
+    for cue in cues:
+        item = dict(cue)
+        duration = (item["end_ms"] - item["start_ms"]) / 1000.0
+        if (
+            duration < policy.min_seconds
+            and merged
+            and merged[-1]["slide"] == item["slide"]
+            and merged[-1]["segment_id"] == item["segment_id"]
+            and item["start_ms"] - merged[-1]["end_ms"] <= gap + 2
+        ):
+            previous = merged[-1]
+            combined = (item["end_ms"] - previous["start_ms"]) / 1000.0
+            if combined <= policy.max_seconds:
+                previous["end_ms"] = item["end_ms"]
+                previous["en"] = previous["en"].rstrip() + " " + item["en"].lstrip()
+                previous["zh"] = previous["zh"].rstrip() + item["zh"].lstrip()
+                continue
+        merged.append(item)
+    for position, cue in enumerate(merged, start=1):
+        cue["index"] = position
+    return merged
+
+
+def rewrap_draft(draft: BilingualDraft, policy: CuePolicy, fps: float) -> BilingualDraft:
+    """Re-wrap and merge an existing bilingual draft without translating again."""
+    cues = merge_short_cues(
+        [cue.model_dump(mode="json") for cue in draft.cues], policy, fps
+    )
+    for cue in cues:
+        cue["en_lines"] = _wrap(
+            cue["en"], policy.en_max_chars_per_line, policy.max_lines
+        )
+        cue["zh_lines"] = _wrap_zh(
+            cue["zh"], policy.zh_max_chars_per_line, policy.max_lines
+        )
+    counts = dict(draft.counts)
+    counts["cues"] = len(cues)
+    counts["problems"] = 0
+    return draft.model_copy(
+        update={
+            "cues": [BilingualCue(**cue) for cue in cues],
+            "counts": counts,
+        }
+    )
 
 
 def accept_subtitles(workspace: Path, paths: LessonPaths) -> Path:

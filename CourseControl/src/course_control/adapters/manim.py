@@ -7,7 +7,7 @@ from pathlib import Path
 from ..contracts import Status
 from ..paths import LessonPaths
 from ..utils import probe_media, run_command, which_command
-from .base import StageOutcome, selected
+from .base import StageOutcome, selected, verify_media
 
 
 def run(paths: LessonPaths) -> StageOutcome:
@@ -19,6 +19,7 @@ def run(paths: LessonPaths) -> StageOutcome:
     log_dir = paths.build_root / "logs"
     media_dir = paths.build_root / "tmp" / "manim-media"
     outputs: list[Path] = []
+    warnings: list[str] = []
     errors: list[str] = []
 
     for shot in shots:
@@ -29,10 +30,17 @@ def run(paths: LessonPaths) -> StageOutcome:
         target = paths.build_root / "animation" / f"{scene_path.stem}.mp4"
         if target.is_file() and target.stat().st_mtime >= scene_path.stat().st_mtime:
             try:
-                probe_media(target)
+                _, shot_warnings = verify_media(
+                    target,
+                    width=paths.lesson.outputs.resolution[0],
+                    height=paths.lesson.outputs.resolution[1],
+                    fps=float(paths.lesson.outputs.fps),
+                    expected_duration_s=shot.expected_duration_s,
+                )
             except Exception:  # noqa: BLE001 - invalid cache is re-rendered
                 target.unlink(missing_ok=True)
             else:
+                warnings.extend(f"{shot.id}: {item}" for item in shot_warnings)
                 outputs.append(target)
                 continue
         relative_scene = scene_path.relative_to(paths.engine_root("manim"))
@@ -71,10 +79,31 @@ def run(paths: LessonPaths) -> StageOutcome:
         target = paths.build_root / "animation" / f"{scene_path.stem}.mp4"
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(candidates[-1], target)
-        probe_media(target)
+        try:
+            _, shot_warnings = verify_media(
+                target,
+                width=paths.lesson.outputs.resolution[0],
+                height=paths.lesson.outputs.resolution[1],
+                fps=float(paths.lesson.outputs.fps),
+                expected_duration_s=shot.expected_duration_s,
+            )
+        except Exception as exc:  # noqa: BLE001
+            target.unlink(missing_ok=True)
+            errors.append(f"{shot.id}: {exc}")
+            continue
+        warnings.extend(f"{shot.id}: {item}" for item in shot_warnings)
         outputs.append(target)
 
     duration_ms = int((time.monotonic() - started) * 1000)
     if errors:
-        return StageOutcome("render:manim", Status.FAIL, outputs=outputs, errors=errors, duration_ms=duration_ms)
-    return StageOutcome("render:manim", Status.PASS, outputs=outputs, duration_ms=duration_ms)
+        return StageOutcome(
+            "render:manim",
+            Status.FAIL,
+            outputs=outputs,
+            warnings=warnings,
+            errors=errors,
+            duration_ms=duration_ms,
+        )
+    return StageOutcome(
+        "render:manim", Status.PASS, outputs=outputs, warnings=warnings, duration_ms=duration_ms
+    )

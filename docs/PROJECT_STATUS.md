@@ -7,6 +7,24 @@
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
+## 0.0000 2026-11-10 Production Stabilization 基线
+
+本轮开始把"构建成功""检查完成""质量合格""人工批准"分开。以下数字是 2026-11-10 实跑结果，覆盖本文件后面保留的历史记录。
+
+| 项 | 实际 |
+| --- | --- |
+| 单测 | 六套 585 个用例，579 通过、6 跳过（CourseControl 438 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
+| 回归 | `scripts/check.ps1` exit 0；新增非阻断 `evidence paths` 报告 |
+| 01-transformer-demo | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；最终成片构建中 |
+| 02-car-aerodynamics | 正文、4 个 Manim 镜头、已批准 SRT 存在；build 目录与 22 分钟成片不在本机 |
+| 05-transformer-5min | 292.37 s 成片；`QUALITY_PASS=True` 仅表示"没有 INCOMPLETE"，不是"质量已验证" |
+| 06-attention-sample | 62.17 s 成片；已显式声明 `subtitles.bilingual: false`，SRT 已按标点/词边界重排，V-31 现在覆盖 Remotion 字幕 |
+| nvda-gpu-control | 354.30 s 成片；ASR 未跑，`verify` 为 `incomplete`，发布门禁不再放行 |
+| 交付 | 新增 `course-control package` / `package-verify` / `release-approve` / `plan-audit` / `subtitles-rewrap` |
+| 审计 | `docs/audit/` 七份报告；`docs/stabilization/` 记录迁移方案 |
+
+状态词仍然严格：`pass` 只表示检查执行且通过；`WARN` 必须展示；`SKIP` / `INCOMPLETE` 不得当作 `pass`；`RELEASE_APPROVED` 需要 review 与 release 两次人工签核。
+
 ## 0.000 2026-11-10 增量：多视觉语法生产系统（P1–P4）
 
 | 能力 | 代码 / 契约 | 证据 | 状态 |
@@ -44,12 +62,12 @@
 | BGM 混音 | `audio_mix.py`、`audio-mix` | Schubert D.664（PD）；−15.9 LUFS / −1.4 dBTP；`audio/mix.json` | COMPLETED（P0） |
 | 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 59 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
 | 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
-| 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（27 镜头）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
+| 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（节拍表 27 个镜头条目，非独立渲染单元）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
 | 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |
 | ASR/语音对齐 | `CourseControl/src/course_control/alignment.py`、`asr-align` | faster-whisper `small.en`；80 cue，覆盖 0.992，0 不一致/0 未覆盖 | COMPLETED（P1） |
 | Teaching QA | `teaching_qa.py`、`teaching-qa` | 结构 WARN；`learner_evidence=missing` | COMPLETED（结构层） |
 | Claim Registry / 双审 | `ContentQA/src/content_qa/claims.py`、`cross_review.py` | A 23 / B 24；43 claim：3 supported、38 需人工、2 冲突、26 有来源缺口 | COMPLETED（P1 契约） |
-| 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个镜头对齐 12 段实测旁白；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
+| 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个节拍条目对齐 12 段实测旁白（build 仍是 1 个 scene_base）；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
 | 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 94.7/100（按参考样片校准冻结线）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
 | Primer 衰老模拟复刻（POC） | `CodeVideoStudio/shots/primer-aging/`、本地 `lessons/aging-evolution` | 145.4 s / 4,361 帧；32 cue；ASR 0.935；冻结 0、静音 0；BGM 混音 pass；`animation-score` 100；`QUALITY_PASS=True`、`RELEASE_APPROVED=False` | POC（本地） |
 | Primer P1 后处理 | `CodeVideoStudio/shots/primer-aging/main.js`、`vendor/three/addons/`（官方 r160，未改动）、D-061 | 景深/泛光/调色/颗粒/暗角/FXAA 全部走官方 addons；`capture.json` 开启 GPU+JPEG 后 36 ms/帧，渲染阶段 152 s（原 12 min 级）；两次捕获 sha256 一致；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |

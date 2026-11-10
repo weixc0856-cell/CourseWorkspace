@@ -37,6 +37,7 @@
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)
 - 配色规范（浅色主题/语义色/对比度）：[docs/配色规范.md](docs/配色规范.md)
 - 品牌与片头片尾（WAYNE / 三种形态 / V-33）：[docs/品牌与片头片尾.md](docs/品牌与片头片尾.md)
+- 片头美术方向（参考板/角色/场景/Gate）：[BrandIntro/README.md](BrandIntro/README.md)
 - 教材驱动课程生产（KnowledgeStudio 拆页/检索/引用）：[docs/KnowledgeStudio.md](docs/KnowledgeStudio.md)、[KnowledgeStudio/README.md](KnowledgeStudio/README.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)

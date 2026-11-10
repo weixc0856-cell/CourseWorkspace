@@ -51,6 +51,11 @@ try {
         & (Join-Path $PSScriptRoot "check-paths.ps1")
     }
 
+    # Non-strict: historical evidence may be gone, but the report must show it.
+    Invoke-Checked "evidence paths" -Quiet {
+        uv run --project CourseControl python scripts/check_evidence.py --workspace .
+    }
+
     Invoke-Checked "unit tests: CourseControl" -Quiet {
         uv run --project CourseControl python -m unittest discover `
             -s CourseControl/tests -t CourseControl
