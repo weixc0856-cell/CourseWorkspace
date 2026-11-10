@@ -1,5 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
@@ -103,6 +105,14 @@ uv run --project CourseControl course-control layout-validate --template process
 uv run --project CourseControl course-control simulation-run `
   --spec BlenderStudio/scenes/primer-poc/simulation.spec.json `
   --out build/primer-poc/simulation.json
+
+# 配置解析 / 恢复 / 统计 / 字幕 QC / 交付包
+uv run --project CourseControl course-control config-resolve --lesson 01-shell-for-ai-era
+uv run --project CourseControl course-control build --lesson 01-shell-for-ai-era --resume
+uv run --project CourseControl course-control stats --lesson 01-shell-for-ai-era
+uv run --project CourseControl course-control subtitles-qc --lesson 01-shell-for-ai-era
+uv run --project CourseControl course-control package --lesson 01-shell-for-ai-era
+uv run --project CourseControl course-control package-verify --package build/01-shell-for-ai-era/package
 
 # 完整构建
 .\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era

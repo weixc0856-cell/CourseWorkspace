@@ -14,8 +14,8 @@ window.seek=async t=>{
   for(let j=80;j<H;j+=80){x.beginPath();x.moveTo(0,j);x.lineTo(W,j);x.stroke();}
   x.save();x.font=`600 24px ${FONT}`;x.fillStyle=MUTED;x.textAlign='left';x.fillText('05 · 遮罩',160,130);
   x.textAlign='right';x.fillStyle=INK;x.fillText('WORKSPACE',W-160,130);x.fillStyle=ACCENT;x.fillRect(W-160-190,112,18,18);
-  x.textAlign='left';x.fillStyle=INK;x.font=`700 54px ${FONT}`;x.fillText('只能看前面',160,210);
-  x.fillStyle=MUTED;x.font=`400 28px ${FONT}`;x.fillText('未来的位置被遮住，模型不会偷看答案',160,258);x.restore();
+  x.textAlign='left';x.fillStyle=INK;x.font=`700 54px ${FONT}`;x.fillText('解码器：能看当前和之前',160,210);
+  x.fillStyle=MUTED;x.font=`400 28px ${FONT}`;x.fillText('不能看未来；未来位置被遮住',160,258);x.restore();
   const cell=88,gap=6,gridW=5*cell+4*gap,left=W/2-gridW/2+40,top=340;
   const build=ease((t-0.2)/1.2),mask=ease((t-1.4)/1.2);
   for(let r=0;r<5;r++){

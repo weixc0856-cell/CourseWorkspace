@@ -1,5 +1,7 @@
 # 文档索引
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本目录按“现行契约 / 生产规范 / 评估与雷达 / 状态与验收 / 本地归档”组织。
 
 ## 1. 现行契约
@@ -12,7 +14,7 @@
 
 ## 1.0.0 V1 全量修复与生产体系收敛（2026-11-10，现行）
 
-- [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)：C-01～C-30 唯一问题台账与最终裁决
+- [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)：C-01～C-32 唯一问题台账；现状 VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16）/ OPEN 0
 - [stabilization/DECISIONS.md](stabilization/DECISIONS.md)：本轮裁决索引与被取代说法
 - [stabilization/ARCHITECTURE_FINAL.md](stabilization/ARCHITECTURE_FINAL.md)：最终模块边界与权威链
 - [stabilization/PRODUCTION_CONTRACT.md](stabilization/PRODUCTION_CONTRACT.md)：Page/Scene/Storyboard/Shot

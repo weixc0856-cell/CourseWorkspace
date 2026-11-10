@@ -93,3 +93,11 @@ BrandIntro/art_tests/*/out/
 
 # Vendored three.js is copied into shots at build time.
 CodeVideoStudio/shots/*/three.module.js
+
+# Brand intro/desktop: commit source; keep renders, previews and Blender backups local.
+CodeVideoStudio/shots/brand-*/out/
+CodeVideoStudio/shots/brand-intro/brand-rise/
+CodeVideoStudio/shots/brand-intro/env-*.png
+CodeVideoStudio/shots/brand-intro/character-*.png
+CodeVideoStudio/shots/brand-*/*.blend1
+CodeVideoStudio/shots/brand-intro/film.before-*.js

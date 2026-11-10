@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 from course_control.adapters.base import StageOutcome
-from course_control.checkpoint import CheckpointStore, run_stage
+from course_control.checkpoint import CheckpointStore, run_stage, stage_inputs
+from course_control.paths import LessonPaths
 from course_control.contracts import Status
 
 
@@ -60,6 +61,16 @@ class CheckpointStoreTest(unittest.TestCase):
             store.save(outcome("render:manim", output, Status.FAIL), {}, "run-1")
             valid, _ = store.check("render:manim", {})
             self.assertFalse(valid)
+
+
+    def test_subtitles_only_invalidate_consuming_stages(self) -> None:
+        workspace = Path(__file__).resolve().parents[2]
+        fixture = workspace / "CourseControl" / "tests" / "fixtures" / "lesson-smoke"
+        paths = LessonPaths.load(workspace, fixture)
+        subtitle_key = "CourseControl/tests/fixtures/lesson-smoke/subtitles.srt"
+        self.assertNotIn(subtitle_key, stage_inputs(paths, "capture_slides"))
+        self.assertNotIn(subtitle_key, stage_inputs(paths, "render:blender"))
+        self.assertIn(subtitle_key, stage_inputs(paths, "collect"))
 
     def test_run_stage_skips_the_action_when_checkpoint_is_valid(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

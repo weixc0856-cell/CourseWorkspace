@@ -1,11 +1,22 @@
 # CodeVideoStudio
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 镜头级代码视频生产目录（R1 P2/P3）。
 
 - **上游 Skill**：`skills/code-video/`，来自 [SenseNova-6.8-Code2Video](https://github.com/OpenSenseNova/SenseNova-6.8-Code2Video)，Apache 2.0（`LICENSE.code-video`）。该目录保留 Apache-2.0；仓库其余部分为 AGPL-3.0-or-later，见根目录 `LICENSE` / `NOTICE`。
 - **不包含**：27B 模型权重。Agent 使用 Claude Code + cc-switch + DeepSeek；渲染在本地 Playwright/ffmpeg。
 - **Agent 配置**：默认 Claude Code（`config/claude-code.yaml`）。镜头阶段才开放 `Read/Write/Edit/Glob/Grep`，cwd 必须是 `CodeVideoStudio/shots/<shot>/` 或 `build/` 暂存目录；文本阶段用 `--tools=`。
 - **不接管**：整课编排与最终合成。CourseControl 仍是唯一调度层；产物是镜头 MP4。
+
+## three.js 与镜头副本（2026-11-10）
+
+唯一 checked-in 副本是 `vendor/three/three.module.js`。镜头目录里的 `three.module.js` 由 `course-control vendor-sync`（或 `render:code_video`）在构建时复制，不提交。升级只改 vendor 一处，然后重捕获使用它的镜头。
+
+```powershell
+uv run --project CourseControl course-control vendor-sync
+uv run --project CourseControl course-control vendor-check
+```
 
 ## 目录
 

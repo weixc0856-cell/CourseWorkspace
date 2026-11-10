@@ -1,5 +1,7 @@
 # KnowledgeStudio
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 教材与知识资产管理：把一本专业教材拆成**按页可引用**的知识单元，让一节课只读它需要的十几页。
 
 ```powershell

@@ -1,10 +1,23 @@
 # ContentQA — 内容审查
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 默认用 **Claude Code** 对课程内容做事实与一致性核查，产出**候选意见**；也可显式切到 OpenAI 兼容 API。它只读课程、只写 `build/<slug>/review/`，不影响课程构建的 verdict。
 
 - 需求：`docs/PRD.md` FR-12
 - 架构：`docs/ARCHITECTURE.md` §3.4、§4.3
 - 配置模板：`config/content-qa.example.yaml`
+
+## 裁决队列（2026-11-10）
+
+审查意见本身不是结论。每条 finding 的处置写入 `build/<slug>/review/decisions.json`：
+
+```powershell
+uv run --project CourseControl course-control review-status --lesson <slug>
+uv run --project CourseControl course-control review-decide --lesson <slug> --id <finding> --decision fixed --by <name>
+```
+
+`accepted` / `deferred` 保持开放；`rejected` 必须写理由；未裁决的 finding 一律进入人工复核。
 
 ## 边界
 

@@ -1,10 +1,14 @@
 # BrandIntro
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 WAYNE 片头的美术方向工程。与课程流水线解耦，不产出课程内容。
 
 日期：2026-11-10
-状态：**2026-11-10 暂停。** 成果与判断见 [ARCHIVE.md](ARCHIVE.md)。已有一条 20 秒工作室版原型 `out/wayne-atelier.mp4`，未接生产链。
+状态：**C-16 DEFERRED（所有者决定，2026-11-10）：片头暂缓，不阻塞 V1。** 成果与判断见 [ARCHIVE.md](ARCHIVE.md)。已有一条 20 秒工作室版原型 `out/wayne-atelier.mp4`，未接生产链。
 决策来源：`docs/品牌片头-3D桌面戏-设计.md` v1.1 的 Gate 1 粗剪结论 + 2026-11-10 美术方向审查。
+
+> **2026-11-10 收尾**：`film.js` 的墙面/背板改为 `paper #FBFAF7`，恢复地面与台面层次，重渲 `out/wayne-atelier-v2.mp4`；正确入口是 `film.html`，不是 `index.html`。Gate 3 复核与前后帧见 [gates/GATE3_REVIEW_2026-11-10.md](gates/GATE3_REVIEW_2026-11-10.md)。**Gate 3 仍未通过**，最终美术签核待人工。
 
 ## 1. 这一轮在解决什么
 

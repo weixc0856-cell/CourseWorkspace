@@ -197,6 +197,25 @@ def _audio_source(paths: LessonPaths) -> tuple[Path | None, str | None]:
 
 
 def _load_cues(paths: LessonPaths) -> tuple[list[dict] | None, str | None]:
+    # The delivered subtitles are the accepted SRT, not an older bilingual
+    # draft left under build/. Audit what was shipped.
+    srt_path = paths.subtitles_path()
+    if srt_path is not None and srt_path.is_file():
+        from .subtitles_qc import CJK_RE, parse_srt
+
+        cues = []
+        for cue in parse_srt(srt_path.read_text(encoding="utf-8", errors="replace")):
+            en = [line for line in cue["lines"] if not CJK_RE.search(line)]
+            cues.append(
+                {
+                    "index": cue["index"],
+                    "start_ms": int(cue["start_ms"]),
+                    "end_ms": int(cue["end_ms"]),
+                    "en": " ".join(en).strip(),
+                }
+            )
+        if cues:
+            return cues, None
     draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
     if draft_path.is_file():
         try:

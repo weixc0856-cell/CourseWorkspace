@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.alignment import Word, align_cues
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+
+from course_control.alignment import Word, _load_cues, align_cues
 
 
 def word(start: int, end: int, text: str) -> Word:
@@ -45,6 +49,30 @@ class AlignmentTests(unittest.TestCase):
             result["uncovered_speech"][0]["end_s"] - result["uncovered_speech"][0]["start_s"],
             1.5,
         )
+
+
+    def test_loader_prefers_accepted_srt_over_stale_draft(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            srt = root / "subtitles.srt"
+            srt.write_text(
+                "1\n00:00:00,000 --> 00:00:02,000\nHello world\n你好世界\n",
+                encoding="utf-8",
+            )
+            draft_dir = root / "build" / "demo" / "subtitles"
+            draft_dir.mkdir(parents=True)
+            (draft_dir / "bilingual.draft.json").write_text(
+                '{"cues":[{"index":1,"start_ms":0,"end_ms":9999,"en":"stale"}]}',
+                encoding="utf-8",
+            )
+            paths = SimpleNamespace(
+                subtitles_path=lambda: srt,
+                build_root=root / "build" / "demo",
+            )
+            cues, error = _load_cues(paths)
+            self.assertIsNone(error)
+            self.assertEqual(cues[0]["en"], "Hello world")
+            self.assertEqual(cues[0]["end_ms"], 2000)
 
     def test_subtitle_mentions_missing_from_speech(self) -> None:
         cues = [{"index": 1, "start_ms": 0, "end_ms": 1500, "en": "query key value vector"}]

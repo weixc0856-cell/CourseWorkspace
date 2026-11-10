@@ -121,7 +121,7 @@ def check_cues(
     errors: list[str] = []
     warnings: list[str] = []
     previous: dict | None = None
-    for cue in cues:
+    for cue_index, cue in enumerate(cues):
         position = cue["index"]
         start, end = cue["start_ms"], cue["end_ms"]
         duration = (end - start) / 1000.0
@@ -159,7 +159,22 @@ def check_cues(
                 warnings.append(f"cue {position}: Chinese line starts with punctuation")
         if en:
             last = re.findall(r"[A-Za-z']+", en[-1])
-            if last and last[-1] == last[-1].lower() and last[-1] in DANGLING_EN:
+            # A preposition/article at the break is a false positive when the
+            # next cue continues the same sentence in lower case. Only flag a
+            # real stop after a dangling function word.
+            continuation = False
+            if cue_index + 1 < len(cues):
+                next_en, _ = _split_languages(cues[cue_index + 1]["lines"])
+                if next_en and next_en[0][:1].islower():
+                    continuation = True
+            sentence_end = en[-1].rstrip().endswith((".", "!", "?", "…", '"', "”"))
+            if (
+                not continuation
+                and not sentence_end
+                and last
+                and last[-1] == last[-1].lower()
+                and last[-1] in DANGLING_EN
+            ):
                 warnings.append(
                     f"cue {position}: English cue ends with '{last[-1]}'"
                 )

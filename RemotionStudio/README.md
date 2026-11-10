@@ -1,5 +1,7 @@
 # RemotionStudio
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 最终视频编排工程。读取 `build/<lesson>/shots.json` 或 `build/<lesson>/contracts/timeline.spec.json`，把幻灯片画面、Blender / Motion Canvas / Manim / CodeVideo 成片、旁白和字幕组合成课程视频。
 
 ## 边界
@@ -39,7 +41,7 @@ npx remotion render src/index.ts CourseVideo `
   ../build/01-shell-for-ai-era/final/preview-remotion.mp4 `
   --props=../build/01-shell-for-ai-era/shots.json
 
-# 章节卡（独立渲染，尚未自动插入时间线）
+# 章节卡（探针入口，非生产；不进入课程构建）
 npx remotion render src/probes/index.ts ChapterCard ../build/<lesson>/final/chapter-01.mp4 `
   --props=../build/<lesson>/contracts/chapter-01.json
 
@@ -77,8 +79,8 @@ npx remotion render src/index.ts CourseTimeline `
 - 时间线 `video[].metadata.legacy_motion` 由 `collect`/`v1_timeline` 写入；
 - `src/components/MotionImage.tsx` 只对图片资产应用平移/缩放，视频不受影响；
 - 参数来自 `lesson.yaml.motion`：`slides: ken_burns|static`、`scale`、`pan_percent`；
-- `PrimerPoc` 是 30 秒模拟样片合成：世界视频 + 三元图 + payoff 表。
-- `ChapterCard` 是独立的章节卡（章节号、标题、副标题、纸白底）；当前只支持手工渲染，尚未由导演计划自动插入。
+- `PrimerPoc` 是 30 秒模拟样片探针，位于 `src/probes/`，不进入生产入口。
+- `ChapterCard` 与 `BrandPreview` 已移至 `src/probes/`；生产入口 `src/index.ts` 只注册课程与品牌片段。
 
 ## 旁白与字幕
 

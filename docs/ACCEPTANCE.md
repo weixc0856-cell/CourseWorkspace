@@ -8,7 +8,7 @@
 
 ## 0. 2026-11-10 复核
 
-本轮重跑六套单测，实际为 **636 个用例（630 通过 + 6 跳过）**：CourseControl 489、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 21；`check.ps1` exit 0。新增的配置解析、检查点、resume、字幕 QC、裁决队列、vendor、镜头分类与证据分类测试都在这 489 之内。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
+本轮重跑六套单测，实际为 **640 个用例（634 通过 + 6 跳过）**：CourseControl 493、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 21；`check.ps1` exit 0。新增的配置解析、检查点、resume、字幕 QC、裁决队列、vendor、镜头分类与证据分类测试都在这 493 之内。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
 
 ## 1. 一键回归
 
@@ -21,7 +21,7 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 489（484 通过 + 5 跳过） | 484 通过，5 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 493（488 通过 + 5 跳过） | 488 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 25 | 全部通过 |

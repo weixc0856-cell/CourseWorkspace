@@ -1,5 +1,7 @@
 # BlenderStudio
 
+
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 3D 场景与渲染工程。负责 Blender 场景构建、Geometry Nodes 资产、场景级验收与渲染；课程级编排、调度与最终验收仍属于 `CourseControl/`。
 
 ## 边界
@@ -10,6 +12,16 @@
 - 不在 Blender 内置 Python 中安装第三方包。
 - IR v2 任务文件只包含数据字段，不包含可执行代码。
 - `scenes/primer-poc/` 是独立模拟 POC：用 Blender Python 消费 `SimulationData`，不属于 IR v2 任务；只用于双引擎对照。
+
+## 任务入口（2026-11-10）
+
+v1 课程任务与 v2 场景任务都由 `CourseControl` 的 `blender_task.load_blender_task` 读取：按 `schema_version` 分派、未知字段拒绝、输出必须在 `build/<lesson>/blender/`。校验命令：
+
+```powershell
+uv run --project CourseControl course-control blender-task-validate --task BlenderStudio/tasks/<lesson>/<task>.json
+```
+
+v2 场景仍用于 POC 与场景验证，不进入课程默认链路，除非课程显式引用。
 
 ## 环境
 
