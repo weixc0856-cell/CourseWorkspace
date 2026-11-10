@@ -172,9 +172,16 @@ def _q4(paths: LessonPaths) -> dict:
 
 def _q5(paths: LessonPaths) -> dict:
     build_root = paths.build_root
+    subtitles_artifact = paths.subtitles_path()
+    if (
+        subtitles_artifact is None
+        and paths.lesson.subtitles.enabled
+        and paths.lesson.subtitles.mode == "word"
+    ):
+        subtitles_artifact = build_root / "subtitles.words.json"
     required = {
         "narration": build_root / "narration" / "narration.wav",
-        "subtitles": paths.subtitles_path(),
+        "subtitles": subtitles_artifact,
         "build_report": build_root / "final" / "build-report.json",
         "media_qc": build_root / "quality" / "media-qc.json",
         "approval": paths.lesson_dir / "authoring" / "approval.json",

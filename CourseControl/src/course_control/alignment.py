@@ -40,7 +40,32 @@ def _sha(path: Path) -> str:
     return digest.hexdigest()
 
 
+_TRAD_TO_SIMP = str.maketrans(
+    {
+        "麼": "么", "實": "实", "讓": "让", "個": "个", "詞": "词", "這": "这",
+        "時": "时", "會": "会", "對": "对", "於": "于", "與": "与", "從": "从",
+        "進": "进", "過": "过", "還": "还", "為": "为", "說": "说", "見": "见",
+        "點": "点", "數": "数", "據": "据", "強": "强", "連": "连", "變": "变",
+        "權": "权", "裡": "里", "層": "层", "問": "问", "應": "应", "該": "该",
+        "們": "们", "來": "来", "現": "现", "際": "际", "開": "开", "關": "关",
+        "並": "并", "嗎": "吗", "著": "着", "夠": "够", "樣": "样", "後": "后",
+        "錯": "错", "陣": "阵", "話": "话", "歸": "归", "訊": "讯", "帶": "带",
+        "誰": "谁", "長": "长", "間": "间", "題": "题", "種": "种", "幾": "几",
+        "幹": "干", "麼": "么", "個": "个", "麼": "么",
+    }
+)
+
+
 def _tokens(text: str) -> list[str]:
+    """Tokenize English words or CJK characters for coverage comparison.
+
+    CJK ASR often returns traditional characters while the approved script is
+    simplified; normalize the common variants before comparing, otherwise every
+    Chinese cue scores zero coverage.
+    """
+    if re.search(r"[一-鿿]", text):
+        normalized = text.translate(_TRAD_TO_SIMP)
+        return [ch for ch in normalized if "一" <= ch <= "鿿" or ch.isalnum()]
     cleaned = re.sub(r"[^a-z0-9']+", " ", text.lower())
     return [token for token in cleaned.split() if token]
 

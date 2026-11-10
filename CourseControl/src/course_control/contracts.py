@@ -38,10 +38,24 @@ class Outputs(StrictModel):
     animation_canvas: tuple[int, int] = (1920, 1080)
 
 
+TransitionKind = Literal["hard_cut", "fade", "dissolve", "match_cut", "wipe"]
+
+
+class Transition(StrictModel):
+    """Visual transition into/out of a shot; never changes the shot's duration."""
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    in_: TransitionKind = Field("hard_cut", alias="in")
+    out: TransitionKind = "hard_cut"
+
+
 class Compose(StrictModel):
-    mode: Literal["deck", "scene", "recording"]
+    mode: Literal["deck", "scene", "recording", "shots"]
     base_video: str | None = None
     renderer: Literal["timeline", "legacy"] = "timeline"
+    # Optional scene overlay drawn by Remotion instead of baked into the plate.
+    overlay: str | None = None
 
     @model_validator(mode="after")
     def recording_needs_base(self):
@@ -63,6 +77,10 @@ class Narration(StrictModel):
 class Subtitles(StrictModel):
     enabled: bool = False
     render: Literal["remotion", "burn_in"] = "remotion"
+    # ``cue`` keeps the SRT pipeline; ``word`` consumes ASR word timestamps.
+    mode: Literal["cue", "word"] = "cue"
+    position: Literal["bottom", "low_center"] = "bottom"
+    word_source: str | None = None
     top_language: str = "en"
     bottom_language: str = "zh-Hans"
     # Distance in pixels between the bottom of the subtitle block and the frame
@@ -161,6 +179,48 @@ class MotionPolicy(StrictModel):
     pan_percent: float = Field(default=1.2, ge=0.0, le=4.0)
 
 
+class BrandSegment(StrictModel):
+    """One brand segment (intro or outro) around the lesson body."""
+
+    enabled: bool = True
+    # ``auto`` resolves from ``audio.content_kind`` via shared/design-tokens/brand.json.
+    preset: str = "auto"
+    duration_s: float | None = Field(default=None, gt=0.3, le=30.0)
+    # Brand frames are English-only; this overrides the lesson's English title.
+    title: str | None = None
+
+    @field_validator("preset")
+    @classmethod
+    def _preset_slug(cls, value: str) -> str:
+        # Preset ids use underscores (course_intro); the lesson slug rule does not.
+        if value != "auto" and not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", value):
+            raise ValueError("preset must be 'auto' or a preset id from brand.json")
+        return value
+
+
+class Branding(StrictModel):
+    """Brand assets around the body. Disabled unless a lesson opts in.
+
+    The brand layer never touches narration, subtitles or shot timing: it is
+    stitched after the viewing master is final, so the body timeline stays the
+    single timing fact.
+    """
+
+    theme: Literal["wayne-light"] = "wayne-light"
+    intro: BrandSegment | None = None
+    outro: BrandSegment | None = None
+    # Only the news end card shows a date; course frames carry no metadata.
+    date: str | None = None
+    preview_safe_area: bool = False
+
+    @property
+    def enabled(self) -> bool:
+        return bool(
+            (self.intro is not None and self.intro.enabled)
+            or (self.outro is not None and self.outro.enabled)
+        )
+
+
 class LessonConfig(StrictModel):
     schema_version: Literal[1]
     lesson_id: str
@@ -177,9 +237,11 @@ class LessonConfig(StrictModel):
     build: BuildOptions = BuildOptions()
     motion: MotionPolicy = MotionPolicy()
     audio: AudioPolicy = AudioPolicy()
+    branding: Branding = Branding()
     video_form: Literal["long", "short"] = "long"
     duration: DurationPolicy | None = None
     authoring: Authoring | None = None
+    production: str | None = None
 
     @field_validator("lesson_id")
     @classmethod
@@ -283,6 +345,7 @@ class Shot(StrictModel):
     duration_s: float = Field(gt=0)
     timeline_role: Literal["base", "overlay"]
     presentation: Literal["cutaway", "picture_in_picture", "transparent_overlay"] | None = None
+    transition: Transition | None = None
 
     @model_validator(mode="after")
     def overlay_needs_presentation(self):

@@ -26,7 +26,13 @@
 [自动] compose                         staging → npx remotion render → final/course-video.mp4
    │
    ▼
-[自动] verify                          V-10~V-22 → final/build-report.json
+[自动][可选] burn_subtitles            ASS 烧录 → final/course-video-captioned.mp4
+   │
+   ▼
+[自动][可选] brand                     lesson.branding 开启时渲染片头片尾并拼接
+   │                                   → final/course-video-delivery.mp4 + final/brand.json
+   ▼
+[自动] verify                          V-10~V-22 + V-36 → final/build-report.json
 
 [独立][自动][可选] scene-run           IR v2 → Blender → 场景验收 → manifests/
 [独立][自动][人工触发] modeling-studio 本地模型 → 脚本 → Blender → validation.json
@@ -253,7 +259,7 @@ uv run --project CourseControl course-control validate --lesson <slug>
   → narration-build（本地 VoxCPM2，整课或 --sample-pages 样片）
   → subtitles-build（实测音频；--planned 可先生成计划版草稿）
   → [人工] subtitles-accept
-  → build（validate → 截图/动画 → collect → TimelineSpec 合成 → ASS 烧录 → verify）
+  → build（validate → 截图/动画 → collect → TimelineSpec 合成 → ASS 烧录 → 品牌拼接 → verify）
 ```
 
 | 阶段 | 命令 | 产物 |
@@ -305,3 +311,27 @@ PATH="CodeVideoStudio/bin:$PATH" sh CodeVideoStudio/skills/code-video/scripts/ch
 **创作规范**：所有长视频与 Shorts 的选题、六段叙事骨架、A/B 视觉生产方式与留存指标见
 [docs/creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)。
 长视频与 Shorts 都必须提供 `authoring/narrative-plan.json`，并由 `narrative-validate` 校验。
+
+## 15. 镜头驱动生产（2026-11-10）
+
+用于短切、模拟、混合叙事等不适合“页 + 插入动画”的片型。
+
+1. `lesson.yaml`：`compose.mode: shots`、`production: authoring/production.yaml`。
+2. `authoring/production.yaml`：Lesson → Sequence → Shot；镜头 `duration_s` 是唯一时钟。
+3. 每个镜头声明 `purpose` / `visual_type` / `grammar` / `renderer` / `source`；`techniques`、`actions` 可空，动作类型开放。
+4. 校验与构建：
+
+```powershell
+uv run --project CourseControl course-control production-validate --plan lessons/<slug>/authoring/production.yaml
+uv run --project CourseControl course-control validate --lesson <slug>
+uv run --project CourseControl course-control build --lesson <slug>
+```
+
+5. 质量不在 `animation-score` 上判定；用分层门禁：
+
+```powershell
+uv run --project CourseControl course-control quality-gate --lesson <slug> --profile <grammar>
+uv run --project CourseControl course-control reference-compare --lesson <slug> --reference <id>
+```
+
+6. 旧模式 `deck` / `scene` / `recording` 不变；不写 `production` 的课程完全不受影响。

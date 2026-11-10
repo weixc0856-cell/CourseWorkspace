@@ -1,11 +1,40 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-09（Primer P1 后处理、第三方依赖准入规范）
+- **最近更新**：2026-11-09（品牌层 WAYNE 片头片尾、KnowledgeStudio 教材知识库、Primer P1 归档、第三方依赖准入、Blender 写实能力评估）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `eaea74e`
-- **基线核实**：2026-11-09 实跑 `check.ps1` = `check ok`；CourseControl 单测 352 个用例（含新增 capture.json 与缓存失效用例）
+- **基线核实**：2026-11-09 实跑 `check.ps1` = `check ok`；CourseControl 412 个用例、KnowledgeStudio 13 个用例，Remotion `tsc --noEmit` 通过
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
+
+## 0.000 2026-11-10 增量：多视觉语法生产系统（P1–P4）
+
+| 能力 | 代码 / 契约 | 证据 | 状态 |
+| --- | --- | --- | --- |
+| Production Contract（Lesson/Sequence/Shot） | `production.py`、`contracts.py`、`paths.py`、`collect._collect_shots`、`pipeline.py` | `test_production.py`、`test_collect_shots.py`、shots-demo 30 s 完整构建 verdict pass | COMPLETED |
+| 视觉语法注册表 | `shared/grammars/visual-grammars.yaml`、`grammar.py`、`course-control grammar-list` | 7 个 grammar；`test_grammar.py` | COMPLETED |
+| 按语法的节拍校验 | `beats.py`（per-shot grammar）、`validators.py` V-35 | `test_grammar.py`：3 s 切在 kinetic 通过、在 long_take 失败 | COMPLETED |
+| 质量分层 | `quality_gates.py`、`course-control quality-gate`、`animation_score.py`（metric_only） | 05-transformer-5min：hard pass / grammar pass / score 100 metric_only | COMPLETED |
+| 废止统一 85 分线 | `docs/工业化动画工作流.md`、D-065/D-066 | 文档与 CLI 一致 | COMPLETED |
+| 镜头级转场 | `contracts.Transition`、`v1_timeline` metadata、`CourseTimeline.tsx` | `tsc --noEmit`；未逐帧目检 | COMPLETED（组件） |
+| 逐词字幕 | `Subtitles.mode=word`、`collect._word_captions`、`WordCaptions.tsx`、V-16 | shots-demo 30 s 成片抽帧可见逐词高亮；未用真实中文 ASR 验证精度 | PARTIAL |
+| 长片分块捕获 | `capture.mjs --chunk-seconds`、`adapters/code_video.py` | 12 s / 360 帧，PSNR ≈ 57.7 dB；180 s 未重跑 | PARTIAL |
+| 参考库与六维差距 | `reference.py`、`docs/architecture/references/`、`golden/`、`reference-compare` | 3 份参考记录；`3b1b-attention` 实跑 | COMPLETED |
+| 真实中文样片（06-attention-sample） | `lessons/06-attention-sample`（本地）、production 契约、Manim + CodeVideo | 62.187 s 成片；7 镜头 / 5 语法 / 2 渲染器；ASR small/zh 覆盖率 0.935 PASS；quality-gate hard/grammar pass；Q1/Q2/Q5 未完成 | VERIFIED（本地） |
+| 180 s 分块捕获 | `capture.mjs --chunk-seconds` | 3 段 × 60 s；5400 帧 / 180.000 s；完整解码；281.9 s | VERIFIED |
+
+边界：逐词字幕未目检；`Annotation` 仍只有 `text`/`legend`；`match_cut` 回退硬切；180 s 分块捕获未重跑。详见 [实施记录](architecture/实施记录-P1-P4.md)。
+
+## 0.00 2026-11-09 增量：品牌层与教材知识库
+
+| 能力 | 契约 / 代码 | 证据 | 状态 |
+| --- | --- | --- | --- |
+| FR-34 品牌层 | `RemotionStudio/src/brand/`、`shared/design-tokens/brand.json`、`CourseControl/.../branding.py`、`adapters/brand.py`、`docs/品牌与片头片尾.md` | 全英文、片头 3.0 s 硬切 / 片尾 12 s CTA-only / 新闻片尾 6 s / 竖屏签名 1 s；真实渲染并拼接 292.367 s 母版 → 307.367 s，`mode=copy`（TS 重封装 + 显式 duration）、`video_timing` 9221/9221 帧、`audio_alignment=pass`（delta 0.107 s）；V-36 反查母版+片头片尾；29 个单测 | COMPLETED（POC） |
+| FR-35 教材知识库 | `KnowledgeStudio/src/knowledge_studio/`、`docs/KnowledgeStudio.md` | PDF 导入（pypdf 6.9.2）；12 页冒烟教材：目录 4 条/偏移 -4、3 单元、index、英文检索 4/12 页、中文检索 3/12 页、claim 证据、KS-01…KS-08 全 pass；13 个单测 | COMPLETED（R1+R2） |
+
+边界：品牌音效、新闻正片来源条、缩略图模板、4K 品牌渲染未实现；教材 OCR、表格/公式语义结构与语义检索未实现（R3）。品牌默认关闭，开启后成片时长为母版 + 片头片尾，V-36 按此复算。
+
+---
 
 ## 0.0 2026-11-09 增量：五条质量防线 P0 与 5 分钟校准课
 
@@ -26,7 +55,9 @@
 | Primer P1 后处理 | `CodeVideoStudio/shots/primer-aging/main.js`、`vendor/three/addons/`（官方 r160，未改动）、D-061 | 景深/泛光/调色/颗粒/暗角/FXAA 全部走官方 addons；`capture.json` 开启 GPU+JPEG 后 36 ms/帧，渲染阶段 152 s（原 12 min 级）；两次捕获 sha256 一致；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | Primer P1 生物资产与动作 | `simulate.py`（schema 2，稳定 `id`）、`main.js` 生物组件 | 胶囊身体 + 头部（口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；步态由实测速度驱动、近静止低头、新生缩放；修复按数组下标插值造成的跨个体跳变；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | Primer P1 生态（水面/植被） | `main.js`（湖盆、水面、草丛、灌木）、官方 `Water` addon | 湖盆 + 按地形采样确定水线的水面（`Water` addon，水纹随 `t`）；6,000 实例草叶 + 70 灌木；`media-qc` 十项 PASS；`animation-score` 100；两次捕获 sha256 一致 | COMPLETED（POC） |
+| Primer P1 Remotion 叠加层 | `course_control/overlays.py`、`RemotionStudio/src/overlays/AgingHud.tsx`、`CourseTimeline.tsx` | `compose.overlay: aging_hud` → timeline `metadata.overlay`（约 69 KB/145 s）→ Remotion 绘制 HUD 与 5 年分箱死亡风险曲线；世界片不再烧入 HUD；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | 第三方依赖准入 | `docs/第三方依赖准入规范.md`、D-062、`CLAUDE.md` 第 12 条 | 检查表 + 依赖登记表（star/fork/推送日/许可/版本一致性）；three.js 117,923 star / 36,921 fork / 2026-11-09 仍在推送；本地 r160 落后上游 0.187.0，已登记为升级待办 | COMPLETED |
+| Blender 写实能力评估 | `docs/evaluations/评估-Blender写实渲染能力.md` | 森林+列车（2 万棵实例树）720p/32 采样 4.53 s/帧；程序化精细树 3 s/帧；陆家嘴夜景体块 6 s/帧；结论：算力非瓶颈，资产与美术是；1:1 复刻不在能力内，3D 讲解是甜区 | COMPLETED（评估） |
 
 边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
 ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。

@@ -1699,11 +1699,13 @@ def animation_score_command(
     lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     sheet: Path | None = typer.Option(None, "--sheet"),
+    profile: str | None = typer.Option(None, "--profile"),
 ) -> None:
-    """Score how far the film is from the 3Blue1Brown motion grammar."""
+    """Report motion metrics. This is a metric tool, not a release gate."""
     from . import palette_gate
     from .animation_score import score
     from .beats import load_segments, load_sheet
+    from .grammar import try_load_registry
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -1738,14 +1740,18 @@ def animation_score_command(
         media_qc=media_qc,
         build_verdict=build_verdict,
         palette_ok=palette_ok,
+        registry=try_load_registry(workspace.resolve()),
+        profile=profile,
     )
     typer.echo(f"score: {result['score']}/100  verdict: {result['verdict']}")
+    typer.echo(f"release_gate: {result.get('release_gate', 'legacy')} (metric only)")
     for name, value in result["components"].items():
         typer.echo(f"  {name}: {value}")
     typer.echo("metrics: " + json.dumps(result["metrics"], ensure_ascii=False))
     for issue in result["issues"]:
-        typer.echo(f"  [fail] {issue}")
-    raise typer.Exit(0 if result["verdict"] == "pass" else 1)
+        typer.echo(f"  [issue] {issue}")
+    typer.echo("use `course-control quality-gate` for the release decision")
+    raise typer.Exit(0)
 
 
 @app.command("narrative-validate")
@@ -1839,3 +1845,245 @@ def teaching_qa_command(
     typer.echo("learner_evidence: missing")
     typer.echo(f"report: {target}")
     raise typer.Exit(1 if report["structural_status"] == "BLOCKED" else 0)
+
+
+@app.command("brand-plan")
+def brand_plan_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Resolve the brand segments for a lesson without rendering anything."""
+    from .branding import build_plan, write_plan
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+        plan = build_plan(paths)
+        target = write_plan(paths, plan)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(json.dumps(plan.as_dict(), ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"lesson: {plan.lesson_id}  content_kind: {plan.content_kind}")
+    typer.echo(f"master: {plan.master or '(none yet)'}")
+    for segment in plan.segments:
+        typer.echo(
+            f"  {segment['kind']}: {segment['preset']} / {segment['composition']} "
+            f"{segment['duration_s']}s ({segment['duration_frames']} frames)"
+        )
+    typer.echo(f"brand total: {plan.brand_duration_s}s")
+    typer.echo(f"plan: {target}")
+
+
+@app.command("brand-render")
+def brand_render_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    force: bool = typer.Option(False, "--force", help="Ignore the segment cache."),
+    stitch: bool = typer.Option(
+        False, "--stitch", help="Also concatenate around the existing viewing master."
+    ),
+) -> None:
+    """Render the brand segments (and optionally stitch the delivery master)."""
+    from .branding import (
+        build_plan,
+        delivery_path,
+        render_segments,
+        run_branding,
+        write_plan,
+    )
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+        if stitch:
+            plan, record = run_branding(paths, force=force)
+            typer.echo(
+                f"delivery: {delivery_path(paths)}  mode: {record['mode']}  "
+                f"{record['duration_s']}s"
+            )
+            return
+        plan = build_plan(paths)
+        write_plan(paths, plan)
+        for record in render_segments(paths, plan, force=force):
+            typer.echo(
+                f"  {record['composition']}: {record['status']} "
+                f"{record['duration_s']}s"
+            )
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+
+
+@app.command("grammar-list")
+def grammar_list_command(
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """List the visual grammars available to production contracts."""
+    from .grammar import try_load_registry
+
+    registry = try_load_registry(workspace.resolve())
+    if as_json:
+        typer.echo(json.dumps(registry.model_dump(mode="json"), ensure_ascii=False, indent=2))
+        return
+    for name, spec in registry.grammars.items():
+        window = spec.shot_seconds
+        typer.echo(
+            f"{name:14s} {spec.label}  shots {window.min:g}-{window.max:g}s  "
+            f"long_lived>={spec.constraints.long_lived_ratio_min:g}"
+        )
+
+
+@app.command("production-validate")
+def production_validate_command(
+    plan: Path | None = typer.Option(None, "--plan"),
+    lesson: str | None = typer.Option(None, "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Validate a shot-driven production contract before any render."""
+    from .grammar import try_load_registry
+    from .paths import ContractError, LessonPaths
+    from .production import load_production, validate_plan
+
+    workspace = workspace.resolve()
+    registry = try_load_registry(workspace)
+    if plan is None:
+        if not lesson:
+            typer.echo("give --plan or --lesson", err=True)
+            raise typer.Exit(2)
+        try:
+            paths = LessonPaths.load(workspace, (workspace / lesson_dir / lesson).resolve())
+        except ContractError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        if paths.production is None or paths.production_source is None:
+            typer.echo("lesson has no production contract", err=True)
+            raise typer.Exit(1)
+        production = paths.production
+        source = paths.production_source
+    else:
+        source = plan if plan.is_absolute() else (workspace / plan).resolve()
+        try:
+            production = load_production(source)
+        except (OSError, ValueError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+    issues = validate_plan(production, workspace=workspace, registry=registry)
+    payload = {
+        "lesson": production.lesson,
+        "sequences": len(production.sequences),
+        "shots": len(production.shots),
+        "total_seconds": round(production.total_seconds, 3),
+        "issues": issues,
+    }
+    if as_json:
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(
+            f"lesson: {payload['lesson']}  sequences: {payload['sequences']}  "
+            f"shots: {payload['shots']}  total: {payload['total_seconds']}s"
+        )
+        for issue in issues:
+            typer.echo(f"  [fail] {issue}")
+        typer.echo("verdict: " + ("pass" if not issues else "fail"))
+    raise typer.Exit(0 if not issues else 1)
+
+
+@app.command("quality-gate")
+def quality_gate_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    profile: str | None = typer.Option(None, "--profile"),
+    waive: list[str] = typer.Option([], "--waive", help="shot:check prefix to waive"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Evaluate hard constraints, grammar constraints and metrics separately."""
+    from .paths import ContractError, LessonPaths
+    from .quality_gates import evaluate
+
+    workspace = workspace.resolve()
+    try:
+        paths = LessonPaths.load(workspace, (workspace / lesson_dir / lesson).resolve())
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = evaluate(paths, profile=profile, waivers=waive)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"hard: {'pass' if report['hard_ok'] else 'fail'}")
+        for item in report["hard_failures"]:
+            typer.echo(f"  [hard] {item.get('source')}:{item.get('id')} {item.get('detail') or ''}")
+        typer.echo(f"grammar: {'pass' if report['grammar_ok'] else 'fail'}")
+        for issue in report["grammar_failures"]:
+            typer.echo(f"  [grammar] {issue}")
+        metrics = report.get("metrics") or {}
+        if metrics:
+            typer.echo(f"metrics: score {metrics.get('score')} ({metrics.get('release_gate')})")
+            typer.echo("  " + json.dumps(metrics.get("metrics") or {}, ensure_ascii=False))
+        typer.echo("human review: required")
+        typer.echo("releasable: " + ("yes, after human sign-off" if report["releasable"] else "no"))
+    raise typer.Exit(0 if report["releasable"] else 1)
+
+
+@app.command("reference-compare")
+def reference_compare_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    reference: str = typer.Option(..., "--reference"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Compare measured motion metrics with a named reference record."""
+    from .animation_score import score
+    from .beats import load_segments, load_sheet
+    from .grammar import try_load_registry
+    from .paths import ContractError, LessonPaths
+    from .reference import compare, load_reference, resolve_reference
+
+    workspace = workspace.resolve()
+    try:
+        paths = LessonPaths.load(workspace, (workspace / lesson_dir / lesson).resolve())
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    sheet = paths.lesson_dir / "authoring" / "beats.yaml"
+    meta = paths.build_root / "narration" / "narration.meta.json"
+    if not sheet.is_file() or not meta.is_file():
+        typer.echo("reference-compare needs authoring/beats.yaml and narration meta", err=True)
+        raise typer.Exit(1)
+    media = paths.build_root / "quality" / "media-qc.json"
+    result = score(
+        load_sheet(sheet),
+        load_segments(meta),
+        media_qc=json.loads(media.read_text(encoding="utf-8")) if media.is_file() else None,
+        registry=try_load_registry(workspace),
+    )
+    try:
+        record = load_reference(resolve_reference(workspace, reference))
+    except (OSError, ValueError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = compare(result["metrics"], record)
+    target = paths.build_root / "quality" / "reference-compare.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"reference: {report['reference']}  overall: {report['overall']}")
+    for name, item in report["dimensions"].items():
+        typer.echo(f"  {name:18s} {item['status']:14s} {item['detail']}")
+    for item in report["required_improvements"]:
+        typer.echo(f"  [required] {item}")
+    typer.echo("human review: required")
+    typer.echo(f"report: {target}")

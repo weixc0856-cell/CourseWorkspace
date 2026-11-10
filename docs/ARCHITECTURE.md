@@ -19,6 +19,7 @@ CourseWorkspace/
 ├── RemotionStudio/     合成层：截图采集、staging、Remotion 合成（Node）
 ├── ModelingStudio/     三维内部能力：图片 → Blender（Python）
 ├── ContentQA/          审查内部能力：Claude Code 默认 / API 可选（Python）
+├── KnowledgeStudio/    教材知识库：PDF 拆页、目录校准、按页检索与引用（Python）
 ├── shared/
 │   ├── ai_runtime/     AI 运行时：跨进程锁、服务生命周期、任务状态、上下文预算
 │   ├── scene_expr/     受限表达式：AST 白名单 + 解释器（控制层与 Blender 共用）
@@ -60,6 +61,7 @@ CourseWorkspace/
 | `RemotionStudio` | 截图、staging、合成、字幕/旁白渲染 | 不做时间线推导 |
 | `ModelingStudio` | 图片→分析→规划→脚本→Blender→验收 | 不写 `lessons/` 与课程 `build/` |
 | `ContentQA` | 审查候选意见与报告（默认 Claude Code） | 不改课程、不影响 verdict |
+| `KnowledgeStudio` | 教材拆页、单元、索引、按页检索与 claim 引用 | 不生成课程内容、不判断结论真伪、不改 `lessons/` |
 | `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 
@@ -271,6 +273,7 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | 双语字幕 | `subtitles.py` | 英上中下、SRT/ASS/VTT、逐 cue 翻译；V-31 |
 | 双版本成片 | `adapters/burn.py`、`pipeline.py` | 干净母版 + ASS 烧录版；QSV → libx264；V-28 |
 | TimelineSpec 合成 | `RemotionStudio/src/compositions/CourseTimeline.tsx`、`ScenePage.tsx`、`adapters/remotion.py` | `timeline.spec.json` 驱动；`compose.mode=scene` 用全屏 ScenePage 作为 base；`renderer: legacy` 回退 |
+| 场景叠加层 | `course_control/overlays.py`、`RemotionStudio/src/overlays/AgingHud.tsx` | 课程声明 `compose.overlay: <kind>`；`collect` 把叠加数据写进 timeline `metadata.overlay`，由 Remotion 在底片之上绘制（HUD/图表不再烧进世界片） |
 | 引擎路由 | `engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
 | Code2Video 镜头 | `adapters/code_video.py`、`CodeVideoStudio/` | 镜头级 `SPEC.md` + `frame(t)` + `VERIFY.md`；本地 Playwright/ffmpeg；不部署 27B；Agent 用 Claude Code + DeepSeek |
 | HTML 渲染/lint 备选 | `CodeVideoStudio/backends/hyperframes/` | HyperFrames POC：HTML/GSAP → MP4，`check` 提供首帧/字号/对比度检查；不替换 Remotion |

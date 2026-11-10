@@ -50,6 +50,18 @@
           "title": "Segment",
           "type": "integer"
         },
+        "grammar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grammar"
+        },
         "start": {
           "maximum": 1.0,
           "minimum": 0.0,
@@ -147,6 +159,11 @@
     "lesson": {
       "minLength": 1,
       "title": "Lesson",
+      "type": "string"
+    },
+    "grammar": {
+      "default": "long_take",
+      "title": "Grammar",
       "type": "string"
     },
     "palette": {

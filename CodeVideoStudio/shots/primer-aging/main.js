@@ -529,76 +529,6 @@ function update(t) {
   grain.uniforms.time.value = t;
   water.material.uniforms['time'].value = t * 0.6;
   composer.render(0);
-  drawOverlay(t, scenario, frames[index], progress);
-}
-
-// ---- overlay ---------------------------------------------------------------
-const overlay = document.getElementById('hud');
-const chart = document.getElementById('chart');
-const ctx = chart.getContext('2d');
-const labelEl = document.getElementById('scenario');
-const popEl = document.getElementById('pop');
-const ageEl = document.getElementById('meanage');
-const maEl = document.getElementById('maloci');
-
-function fitChart() {
-  const ratio = window.devicePixelRatio || 1;
-  chart.width = chart.clientWidth * ratio;
-  chart.height = chart.clientHeight * ratio;
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-}
-
-function drawOverlay(t, scenario, frame, progress) {
-  labelEl.textContent = scenario.label;
-  labelEl.className = scenario.id;
-  popEl.textContent = String(frame.population);
-  ageEl.textContent = frame.mean_death_age == null ? '—' : String(Math.round(frame.mean_death_age));
-  const alive = frame.agents.filter((agent) => agent[4]);
-  const ma = alive.length ? alive.reduce((sum, agent) => sum + agent[5], 0) / alive.length : 0;
-  maEl.textContent = ma.toFixed(1);
-
-  const w = chart.clientWidth;
-  const h = chart.clientHeight;
-  ctx.clearRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(160,175,186,0.25)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i += 1) {
-    const y = (h * i) / 4;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-  const hazard = frame.hazard;
-  const maxAge = hazard.length - 1;
-  const raw = hazard.map((value) => (value == null ? null : Math.max(0, value)));
-  const values = [];
-  for (let start = 0; start < raw.length; start += 5) {
-    const window = raw.slice(start, start + 5).filter((item) => item != null);
-    values.push(window.length ? window.reduce((sum, item) => sum + item, 0) / window.length : null);
-  }
-  const peak = Math.max(0.02, ...values.filter((value) => value != null));
-  ctx.strokeStyle = scenario.id === 'danger' ? '#e8733b' : '#6e8f6a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  let started = false;
-  for (let bin = 0; bin < values.length; bin += 1) {
-    const value = values[bin];
-    if (value == null) continue;
-    const age = bin * 5 + 2.5;
-    const x = (age / maxAge) * w;
-    const y = h - Math.min(1, value / peak) * (h - 6) - 3;
-    if (!started) {
-      ctx.moveTo(x, y);
-      started = true;
-    } else {
-      ctx.lineTo(x, y);
-    }
-  }
-  ctx.stroke();
-  ctx.fillStyle = 'rgba(220,228,233,0.55)';
-  ctx.font = '10px Arial';
-  ctx.fillText('risk of death by age', 2, 11);
 }
 
 window.addEventListener('resize', () => {
@@ -609,10 +539,8 @@ window.addEventListener('resize', () => {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   fxaa.uniforms.resolution.value.set(1 / w, 1 / h);
-  fitChart();
 });
 
-fitChart();
 window.DUR = DURATION;
 window.seek = async (t) => {
   update(t);

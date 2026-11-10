@@ -15,6 +15,7 @@ explicitly transitional; timing and assets remain authoritative in V1.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -106,6 +107,8 @@ def timeline_from_shots(
             "legacy_slide": shot.slide,
             "legacy_presentation": shot.presentation,
         }
+        if shot.transition is not None:
+            metadata["legacy_transition"] = shot.transition.model_dump(by_alias=True)
         if motion is not None and shot.kind == "slide":
             spec = slide_motion(shot.slide or 0, motion)
             if spec is not None:
@@ -161,27 +164,52 @@ def timeline_from_shots(
         )
 
     subtitles: list[SubtitleCue] = []
+    word_captions = None
     if shots.subtitles:
-        relative = str(shots.subtitles.get("path") or "")
-        if not relative:
-            raise V1TimelineError("subtitles entry has no path")
-        path = build_root / relative
-        try:
-            cues = parse_srt(path.read_text(encoding="utf-8"))
-        except LegacyE6Error as exc:
-            raise V1TimelineError(f"cannot parse {path}: {exc}") from exc
-        for cue in cues:
-            start = ms_to_frame(cue.start_ms, fps_num, fps_den)
-            end = ms_to_frame(cue.end_ms, fps_num, fps_den)
-            if end <= start:
-                raise V1TimelineError(f"subtitle cue {cue.index} is shorter than one frame")
-            if end > total_frames:
-                raise V1TimelineError(
-                    f"subtitle cue {cue.index} ends at {end}, beyond {total_frames}"
+        mode = str(shots.subtitles.get("mode") or "cue")
+        words_relative = str(shots.subtitles.get("words") or "")
+        if words_relative:
+            words_path = build_root / words_relative
+            try:
+                words = json.loads(words_path.read_text(encoding="utf-8")).get("words") or []
+            except (OSError, json.JSONDecodeError) as exc:
+                raise V1TimelineError(f"cannot read word captions {words_path}: {exc}") from exc
+            rendered = []
+            for item in words:
+                start = ms_to_frame(int(item["start_ms"]), fps_num, fps_den)
+                end = ms_to_frame(int(item["end_ms"]), fps_num, fps_den)
+                if end <= start:
+                    continue
+                rendered.append(
+                    {"start_frame": start, "end_frame": end, "text": str(item.get("text") or "")}
                 )
-            subtitles.append(
-                SubtitleCue(index=cue.index, start_frame=start, end_frame=end, text=cue.text)
-            )
+            if not rendered:
+                raise V1TimelineError(f"word captions are empty: {words_path}")
+            word_captions = {
+                "position": str(shots.subtitles.get("position") or "bottom"),
+                "words": rendered,
+            }
+        relative = str(shots.subtitles.get("path") or "")
+        if relative:
+            path = build_root / relative
+            try:
+                cues = parse_srt(path.read_text(encoding="utf-8"))
+            except LegacyE6Error as exc:
+                raise V1TimelineError(f"cannot parse {path}: {exc}") from exc
+            for cue in cues:
+                start = ms_to_frame(cue.start_ms, fps_num, fps_den)
+                end = ms_to_frame(cue.end_ms, fps_num, fps_den)
+                if end <= start:
+                    raise V1TimelineError(f"subtitle cue {cue.index} is shorter than one frame")
+                if end > total_frames:
+                    raise V1TimelineError(
+                        f"subtitle cue {cue.index} ends at {end}, beyond {total_frames}"
+                    )
+                subtitles.append(
+                    SubtitleCue(index=cue.index, start_frame=start, end_frame=end, text=cue.text)
+                )
+        elif mode != "word":
+            raise V1TimelineError("subtitles entry has no path")
 
     return TimelineSpec(
         lesson_id=lesson,
@@ -198,6 +226,7 @@ def timeline_from_shots(
             "legacy_annotations": [
                 annotation.model_dump(mode="json") for annotation in shots.annotations
             ],
+            **({"word_captions": word_captions} if word_captions else {}),
         },
     )
 

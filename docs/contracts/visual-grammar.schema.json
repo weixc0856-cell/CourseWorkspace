@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/contracts/visual-grammar.schema.json",
+  "title": "Visual grammar registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "grammars"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "grammars": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/grammar"}
+    }
+  },
+  "$defs": {
+    "grammar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "shot_seconds", "constraints"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "purpose": {"type": "array", "items": {"type": "string"}},
+        "shot_seconds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": {
+            "min": {"type": "number", "exclusiveMinimum": 0},
+            "max": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "first_action_by": {"type": "number", "minimum": 0, "maximum": 1},
+            "max_action_gap_s": {"type": "number", "exclusiveMinimum": 0},
+            "long_lived_ratio_min": {"type": "number", "minimum": 0, "maximum": 1},
+            "camera_motive_required": {"type": "boolean"},
+            "min_actions": {"type": "integer", "minimum": 0},
+            "freeze_counts_against": {"type": "boolean"},
+            "max_cut_rate_per_10s": {"type": "number", "exclusiveMinimum": 0},
+            "min_actions_per_10s": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "capabilities": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

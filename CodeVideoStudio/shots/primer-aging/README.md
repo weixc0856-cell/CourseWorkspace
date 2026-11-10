@@ -47,10 +47,12 @@ terrain with a lake hollow (official `Water` addon), scattered rocks, instanced
 grass tufts and shrubs, four-legged agents (capsule body, head with muzzle
 and ears, tapered tail, two-segment legs) whose gait is driven by the recorded
 speed, heads that dip while nearly still (a visual idiom, not a modelled
-variable), newborn scale-in, camera set
-left of the HUD, age-coded blobs (teal → orange), HUD with population / mean
-death age / late-acting mutations and a 5-year binned hazard curve. BGM:
-Schubert D.664 (public domain) mixed with ducking by `audio-mix`.
+variable), newborn scale-in, camera left of the HUD panel, age-coded blobs
+(teal to orange).
+
+HUD: drawn by the Remotion overlay (`compose.overlay: aging_hud`) from the same
+`aging.json` + `timing.json`; the plate carries no HUD, so the chart and
+typography can change without re-rendering 4,000 frames.
 
 Post: the official three.js r160 addon chain — `BokehPass` (depth of field
 focused on the world centre), `UnrealBloomPass`, `ColorCorrectionShader`

@@ -109,6 +109,8 @@ def _audio_files(paths: LessonPaths, build_root: Path, workspace: Path) -> list[
     ]
     if paths.lesson.content.subtitles:
         files.append(_artifact(paths.lesson_dir / paths.lesson.content.subtitles, workspace))
+    elif paths.lesson.subtitles.enabled and paths.lesson.subtitles.mode == "word":
+        files.append(_artifact(build_root / "subtitles.words.json", workspace))
     return files
 
 
@@ -146,15 +148,16 @@ def build_manifest(
     build_root: Path,
     workspace: Path,
 ) -> DeliveryManifest:
+    final_files = [
+        _artifact(build_root / "final" / "course-video.mp4", workspace),
+        _artifact(build_root / "final" / "course-video-captioned.mp4", workspace, required=False),
+    ]
+    if paths.lesson.branding.enabled:
+        final_files.append(
+            _artifact(build_root / "final" / "course-video-delivery.mp4", workspace)
+        )
     items = [
-        _item(
-            "01_final_video",
-            "最终成片",
-            [
-                _artifact(build_root / "final" / "course-video.mp4", workspace),
-                _artifact(build_root / "final" / "course-video-captioned.mp4", workspace, required=False),
-            ],
-        ),
+        _item("01_final_video", "最终成片", final_files),
         _item("02_script", "剧本与讲稿", _script_files(paths, workspace)),
         _item("03_storyboard", "导演分镜", _storyboard_files(build_root, workspace)),
         _item("04_assets", "原始素材", _asset_files(plan, paths, build_root, workspace)),

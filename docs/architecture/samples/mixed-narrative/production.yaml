@@ -1,0 +1,58 @@
+schema_version: 1
+lesson: sample-mixed-narrative
+sequences:
+  - id: seq-01
+    title: 四种语法一条时间线
+    shots:
+      - id: mixed-001
+        duration_s: 3.0
+        purpose: orient
+        visual_type: title_card
+        grammar: kinetic_type
+        techniques: [reveal, tag_in]
+        renderer: code_video
+        source: docs/architecture/samples/mixed-narrative/title-card
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        actions: [{type: reveal, target: title, at: 0.0}, {type: reveal, target: tags, at: 0.5}]
+        audio: {}
+        captions: {mode: none}
+      - id: mixed-002
+        duration_s: 3.0
+        purpose: explain
+        visual_type: geometric_transform
+        grammar: long_take
+        techniques: [transform, camera_push]
+        renderer: manim
+        source: docs/architecture/samples/long-take-geometry/scene.py
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: push_in, motive: "承接标题卡，进入方向与角度"}
+        actions: [{type: create, target: vectors, at: 0.05}, {type: transform, target: key_vector, at: 0.55}]
+        audio: {}
+        captions: {mode: none}
+      - id: mixed-003
+        duration_s: 3.0
+        purpose: explain
+        visual_type: kinetic_typography
+        grammar: kinetic_edit
+        techniques: [char_reveal, sweep_highlight]
+        renderer: code_video
+        source: docs/architecture/samples/kinetic-cuts
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        actions: [{type: reveal, target: sentence, at: 0.02}, {type: highlight, target: sweep_band, at: 0.17}]
+        audio: {}
+        captions: {mode: none}
+      - id: mixed-004
+        duration_s: 3.0
+        purpose: simulate
+        visual_type: population_simulation
+        grammar: simulation
+        techniques: [move, collide, state_change]
+        renderer: code_video
+        source: docs/architecture/samples/population-sim
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        actions: [{type: module, target: sir_model, at: 0.0}]
+        audio: {}
+        captions: {mode: none}

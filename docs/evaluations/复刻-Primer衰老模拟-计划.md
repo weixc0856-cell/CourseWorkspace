@@ -124,3 +124,18 @@ P0 完成：我们已经有能力用现有流水线端到端复刻该参考片�
 | 确定性 | GPU 路径两次 30 帧捕获 sha256 `4d9b9d632b…` 一致 |
 
 已知缺口：生物群系仍是一整片（没有按区域区分植被/地形）；水下无内容（水面不透明）；繁殖只有新生缩放；HUD 仍内嵌在世界片里。
+
+## 11. P1 Remotion 叠加层增量结果（2026-11-09）
+
+| 项 | 结果 |
+| --- | --- |
+| 机制 | 课程声明 `compose.overlay: aging_hud`；`collect` 从镜头的 `aging.json`/`timing.json` 生成逐帧 HUD 载荷（种群、平均死亡年龄、突变负荷、5 年分箱风险曲线），写入 timeline `metadata.overlay` |
+| 渲染 | `RemotionStudio/src/overlays/AgingHud.tsx` 在底片之上绘制；数值按时间插值（比原来逐帧跳变更平滑），危险/安全两套配色沿用原 HUD |
+| 解耦 | 世界片不再包含 HUD；改图表/文案/字体不需要重渲 4,361 帧 |
+| 测试 | `CourseControl/tests/test_overlays.py` 5 项；`RemotionStudio` `tsc --noEmit` 通过 |
+| 构建 | `verdict=pass`；`compose` / `burn_subtitles` / `verify` 全 pass |
+| 媒体 QC | 十项全 PASS：4,361 帧、−16.2 LUFS / −3.2 dBTP、静音 0、黑帧 0、冻结 0、字幕 32 cue、ASR 0.935 |
+| 质量报告 | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`；`animation-score = 100/100` |
+| 确定性 | 世界片两次 30 帧捕获 sha256 `3528366c99…` 一致 |
+
+已知缺口：只剩这一门课使用该叠加层，尚无第二种 overlay 类型（图表/标注的统一组件库未做）；繁殖仍无双方互动；旁白仍为候选稿。

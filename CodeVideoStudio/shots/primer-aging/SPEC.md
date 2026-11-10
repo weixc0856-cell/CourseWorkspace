@@ -33,9 +33,11 @@
 2. Scenario switches at the start of narration segment `s08` (danger → safe).
 3. Agent colour and size follow age; dead agents fade out; agents are matched
    by stable `id` between frames (no index interpolation), and newborns scale in.
-4. HUD shows scenario label, population, mean age at death and late-acting
-   mutations per agent; hazard-by-age chart is binned in 5-year groups.
-5. Camera holds the world left of the HUD; no clipping of the field.
+4. The HUD (scenario label, population, mean age at death, late-acting mutations
+   per agent, hazard-by-age chart binned in 5-year groups) is drawn by the
+   Remotion overlay from `compose.overlay: aging_hud`; the plate itself carries
+   no HUD so the chart and typography can change without a re-render.
+5. Camera holds the world left of the HUD; the right ~31% stays clear for the overlay; no clipping of the field.
 6. H.264 / yuv420p / 30 fps / 1920×1080, no audio.
 7. Post-processing is the official addon chain (`BokehPass`, `UnrealBloomPass`,
    `ColorCorrectionShader`, `FilmPass`, `VignetteShader`, `OutputPass`,

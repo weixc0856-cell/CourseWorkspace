@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "note": "Validated samples that define the production envelope of each grammar. Renders live in build/architecture-samples/ (not tracked).",
+  "grammars": {
+    "long_take": {
+      "sample": "long-take-geometry",
+      "source": "docs/architecture/samples/long-take-geometry/",
+      "render": "build/architecture-samples/manim/videos/scene/1080p30/LongTakeGeometry.mp4",
+      "sha256_prefix": "929bb8fe126abddb",
+      "metrics": {"shots": 1, "average_shot_seconds": 8.8, "beats_per_10s": 4.55, "camera_moves": 1}
+    },
+    "kinetic_edit": {
+      "sample": "kinetic-cuts",
+      "source": "docs/architecture/samples/kinetic-cuts/",
+      "render": "build/architecture-samples/kinetic-cuts.mp4",
+      "sha256_prefix": "48319f0131cefde3",
+      "metrics": {"shots": 4, "average_shot_seconds": 3.0, "beats_per_10s": 6.67, "cut_rate_per_10s": 3.33}
+    },
+    "simulation": {
+      "sample": "population-sim",
+      "source": "docs/architecture/samples/population-sim/",
+      "render": "build/architecture-samples/population-sim.mp4",
+      "sha256_prefix": "e0e013d77ce77c89",
+      "metrics": {"shots": 1, "average_shot_seconds": 12.0, "beats_per_10s": 0.83}
+    },
+    "mixed": {
+      "sample": "mixed-narrative",
+      "source": "docs/architecture/samples/mixed-narrative/",
+      "render": "build/architecture-samples/mixed-narrative.mp4",
+      "sha256_prefix": "8aee7a95658d85e3",
+      "metrics": {"shots": 4, "average_shot_seconds": 3.0, "beats_per_10s": 6.67}
+    }
+  }
+}

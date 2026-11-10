@@ -201,6 +201,17 @@
           ],
           "default": null,
           "title": "Presentation"
+        },
+        "transition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Transition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -337,6 +348,38 @@
         "total_duration_s"
       ],
       "title": "Timeline",
+      "type": "object"
+    },
+    "Transition": {
+      "additionalProperties": false,
+      "description": "Visual transition into/out of a shot; never changes the shot's duration.",
+      "properties": {
+        "in": {
+          "default": "hard_cut",
+          "enum": [
+            "hard_cut",
+            "fade",
+            "dissolve",
+            "match_cut",
+            "wipe"
+          ],
+          "title": "In",
+          "type": "string"
+        },
+        "out": {
+          "default": "hard_cut",
+          "enum": [
+            "hard_cut",
+            "fade",
+            "dissolve",
+            "match_cut",
+            "wipe"
+          ],
+          "title": "Out",
+          "type": "string"
+        }
+      },
+      "title": "Transition",
       "type": "object"
     }
   },

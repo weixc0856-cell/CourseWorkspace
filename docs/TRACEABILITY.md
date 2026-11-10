@@ -44,6 +44,12 @@
 | V1-D Session 证据适配 | `CourseControl/src/course_control/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |
 | V1-D 剩余轨道 | `ShotSpec` 扩展 `session/simulation/graphics`；Session runner 原生写 V1 | 未开始 |
 | V1 统一契约（V1-B/C/F） | `CourseControl/src/course_control/contracts_v1.py`、`timecode.py`、`legacy_e6.py`、`e65.py`；`shared/schemas/*-v1.schema.json`；`course-control schemas-v1` / `contract-v1-validate` / `e6-adapt` / `e65-adapt` | `CourseControl/tests/test_contracts_v1.py`、`test_timecode.py`、`test_legacy_e6.py`、`test_e65_contracts.py` |
+| FR-34 品牌与片头片尾 | `RemotionStudio/src/brand/`、`shared/design-tokens/brand.json`、`CourseControl/src/course_control/branding.py`、`adapters/brand.py`、`verify.py` V-36 | `test_branding.py`、`tsc --noEmit`、真实 3.0 s/12 s 渲染与 292.367 s 母版拼接（307.367 s，mode=copy，TS 重封装，video_timing/audio_alignment pass） |
+| FR-35 教材知识库 | `KnowledgeStudio/src/knowledge_studio/`、`docs/KnowledgeStudio.md` | `KnowledgeStudio/tests/test_knowledge_studio.py`、12 页冒烟教材 CLI 全链路、`verify` KS-01…KS-08 pass |
+| FR-36 多视觉语法生产契约 | `production.py`、`renderers.py`、`collect._collect_shots`、`paths.py`、`course-control production-validate` | `test_production.py`、`test_collect_shots.py`、`test_grammar.py` |
+| FR-37 分层质量门禁 | `quality_gates.py`、`animation_score.py`（profile/metric_only）、`course-control quality-gate` | `test_quality_gates.py`、05-transformer-5min 实跑 |
+| FR-38 逐词字幕与镜头转场 | `contracts.Subtitles.mode/position`、`collect._word_captions`、`v1_timeline` word_captions、`CourseTimeline.tsx`、`capture.mjs --chunk-seconds` | `tsc --noEmit`、分块捕获 PSNR 实测；逐词渲染未目检 |
+| FR-39 参考驱动比较 | `reference.py`、`docs/architecture/references/`、`docs/architecture/golden/`、`course-control reference-compare` | `test_reference.py`、3b1b-attention 实跑 |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
 
 ## 人工依赖

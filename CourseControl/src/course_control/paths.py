@@ -8,6 +8,7 @@ import yaml
 from pydantic import ValidationError
 
 from .contracts import LessonConfig, SLUG_RE, ShotSpec, Storyboard
+from .production import ProductionPlan, load_production, synthetic_storyboard
 
 DRIVE_RE = re.compile(r"^[A-Za-z]:")
 
@@ -70,6 +71,8 @@ class LessonPaths:
     storyboard_source: Path | None = None
     selected_shot_ids: set[str] | None = None
     build_root_override: Path | None = None
+    production: ProductionPlan | None = None
+    production_source: Path | None = None
 
     @classmethod
     def load(
@@ -91,24 +94,50 @@ class LessonPaths:
             raise ContractError(
                 f"lesson_id '{lesson.lesson_id}' does not match directory '{lesson_dir.name}'"
             )
-        storyboard_file = lesson_dir / lesson.content.storyboard
-        if storyboard_override is not None:
-            candidate = Path(storyboard_override)
-            if not candidate.is_absolute():
-                candidate = (workspace / candidate).resolve()
-            if not candidate.is_file():
-                raise ContractError(f"storyboard override not found: {candidate}")
-            storyboard_file = candidate
-        raw_story = load_yaml(storyboard_file)
-        try:
-            storyboard = Storyboard.model_validate(raw_story)
-        except ValidationError as exc:
-            raise ContractError(format_validation_error(exc, str(storyboard_file))) from exc
-        if storyboard.lesson != lesson.lesson_id:
-            raise ContractError(
-                f"storyboard.lesson '{storyboard.lesson}' does not match lesson_id"
-            )
-        return cls(workspace, lesson_dir, lesson, storyboard, storyboard_file, build_root_override=build_root_override)
+        production = None
+        production_file = None
+        if lesson.production or lesson.compose.mode == "shots":
+            production_file = lesson_dir / (lesson.production or "authoring/production.yaml")
+            if not production_file.is_file():
+                raise ContractError(f"production contract not found: {production_file}")
+            try:
+                production = load_production(production_file)
+            except (OSError, ValueError) as exc:
+                raise ContractError(str(exc)) from exc
+            if production.lesson != lesson.lesson_id:
+                raise ContractError(
+                    f"production.lesson '{production.lesson}' does not match lesson_id"
+                )
+            storyboard = synthetic_storyboard(production)
+            storyboard_file = production_file
+        else:
+            storyboard_file = lesson_dir / lesson.content.storyboard
+            if storyboard_override is not None:
+                candidate = Path(storyboard_override)
+                if not candidate.is_absolute():
+                    candidate = (workspace / candidate).resolve()
+                if not candidate.is_file():
+                    raise ContractError(f"storyboard override not found: {candidate}")
+                storyboard_file = candidate
+            raw_story = load_yaml(storyboard_file)
+            try:
+                storyboard = Storyboard.model_validate(raw_story)
+            except ValidationError as exc:
+                raise ContractError(format_validation_error(exc, str(storyboard_file))) from exc
+            if storyboard.lesson != lesson.lesson_id:
+                raise ContractError(
+                    f"storyboard.lesson '{storyboard.lesson}' does not match lesson_id"
+                )
+        return cls(
+            workspace,
+            lesson_dir,
+            lesson,
+            storyboard,
+            storyboard_file,
+            build_root_override=build_root_override,
+            production=production,
+            production_source=production_file,
+        )
 
     def selects(self, shot_id: str) -> bool:
         return self.selected_shot_ids is None or shot_id in self.selected_shot_ids

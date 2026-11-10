@@ -22,15 +22,22 @@
 - E6.5 成片（本地归档，不入库）：`docs/archive/E6.5/E6.5-成片报告.md`
 - 技术雷达与外部项目评估：[docs/evaluations/技术雷达-视频生产.md](docs/evaluations/技术雷达-视频生产.md)、[docs/evaluations/评估-Codex审核.md](docs/evaluations/评估-Codex审核.md)、[docs/evaluations/评估-Code2Video接入.md](docs/evaluations/评估-Code2Video接入.md)、[docs/evaluations/评估-DeepSeek Harness.md](docs/evaluations/评估-DeepSeek%20Harness.md)、[docs/evaluations/评估-四后端对比.md](docs/evaluations/评估-四后端对比.md)
 - 课程复刻差距与视觉规范：[docs/evaluations/课程复刻差距与稳定工作流.md](docs/evaluations/课程复刻差距与稳定工作流.md)、[docs/课程视觉风格指南.md](docs/课程视觉风格指南.md)
+- Blender 写实渲染能力评估：[docs/evaluations/评估-Blender写实渲染能力.md](docs/evaluations/评估-Blender写实渲染能力.md)
 - 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
 - 科学计算/绘图接入：[docs/evaluations/科学图形与图表接入评估.md](docs/evaluations/科学图形与图表接入评估.md)
 - 动画视觉导演规范：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md)
 - 动画渲染适配器：[docs/动画渲染适配器.md](docs/动画渲染适配器.md)
 - 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
 - 工业化动画工作流（节拍表/配色/评分门禁）：[docs/工业化动画工作流.md](docs/工业化动画工作流.md)
+- 多视觉语法生产系统（架构/审计/样片/实施）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)、[docs/architecture/实施记录-P1-P4.md](docs/architecture/实施记录-P1-P4.md)
+- 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
+- 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)、[经济学第一季方案](docs/verticals/economics/经济学系列-第一季生产方案.md)
+
 - 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)
 - 配色规范（浅色主题/语义色/对比度）：[docs/配色规范.md](docs/配色规范.md)
+- 品牌与片头片尾（WAYNE / 三种形态 / V-33）：[docs/品牌与片头片尾.md](docs/品牌与片头片尾.md)
+- 教材驱动课程生产（KnowledgeStudio 拆页/检索/引用）：[docs/KnowledgeStudio.md](docs/KnowledgeStudio.md)、[KnowledgeStudio/README.md](KnowledgeStudio/README.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - Primer 式模拟视频 POC：[docs/evaluations/评估-Primer模拟视频POC.md](docs/evaluations/评估-Primer模拟视频POC.md)
@@ -60,6 +67,7 @@
 9. **Claude Code 默认后端。** 课程文本生产（brief/outline/script/content）、字幕翻译、ContentQA 与 ModelingStudio 文本规划默认走 Claude Code；文本阶段必须禁用工具（`--tools=`），镜头 Agent 阶段只允许写 `build/` 暂存目录。不可用即 `blocked`；只有 `claude_code_fallback: local_first` 才可回退本地/远程，禁止静默降级。
 10. **远程回退必须显式。** 8080 被占用或本地启动失败时，只有 `config/model-routing.yaml` 明确启用且 key 环境变量存在才可回退远程 OpenAI 兼容 API；任务记录必须写 `provider`，不得冒充本地；视觉阶段没有 `vision_model` 时不得回退。**所有 DeepSeek 调用固定 `deepseek-flash`，禁用 `deepseek-v4-pro`；配置层会拒绝 pro。API key 只从系统环境变量读取（本机 `DeepSeek-API`），不写入 `.env`、YAML、日志或跟踪文件；仓库只保留不含 key 的 `.env.example`。远程 provider 可为 `deepseek` / `openai-compatible` 等；通用变量为 `REMOTE_*`，DeepSeek 兼容 `DEEPSEEK_*`。**
 11. **创作规范是硬约束。** 长视频与 Shorts 必须提供 `authoring/narrative-plan.json` 并通过 `narrative-validate`；Shorts 30–90 秒、竖屏、独立脚本，不从长视频裁切；A/B 画面必须标注 `real_data / simulation / schematic`。规范见 `docs/creative/叙事设计与观众留存规范.md`。
+13. **片头片尾不得影响正片。** 品牌片段只允许 `片头 → 正片 → 片尾` 线性拼接；正片的视频、音频、字幕与时间线是原子资产，不裁剪、不重编码、不交叉淡化、不提前播放。拼接后必须通过帧时间戳与音频对齐核验（`video_timing` / `audio_alignment`，V-36）；品牌默认关闭，只有 `lesson.yaml.branding` 显式开启才生效。
 12. **复用优先，但准入要过关。** 有成熟实现时不自造轮子；引入前校核上游许可、口碑（star/fork/open issues）、近 6 个月活跃度与版本一致性，并在 `docs/第三方依赖准入规范.md` 登记；引入后产生负面效果（性能回退、不可确定性复现、许可污染、维护停滞）的一律 pass 掉。依赖落后 ≥2 个 minor 版本必须开升级任务或记录不升级理由。
 
 ## 3. 常用入口

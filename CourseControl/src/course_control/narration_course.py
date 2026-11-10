@@ -176,15 +176,21 @@ def dry_run(script, rtf_low: float = 9.0, rtf_high: float = 12.5) -> dict:
     }
 
 
-def _voice_config(lesson, tts: dict) -> tuple[Path, str | None, str]:
-    reference = tts.get("voice_ref_en")
-    if reference:
-        prompt_text = str(tts.get("prompt_text_en") or tts.get("prompt_text") or "").strip() or None
-    else:
+def _voice_config(lesson, tts: dict, language: str = "en") -> tuple[Path, str | None, str]:
+    """Pick the voice reference that matches the script language.
+
+    The local config carries both ``voice_ref`` (Chinese) and ``voice_ref_en``.
+    Picking the English one unconditionally made Chinese narration come out in
+    the English reference voice.
+    """
+    if language == "zh":
         reference = tts.get("voice_ref")
         prompt_text = str(tts.get("prompt_text") or "").strip() or None
+    else:
+        reference = tts.get("voice_ref_en")
+        prompt_text = str(tts.get("prompt_text_en") or tts.get("prompt_text") or "").strip() or None
     if not reference:
-        raise NarrationCourseBlocked("config tts.voice_ref_en / tts.voice_ref is empty")
+        raise NarrationCourseBlocked("config tts.voice_ref is empty for this language")
     mode = lesson.narration.mode if lesson.narration else "reference_only"
     return Path(reference), prompt_text, mode
 
@@ -211,7 +217,7 @@ def synthesize_course(
     tts = config.get("tts") or {}
     ai_root = Path(config.get("ai_root") or "").resolve()
     runtime = Path(tts.get("runtime_dir") or (ai_root / "VoxCPM-Runtime"))
-    voice_ref, prompt_text, mode = _voice_config(lesson, tts)
+    voice_ref, prompt_text, mode = _voice_config(lesson, tts, getattr(script, "language", "en"))
     style_enabled = bool(lesson.narration.style_enabled)
     text_frontend = bool(lesson.narration.text_frontend)
     speed = float(lesson.narration.speed)

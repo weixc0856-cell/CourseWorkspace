@@ -122,7 +122,11 @@ def mix_lesson(
     if plan.status != "ready":
         return finish(Status.FAIL, errors=["audio plan is blocked: " + "; ".join(plan.errors)])
     if not plan.cues:
-        return finish(Status.SKIPPED, warnings=["no BGM cue configured"])
+        # BGM-less content (news, formal courses) still needs the same loudness
+        # target; skipping the stage silently left those masters quiet.
+        return _normalize_without_bgm(
+            workspace, paths, final, final_dir / output_name, report, finish
+        )
 
     cue = plan.cues[0]
     if len(plan.cues) > 1:
@@ -215,3 +219,73 @@ def mix_lesson(
 
 
 __all__ = ["AudioMixError", "MixResult", "bgm_source", "mix_lesson"]
+
+def _normalize_without_bgm(
+    workspace: Path,
+    paths: LessonPaths,
+    final: Path,
+    output: Path,
+    report: dict,
+    finish,
+) -> MixResult:
+    """Single-pass loudness normalisation for lessons with no BGM cue."""
+    info = probe_media(final)
+    if not info.has_audio:
+        return finish(Status.FAIL, errors=["final video has no audio stream"])
+    duration = float(info.duration or 0.0)
+    if duration <= 0:
+        return finish(Status.FAIL, errors=["final video duration is unknown"])
+
+    report["mode"] = "loudness_only"
+    report["lufs_target"] = -16.0
+    command = [
+        *which_command("ffmpeg"),
+        "-hide_banner",
+        "-y",
+        "-i",
+        str(final),
+        "-map",
+        "0:v:0",
+        "-map",
+        "0:a:0",
+        "-af",
+        "loudnorm=I=-16:TP=-1.5:LRA=11",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-ar",
+        "48000",
+        "-t",
+        f"{duration:.3f}",
+        str(output),
+    ]
+    result = run_command(
+        command,
+        workspace,
+        timeout=1800,
+        log_path=paths.build_root / "logs" / "audio-mix.log",
+    )
+    report["command"] = command
+    if result.exit_code != 0 or not output.is_file():
+        return finish(
+            Status.FAIL,
+            errors=[f"ffmpeg loudness normalisation failed ({result.exit_code}): {result.stderr[-1200:]}"],
+        )
+
+    mixed = probe_media(output)
+    report["output_info"] = mixed.as_dict()
+    if not mixed.has_audio or (mixed.duration or 0) <= 0:
+        return finish(Status.FAIL, errors=["normalised output has no usable audio"])
+    if abs((mixed.duration or 0) - duration) > 0.05:
+        return finish(
+            Status.FAIL,
+            errors=[f"normalised duration {mixed.duration:.3f}s differs from source {duration:.3f}s"],
+        )
+    return finish(
+        Status.PASS,
+        warnings=["no BGM cue configured; applied loudness normalisation only"],
+        output=output,
+    )
