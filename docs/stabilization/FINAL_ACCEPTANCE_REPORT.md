@@ -141,7 +141,7 @@ Gate 3 复核：
 | NVDA | 354.304 s，`verdict=pass`；V-44 PASS；ASR 0.897、6 条 mismatch WARN；media-qc 19 段冻结 WARN；`VERIFY_PASS=true`，`RELEASE_APPROVED=false` |
 | 05 | 292.373 s，`verdict=pass`；V-31/V-44 PASS；ASR 0.992、0 mismatch；媒体冻结 58 段 WARN |
 | 交付包 | 05 55 文件、06 22 文件、NVDA 26 文件；三个 `package-verify` 均通过；06 外部声线参考已打包 |
-| Git | 品牌两笔提交已入库；本轮代码与文档提交见 §10；课程内容与 `build/` 不入库 |
+| Git | `84d5d5c`、`e611886`、`2f8869f` 已提交；工作树干净；课程内容与 `build/` 不入库 |
 
 
 ## 8. 问题台账终态
@@ -163,5 +163,6 @@ Gate 3 复核：
 
 ## 10. Git
 
-- 已提交：`84d5d5c`（brand-desktop 源码）、`e611886`（brand-intro 源码与 Gate 3 复核）；本轮代码与文档提交见 `git log`。
+- 已提交：`84d5d5c`（brand-desktop 源码）、`e611886`（brand-intro 源码与 Gate 3 复核）、`2f8869f`（C-25/C-26/C-07、检查点粒度、验收报告）。
+- 尚未推送；远端仍停在 `82db7ef`。
 - 课程内容与 `build/` 不入库；`lessons/` 的修改保留在本地。
