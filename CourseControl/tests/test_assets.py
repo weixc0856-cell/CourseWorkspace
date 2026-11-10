@@ -64,8 +64,8 @@ class AssetAddressingTest(unittest.TestCase):
             self.assertTrue(all(item["origin"] in {"external", "voice-ref"} for item in assets))
 
     def test_bundle_names_are_safe_and_unique(self) -> None:
-        first = safe_bundle_name({"path": "D:/a b/声音.wav"})
-        second = safe_bundle_name({"path": "D:/other/声音.wav"})
+        first = safe_bundle_name({"path": "assets/a b/声音.wav"})
+        second = safe_bundle_name({"path": "assets/other/声音.wav"})
         self.assertNotEqual(first, second)
         self.assertNotIn(" ", first)
         self.assertTrue(first.endswith(".wav"))

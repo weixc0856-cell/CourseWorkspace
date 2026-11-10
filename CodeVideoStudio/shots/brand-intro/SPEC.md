@@ -47,7 +47,7 @@
 
 ```powershell
 # 1. build the character (writes character.blend / character.json / character-preview.png)
-& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --background --factory-startup `
+& "<BLENDER_EXE>" --background --factory-startup `
   --python build_character.py -- .
 
 # 2. render

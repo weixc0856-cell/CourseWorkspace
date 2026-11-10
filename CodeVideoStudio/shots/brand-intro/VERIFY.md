@@ -26,7 +26,7 @@
 ## 命令
 
 ```powershell
-& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --background --factory-startup `
+& "<BLENDER_EXE>" --background --factory-startup `
   --python build_character.py -- .
 node ../../skills/code-video/scripts/capture.mjs . --fps 30 --dur 20 --size 1920x1080 --out out/wayne-opener.mp4 --gpu
 ```

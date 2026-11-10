@@ -11,7 +11,7 @@
 ```json
 {
   "asset_id": "bgm:schubert_d664_piano.wav",
-  "path": "D:/Local-Drama-Studio/assets/audio/bgm/commons/schubert_d664_piano.wav",
+  "path": "<bgm_root>/commons/schubert_d664_piano.wav",
   "origin": "bgm",
   "exists": true,
   "sha256": "…",

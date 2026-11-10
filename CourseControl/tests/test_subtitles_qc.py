@@ -46,6 +46,21 @@ class SubtitleQCTest(unittest.TestCase):
         self.assertEqual(report["status"], "WARN")
         self.assertTrue(any("term split" in item for item in report["warnings"]))
 
+
+    def test_sentence_end_phrasal_verb_is_not_dangling(self) -> None:
+        report = check_cues([cue(1, 0, 3000, "The word is looking for.")], bilingual=False)
+        self.assertEqual(report["status"], "PASS", report)
+
+    def test_lower_case_continuation_is_not_dangling(self) -> None:
+        report = check_cues(
+            [
+                cue(1, 0, 2000, "It depends on the"),
+                cue(2, 2100, 4000, "available memory."),
+            ],
+            bilingual=False,
+        )
+        self.assertEqual(report["status"], "PASS", report)
+
     def test_number_split_across_lines_warns(self) -> None:
         report = check_cues(
             [cue(1, 0, 3000, "Published in 201", "7 by eight authors.")],

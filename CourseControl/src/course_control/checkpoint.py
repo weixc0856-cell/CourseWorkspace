@@ -87,7 +87,7 @@ def hash_tree(paths: LessonPaths, root: Path, *, skip: tuple[str, ...] = ()) -> 
     return hash_files(paths, files)
 
 
-def _content_files(paths: LessonPaths) -> list[Path]:
+def _content_files(paths: LessonPaths, *, subtitles: bool = False) -> list[Path]:
     lesson = paths.lesson
     files = [paths.lesson_dir / "lesson.yaml"]
     files.append(paths.content_path(lesson.content.slides))
@@ -100,7 +100,7 @@ def _content_files(paths: LessonPaths) -> list[Path]:
         files.append(paths.lesson_dir / lesson.content.storyboard)
     if paths.production_source is not None:
         files.append(Path(paths.production_source))
-    if lesson.content.subtitles:
+    if subtitles and lesson.content.subtitles:
         files.append(paths.content_path(lesson.content.subtitles))
     return files
 
@@ -142,6 +142,9 @@ def stage_inputs(paths: LessonPaths, stage: str) -> dict[str, str]:
     """Files whose change must invalidate a stage checkpoint."""
     common = _content_files(paths)
     files: list[Path] = list(common)
+    subtitle_files: list[Path] = []
+    if paths.lesson.content.subtitles:
+        subtitle_files.append(paths.content_path(paths.lesson.content.subtitles))
     if stage == "capture_slides":
         files = list(common)
     elif stage.startswith("render:"):
@@ -158,7 +161,7 @@ def stage_inputs(paths: LessonPaths, stage: str) -> dict[str, str]:
             files.append(paths.workspace / "CodeVideoStudio" / "vendor" / "three" / "three.module.js")
         files.append(paths.workspace / "config" / "tools.yaml")
     elif stage == "collect":
-        files = list(common) + [
+        files = list(common) + subtitle_files + [
             paths.build_root / "narration" / "narration.meta.json",
             paths.build_root / "narration" / "narration.wav",
         ]
@@ -167,7 +170,7 @@ def stage_inputs(paths: LessonPaths, stage: str) -> dict[str, str]:
         inputs.update(hash_tree(paths, paths.build_root / "slides"))
         return inputs
     elif stage == "compose":
-        files = list(common) + [
+        files = list(common) + subtitle_files + [
             paths.build_root / "shots.json",
             paths.build_root / "contracts" / "timeline.spec.json",
         ]
@@ -176,7 +179,7 @@ def stage_inputs(paths: LessonPaths, stage: str) -> dict[str, str]:
         inputs.update(hash_tree(paths, paths.build_root / "slides"))
         return inputs
     elif stage == "burn_subtitles":
-        files = list(common) + [paths.build_root / "final" / "course-video.mp4"]
+        files = list(common) + subtitle_files + [paths.build_root / "final" / "course-video.mp4"]
     elif stage == "brand":
         files = list(common) + [
             paths.build_root / "final" / "course-video.mp4",
