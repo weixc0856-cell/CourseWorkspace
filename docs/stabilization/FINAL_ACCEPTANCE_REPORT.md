@@ -154,6 +154,11 @@
 
 ## 10. Git
 
-- 已提交：`84d5d5c`（brand-desktop 源码）、`e611886`（brand-intro 源码与 Gate 3 复核）、`2f8869f`（C-25/C-26/C-07、检查点粒度、验收报告）。
-- 尚未推送；远端仍停在 `82db7ef`。
-- 课程内容与 `build/` 不入库；`lessons/` 的修改保留在本地。
+- 本轮提交：
+  - `84d5d5c` brand-desktop 源码与资产规则
+  - `e611886` brand-intro 源码与 Gate 3 复核
+  - `2f8869f` C-25/C-26/C-07、检查点粒度、验收报告
+  - `6300b28` 最终提交哈希记录
+  - `eca19a4` 删除品牌试验渲染与备份
+  - `a4f0bad` C-16 DEFERRED、06 因果措辞、NVDA 审阅、Resume 实测
+- 推送状态见本轮结束时的 `git status -sb`；课程内容与 `build/` 不入库，`lessons/` 修改保留在本地。
