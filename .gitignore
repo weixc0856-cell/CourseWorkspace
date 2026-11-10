@@ -71,6 +71,8 @@ MotionStudio/output/
 
 # CodeVideoStudio generated outputs (specs and source stay tracked)
 CodeVideoStudio/shots/*/out/
+# Per-shot locks are environment-specific; the shot source is what gets tracked.
+CodeVideoStudio/shots/*/package-lock.json
 CodeVideoStudio/backends/hyperframes/*/out/
 CodeVideoStudio/backends/hyperframes/hf-poc/.hyperframes/
 
