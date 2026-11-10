@@ -26,6 +26,7 @@ class AssetAddressingTest(unittest.TestCase):
             self.assertEqual(asset["origin"], "bgm")
             self.assertTrue(asset["sha256"])
             self.assertEqual(asset["license_status"], "public_domain")
+            self.assertIn("bgm_root", asset["acquisition"])
 
     def test_workspace_asset_is_not_external(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

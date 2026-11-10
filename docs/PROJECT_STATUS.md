@@ -13,7 +13,7 @@
 
 | 项 | 实际 |
 | --- | --- |
-| 单测 | 六套 639 个用例，633 通过、6 跳过（CourseControl 492 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
+| 单测 | 六套 640 个用例，634 通过、6 跳过（CourseControl 493 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
 | 回归 | `scripts/check.ps1` exit 0；新增非阻断 `evidence paths` 报告 |
 | 01-transformer-demo | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；成片 1195.605 s / 1080p30，build-report pass |
 | 02-car-aerodynamics | 正文、4 个 Manim 镜头、已批准 SRT 存在；build 目录与 22 分钟成片不在本机 |
@@ -27,7 +27,7 @@
 
 ## 0.0000A 2026-11-10 V1 全量修复与收敛
 
-- 问题台账：`docs/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 25 / FIXED 4 / IN_PROGRESS 1；C-16 的 Gate 3 未过；C-31、C-32 已验证）
+- 问题台账：`docs/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16 片头暂缓）；C-31、C-32 已验证）
 - 新增命令：`config-resolve`、`stats`、`subtitles-qc`、`review-status`、`review-decide`、`blender-task-validate`、`vendor-check`、`vendor-sync`、`shot-taxonomy`
 - build 新增：`--resume` / `--resume-from`；每次写 `logs/config-resolution.json`、`runtime/last-run.json`、`runtime/checkpoints/`
 - 质量新增：WARN 分类（`human_review` / `blocking`）、`NEEDS_HUMAN_REVIEW`、`BLOCKED_WARNINGS`、V-42/V-43/V-44

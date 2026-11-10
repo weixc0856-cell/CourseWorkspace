@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "run_id": "20261110T114434Z-04e61cd1",
+  "lesson": "06-attention-sample",
+  "started_at": "2026-11-10T19:44:34+08:00",
+  "config_fingerprint": "12f35ef544cc1b5ed12eb24bacc89fec94ba096946af6328dedbd16d1ada707d",
+  "config_snapshot": "logs/config-resolution.json",
+  "resume": {
+    "enabled": true,
+    "from": null,
+    "reused": [
+      "render:manim",
+      "collect",
+      "compose"
+    ],
+    "replayed": [
+      "render:code_video"
+    ],
+    "invalid": {
+      "render:code_video": [
+        "output hash changed: animation/attn-hook.mp4"
+      ]
+    }
+  },
+  "finished_at": "2026-11-10T19:44:57+08:00",
+  "verdict": "pass"
+}

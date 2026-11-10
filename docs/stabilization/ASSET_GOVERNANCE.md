@@ -38,6 +38,13 @@
 
 外部资产丢失时 package 失败，而不是生成一个"本机能播、换机就丢"的包。
 
+## 2.1 BGM 的交付判定（05）
+
+- 成片 `course-video-mixed.mp4` 已包含 BGM，**播放不需要 BGM 源文件**。
+- 重新混音/重新打包需要源文件；它是外部依赖，不打包进交付包。
+- `manifest.referenced_assets[]` 记录：`asset_id=bgm:commons/schubert_d664_piano.wav`、绝对路径、`sha256=da415ba2…`、`license_status=public_domain`、`attribution=Schubert D.664, public domain`、`acquisition=resolve under config/local-paths.yaml bgm_root`。
+- 换机时按 `config/local-paths.yaml.bgm_root` 放置同名文件即可恢复；哈希不符会被 package 审计发现。
+
 ## 3. 证据引用
 
 `docs/` 中引用的 `build/...` 路径由 `scripts/check_evidence.py` 审计：

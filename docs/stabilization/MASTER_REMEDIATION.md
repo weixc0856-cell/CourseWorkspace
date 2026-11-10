@@ -49,7 +49,7 @@ C-15、C-26 均存在，不是缺号。统计脚本化没有独立编号，作�
 | C-13 | 两代 Blender Schema 无统一入口 | `blender_task`、`adapters/blender` | 单一加载器按 `schema_version` 分派；未知字段拒绝；输出路径校验 | — | v1/v2/未知版本都有确定行为 | **VERIFIED**：`test_blender_task`；`blender-task-validate` |
 | C-14 | V1 时间线靠 legacy 字段桥接 | `legacy_registry`、`v1_timeline`、`verify` | 登记每个 legacy 字段的消费者与退出目标；未登记即 V-43 失败 | C-01 | 新增字段必须登记 | **FIXED**：9 个字段登记；V-43；`test_legacy_registry` |
 | C-15 | `build-report` 无 run_id/输入哈希 | `contracts`、`report` | `run_id`、artifact `sha256`、config 指纹 | — | 报告可定位到一次运行 | **VERIFIED**：`test_contracts`、真实报告 |
-| C-16 | 品牌 2D/3D 视觉语言不一致 | `brand`、`BrandIntro`、3D shots | 统一 token 与 Gate；3D 未过 Gate 前不作品牌资产 | 人工 Gate | 2D/3D 同属一套体系 | **IN_PROGRESS**：`film.js` 墙面/背板改 `paper`、恢复地面层次并重渲 `wayne-atelier-v2.mp4`；Gate 3 仍未通过（角色比例、品牌叙事），见 `BrandIntro/gates/GATE3_REVIEW_2026-11-10.md`；人工签核 pending |
+| C-16 | 品牌 2D/3D 视觉语言不一致 | `brand`、`BrandIntro`、3D shots | 统一 token 与 Gate；3D 未过 Gate 前不作品牌资产 | 人工 Gate | 2D/3D 同属一套体系 | **DEFERRED**（所有者决定，2026-11-10）：视觉概念与 3D 角色设计尚未成熟，暂缓片头；保留源码、角色资产与 Gate 3 证据；不以片头阻塞 V1 课程生产；后续单独重做，不在当前方案上打补丁 |
 | C-17 | three.js 5 份重复 vendored | `vendor`、`CodeVideoStudio` | 单一 `vendor/three`，构建时复制；副本不提交 | — | `vendor-check` 通过 | **VERIFIED**：5 份删除；`test_vendor`；实测 copied=3/current=2 |
 | C-18 | Remotion Root 混入探针 | `RemotionStudio` | 探针独立入口 `src/probes` | — | 生产入口只暴露生产 composition | **VERIFIED**：`src/Root.tsx` 仅 7 个生产 composition；`tsc` 通过 |
 | C-19 | 固定 1800 s 超时 | `timeouts`、`adapters` | 按时长策略与 `config/tools.yaml` 解析；超时杀进程树 | — | 20 分钟课程 compose ≥ 3600 s | **VERIFIED**：`test_timeouts`；`run_command` 超时测试 |
@@ -58,14 +58,14 @@ C-15、C-26 均存在，不是缺号。统计脚本化没有独立编号，作�
 | C-22 | 文档过期点集中 | `docs/` | 修过期句；文档标准与索引 | — | 无仍然生效的旧规范冲突 | **VERIFIED**：FRONTEND/ARCHITECTURE 修正；`DOCUMENTATION_STANDARD.md` |
 | C-23 | 五层审查无统一裁决队列 | `review_decisions`、`quality` | `review/decisions.json`；Q1 读取；未裁决即人工复核 | — | 每条 finding 有裁决或明确未裁决 | **VERIFIED**：`review-status`/`review-decide`；`test_review_decisions` |
 | C-24 | 同一行为多配置源 | `config_resolve`、`pipeline` | 每次 build 生成不可变 `config-resolution.json`；冲突阻断 | — | 05 的四个时长值有唯一解释；指纹进入 resume | **VERIFIED**：`config-resolve` 对 05/06/01/nvda 实测；`test_config_resolve` |
-| C-25 | 内容小矛盾 | `lessons/06` 正文 | 标题时长、因果遮罩表述、示意矩阵标注 | 所有者批准 | 内容与实测一致 | **VERIFIED**：标题改为 `Attention in a Minute`；s005 增加“在解码器里”；重生成 9.12 s，全片 64.405 s；V-31/V-44 PASS，ASR 覆盖 0.935、0 cue mismatch；画面文案与 SRT 同步 |
-| C-26 | 新闻片幻灯片密度 | `lessons/nvda`、版式 | 中文段落移出幻灯片，交给字幕 | 所有者批准、视觉验收 | 抽帧可读 | **VERIFIED**：删除 8 页中文段，重建 354.304 s；V-44 PASS；前后帧与 15 s 片段在 `docs/stabilization/evidence/c26/`；ASR 0.897、6 条短句/专名 mismatch 为 WARN |
+| C-25 | 内容小矛盾 | `lessons/06` 正文 | 标题时长、因果遮罩表述、示意矩阵标注 | 所有者批准 | 内容与实测一致 | **VERIFIED**：标题改为 `How Attention Works in About a Minute`；s005 改为“解码器里的注意力，能看当前和之前的位置，不能看未来”；重生成 10.24 s，全片 65.533 s；V-31/V-44 PASS，ASR 0.935、0 mismatch；画面文案与 SRT 同步 |
+| C-26 | 新闻片幻灯片密度 | `lessons/nvda`、版式 | 中文段落移出幻灯片，交给字幕 | 所有者批准、视觉验收 | 抽帧可读 | **VERIFIED**：删除 8 页中文段；6 条 ASR mismatch 已分类，重定时 cue 80–84、111–116；重建 354.304 s，V-44 PASS；审阅记录在 `docs/stabilization/evidence/c26/EDITORIAL_REVIEW.md` |
 | C-27 | 验收文档算术错误 | `ACCEPTANCE`、`stats` | 计数由 `stats` 生成；更新数字 | C-25 | 文档数字与产物一致 | **VERIFIED**：`stats` 命令；ACCEPTANCE 2026-11-10 段 |
 | C-28 | 未提交的品牌工作 | `BrandIntro`、3D shots | 记录设计/失败/当前版本，交由所有者决定提交 | 所有者 | 下一次会话能判断哪些已决定 | **VERIFIED**：源码分两笔提交（`84d5d5c`、`e611886`）；`out/`、预览帧、`*.blend1`、渲染副本被忽略；分类见 `BrandIntro/ASSET_CLASSIFICATION.md` |
 | C-29 | 06 的 `subtitle disabled` 文案 | `verify` | 只在字幕禁用时使用该文案 | — | 06 的报告不再误导 | **VERIFIED**：`test_burnin`/verify 测试；06 V-31 已执行 |
 | C-30 | 20 分钟 compose 停摆 | `build_lock`、`utils`、`atomic` | 同课单 build；超时杀进程树；原子写 | — | 01 单 build 产出 1195.605 s | **VERIFIED**：01 真实产物；`test_build_lock`、`test_run_command` |
 
-状态计数：VERIFIED 25，FIXED 4（C-01、C-07、C-09、C-14），IN_PROGRESS 1（C-16，Gate 3 未通过），OPEN 0。C-07 未升为 VERIFIED，因为 01 仍有行首标点 WARN。
+状态计数：VERIFIED 25，FIXED 4（C-01、C-07、C-09、C-14），DEFERRED 1（C-16，所有者暂缓片头），OPEN 0。C-07 未升为 VERIFIED，因为 01 仍有行首标点 WARN。
 
 ## 3. 依赖图
 
@@ -80,7 +80,7 @@ C-01 (production authority)
   └── C-14 (legacy bridge exit)
 C-27 (scripted counts)
   └── C-12 (status truth)
-C-16 (brand Gate) ── 人工视觉验收
+C-16 (brand Gate) ── DEFERRED，不阻塞 V1
 C-25 / C-26 ── 所有者内容批准
 ```
 
@@ -96,9 +96,9 @@ C-25 / C-26 ── 所有者内容批准
 
 `brand-desktop` / `brand-intro` 源码已分两笔提交（`84d5d5c`、`e611886`）；生成物、预览帧、Blender 备份与 three.js 副本被忽略。分类见 `BrandIntro/ASSET_CLASSIFICATION.md`。
 
-### 4.3 C-16 品牌 3D（唯一未关闭项）
+### 4.3 C-16 品牌 3D（DEFERRED）
 
-`film.js` 已完成实际修正：墙面/背板改为 `paper`、曝光 1.02、恢复地面层次，重渲 `wayne-atelier-v2.mp4`。Gate 3 仍**未通过**：角色比例偏小、品牌 W 与角色动作未形成同一叙事。前后帧与逐项判定见 `BrandIntro/gates/GATE3_REVIEW_2026-11-10.md`。关闭条件：所有者完成视觉签核或明确放弃该 3D 方向。
+所有者决定暂缓：当前视觉概念与 3D 角色设计不成熟，不在本方案上继续打补丁。保留 `BrandIntro/` 设计记录、`CodeVideoStudio/shots/brand-intro` 源码、角色资产与 Gate 3 前后帧。片头不进入生产默认链路，不阻塞 V1。后续独立重新设计。
 
 ### 4.4 C-07 05 已批准字幕
 

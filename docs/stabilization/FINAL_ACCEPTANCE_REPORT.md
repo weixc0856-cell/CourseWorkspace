@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | `ENGINEERING_VERIFIED` | **true** | `check.ps1` exit 0；六套单测；06 / NVDA / 05 真实构建；配置、resume、字幕、资产、vendor 检查 |
 | `CONTENT_VERIFIED` | **false（机器一致性通过，编辑签核未完成）** | C-25 旁白/字幕/画面已一致；C-26 事实/判断已分开；但措辞与新闻写作仍由所有者最终确认 |
-| `VISUAL_VERIFIED` | **false** | Gate 3 未通过：角色比例偏小、品牌 W 与角色动作未形成同一叙事；见 §4 |
+| `VISUAL_VERIFIED` | **false（C-16 已 DEFERRED，不阻塞 V1）** | 片头概念/角色未成熟，所有者决定暂缓；保留源码、资产与 Gate 3 证据 |
 | `PACKAGE_VERIFIED` | **true** | 06 / NVDA / 05 的 `package-verify` 通过；哈希复核 |
 | `RELEASE_APPROVED` | **false** | 无 review / release 人工签核 |
 
@@ -37,18 +37,18 @@
 3. 修复后 `--resume-from compose`：复用 manim/collect，重跑 code_video（输入清单新增 vendor 哈希）与 compose。
 4. `--resume`：复用 manim / code_video / collect / compose，只跑 verify，**pass**。
 
-验证到的内容：
+验证到的内容（本轮补做两项真实注入，见 `docs/stabilization/evidence/RESUME_VERIFICATION.md`）：
 
-- 输入哈希：真实发生——新增 vendor 文件使 code_video 检查点失效。
-- 输出哈希：代码在复用前重算，单测覆盖；真实运行中未主动篡改产物。
-- 配置指纹：代码与单测覆盖，未在真实运行中改配置触发失效。
-- 字幕变化：NVDA 的 `--resume` 记录显示字幕输入使 capture/compose/burn 失效；本轮已收窄检查点输入范围，字幕只失效 consuming stages。
+- 输入哈希：新增 vendor 文件使 code_video 检查点失效。
+- 输出哈希：截断 `animation/attn-hook.mp4` 并改旧 mtime 后，`--resume` 记录 `output hash changed: animation/attn-hook.mp4`，重跑 code_video 并恢复为相同哈希，compose 复用。
+- 配置指纹：向 `config/tools.yaml` 加一行注释后，`--resume` 将 manim/code_video/collect/compose 全部标记 `configuration fingerprint changed` 并重跑；恢复配置后再构建一次，最终快照与配置一致。
+- 字幕变化：NVDA 的 `--resume` 记录显示字幕输入使 capture/compose/burn 失效；已收窄检查点输入范围，字幕只失效 consuming stages。
 
 ### 1.3 交付包
 
-- 06：22 个文件；外部声线参考打包到 `assets/external/719ce803-my_voice_clean_v1.wav`，`package-verify` 通过。
-- NVDA：26 个文件；`package-verify` 通过。
-- 05：55 个文件；`referenced_assets` 记录 BGM 与声线参考的 `asset_id`/SHA-256；BGM 在配置库中，不复制进包，因为成片已经混音。**这是“有依赖声明”，不是“包内自带 BGM 源文件”。**
+- 06：28 个文件；外部声线参考打包到 `assets/external/719ce803-my_voice_clean_v1.wav`，`package-verify` 通过。
+- NVDA：27 个文件；`package-verify` 通过。
+- 05：55 个文件；`referenced_assets` 记录 BGM 与声线参考的 `asset_id`/SHA-256。BGM 是**重新混音的外部依赖，不是播放必需资产**：`course-video-mixed.mp4` 已包含 BGM；源文件记录 `license_status=public_domain`、`attribution`、`acquisition=resolve under config/local-paths.yaml bgm_root`，换机可按根目录放置并用哈希复核。
 
 ### 1.4 三个“通过”的含义
 
@@ -60,22 +60,22 @@
 
 ### 1.5 本轮端到端范围
 
-06 是**单一 64 秒课程**的完整构建（config → validate → render → collect → compose → verify），不是 20 分钟长课 01 的完整生产，也不是多课程批量生产。NVDA 是 354 秒新闻片的完整构建。两者都不等于“所有课程类型已验收”。
+06 是**单一 65.5 秒课程**的完整构建（config → validate → render → collect → compose → verify），不是 20 分钟长课 01 的完整生产，也不是多课程批量生产。NVDA 是 354 秒新闻片的完整构建。两者都不等于“所有课程类型已验收”。
 
 ## 2. C-25：06 内容矛盾
 
 | 项 | 修改 |
 | --- | --- |
-| 标题 | `Attention in Ninety Seconds` → `Attention in a Minute`；中文 `九十秒看懂注意力` → `一分钟看懂注意力`；`slides.md` 同步 |
-| 因果遮罩 | 旁白 s005、`lecture_notes.md`、SRT cue 11 改为“在解码器里，注意力只能看它前面” |
-| 画面 | `attn-mask` 标题改为“解码器：只能看前面”；SPEC 固定文案同步 |
-| 时间轴 | s005 6.88 → 9.12 s；全片 62.16 → 64.405 s；production/beats/SRT 重新定时 |
+| 标题 | `Attention in Ninety Seconds` → `How Attention Works in About a Minute`；中文 `九十秒看懂注意力` → `一分钟看懂注意力`；`slides.md` 同步 |
+| 因果遮罩 | 旁白 s005、`lecture_notes.md`、SRT cue 11 改为“解码器里的注意力，能看当前和之前的位置，不能看未来” |
+| 画面 | `attn-mask` 标题改为“解码器：能看当前和之前”，副题“不能看未来；未来位置被遮住”；SPEC 同步 |
+| 时间轴 | s005 6.88 → 10.24 s；全片 62.16 → 65.533 s；production/beats/SRT 重新定时 |
 
 验证：
 
-- 06 重建 `verdict=pass`，V-14 64.400 s，V-31/V-44 PASS。
+- 06 重建 `verdict=pass`，V-14 65.533 s，V-31/V-44 PASS。
 - ASR 覆盖 0.935，0 cue mismatch。
-- 画面帧确认“解码器：只能看前面”与字幕一致。
+- 画面帧确认“能看当前和之前 / 不能看未来”与字幕一致；前后帧在 `docs/stabilization/evidence/c25/`。
 - 原始版本保存在 `lessons/06-attention-sample/authoring/original-2026-11-10/`；审批记录通过 `author-accept` 写入，措辞的最终编辑签核仍需所有者确认。
 
 ## 3. C-26：NVDA 新闻片密度
@@ -89,30 +89,20 @@
 验证：
 
 - 完整重建 354.304 s，`verdict=pass`，V-44 PASS。
-- 抽帧：第 1 页与第 2 页中文小字消失，英文要点可读；见 `docs/stabilization/evidence/c26/`（4 张前后帧 + 2 个 15 s 片段）。
-- ASR 覆盖 0.897，6 条短句/专名 mismatch 为 WARN；未删除 cue 提升覆盖率。
+- 6 条 ASR mismatch 已逐条分类：3 条日期/专名识别差异保留，3 条真实时间轴提前已重定时（cue 80–84、111–116）。重跑后 ASR 0.919、3 条 mismatch。
+- 抽帧：第 1 页与第 2 页中文小字消失，英文要点可读；见 `docs/stabilization/evidence/c26/`（4 张前后帧、2 个 15 s 片段、编辑审阅记录）。
+- 未删除 cue 提升覆盖率。
 
 事实/观点：第 06 页明确标注 `MY JUDGMENT`，并有 `What this is not`；未新增事实或把判断写成结论。
 
-## 4. C-16：品牌 2D/3D
+## 4. C-16：品牌 2D/3D（DEFERRED）
 
-实际修复：
+所有者决定：当前视觉概念与 3D 角色设计不成熟，片头暂缓，不在现有方案上继续打补丁。
 
-- 正确入口是 `film.html` → `film.js`（不是 `index.html` → `main.js`）。
-- 墙面与背板改为 `paper #FBFAF7`；曝光 0.94 → 1.02；恢复地面 `#D8D1C5` 与台面层次。
-- 重渲 `out/wayne-atelier-v2.mp4`（20 s / 600 帧 / 1080p30）。
-
-Gate 3 复核：
-
-| 标准 | 判定 |
-| --- | --- |
-| 品牌符号自然出现 | 部分（W 从纸板生长，但不来自角色动作） |
-| 一个叙事 | 部分（角色→曲线→纸板，曲线与品牌关系弱） |
-| 最后 3 秒单独成立 | 通过 |
-| 无声音也能看懂 | 人工初看通过，未做正式无音轨测试 |
-| 连看 3 次不烦 | 未执行 |
-
-结论：**Gate 3 未通过**。前后帧在 `BrandIntro/gates/evidence-2026-11-10/`，逐项判定在 `BrandIntro/gates/GATE3_REVIEW_2026-11-10.md`。最终视觉签核由人决定。
+- 保留 `BrandIntro/` 设计记录、`CodeVideoStudio/shots/brand-intro` 源码、角色资产、Gate 3 前后帧。
+- 本轮已完成的实际修正保留：`film.js` 墙面/背板改 `paper`、曝光 1.02、恢复地面层次，重渲 `wayne-atelier-v2.mp4`。
+- Gate 3 结论仍为未通过：角色比例偏小、品牌 W 与角色动作未形成同一叙事。见 `BrandIntro/gates/GATE3_REVIEW_2026-11-10.md`。
+- 片头不进入生产默认链路，不阻塞 V1；后续独立重新设计。
 
 ## 5. C-07：05 已批准字幕
 
@@ -121,6 +111,7 @@ Gate 3 复核：
 - V-44 规则修正：下一 cue 小写续行、当前 cue 句末标点，不再报悬空介词。
 - `subtitles-qc` 05 = PASS。复核记录：`lessons/05-transformer-5min/authoring/subtitles-review-2026-11-10.md`。
 - 05 已按新 SRT 重建：292.373 s，`verdict=pass`，V-44 PASS；ASR 0.992、0 mismatch。
+- 01 的 18 条“行首标点”WARN 单独记录在 `docs/stabilization/evidence/c07/01-review.md`，不与 05 修复混为同一状态。
 
 ## 6. C-28：品牌工作提交
 
@@ -135,27 +126,27 @@ Gate 3 复核：
 | 项 | 结果 |
 | --- | --- |
 | `check.ps1` | exit 0，`check ok` |
-| 单测 | 六套 639：633 通过、6 跳过（CourseControl 492 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
+| 单测 | 六套 640：634 通过、6 跳过（CourseControl 493 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
 | Remotion | `tsc --noEmit` exit 0 |
-| 06 | 64.405 s，`verdict=pass`；V-31/V-44 PASS；ASR 0.935、0 mismatch；media-qc 9 段冻结 WARN；quality-report Q1/Q2 INCOMPLETE，`RELEASE_APPROVED=false` |
-| NVDA | 354.304 s，`verdict=pass`；V-44 PASS；ASR 0.897、6 条 mismatch WARN；media-qc 19 段冻结 WARN；`VERIFY_PASS=true`，`RELEASE_APPROVED=false` |
+| 06 | 65.533 s，`verdict=pass`；V-31/V-44 PASS；ASR 0.935、0 mismatch；media-qc 9 段冻结 WARN；quality-report Q1/Q2 INCOMPLETE，`RELEASE_APPROVED=false` |
+| NVDA | 354.304 s，`verdict=pass`；V-44 PASS；ASR 0.919、3 条 mismatch WARN；media-qc 19 段冻结 WARN；`VERIFY_PASS=true`，`RELEASE_APPROVED=false` |
 | 05 | 292.373 s，`verdict=pass`；V-31/V-44 PASS；ASR 0.992、0 mismatch；媒体冻结 58 段 WARN |
-| 交付包 | 05 55 文件、06 22 文件、NVDA 26 文件；三个 `package-verify` 均通过；06 外部声线参考已打包 |
-| Git | `84d5d5c`、`e611886`、`2f8869f` 已提交；工作树干净；课程内容与 `build/` 不入库 |
+| 交付包 | 05 55 文件、06 28 文件、NVDA 27 文件；三个 `package-verify` 均通过；06 外部声线参考已打包 |
+| Git | 本轮收尾提交见 §10；课程内容与 `build/` 不入库 |
 
 
 ## 8. 问题台账终态
 
 - VERIFIED 25：C-02、C-03、C-04、C-05、C-06、C-08、C-10、C-11、C-12、C-13、C-15、C-17、C-18、C-19、C-20、C-21、C-22、C-23、C-24、C-25、C-26、C-27、C-28、C-29、C-30。
 - FIXED 4：C-01、C-07、C-09、C-14。C-07 因 01 仍有行首标点 WARN，未升 VERIFIED。
-- IN_PROGRESS 1：C-16（Gate 3 未通过）。
+- DEFERRED 1：C-16（所有者决定暂缓片头，不阻塞 V1）。
 - OPEN 0。
 - C-31、C-32：均已修复并实测。
 
 
 ## 9. 仍需所有者决定
 
-- C-16 Gate 3 视觉签核。
+- C-16 已 DEFERRED，无需本轮签核；后续独立项目重启。
 - C-25 06 新措辞的编辑签核；C-26 新闻写作与版式的编辑签核。
 - 05 字幕微调是否作为正式修订。
 - 06/NVDA/05 的 review / release 签核。

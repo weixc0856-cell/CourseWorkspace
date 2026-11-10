@@ -101,6 +101,14 @@ def describe_asset(
         if origin == "external":
             origin = "voice-ref"
             asset_id = f"voice-ref:{path.name}"
+    acquisition = {
+        "workspace": "copy from the lesson workspace",
+        "bgm": "resolve under config/local-paths.yaml bgm_root",
+        "ai": "resolve under config/local-paths.yaml ai_root",
+        "tts-runtime": "resolve under config/local-paths.yaml tts.runtime_dir",
+        "voice-ref": "resolve from the configured TTS voice reference",
+        "external": "machine-local file; the delivery package must bundle it",
+    }.get(origin, "external dependency")
     return {
         "asset_id": asset_id,
         "path": str(path),
@@ -109,6 +117,7 @@ def describe_asset(
         "sha256": _sha256(path) if path.is_file() else None,
         "license_status": license_status,
         "attribution": attribution,
+        "acquisition": acquisition,
     }
 
 
