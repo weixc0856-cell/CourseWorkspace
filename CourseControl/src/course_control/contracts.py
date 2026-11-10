@@ -81,6 +81,10 @@ class Subtitles(StrictModel):
     mode: Literal["cue", "word"] = "cue"
     position: Literal["bottom", "low_center"] = "bottom"
     word_source: str | None = None
+    # True means the SRT carries an upper (top_language) and a lower
+    # (bottom_language) line set. False is an explicit single-language
+    # declaration; V-31 then checks one language instead of pretending two.
+    bilingual: bool = True
     top_language: str = "en"
     bottom_language: str = "zh-Hans"
     # Distance in pixels between the bottom of the subtitle block and the frame
@@ -425,6 +429,7 @@ class Artifact(StrictModel):
     path: str
     kind: str
     size_bytes: int
+    sha256: str | None = None
     probe: dict | None = None
 
 
@@ -447,6 +452,7 @@ class RenderArtifact(StrictModel):
 
 class BuildReport(StrictModel):
     schema_version: Literal[1] = 1
+    run_id: str = ""
     lesson: str
     started_at: str
     finished_at: str

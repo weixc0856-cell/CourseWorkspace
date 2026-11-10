@@ -708,6 +708,26 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 4. 新增门禁必须是**可证明的缺陷**（解码失败、帧数不符、音画漂移、字幕缺失、文件哈希不符），不是审美偏好；不新增"秒数/帧数"型硬约束。
 5. 人工看片与签字不可替代：自动化只能证明产物符合契约，不能证明讲得对、看得下去。
 
-**实施状态**：决定已记录，**代码未改**（`beats.py` 的时长规则、`quality_gates.py` 的 grammar 判定待调整；`docs/工业化动画工作流.md`、`docs/ACCEPTANCE.md` 的门禁描述待复核）。
+**实施状态**：**2026-11-10 已实施**。`beats.py` 拆为 errors/warnings，`beats-validate` 只对 errors exit 1；`quality_gates` 的 grammar 失败不再阻断，warnings 单独报告；`animation-score` 去掉无相机/冻结豁免的免费分。详见 `docs/stabilization/ANIMATION_QUALITY_MODEL.md`。
 
 **后果**：`animation-score` 与语法归档退为诊断工具；发布结论回到"三条真实约束 + 人工签核"。
+
+
+---
+
+## D-072 Production Stabilization：两种生产单元、质量状态机与标准交付包
+
+**背景**：审计（`docs/audit/`）发现同一门课有多套镜头/时间表示，质量结论有四种语义，交付包没有哈希与缺项失败。继续加功能会让"通过"更不可信。
+
+**决策**：
+
+1. **两种生产单元**：`deck`/`scene` 以 Page 为权威（`storyboard.yaml`）；`shots` 以 Shot 为权威（`authoring/production.yaml`）。导演计划、节拍表、`shots.json`、`TimelineSpec` 是视图，不是第二套权威。
+2. **导演计划显式接入**：`build --storyboard-source director` 读取 `storyboard.director.yaml`；默认仍读 storyboard/production。`plan-audit` 只读报告计数差异。
+3. **质量状态分离**：`BUILD_PASS`、`VERIFY_PASS`、`VERIFY_WARN`、`VERIFY_INCOMPLETE`、`VERIFY_FAIL`、`QUALITY_VERIFIED`、`REVIEW_APPROVED`、`RELEASE_APPROVED`。`WARN` 展示但不阻断；`SKIP`/`INCOMPLETE` 不得当作 `pass`；发布需要 review + release 两次带哈希的签核。
+4. **标准交付包**：`course-control package` 复制已生成资产到 `build/<slug>/package/`，每个文件记录 SHA-256；缺必需项失败；`package-verify` 可独立复核。`build-report` 增加 `run_id` 与 artifact `sha256`。
+5. **字幕**：显式 `subtitles.bilingual`；V-31 覆盖 burn-in 与 Remotion；中文行宽按显示宽度（CJK=1、拉丁=0.5）；`subtitles-rewrap` 只改行宽与过短 cue 合并，不改语义。
+6. **渲染器 QC**：`verify_media` 统一 Manim/Motion/Blender 的分辨率/帧率/时长检查；CodeVideo 保持原有完整 QC。
+
+**后果**：05 的评分从 100 降到 84.7；nvda/06 的 `INCOMPLETE` 阻止发布；01 的字幕草稿被重排并接受；05/06 生成可复核交付包。代价是发布前多两次人工签核，且旧课程需要重新构建才能获得 `run_id`。
+
+**实施记录**：`docs/stabilization/MIGRATION_PLAN.md`。

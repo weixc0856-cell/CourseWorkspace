@@ -15,6 +15,18 @@
           "title": "Size Bytes",
           "type": "integer"
         },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
         "probe": {
           "anyOf": [
             {
@@ -183,6 +195,11 @@
       "default": 1,
       "title": "Schema Version",
       "type": "integer"
+    },
+    "run_id": {
+      "default": "",
+      "title": "Run Id",
+      "type": "string"
     },
     "lesson": {
       "title": "Lesson",

@@ -86,6 +86,8 @@ def compose(paths: LessonPaths) -> StageOutcome:
 
     props_path = _render_props(paths, timeline_path, use_timeline, shots_path)
     composition = "CourseTimeline" if use_timeline else "CourseVideo"
+    target_seconds = float(getattr(paths.lesson.duration, "target_seconds", None) or 0.0)
+    render_timeout = max(1800, int(target_seconds * 3)) if target_seconds else 1800
     render = run_command(
         [
             *which_command("npx"),
@@ -97,7 +99,7 @@ def compose(paths: LessonPaths) -> StageOutcome:
             f"--props={props_path}",
         ],
         remotion_root,
-        timeout=1800,
+        timeout=render_timeout,
         log_path=log_dir / "remotion.log",
     )
     duration_ms = int((time.monotonic() - started) * 1000)

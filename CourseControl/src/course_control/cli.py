@@ -64,10 +64,16 @@ def build_command(
     skip_render: bool = typer.Option(False, "--skip-render"),
     skip_compose: bool = typer.Option(False, "--skip-compose"),
     storyboard: Path | None = typer.Option(None, "--storyboard"),
+    storyboard_source: str | None = typer.Option(
+        None, "--storyboard-source", help="storyboard or director"
+    ),
     shots: list[str] | None = typer.Option(None, "--shots"),
     build_root: Path | None = typer.Option(None, "--build-root"),
 ) -> None:
     """Run the applicable stages for a lesson."""
+    if storyboard_source not in (None, "storyboard", "director"):
+        typer.echo("--storyboard-source must be storyboard or director", err=True)
+        raise typer.Exit(2)
     try:
         report, report_path = run_build(
             workspace.resolve(),
@@ -76,6 +82,7 @@ def build_command(
                 skip_render=skip_render,
                 skip_compose=skip_compose,
                 storyboard=storyboard,
+                storyboard_source=storyboard_source,
                 shots=shots,
                 build_root=build_root,
             ),
@@ -1030,6 +1037,88 @@ def subtitles_build_command(
     typer.echo(f"draft: {srt_path}")
 
 
+@app.command("subtitles-rewrap")
+def subtitles_rewrap_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    write: bool = typer.Option(False, "--write", help="write the rewrapped SRT"),
+    draft: bool = typer.Option(False, "--draft", help="rewrap build/subtitles/bilingual.draft.json"),
+) -> None:
+    """Rewrap subtitle lines at word/punctuation boundaries without changing text."""
+    from .subtitles import (
+        BilingualDraft,
+        CuePolicy,
+        rewrap_draft,
+        rewrap_srt,
+        validate_cues,
+        write_srt,
+        write_vtt,
+    )
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if draft:
+        draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
+        if not draft_path.is_file():
+            typer.echo(f"subtitle draft not found: {draft_path}", err=True)
+            raise typer.Exit(1)
+        original = BilingualDraft.model_validate(
+            json.loads(draft_path.read_text(encoding="utf-8"))
+        )
+        updated = rewrap_draft(original, CuePolicy(), float(paths.lesson.outputs.fps))
+        total_ms = max((cue.end_ms for cue in updated.cues), default=0)
+        problems = validate_cues(
+            [cue.model_dump(mode="json") for cue in updated.cues],
+            CuePolicy(),
+            float(paths.lesson.outputs.fps),
+            total_ms,
+        )
+        typer.echo(f"source: {draft_path}")
+        typer.echo(f"cues: {len(original.cues)} -> {len(updated.cues)}")
+        for problem in problems:
+            typer.echo(f"  [problem] {problem}", err=True)
+        if write:
+            draft_path.write_text(
+                json.dumps(updated.model_dump(mode="json"), ensure_ascii=False, indent=2)
+                + chr(10),
+                encoding="utf-8",
+            )
+            write_srt(
+                [cue.model_dump(mode="json") for cue in updated.cues],
+                draft_path.with_suffix(".srt"),
+            )
+            write_vtt(
+                [cue.model_dump(mode="json") for cue in updated.cues],
+                draft_path.with_suffix(".vtt"),
+            )
+            typer.echo(f"wrote: {draft_path}")
+        raise typer.Exit(0 if not problems else 1)
+    target = paths.subtitles_path()
+    if target is None or not target.is_file():
+        target = paths.build_root / "subtitles" / "bilingual.draft.srt"
+    if not target.is_file():
+        typer.echo(f"subtitle SRT not found: {target}", err=True)
+        raise typer.Exit(1)
+    original = target.read_text(encoding="utf-8", errors="replace")
+    rewrapped = rewrap_srt(
+        original, CuePolicy(), bilingual=paths.lesson.subtitles.bilingual
+    )
+    before = len(original.splitlines())
+    after = len(rewrapped.splitlines())
+    typer.echo(f"source: {target}")
+    typer.echo(f"lines: {before} -> {after}")
+    if write:
+        target.write_text(rewrapped, encoding="utf-8")
+        typer.echo(f"wrote: {target}")
+    else:
+        typer.echo(rewrapped[:2000])
+    raise typer.Exit(0)
+
+
 @app.command("subtitles-accept")
 def subtitles_accept_command(
     lesson: str = typer.Option(..., "--lesson"),
@@ -1637,14 +1726,145 @@ def quality_report_command(
     for item in report["dimensions"]:
         typer.echo(f"  [{item['id']}] {item['status']}: {item['reason']}")
     states = report["states"]
-    typer.echo(f"BUILD_PASS: {states['BUILD_PASS']}")
-    typer.echo(f"QUALITY_PASS: {states['QUALITY_PASS']}")
-    typer.echo(f"RELEASE_APPROVED: {states['RELEASE_APPROVED']}")
+    for key in (
+        "BUILD_PASS",
+        "VERIFY_PASS",
+        "VERIFY_INCOMPLETE",
+        "VERIFY_FAIL",
+        "QUALITY_PASS",
+        "QUALITY_VERIFIED",
+        "REVIEW_APPROVED",
+        "RELEASE_APPROVED",
+    ):
+        typer.echo(f"{key}: {states[key]}")
     typer.echo(f"report: {target}")
     if any(item["status"] == BLOCKED for item in report["dimensions"]):
         raise typer.Exit(1)
     if any(item["status"] == INCOMPLETE for item in report["dimensions"]):
         raise typer.Exit(3)
+    raise typer.Exit(0)
+
+
+@app.command("package")
+def package_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    out: Path | None = typer.Option(None, "--out"),
+) -> None:
+    """Collect a standard delivery package with SHA-256 for every file."""
+    from .package import PackageError, build_package
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    try:
+        manifest, root = build_package(paths, out)
+    except PackageError as exc:
+        typer.echo(f"package failed: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"package: {root}")
+    typer.echo(f"run_id: {manifest.get('run_id') or 'unknown'}")
+    for item in manifest["files"]:
+        typer.echo(f"  {item['status']:>13}  {item['path']}")
+    raise typer.Exit(0)
+
+
+@app.command("package-verify")
+def package_verify_command(
+    package: Path = typer.Option(..., "--package"),
+) -> None:
+    """Re-hash a delivery package and report missing or changed files."""
+    from .package import verify_package
+
+    problems = verify_package(package)
+    if problems:
+        for problem in problems:
+            typer.echo(problem, err=True)
+        raise typer.Exit(2)
+    typer.echo("package ok")
+    raise typer.Exit(0)
+
+
+@app.command("release-approve")
+def release_approve_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    stage: str = typer.Option("release", "--stage", help="review or release"),
+    approved_by: str = typer.Option(..., "--by"),
+    decision: str = typer.Option("approved", "--decision", help="approved or rejected"),
+    note: str = typer.Option("", "--note"),
+) -> None:
+    """Record a traceable human review or release decision.
+
+    A release sign-off is refused unless the automatic verification is complete
+    and the human review has already been approved.
+    """
+    import hashlib
+    from datetime import datetime, timezone
+
+    from .quality import build_quality_report
+
+    if stage not in {"review", "release"}:
+        typer.echo("stage must be review or release", err=True)
+        raise typer.Exit(1)
+    if decision not in {"approved", "rejected"}:
+        typer.echo("decision must be approved or rejected", err=True)
+        raise typer.Exit(1)
+    if not approved_by.strip():
+        typer.echo("--by must name the approver", err=True)
+        raise typer.Exit(1)
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+
+    report, quality_path = build_quality_report(workspace.resolve(), paths)
+    states = report["states"]
+    if decision == "approved" and not states["VERIFY_PASS"]:
+        typer.echo("automatic verification is not pass; refusing approval", err=True)
+        typer.echo(f"VERIFY_INCOMPLETE={states['VERIFY_INCOMPLETE']} VERIFY_FAIL={states['VERIFY_FAIL']}", err=True)
+        raise typer.Exit(2)
+    if stage == "release" and decision == "approved" and not states["REVIEW_APPROVED"]:
+        typer.echo("human review is not approved; refusing release sign-off", err=True)
+        raise typer.Exit(2)
+
+    build_report = paths.build_root / "final" / "build-report.json"
+    final = paths.build_root / "final" / "course-video-mixed.mp4"
+    if not final.is_file():
+        final = paths.build_root / "final" / "course-video.mp4"
+    if not build_report.is_file() or not final.is_file():
+        typer.echo("build-report.json and final video are required", err=True)
+        raise typer.Exit(2)
+
+    def sha(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    payload = {
+        "schema_version": 1,
+        "lesson": paths.slug,
+        "stage": stage,
+        "decision": decision,
+        "approved_by": approved_by.strip(),
+        "approved_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "note": note,
+        "build_report_sha256": sha(build_report),
+        "final_video_sha256": sha(final),
+        "quality_report_sha256": sha(quality_path),
+    }
+    target = paths.build_root / "quality" / f"{stage}-approval.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8")
+    typer.echo(f"{stage} decision: {decision} by {payload['approved_by']}")
+    typer.echo(f"record: {target}")
     raise typer.Exit(0)
 
 
@@ -1657,7 +1877,7 @@ def beats_validate_command(
 ) -> None:
     """Validate the director beat sheet against the measured narration."""
     from . import palette_gate
-    from .beats import load_segments, load_sheet, validate_sheet
+    from .beats import load_segments, load_sheet, validate_sheet_report
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -1686,11 +1906,16 @@ def beats_validate_command(
         palette_ok = False
         typer.echo(f"palette: {beat_sheet.palette} unreadable: {exc}", err=True)
 
-    issues = validate_sheet(beat_sheet, segments, palette_ok=palette_ok)
-    for issue in issues:
-        typer.echo(f"  [fail] {issue}")
-    typer.echo(f"shots: {len(beat_sheet.shots)}; issues: {len(issues)}; sheet: {sheet_path}")
-    raise typer.Exit(0 if not issues else 1)
+    report = validate_sheet_report(beat_sheet, segments, palette_ok=palette_ok)
+    for issue in report["errors"]:
+        typer.echo(f"  [error] {issue}")
+    for issue in report["warnings"]:
+        typer.echo(f"  [warning] {issue}")
+    typer.echo(
+        f"shots: {len(beat_sheet.shots)}; errors: {len(report['errors'])}; "
+        f"warnings: {len(report['warnings'])}; sheet: {sheet_path}"
+    )
+    raise typer.Exit(0 if not report["errors"] else 1)
 
 
 @app.command("animation-score")
@@ -1938,6 +2163,37 @@ def grammar_list_command(
         )
 
 
+@app.command("plan-audit")
+def plan_audit_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Report the count of every production representation and the authority."""
+    from .plan_audit import audit_plan
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = audit_plan(paths)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"mode: {report['mode']}  authority: {report['authority']}")
+        for key, value in report["counts"].items():
+            typer.echo(f"  {key}: {value}")
+        if report["mismatches"]:
+            typer.echo("mismatches:")
+            for key, value in report["mismatches"].items():
+                typer.echo(f"  {key}={value} (expected {report['expected']})")
+        else:
+            typer.echo("mismatches: none")
+    raise typer.Exit(0)
+
+
 @app.command("production-validate")
 def production_validate_command(
     plan: Path | None = typer.Option(None, "--plan"),
@@ -2018,12 +2274,18 @@ def quality_gate_command(
     if as_json:
         typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
     else:
-        typer.echo(f"hard: {'pass' if report['hard_ok'] else 'fail'}")
+        typer.echo(f"verification: {report.get('verification_status', 'pass')}")
+        typer.echo(f"hard: {'fail' if report['hard_failures'] else 'pass'}")
         for item in report["hard_failures"]:
             typer.echo(f"  [hard] {item.get('source')}:{item.get('id')} {item.get('detail') or ''}")
-        typer.echo(f"grammar: {'pass' if report['grammar_ok'] else 'fail'}")
+        typer.echo(f"incomplete: {len(report.get('incomplete_failures') or [])}")
+        for item in report.get("incomplete_failures") or []:
+            typer.echo(f"  [incomplete] {item.get('source')}:{item.get('id')} {item.get('detail') or ''}")
+        typer.echo(f"grammar: {'fail' if report['grammar_failures'] else 'pass'}")
         for issue in report["grammar_failures"]:
             typer.echo(f"  [grammar] {issue}")
+        for issue in report.get("grammar_warnings") or []:
+            typer.echo(f"  [warning] {issue}")
         metrics = report.get("metrics") or {}
         if metrics:
             typer.echo(f"metrics: score {metrics.get('score')} ({metrics.get('release_gate')})")

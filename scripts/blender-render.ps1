@@ -199,6 +199,22 @@ if ($code -eq 0 -and -not (Test-Path -LiteralPath $outputAbs -PathType Leaf)) {
     exit 7
 }
 
+# Blender on Windows can return from the parent process before a child writer
+# has finalised the MP4 (moov atom).  Wait for the file to stop growing.
+if ($code -eq 0 -and (Test-Path -LiteralPath $outputAbs -PathType Leaf)) {
+    $lastSize = -1
+    $stable = 0
+    $grace = (Get-Date).AddSeconds(90)
+    while ((Get-Date) -lt $grace) {
+        $size = (Get-Item -LiteralPath $outputAbs).Length
+        if ($size -gt 0 -and $size -eq $lastSize) { $stable++ } else { $stable = 0 }
+        $lastSize = $size
+        if ($stable -ge 3) { break }
+        Start-Sleep -Milliseconds 1000
+    }
+    Write-Host ("BLENDER_OUTPUT_BYTES " + $lastSize)
+}
+
 if ($code -eq 0) {
     Write-Host "OK: $outputAbs"
 }

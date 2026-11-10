@@ -86,3 +86,7 @@ ScientificFigures/output/
 # Local archive: finished project reports stay out of the remote
 /docs/archive/*
 !/docs/archive/README.md
+
+# BrandIntro: reference captures and render tests are media, not workflow
+BrandIntro/art_direction/frames/
+BrandIntro/art_tests/*/out/

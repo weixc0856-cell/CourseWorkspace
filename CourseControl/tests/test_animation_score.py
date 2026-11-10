@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from course_control.animation_score import WEIGHTS, score
-from course_control.beats import Beat, BeatSheet, BeatShot
+from course_control.beats import Beat, BeatSheet, BeatShot, CameraMove
 
 SEGMENTS = [(0.0, 16.0), (16.0, 12.0)]
 
@@ -47,13 +47,21 @@ def demo_sheet() -> BeatSheet:
 
 
 class AnimationScoreTest(unittest.TestCase):
-    def test_perfect_inputs_score_full(self) -> None:
+    def test_perfect_inputs_without_camera_do_not_score_full(self) -> None:
         result = score(demo_sheet(), SEGMENTS, media_qc={"freeze_intervals": []}, build_verdict="pass")
         self.assertEqual(result["verdict"], "pass")
         self.assertEqual(result["components"]["gates"], WEIGHTS["gates"])
         self.assertEqual(result["components"]["freeze"], WEIGHTS["freeze"])
-        self.assertEqual(result["score"], 100.0)
+        self.assertEqual(result["components"]["camera"], 0.0)
+        self.assertEqual(result["score"], 90.0)
         self.assertEqual(result["metrics"]["long_lived_ratio"], 1.0)
+
+    def test_camera_evidence_unlocks_the_camera_component(self) -> None:
+        sheet = demo_sheet()
+        sheet.shots[0].camera = [CameraMove(at=0.5, width=12.0, motive="push in on the matrix")]
+        result = score(sheet, SEGMENTS, media_qc={"freeze_intervals": []}, build_verdict="pass")
+        self.assertEqual(result["components"]["camera"], WEIGHTS["camera"])
+        self.assertEqual(result["score"], 100.0)
 
     def test_freeze_intervals_reduce_the_score(self) -> None:
         clean = score(demo_sheet(), SEGMENTS, media_qc={"freeze_intervals": []}, build_verdict="pass")
@@ -71,15 +79,17 @@ class AnimationScoreTest(unittest.TestCase):
         self.assertEqual(result["components"]["gates"], 0.0)
         self.assertEqual(result["verdict"], "fail")
 
-    def test_invalid_sheet_fails_the_gate(self) -> None:
+    def test_creative_threshold_is_a_warning_not_a_gate(self) -> None:
+        # D-071: long-lived objects are a diagnostic.  The structural gate stays.
         sheet = demo_sheet()
         sheet.shots[0].long_lived = []
         sheet.shots[1].long_lived = []
         sheet.shots[2].long_lived = []
         result = score(sheet, SEGMENTS, media_qc={"freeze_intervals": []}, build_verdict="pass")
         self.assertTrue(any("continuity" in issue for issue in result["issues"]))
-        self.assertEqual(result["components"]["gates"], 0.0)
-        self.assertEqual(result["verdict"], "fail")
+        self.assertEqual(result["components"]["gates"], WEIGHTS["gates"])
+        self.assertEqual(result["verdict"], "pass")
+        self.assertEqual(result["score"], 70.0)
 
     def test_components_sum_to_score(self) -> None:
         result = score(demo_sheet(), SEGMENTS, media_qc={"freeze_intervals": ["1", "2"]}, build_verdict="pass")

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from .branding import DELIVERY_NAME, sha256_file
 from .contracts import CheckRecord, ShotsFile, Status
 from .duration import resolve, window_problem
 from .paths import LessonPaths, path_problem
-from .subtitles import CuePolicy
+from .subtitles import CuePolicy, display_width
 from .utils import count_srt_cues, page_budgets, probe_media
 
 
@@ -443,58 +444,93 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
             CheckRecord(id="V-30", status=Status.NOT_APPLICABLE, detail="narration disabled")
         )
 
-    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.render == "burn_in":
-        draft_path = build_root / "subtitles" / "bilingual.draft.json"
-        if not draft_path.is_file():
-            checks.append(
-                CheckRecord(
-                    id="V-31",
-                    status=Status.FAIL,
-                    expected="bilingual subtitle draft exists",
-                    actual="missing",
-                    detail=str(draft_path),
-                )
-            )
-        else:
-            import json
+    if paths.lesson.subtitles.enabled:
+        from .subtitles import BilingualDraft, validate_cues
 
-            from .subtitles import BilingualDraft, validate_cues
-
-            problems: list[str] = []
-            try:
-                draft = BilingualDraft.model_validate(
-                    json.loads(draft_path.read_text(encoding="utf-8"))
-                )
-            except Exception as exc:  # noqa: BLE001
-                problems.append(f"cannot read draft: {exc}")
-                draft = None
-            if draft is not None:
-                total_ms = int(shots_file.timeline.total_duration_s * 1000)
-                problems.extend(
-                    validate_cues(
-                        [cue.model_dump(mode="json") for cue in draft.cues],
-                        CuePolicy(),
-                        float(fps or 30),
-                        total_ms,
+        problems: list[str] = []
+        total_ms = int(shots_file.timeline.total_duration_s * 1000)
+        policy = CuePolicy()
+        bilingual = paths.lesson.subtitles.bilingual
+        if paths.lesson.subtitles.render == "burn_in":
+            draft_path = build_root / "subtitles" / "bilingual.draft.json"
+            if not draft_path.is_file():
+                problems.append(f"missing bilingual draft: {draft_path.name}")
+            else:
+                try:
+                    draft = BilingualDraft.model_validate(
+                        json.loads(draft_path.read_text(encoding="utf-8"))
                     )
-                )
-                srt_path = build_root / "subtitles.srt"
-                if not srt_path.is_file():
-                    problems.append("built subtitles.srt missing")
-                else:
-                    actual = count_srt_cues(srt_path)
-                    if actual != len(draft.cues):
-                        problems.append(
-                            f"SRT has {actual} cues but draft has {len(draft.cues)}"
+                except Exception as exc:  # noqa: BLE001
+                    problems.append(f"cannot read draft: {exc}")
+                    draft = None
+                if draft is not None:
+                    problems.extend(
+                        validate_cues(
+                            [cue.model_dump(mode="json") for cue in draft.cues],
+                            policy,
+                            float(fps or 30),
+                            total_ms,
                         )
-            checks.append(
-                _check(
-                    "V-31",
-                    not problems,
-                    "bilingual cues are complete and within policy",
-                    "ok" if not problems else "; ".join(problems[:6]),
-                )
+                    )
+                    srt_path = build_root / "subtitles.srt"
+                    if not srt_path.is_file():
+                        problems.append("built subtitles.srt missing")
+                    else:
+                        actual = count_srt_cues(srt_path)
+                        if actual != len(draft.cues):
+                            problems.append(
+                                f"SRT has {actual} cues but draft has {len(draft.cues)}"
+                            )
+        else:
+            srt_path = paths.subtitles_path()
+            if srt_path is None or not srt_path.is_file():
+                problems.append("subtitle SRT missing")
+            else:
+                from .media_qc import _parse_srt
+
+                cues = _parse_srt(srt_path.read_text(encoding="utf-8", errors="replace"))
+                for position, cue in enumerate(cues, start=1):
+                    duration = (cue["end_ms"] - cue["start_ms"]) / 1000.0
+                    if duration < policy.min_seconds - 0.05:
+                        problems.append(
+                            f"cue {position}: duration {duration:.2f}s < {policy.min_seconds}s"
+                        )
+                    if duration > policy.max_seconds + 0.05:
+                        problems.append(
+                            f"cue {position}: duration {duration:.2f}s > {policy.max_seconds}s"
+                        )
+                    lines = [line for line in str(cue["text"]).splitlines() if line.strip()]
+                    en = [line for line in lines if not re.search(r"[一-鿿]", line)]
+                    zh = [line for line in lines if re.search(r"[一-鿿]", line)]
+                    if bilingual and not en:
+                        problems.append(f"cue {position}: missing top-language line")
+                    if bilingual and not zh:
+                        problems.append(f"cue {position}: missing bottom-language line")
+                    if len(en) > policy.max_lines or len(zh) > policy.max_lines:
+                        problems.append(f"cue {position}: too many lines")
+                    for line in en:
+                        if len(line) > policy.en_max_chars_per_line:
+                            problems.append(
+                                f"cue {position}: English line {len(line)} chars"
+                            )
+                    for line in zh:
+                        if display_width(line) > policy.zh_max_chars_per_line:
+                            problems.append(
+                                f"cue {position}: Chinese line width {display_width(line):.1f}"
+                            )
+                    zh_chars = len(re.sub(r"\s", "", "".join(zh)))
+                    if duration > 0 and zh_chars / duration > policy.zh_cps_max:
+                        problems.append(
+                            f"cue {position}: Chinese {zh_chars / duration:.1f} CPS > {policy.zh_cps_max}"
+                        )
+        checks.append(
+            _check(
+                "V-31",
+                not problems,
+                "subtitles are complete and within policy",
+                "ok" if not problems else "; ".join(problems[:6]),
             )
+        )
     else:
         checks.append(
             CheckRecord(id="V-31", status=Status.NOT_APPLICABLE, detail="subtitles disabled")

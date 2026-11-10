@@ -37,6 +37,7 @@ class ReviewTask(BaseModel):
 
 class ReviewReport(BaseModel):
     schema_version: Literal[1] = 1
+    run_id: str = ""
     lesson: str
     generated_at: str
     model: str

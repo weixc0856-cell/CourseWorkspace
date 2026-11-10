@@ -69,10 +69,10 @@ class ProducerRunTest(unittest.TestCase):
         self.assertEqual(by_id["02_script"].status, "present")
         self.assertEqual(by_id["03_storyboard"].status, "present")
         self.assertEqual(by_id["04_assets"].status, "present")
-        self.assertEqual(by_id["05_audio"].status, "blocked")
+        self.assertEqual(by_id["05_audio"].status, "partial")
         self.assertTrue(any("course-video.mp4" in entry for entry in manifest.missing))
         self.assertFalse(any("shot_007" in entry for entry in manifest.missing))
-        self.assertEqual(len(manifest.missing), 4)
+        self.assertEqual(len(manifest.missing), 3)
 
     def test_order_language_mismatch_is_recorded(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -184,7 +184,7 @@ class RebuildPlanTest(unittest.TestCase):
         save_state(state, state_file)
         plan = plan_rebuild(WORKSPACE, LESSON, build_root=self.root)
         self.assertEqual(plan.shot_ids, ["shot_003"])
-        self.assertIn("--storyboard", plan.command)
+        self.assertIn("--storyboard-source", plan.command)
         self.assertIn("--shots", plan.command)
         self.assertIn("--skip-compose", plan.command)
         self.assertTrue(plan.authorized)

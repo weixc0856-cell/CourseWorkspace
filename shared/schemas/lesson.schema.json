@@ -697,6 +697,11 @@
           "default": null,
           "title": "Word Source"
         },
+        "bilingual": {
+          "default": true,
+          "title": "Bilingual",
+          "type": "boolean"
+        },
         "top_language": {
           "default": "en",
           "title": "Top Language",
@@ -806,6 +811,7 @@
         "mode": "cue",
         "position": "bottom",
         "word_source": null,
+        "bilingual": true,
         "top_language": "en",
         "bottom_language": "zh-Hans",
         "bottom_margin": 190,

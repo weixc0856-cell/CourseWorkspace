@@ -30,6 +30,7 @@ narration:
 
 subtitles:
   enabled: true
+  bilingual: false
 
 acceptance:
   notes_total_seconds: 6

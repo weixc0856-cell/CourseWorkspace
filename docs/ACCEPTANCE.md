@@ -6,6 +6,10 @@
 
 ---
 
+## 0. 2026-11-10 复核
+
+本轮重跑六套单测，实际为 **585 个用例（579 通过 + 6 跳过）**：CourseControl 438、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 21；`check.ps1` exit 0。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
+
 ## 1. 一键回归
 
 ```powershell

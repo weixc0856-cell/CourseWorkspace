@@ -191,11 +191,17 @@ def _q5(paths: LessonPaths) -> dict:
         final = build_root / "final" / "course-video.mp4"
     required["final_video"] = final
     missing = [name for name, path in required.items() if path is None or not path.is_file()]
-    approval = _load(build_root / "quality" / "release-approval.json")
-    approved = bool(
-        approval
-        and approval.get("decision") == "approved"
-        and str(approval.get("approved_by") or "").strip()
+    review = _load(build_root / "quality" / "review-approval.json")
+    release = _load(build_root / "quality" / "release-approval.json")
+    review_ok = bool(
+        review
+        and review.get("decision") == "approved"
+        and str(review.get("approved_by") or "").strip()
+    )
+    release_ok = bool(
+        release
+        and release.get("decision") == "approved"
+        and str(release.get("approved_by") or "").strip()
     )
     if missing:
         return {
@@ -204,16 +210,28 @@ def _q5(paths: LessonPaths) -> dict:
             "evidence": [],
             "missing": missing,
         }
-    if not approved:
+    if not review_ok:
         return {
             "status": WARN,
-            "reason": "all release artifacts present; human release approval is pending",
-            "evidence": ["build/<slug>/quality/release-approval.json"],
+            "reason": "all release artifacts present; human review approval is pending",
+            "evidence": ["build/<slug>/quality/review-approval.json"],
+        }
+    if not release_ok:
+        return {
+            "status": WARN,
+            "reason": "human review approved; release sign-off is pending",
+            "evidence": [
+                "build/<slug>/quality/review-approval.json",
+                "build/<slug>/quality/release-approval.json",
+            ],
         }
     return {
         "status": PASS,
-        "reason": "all release artifacts present and approved",
-        "evidence": ["build/<slug>/quality/release-approval.json"],
+        "reason": "all release artifacts present, reviewed and release-approved",
+        "evidence": [
+            "build/<slug>/quality/review-approval.json",
+            "build/<slug>/quality/release-approval.json",
+        ],
     }
 
 
@@ -228,10 +246,21 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
     ]
     statuses = {item["status"] for item in dimensions}
     build_pass = dimensions[3]["status"] in {PASS, WARN}
-    quality_pass = build_pass and statuses <= {PASS, WARN}
+    verify_fail = (not build_pass) or BLOCKED in statuses
+    verify_incomplete = INCOMPLETE in statuses
+    verify_pass = not verify_fail and not verify_incomplete
+    verify_warn = verify_pass and WARN in statuses
+    quality_verified = verify_pass and statuses == {PASS}
+    review_approval = _load(paths.build_root / "quality" / "review-approval.json")
     release_approval = _load(paths.build_root / "quality" / "release-approval.json")
+    review_approved = bool(
+        verify_pass
+        and review_approval
+        and review_approval.get("decision") == "approved"
+        and str(review_approval.get("approved_by") or "").strip()
+    )
     release_approved = bool(
-        quality_pass
+        review_approved
         and release_approval
         and release_approval.get("decision") == "approved"
         and str(release_approval.get("approved_by") or "").strip()
@@ -244,7 +273,14 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
         "dimensions": dimensions,
         "states": {
             "BUILD_PASS": build_pass,
-            "QUALITY_PASS": quality_pass,
+            "VERIFY_PASS": verify_pass,
+            "VERIFY_WARN": verify_warn,
+            "VERIFY_INCOMPLETE": verify_incomplete,
+            "VERIFY_FAIL": verify_fail,
+            # Legacy name kept for readers; it means "verified, warnings allowed".
+            "QUALITY_PASS": verify_pass,
+            "QUALITY_VERIFIED": quality_verified,
+            "REVIEW_APPROVED": review_approved,
             "RELEASE_APPROVED": release_approved,
         },
         "risks": [

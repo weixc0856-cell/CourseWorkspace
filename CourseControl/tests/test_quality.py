@@ -155,6 +155,8 @@ class QualityReportTests(DemoCase):
         self.assertEqual(statuses["Q4"], Q_INCOMPLETE)
         self.assertEqual(statuses["Q5"], BLOCKED)
         self.assertFalse(report["states"]["BUILD_PASS"])
+        self.assertTrue(report["states"]["VERIFY_INCOMPLETE"])
+        self.assertFalse(report["states"]["VERIFY_PASS"])
         self.assertTrue(target.is_file())
 
     def test_build_pass_still_not_quality_pass(self) -> None:
@@ -170,6 +172,29 @@ class QualityReportTests(DemoCase):
         self.assertTrue(report["states"]["BUILD_PASS"])
         self.assertFalse(report["states"]["QUALITY_PASS"])
         self.assertFalse(report["states"]["RELEASE_APPROVED"])
+
+    def test_verified_warns_need_review_and_release_signoff(self) -> None:
+        self._write("final/build-report.json", {"verdict": "pass", "stages": [{"name": "compose", "status": "pass"}]})
+        self._write("quality/media-qc.json", {"status": PASS})
+        self._write("quality/teaching-qa.json", {"status": PASS, "summary": "structural"})
+        self._write("review/review.json", {"status": "completed", "findings": []})
+        final = self.paths.build_root / "final" / "course-video.mp4"
+        final.write_bytes(b"fake")
+        narration = self.paths.build_root / "narration" / "narration.wav"
+        narration.parent.mkdir(parents=True, exist_ok=True)
+        narration.write_bytes(b"fake")
+        report, _ = build_quality_report(self.workspace, self.paths)
+        self.assertTrue(report["states"]["VERIFY_PASS"])
+        self.assertTrue(report["states"]["VERIFY_WARN"])
+        self.assertFalse(report["states"]["QUALITY_VERIFIED"])
+        self.assertFalse(report["states"]["REVIEW_APPROVED"])
+        self._write("quality/review-approval.json", {"decision": "approved", "approved_by": "owner"})
+        report, _ = build_quality_report(self.workspace, self.paths)
+        self.assertTrue(report["states"]["REVIEW_APPROVED"])
+        self.assertFalse(report["states"]["RELEASE_APPROVED"])
+        self._write("quality/release-approval.json", {"decision": "approved", "approved_by": "owner"})
+        report, _ = build_quality_report(self.workspace, self.paths)
+        self.assertTrue(report["states"]["RELEASE_APPROVED"])
 
 
 if __name__ == "__main__":

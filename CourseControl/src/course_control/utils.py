@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -55,6 +56,24 @@ def which_command(name: str) -> list[str]:
     return [path]
 
 
+def _kill_process_tree(pid: int) -> None:
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(pid)],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    else:
+        try:
+            os.killpg(os.getpgid(pid), 15)
+        except (OSError, ProcessLookupError):
+            pass
+
+
 def run_command(
     command: list[str],
     cwd: Path,
@@ -63,37 +82,57 @@ def run_command(
     log_path: Path | None = None,
     env: dict[str, str] | None = None,
 ) -> CommandResult:
+    """Run a command with a hard timeout.
+
+    Output is redirected to temporary files rather than pipes: on Windows a
+    renderer can spawn a child that inherits the pipe and keeps it open after
+    the parent exits, which makes ``subprocess.run(capture_output=True)`` wait
+    forever.  ``Popen.wait`` returns when the launched process exits.
+    """
     started = time.monotonic()
     timed_out = False
-    try:
-        child_env = os.environ.copy()
-        if env:
-            child_env.update(env)
-        process = subprocess.run(
-            command,
-            cwd=str(cwd),
-            env=child_env,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-        )
-        exit_code = process.returncode
-        stdout = process.stdout
-        stderr = process.stderr
-    except subprocess.TimeoutExpired as exc:
-        timed_out = True
-        exit_code = 124
-        stdout = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
-        stderr = (exc.stderr or "") if isinstance(exc.stderr, str) else ""
-        stderr += f"\nTIMEOUT after {timeout} seconds"
+    child_env = os.environ.copy()
+    if env:
+        child_env.update(env)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        stdout_path = Path(temp_dir) / "stdout.txt"
+        stderr_path = Path(temp_dir) / "stderr.txt"
+        with stdout_path.open("w", encoding="utf-8", errors="replace") as out_handle, stderr_path.open(
+            "w", encoding="utf-8", errors="replace"
+        ) as err_handle:
+            process = subprocess.Popen(
+                command,
+                cwd=str(cwd),
+                env=child_env,
+                stdout=out_handle,
+                stderr=err_handle,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            try:
+                exit_code = process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                timed_out = True
+                exit_code = 124
+                _kill_process_tree(process.pid)
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    pass
+            except BaseException:
+                _kill_process_tree(process.pid)
+                raise
+        stdout = stdout_path.read_text(encoding="utf-8", errors="replace")
+        stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
+    if timed_out:
+        stderr += chr(10) + f"TIMEOUT after {timeout} seconds"
     duration_ms = int((time.monotonic() - started) * 1000)
 
     if log_path is not None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text(
-            "\n".join(
+            chr(10).join(
                 [
                     "COMMAND: " + " ".join(command),
                     "CWD: " + str(cwd),

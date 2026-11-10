@@ -89,9 +89,13 @@ class BeatValidationTest(unittest.TestCase):
         issues = validate_sheet(sheet(VALID), SEGMENTS, palette_ok=False)
         self.assertTrue(any("palette" in issue for issue in issues))
 
-    def test_camera_move_requires_motive(self) -> None:
-        with self.assertRaises(ValidationError):
-            CameraMove(at=0.5, width=12.0, motive="zoom")
+    def test_camera_move_short_motive_is_a_warning(self) -> None:
+        # D-071: camera motive is a diagnostic, not a schema failure.
+        move = CameraMove(at=0.5, width=12.0, motive="zoom")
+        shots = [shot("a", 1, 0.0, 1.0)]
+        shots[0].camera = [move]
+        issues = validate_sheet(sheet(shots), SEGMENTS)
+        self.assertTrue(any("needs a motive" in issue for issue in issues))
 
     def test_subtitle_band_must_be_reserved(self) -> None:
         with self.assertRaises(ValidationError):

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import adapters
+from .build_lock import BuildLock
 from .adapters.base import StageOutcome
 from .collect import collect
 from .contracts import Status
@@ -19,6 +20,7 @@ class BuildOptions:
     skip_render: bool = False
     skip_compose: bool = False
     storyboard: Path | None = None
+    storyboard_source: str | None = None
     shots: list[str] | None = None
     build_root: Path | None = None
 
@@ -34,9 +36,36 @@ def _mark_not_run(builder: ReportBuilder, names: list[str], reason: str) -> None
             builder.add_stage(_stage(name, Status.NOT_RUN, reason=reason))
 
 
+def storyboard_override(
+    workspace: Path, lesson_dir: Path, options: BuildOptions
+) -> Path | None:
+    """Resolve the explicit storyboard input for a build.
+
+    ``--storyboard`` wins; ``--storyboard-source director`` reads the
+    director handoff; the default returns None (lesson's storyboard or the
+    synthetic shots-mode storyboard).
+    """
+    if options.storyboard is not None:
+        return options.storyboard
+    if options.storyboard_source == "director":
+        root = options.build_root or (workspace / "build" / lesson_dir.name)
+        return root / "director" / "storyboard.director.yaml"
+    return None
+
+
 def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple:
+    lock = BuildLock(workspace, lesson_dir.name)
+    lock.acquire()
+    try:
+        return _run_build_locked(workspace, lesson_dir, options)
+    finally:
+        lock.release()
+
+
+def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple:
+    storyboard = storyboard_override(workspace, lesson_dir, options)
     paths = LessonPaths.load(
-        workspace, lesson_dir, storyboard_override=options.storyboard, build_root_override=options.build_root
+        workspace, lesson_dir, storyboard_override=storyboard, build_root_override=options.build_root
     )
     if options.shots:
         known = {shot.id for shot in paths.storyboard.shots}
