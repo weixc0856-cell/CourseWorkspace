@@ -77,8 +77,7 @@ class QualityGateTest(unittest.TestCase):
         report = decide(
             hard=[],
             grammar=[],
-            grammar_warnings=["shot-001: 3.0s is shorter than 5.00s (long_take)"],
-        )
+            grammar_warnings=["shot-001: 3.0s is shorter than 5.00s (long_take)"],        )
         self.assertEqual(report["verification_status"], "pass")
         self.assertTrue(report["releasable"])
         self.assertTrue(report["grammar_warnings"])
@@ -135,6 +134,26 @@ class QualityGateTest(unittest.TestCase):
     def test_legacy_score_has_no_release_gate_marker(self) -> None:
         result = score(kinetic_sheet(), SEGMENTS)
         self.assertNotIn("release_gate", result)
+
+    def test_blocking_warnings_stop_a_release(self) -> None:
+        report = decide(
+            hard=[],
+            grammar=[],
+            blocking_warnings=["Q5 最终交付: release sign-off pending"],
+        )
+        self.assertEqual(report["verification_status"], "incomplete")
+        self.assertFalse(report["releasable"])
+        self.assertEqual(len(report["blocking_warnings"]), 1)
+
+    def test_human_review_warnings_are_not_automatic_vetoes(self) -> None:
+        report = decide(
+            hard=[],
+            grammar=[],
+            human_review_items=["Q3 视听体验: frozen intervals"],
+        )
+        self.assertEqual(report["verification_status"], "pass")
+        self.assertTrue(report["needs_human_review"])
+        self.assertTrue(report["releasable"])
 
 
 if __name__ == "__main__":

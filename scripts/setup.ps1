@@ -50,4 +50,27 @@ foreach ($project in @("CourseSlides", "MotionStudio", "RemotionStudio")) {
     }
 }
 
+# CodeVideo shots reuse RemotionStudio's Playwright. A junction keeps one
+# install while the capture server still serves each shot directory.
+$remotionModules = Join-Path $root "RemotionStudio/node_modules"
+$shotsRoot = Join-Path $root "CodeVideoStudio/shots"
+if ((Test-Path $shotsRoot) -and (Test-Path $remotionModules)) {
+    foreach ($shot in Get-ChildItem $shotsRoot -Directory) {
+        if (-not (Test-Path (Join-Path $shot.FullName "index.html"))) { continue }
+        $link = Join-Path $shot.FullName "node_modules"
+        if (-not (Test-Path $link)) {
+            New-Item -ItemType Junction -Path $link -Target $remotionModules | Out-Null
+        }
+    }
+}
+
+Push-Location $root
+try {
+    & uv run --project CourseControl course-control vendor-sync --workspace $root | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "vendor-sync failed" }
+}
+finally {
+    Pop-Location
+}
+
 Write-Host "setup ok"

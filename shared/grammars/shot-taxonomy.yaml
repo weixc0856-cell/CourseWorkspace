@@ -1,0 +1,94 @@
+schema_version: 1
+
+# Shot capability taxonomy. A shot must name one type; the director may compose
+# types but may not invent a capability that has no contract or sample.
+# status: verified (a real sample exists and passed capture QC) or unverified.
+
+types:
+  concept:
+    status: verified
+    purpose: "Explain one idea or definition without depending on a process."
+    input_contract: ["title (<= 8 words)", "one claim", "one visual metaphor", "narration cue ids"]
+    visual_goal: "The viewer can restate the idea after the shot ends."
+    use_when: ["a term is introduced", "a distinction needs a single image"]
+    avoid_when: ["the idea is a sequence of states", "the point is a numeric comparison"]
+    animation_rules: ["one entry per beat", "no more than one moving focus at a time", "hold the final frame for the last sentence"]
+    quality_checks: ["text inside safe area", "no token split across cue", "contact sheet read at 25%"]
+    sample: "CodeVideoStudio/shots/attention-flow"
+
+  mechanism:
+    status: verified
+    purpose: "Show how a process works, step by step, with cause and effect."
+    input_contract: ["ordered steps", "state before/after each step", "narration cue ids"]
+    visual_goal: "The viewer can predict the next step before it appears."
+    use_when: ["attention/flow/computation order matters", "a transformation has intermediate states"]
+    avoid_when: ["the shot is a static taxonomy"]
+    animation_rules: ["one state change per beat", "never jump two steps in one frame", "keep the previous state visible"]
+    quality_checks: ["each step is legible at pause", "no frozen interval longer than the narration beat", "timeline monotonic"]
+    sample: "CodeVideoStudio/shots/attention-flow"
+
+  comparison:
+    status: verified
+    purpose: "Put two or more options side by side and make the difference measurable."
+    input_contract: ["two or more items", "same axes for every item", "the decision the viewer should make"]
+    visual_goal: "The difference is visible without reading a paragraph."
+    use_when: ["architectures, costs, trade-offs", "before/after with the same metric"]
+    avoid_when: ["there is only one item", "the axes differ between items"]
+    animation_rules: ["align the shared axis", "reveal items in the same order as narration", "no gratuitous motion"]
+    quality_checks: ["axis labels legible", "no colour-only encoding", "values match the source"]
+    sample: "CodeVideoStudio/shots/attn-matrix"
+
+  data:
+    status: verified
+    purpose: "Show a measured quantity and what it implies."
+    input_contract: ["dataset path", "metric definition", "source citation", "chart form"]
+    visual_goal: "The viewer reads the magnitude before the label."
+    use_when: ["the claim depends on a number", "a trend or distribution is the argument"]
+    avoid_when: ["the number is invented", "the axis would need a misleading truncation"]
+    animation_rules: ["axes appear before marks", "highlight follows the narration", "no animated bar races"]
+    quality_checks: ["values trace to a source file", "axis starts at zero unless labelled", "units visible"]
+    sample: "CodeVideoStudio/shots/gpu-trace"
+
+  structure:
+    status: verified
+    purpose: "Show the parts of a system and how they connect."
+    input_contract: ["component list", "edges and direction", "the question the structure answers"]
+    visual_goal: "The viewer can name the components and the flow."
+    use_when: ["architecture, pipeline, model block diagram"]
+    avoid_when: ["the point is a time-ordered process"]
+    animation_rules: ["build edges in reading order", "keep labels attached to nodes", "no node moves without a reason"]
+    quality_checks: ["edge direction readable", "no overlapping labels", "labels stay inside frame"]
+    sample: "CodeVideoStudio/shots/compute-topology"
+
+  transformation:
+    status: verified
+    purpose: "Show a state change: before, the operation, after."
+    input_contract: ["input state", "operation", "output state", "the invariant that holds"]
+    visual_goal: "The viewer sees what changed and what did not."
+    use_when: ["normalisation, projection, merge/split", "training or simulation state changes"]
+    avoid_when: ["nothing changes", "the operation cannot be drawn honestly"]
+    animation_rules: ["show the invariant throughout", "one interpolation per operation", "end on the output state"]
+    quality_checks: ["input and output frames comparable", "no tween hides a discontinuity", "final frame stable"]
+    sample: "CodeVideoStudio/shots/primer-aging"
+
+  narrative:
+    status: verified
+    purpose: "Carry a case, history or concrete example that motivates the idea."
+    input_contract: ["who/what", "when", "the turn", "why it matters to the lesson"]
+    visual_goal: "The viewer cares about the problem before the formalism."
+    use_when: ["opening hook", "historical origin", "a real failure"]
+    avoid_when: ["the story is invented", "the anecdote replaces the explanation"]
+    animation_rules: ["one image per narrative beat", "date and names remain readable", "no stock-footage pastiche"]
+    quality_checks: ["every factual claim has a source", "names and dates match the source", "no unsupported dramatisation"]
+    sample: "CodeVideoStudio/shots/attn-hook"
+
+  summary:
+    status: verified
+    purpose: "Compress the lesson into the few claims the viewer should keep."
+    input_contract: ["3-6 claims", "one visual reminder per claim", "the promise for the next lesson"]
+    visual_goal: "The viewer can recall the structure without replaying the video."
+    use_when: ["end of a chapter", "end of a short lesson"]
+    avoid_when: ["the lesson has one claim", "the summary adds new material"]
+    animation_rules: ["reveal claims in the order they were taught", "hold each long enough to read", "end on the first claim's image"]
+    quality_checks: ["no new claims", "text <= 12 words per item", "matches the outline"]
+    sample: "CodeVideoStudio/shots/attn-recap"

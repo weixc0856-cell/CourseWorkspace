@@ -40,7 +40,7 @@ npx remotion render src/index.ts CourseVideo `
   --props=../build/01-shell-for-ai-era/shots.json
 
 # 章节卡（独立渲染，尚未自动插入时间线）
-npx remotion render src/index.ts ChapterCard ../build/<lesson>/final/chapter-01.mp4 `
+npx remotion render src/probes/index.ts ChapterCard ../build/<lesson>/final/chapter-01.mp4 `
   --props=../build/<lesson>/contracts/chapter-01.json
 
 # 渲染 V1 时间线（含 Ken Burns / TimelineSpec）

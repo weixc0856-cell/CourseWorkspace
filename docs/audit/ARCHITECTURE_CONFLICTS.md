@@ -1,5 +1,7 @@
 # 架构矛盾与生产规则冲突
 
+> 状态说明（2026-11-10 稍后）：本文件保留审计时的证据与建议；C-01～C-30 的当前状态以 [../stabilization/MASTER_REMEDIATION.md](../stabilization/MASTER_REMEDIATION.md) 为准。
+
 - **审计日期**：2026-11-10
 - **范围**：契约、时间基元、质量门禁、自动化、交付、品牌、文档
 - **原则**：只记录能从代码、配置、产物或实跑复现的问题；没有证据的写"待验证"
@@ -407,7 +409,7 @@
 
 ### C-21 音频与参考音依赖工作区外路径
 
-- 05 的 `audio/mix.json` 引用 `D:\Local-Drama-Studio\assets\audio\bgm\commons\schubert_d664_piano.wav`；06 的 `narration.meta.json` 引用 `D:\Local-Drama-Studio\assets\audio\prompts\my_voice_clean_v1.wav`。
+- 05 的 `audio/mix.json` 引用 `<bgm_root>/commons/schubert_d664_piano.wav`；06 的 `narration.meta.json` 引用 `<voice_ref>`。
 - 这些路径不在 `CourseWorkspace` 内，也不在仓库；换机或目录变动后无法复现同一母版。
 - **建议**：在 `config/local-paths.yaml` 记录资产根目录，并在 `audio/mix.json`/`narration.meta.json` 写 `asset_sha256` 与 `license_status`；归档时复制或至少保留哈希。
 

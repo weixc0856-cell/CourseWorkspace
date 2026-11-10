@@ -9,6 +9,7 @@ from pathlib import Path
 
 from ..contracts import Status
 from ..paths import LessonPaths
+from ..timeouts import resolve_timeout
 from ..utils import run_command, which_command
 from .base import StageOutcome
 
@@ -79,7 +80,7 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
         result = run_command(
             command,
             paths.workspace / "RemotionStudio",
-            timeout=600,
+            timeout=resolve_timeout(paths, "capture_slides"),
             log_path=log_dir / "capture-slides.log",
         )
         duration_ms = int((time.monotonic() - started) * 1000)

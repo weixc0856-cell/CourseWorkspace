@@ -69,6 +69,16 @@ def build_command(
     ),
     shots: list[str] | None = typer.Option(None, "--shots"),
     build_root: Path | None = typer.Option(None, "--build-root"),
+    resume: bool = typer.Option(
+        False,
+        "--resume",
+        help="reuse stages whose inputs, configuration and outputs still match",
+    ),
+    resume_from: str | None = typer.Option(
+        None,
+        "--resume-from",
+        help="re-run this stage and everything after it (implies --resume)",
+    ),
 ) -> None:
     """Run the applicable stages for a lesson."""
     if storyboard_source not in (None, "storyboard", "director"):
@@ -85,6 +95,8 @@ def build_command(
                 storyboard_source=storyboard_source,
                 shots=shots,
                 build_root=build_root,
+                resume=resume or resume_from is not None,
+                resume_from=resume_from,
             ),
         )
     except ContractError as exc:
@@ -94,6 +106,8 @@ def build_command(
     typer.echo(f"report: {report_path}")
     for stage in report.stages:
         typer.echo(f"  {stage.name}: {stage.status.value}")
+    if report.reused_stages:
+        typer.echo("  resumed: " + ", ".join(report.reused_stages))
     for failure in report.failures:
         typer.echo(f"  ! {failure}")
     raise typer.Exit(1 if report.verdict == "fail" else 0)
@@ -2349,3 +2363,255 @@ def reference_compare_command(
         typer.echo(f"  [required] {item}")
     typer.echo("human review: required")
     typer.echo(f"report: {target}")
+
+
+@app.command("config-resolve")
+def config_resolve_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+    write: bool = typer.Option(False, "--write", help="write build/<slug>/logs/config-resolution.json"),
+) -> None:
+    """Resolve every configuration value and report its source and conflicts."""
+    from .config_resolve import blocking_conflicts, resolve_config, write_snapshot
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = resolve_config(workspace.resolve(), paths)
+    if write:
+        write_snapshot(paths, report)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"lesson: {report['lesson']}")
+        typer.echo(f"fingerprint: {report['fingerprint']}")
+        for item in report["values"]:
+            typer.echo(f"  {item['key']}: {item['value']}  <- {item['source']}")
+        for item in report["warnings"]:
+            typer.echo(f"  [warn] {item}")
+        for item in report["conflicts"]:
+            typer.echo(f"  [{item['severity']}] {item['code']}: {item['message']}")
+    raise typer.Exit(1 if blocking_conflicts(report) else 0)
+
+
+@app.command("blender-task-validate")
+def blender_task_validate_command(
+    task: Path = typer.Option(..., "--task"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Validate a Blender task against the v1 course or v2 scene contract."""
+    from .blender_task import BlenderTaskError, load_blender_task
+
+    try:
+        ref = load_blender_task(task, workspace.resolve())
+    except BlenderTaskError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(
+        f"schema_version={ref.version} lesson={ref.lesson} output={ref.output}"
+    )
+
+
+@app.command("subtitles-qc")
+def subtitles_qc_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    file: Path | None = typer.Option(None, "--file", help="audit this SRT instead"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Audit subtitle timing, language, line breaks and glossary terms."""
+    from .subtitles_qc import check_srt
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    target = file or paths.subtitles_path()
+    if target is None or not target.is_file():
+        typer.echo("no subtitle file to audit", err=True)
+        raise typer.Exit(1)
+    report = check_srt(
+        target,
+        bilingual=paths.lesson.subtitles.bilingual,
+        glossary_path=paths.lesson_dir / "authoring" / "glossary.yaml",
+    )
+    out = paths.build_root / "quality" / "subtitles-qc.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"status: {report['status']}  cues: {report['cues']}")
+        for item in report["errors"]:
+            typer.echo(f"  [error] {item}")
+        for item in report["warnings"]:
+            typer.echo(f"  [warn] {item}")
+        typer.echo(f"report: {out}")
+    raise typer.Exit(1 if report["status"] == "FAIL" else 0)
+
+
+@app.command("review-status")
+def review_status_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Show the adjudication queue for content findings."""
+    from .review_decisions import summarize
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = summarize(paths.build_root)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"findings: {len(report['findings'])}")
+        typer.echo(f"undecided: {len(report['undecided'])}")
+        typer.echo(f"counts: {report['counts']}")
+        for item in report["undecided"][:20]:
+            typer.echo(f"  [open] {item}")
+        if report["unknown_decisions"]:
+            typer.echo("unknown decision values: " + ", ".join(report["unknown_decisions"]))
+        if report["stale_decisions"]:
+            typer.echo(
+                "decisions for findings that no longer exist: "
+                + ", ".join(report["stale_decisions"][:10])
+            )
+        typer.echo("needs human review: " + ("yes" if report["needs_human_review"] else "no"))
+    raise typer.Exit(1 if report["needs_human_review"] else 0)
+
+
+@app.command("review-decide")
+def review_decide_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    finding: str = typer.Option(..., "--id"),
+    decision: str = typer.Option(
+        ..., "--decision", help="accepted / rejected / fixed / deferred"
+    ),
+    by: str = typer.Option(..., "--by", help="the person making the decision"),
+    note: str = typer.Option("", "--note"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Record one adjudication decision for a content finding."""
+    from .review_decisions import DecisionError, record_decision
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    try:
+        record_decision(paths.build_root, paths.slug, finding, decision, by=by, note=note)
+    except DecisionError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2)
+    typer.echo(f"{finding}: {decision} by {by}")
+
+
+@app.command("vendor-check")
+def vendor_check_command(
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Check every shot's copied three.js against the canonical vendor file."""
+    from .vendor import audit
+
+    problems = audit(workspace.resolve())
+    for item in problems:
+        typer.echo(item)
+    if not problems:
+        typer.echo("vendor ok")
+    raise typer.Exit(1 if problems else 0)
+
+
+@app.command("vendor-sync")
+def vendor_sync_command(
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    shot: str | None = typer.Option(None, "--shot", help="sync only this shot"),
+) -> None:
+    """Copy the canonical three.js into shot directories."""
+    from .vendor import sync, uses_three
+
+    shots_root = workspace.resolve() / "CodeVideoStudio" / "shots"
+
+    projects = (
+        [shots_root / shot]
+        if shot
+        else sorted(path for path in shots_root.iterdir() if path.is_dir() and uses_three(path))
+    )
+    result = sync(workspace.resolve(), projects)
+    typer.echo(f"copied: {', '.join(result['copied']) or 'none'}")
+    typer.echo(f"current: {', '.join(result['current']) or 'none'}")
+    for error in result["errors"]:
+        typer.echo(error, err=True)
+    raise typer.Exit(1 if result["errors"] else 0)
+
+
+@app.command("stats")
+def stats_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+    write: bool = typer.Option(False, "--write", help="write build/<slug>/quality/stats.json"),
+) -> None:
+    """Count pages, shots, audio assets, cues and delivery files from artifacts."""
+    from .stats import lesson_stats, write_stats
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    report = lesson_stats(paths)
+    if write:
+        write_stats(paths, report)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"lesson: {report['lesson']} ({report['mode']}, authority={report['authority']})")
+        for key, value in report["counts"].items():
+            typer.echo(f"  {key}: {value}")
+        typer.echo(f"  duration_seconds: {report['duration_seconds']}")
+        typer.echo(f"  build: {report['status']['build']}  media_qc: {report['status']['media_qc']}")
+
+
+@app.command("shot-taxonomy")
+def shot_taxonomy_command(
+    path: Path = typer.Option(
+        Path("shared/grammars/shot-taxonomy.yaml"), "--taxonomy"
+    ),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Validate the shot capability taxonomy and its sample coverage."""
+    from .shot_taxonomy import coverage, load_taxonomy, validate
+
+    try:
+        data = load_taxonomy(path.resolve())
+    except (OSError, ValueError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    problems = validate(data)
+    cover = coverage(data, workspace.resolve())
+    report = {"problems": problems, "coverage": cover}
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        for name, spec in (data.get("types") or {}).items():
+            typer.echo(f"  {name:16s} {spec.get('status')}  {spec.get('sample') or '-'}")
+        typer.echo("verified samples: " + (", ".join(cover["verified"]) or "none"))
+        typer.echo("unverified: " + (", ".join(cover["unverified"]) or "none"))
+        for problem in problems:
+            typer.echo(f"  [problem] {problem}", err=True)
+    raise typer.Exit(1 if problems else 0)

@@ -233,13 +233,13 @@ def main() -> int:
         ),
         (
             "remotion-c1",
-            ["npx.cmd", "remotion", "render", "src/index.ts", "R1Smoke",
+            ["npx.cmd", "remotion", "render", "src/probes/index.ts", "R1Smoke",
              str(ROOT / "build/r1/benchmark/remotion-c1.mp4"), "--concurrency=1", "--log=error"],
             ROOT / "RemotionStudio",
         ),
         (
             "remotion-c4",
-            ["npx.cmd", "remotion", "render", "src/index.ts", "R1Smoke",
+            ["npx.cmd", "remotion", "render", "src/probes/index.ts", "R1Smoke",
              str(ROOT / "build/r1/benchmark/remotion-c4.mp4"), "--concurrency=4", "--log=error"],
             ROOT / "RemotionStudio",
         ),

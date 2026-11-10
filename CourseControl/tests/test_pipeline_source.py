@@ -4,7 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.pipeline import BuildOptions, storyboard_override
+from course_control.paths import ContractError
+from course_control.pipeline import BuildOptions, _validate_resume_from, storyboard_override
 
 
 class StoryboardSourceTest(unittest.TestCase):
@@ -40,6 +41,12 @@ class StoryboardSourceTest(unittest.TestCase):
             lesson_dir = workspace / "lessons" / "demo"
             lesson_dir.mkdir(parents=True)
             self.assertIsNone(storyboard_override(workspace, lesson_dir, BuildOptions()))
+
+    def test_resume_from_rejects_unknown_stage(self) -> None:
+        with self.assertRaises(ContractError):
+            _validate_resume_from("no-such-stage")
+        _validate_resume_from("compose")
+        _validate_resume_from(None)
 
 
 if __name__ == "__main__":

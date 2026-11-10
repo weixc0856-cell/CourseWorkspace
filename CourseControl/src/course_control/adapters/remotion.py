@@ -7,9 +7,21 @@ from pathlib import Path
 
 from ..contracts import Status
 from ..paths import LessonPaths
+from ..timeouts import resolve_timeout
 from ..utils import load_json, probe_media, run_command, which_command
 from .base import StageOutcome
 from .slides import clean_staging
+
+
+def _build_relative(paths: LessonPaths, value: str) -> str:
+    """Turn a workspace-relative timeline asset into a build-root-relative one."""
+    candidate = Path(str(value))
+    if not candidate.is_absolute():
+        candidate = paths.workspace / candidate
+    try:
+        return candidate.resolve().relative_to(paths.build_root.resolve()).as_posix()
+    except (OSError, ValueError):
+        return str(value)
 
 
 def _render_props(
@@ -20,17 +32,35 @@ def _render_props(
 ) -> Path:
     """Return the props file passed to Remotion.
 
-    For burn-in we render a clean master (``captions=false``); the ASS burn
-    happens in a later pipeline stage.
+    Timeline assets are stored workspace-relative (``build/<slug>/...``). The
+    renderer reads them from ``public/staging/<slug>/``; rewriting them to
+    build-root-relative here keeps default and isolated ``--build-root`` runs
+    identical. For burn-in we also render a clean master (``captions=false``);
+    the ASS burn happens in a later pipeline stage.
     """
     burn_in = (
         paths.lesson.subtitles.enabled
         and paths.lesson.subtitles.render == "burn_in"
     )
-    source = timeline_path if use_timeline else shots_path
-    if not burn_in:
-        return source
-    data = load_json(source)
+    if not use_timeline:
+        if not burn_in:
+            return shots_path
+        data = load_json(shots_path)
+    else:
+        data = load_json(timeline_path)
+        for key in ("video", "audio"):
+            for item in data.get(key) or []:
+                asset = item.get("asset") if isinstance(item, dict) else None
+                if isinstance(asset, dict) and asset.get("path"):
+                    asset["path"] = _build_relative(paths, asset["path"])
+        if not burn_in:
+            target = paths.build_root / "final" / "render-props.json"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            return target
     data["captions"] = False
     target = paths.build_root / "final" / "render-props.json"
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -68,6 +98,8 @@ def compose(paths: LessonPaths) -> StageOutcome:
         paths.slug,
         "--timeline" if use_timeline else "--shots",
         str(timeline_path if use_timeline else shots_path),
+        "--build-root",
+        str(paths.build_root),
     ]
     stage = run_command(
         stage_args,
@@ -86,8 +118,7 @@ def compose(paths: LessonPaths) -> StageOutcome:
 
     props_path = _render_props(paths, timeline_path, use_timeline, shots_path)
     composition = "CourseTimeline" if use_timeline else "CourseVideo"
-    target_seconds = float(getattr(paths.lesson.duration, "target_seconds", None) or 0.0)
-    render_timeout = max(1800, int(target_seconds * 3)) if target_seconds else 1800
+    render_timeout = resolve_timeout(paths, "compose")
     render = run_command(
         [
             *which_command("npx"),

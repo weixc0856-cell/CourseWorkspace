@@ -1,18 +1,39 @@
-"""Report build/ paths referenced by docs that no longer exist.
+"""Report and classify build/ paths referenced by docs that no longer exist.
 
-This is a diagnostic, not a release gate.  Historical evidence is allowed to
-disappear; it must not silently claim to exist.  Use ``--strict`` in CI if the
-project decides every referenced path must be retained.
+A missing path is not automatically a defect.  It is a defect when nobody has
+decided what it was.  Every missing path must match a rule in
+``docs/audit/evidence-decisions.yaml``:
+
+    retained       still required evidence; restore it
+    regenerable    produced by a documented command; re-run it
+    retired_poc    an experiment that left the production path; reference is historical
+    historical     archive/document-history reference; not expected to exist
+    stale_ref      documentation points at a path that never existed; fix the doc
+    external       produced outside this workspace
+
+Unclassified missing paths fail the check, so a new dangling reference cannot
+sneak in unnoticed.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
+import yaml
+
 PATH_RE = re.compile(r"build/[A-Za-z0-9_.\-/]+")
 SKIP = ("<", ">", "{", "}", "*", "...", "slug", "lesson", "xxx", "…")
+DISPOSITIONS = {
+    "retained",
+    "regenerable",
+    "retired_poc",
+    "historical",
+    "stale_ref",
+    "external",
+}
 
 
 def referenced_paths(root: Path) -> dict[str, list[str]]:
@@ -27,26 +48,94 @@ def referenced_paths(root: Path) -> dict[str, list[str]]:
     return found
 
 
+def load_rules(path: Path) -> list[dict]:
+    if not path.is_file():
+        return []
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    rules = data.get("rules") or []
+    return [rule for rule in rules if isinstance(rule, dict)]
+
+
+def classify(path: str, rules: list[dict]) -> dict | None:
+    matches = [rule for rule in rules if path.startswith(str(rule.get("prefix") or ""))]
+    if not matches:
+        return None
+    return max(matches, key=lambda rule: len(str(rule.get("prefix") or "")))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
     parser.add_argument("--strict", action="store_true")
+    parser.add_argument(
+        "--decisions",
+        type=Path,
+        default=Path("docs/audit/evidence-decisions.yaml"),
+    )
     args = parser.parse_args()
     root = args.workspace.resolve()
     found = referenced_paths(root)
     missing = {path: docs for path, docs in found.items() if not (root / path).exists()}
+    rules = load_rules((root / args.decisions) if not args.decisions.is_absolute() else args.decisions)
+
+    classified: dict[str, dict] = {}
+    unclassified: list[str] = []
+    for path in sorted(missing):
+        rule = classify(path, rules)
+        if rule is None or rule.get("disposition") not in DISPOSITIONS:
+            unclassified.append(path)
+            continue
+        classified[path] = {
+            "disposition": rule["disposition"],
+            "reason": rule.get("reason"),
+            "owner": rule.get("owner"),
+            "referenced_by": sorted(set(missing[path])),
+        }
+
     report = root / "build" / ".audit" / "missing-evidence.txt"
     report.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         f"referenced build paths: {len(found)}",
         f"missing: {len(missing)}",
+        f"classified: {len(classified)}",
+        f"unclassified: {len(unclassified)}",
         "",
+        "path\tdisposition\treason\treferenced_by",
     ]
-    for path in sorted(missing):
-        lines.append(f"{path}\t{', '.join(sorted(set(missing[path]))[:3])}")
+    for path, item in classified.items():
+        lines.append(
+            f"{path}\t{item['disposition']}\t{item['reason'] or ''}\t"
+            + ", ".join(item["referenced_by"][:3])
+        )
+    for path in unclassified:
+        lines.append(f"{path}\tUNCLASSIFIED\t\t{', '.join(sorted(set(missing[path]))[:3])}")
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"evidence: {len(found)} referenced, {len(missing)} missing")
+
+    json_report = root / "build" / ".audit" / "evidence-classification.json"
+    json_report.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "referenced": len(found),
+                "missing": len(missing),
+                "classified": classified,
+                "unclassified": unclassified,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    print(f"evidence: {len(found)} referenced, {len(missing)} missing, {len(classified)} classified")
+    if unclassified:
+        print(f"unclassified missing paths ({len(unclassified)}):")
+        for path in unclassified[:20]:
+            print(f"  {path}")
     print(f"report: {report}")
+    if unclassified:
+        return 1
     return 1 if args.strict and missing else 0
 
 

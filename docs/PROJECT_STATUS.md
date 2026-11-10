@@ -1,9 +1,9 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-09（品牌层 WAYNE 片头片尾、KnowledgeStudio 教材知识库、Primer P1 归档、第三方依赖准入、Blender 写实能力评估）
+- **最近更新**：2026-11-10（V1 全量修复与生产体系收敛：配置快照、resume、字幕 QC、裁决队列、资产与文档治理）
 - **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `eaea74e`
-- **基线核实**：2026-11-09 实跑 `check.ps1` = `check ok`；CourseControl 412 个用例、KnowledgeStudio 13 个用例，Remotion `tsc --noEmit` 通过
+- **基线核实**：2026-11-10 实跑 `check.ps1` = `check ok`；六套 633 个用例（627 通过、6 跳过），Remotion `tsc --noEmit` 通过
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
@@ -13,9 +13,9 @@
 
 | 项 | 实际 |
 | --- | --- |
-| 单测 | 六套 585 个用例，579 通过、6 跳过（CourseControl 438 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
+| 单测 | 六套 636 个用例，630 通过、6 跳过（CourseControl 489 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
 | 回归 | `scripts/check.ps1` exit 0；新增非阻断 `evidence paths` 报告 |
-| 01-transformer-demo | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；最终成片构建中 |
+| 01-transformer-demo | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；成片 1195.605 s / 1080p30，build-report pass |
 | 02-car-aerodynamics | 正文、4 个 Manim 镜头、已批准 SRT 存在；build 目录与 22 分钟成片不在本机 |
 | 05-transformer-5min | 292.37 s 成片；`QUALITY_PASS=True` 仅表示"没有 INCOMPLETE"，不是"质量已验证" |
 | 06-attention-sample | 62.17 s 成片；已显式声明 `subtitles.bilingual: false`，SRT 已按标点/词边界重排，V-31 现在覆盖 Remotion 字幕 |
@@ -24,6 +24,16 @@
 | 审计 | `docs/audit/` 七份报告；`docs/stabilization/` 记录迁移方案 |
 
 状态词仍然严格：`pass` 只表示检查执行且通过；`WARN` 必须展示；`SKIP` / `INCOMPLETE` 不得当作 `pass`；`RELEASE_APPROVED` 需要 review 与 release 两次人工签核。
+
+## 0.0000A 2026-11-10 V1 全量修复与收敛
+
+- 问题台账：`docs/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 22 / FIXED 4 / OPEN 4；另 C-31、C-32 已验证）
+- 新增命令：`config-resolve`、`stats`、`subtitles-qc`、`review-status`、`review-decide`、`blender-task-validate`、`vendor-check`、`vendor-sync`、`shot-taxonomy`
+- build 新增：`--resume` / `--resume-from`；每次写 `logs/config-resolution.json`、`runtime/last-run.json`、`runtime/checkpoints/`
+- 质量新增：WARN 分类（`human_review` / `blocking`）、`NEEDS_HUMAN_REVIEW`、`BLOCKED_WARNINGS`、V-42/V-43/V-44
+- 资产新增：`audio/mix.json.source_asset`、交付包 `external_assets[]`、唯一 `CodeVideoStudio/vendor/three`
+- 文档新增：`docs/stabilization/` 11 份权威入口；`docs/audit/evidence-decisions.yaml` 覆盖 90 个缺失证据
+- 未关闭：C-16（3D 品牌 Gate）、C-25（06 内容表述）、C-26（新闻片密度）、C-28（品牌工作提交），均需所有者决定
 
 ## 0.000 2026-11-10 增量：多视觉语法生产系统（P1–P4）
 

@@ -1,7 +1,7 @@
 # 生产契约收敛（Production Contract）
 
 - 日期：2026-11-10
-- 状态：已实现最小收敛；01/05/06 的迁移待真实构建验证
+- 状态：契约已实现；权威声明已落到每门课；01/05 的单元粒度迁移仍需所有者决定
 - 关联审计：`docs/audit/ARCHITECTURE_CONFLICTS.md` C-01
 - 关联决策：D-032、D-035、D-065、D-066、D-071
 
@@ -38,13 +38,16 @@
 
 ### 2.2 导演计划如何进入 build
 
-`build` 增加显式开关：
+每门课在 `lesson.yaml` 声明：
 
-```powershell
-course-control build --lesson <slug> --storyboard-source director
+```yaml
+build:
+  storyboard_source: storyboard   # 或 director
 ```
 
 - 默认 `storyboard`（或 shots 模式的 production），行为不变。
+- 6 门真实课程已显式写 `storyboard_source: storyboard`；不再是隐藏的 CLI 开关。
+- 临时覆盖仍可用 `--storyboard-source director`。
 - `director` 读取 `build/<slug>/director/storyboard.director.yaml`；文件缺失即失败，不回退到 storyboard。
 - `--storyboard <path>` 仍然优先，用于临时 handoff。
 - `producer-rebuild` 打印的命令应使用 `--storyboard-source director`，而不是手写路径。
@@ -65,7 +68,8 @@ course-control plan-audit --lesson <slug>
 | --- | --- | --- |
 | shots 模式 synthetic storyboard | 已有 | `LessonPaths.load` 从 `production.yaml` 生成 `Storyboard`，build 与 collect 消费同一份 |
 | deck/scene storyboard | 已有 | 默认路径；`--storyboard` 可覆盖 |
-| `--storyboard-source director` | **本轮新增** | 显式选择导演计划，不改变默认 |
+| `build.storyboard_source` | **本轮新增** | 课程级声明；默认 storyboard |
+| `--storyboard-source director` | **本轮新增** | 临时覆盖；不改变默认 |
 | `plan-audit` | **本轮新增** | 只读计数与权威报告 |
 | 05 的 Page 权威 | 未完成 | 05 仍是 1 个 storyboard 镜头；导演计划 3 个、beats 27 个条目只是视图。文档不再声称"27 个独立镜头" |
 | 01 的 Page 权威 | 未完成 | storyboard 5 个镜头；导演计划 12 个是视图。完整构建应使用 storyboard，或在迁移后使用 director |

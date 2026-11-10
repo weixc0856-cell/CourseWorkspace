@@ -1,14 +1,8 @@
 import React from 'react';
 import {Composition} from 'remotion';
-import {AccessProbe} from './compositions/AccessProbe';
-import {ChapterCard, chapterCardDefaults} from './compositions/ChapterCard';
 import {CourseTimeline} from './compositions/CourseTimeline';
 import {CourseVideo} from './compositions/CourseVideo';
-import {R1Smoke} from './compositions/R1Smoke';
 import {ScenePage, ScenePageProps} from './compositions/ScenePage';
-import {FormulaProbe} from './compositions/FormulaProbe';
-import {PrimerPoc, primerPocDefaults} from './compositions/PrimerPoc';
-import {PrimerQuad, primerQuadDefaults} from './compositions/PrimerQuad';
 import {ShotsFile, TimelineSpec} from './types';
 import {BRAND} from './brand/tokens';
 import {BrandProps} from './brand/types';
@@ -16,7 +10,10 @@ import {CourseIntro} from './brand/CourseIntro';
 import {CourseOutro} from './brand/CourseOutro';
 import {NewsOutro} from './brand/NewsOutro';
 import {ShortSignature} from './brand/ShortSignature';
-import {BrandPreview} from './brand/BrandPreview';
+
+// Production compositions only. Probes (R1Smoke, FormulaProbe, AccessProbe,
+// PrimerPoc/Quad, ChapterCard, BrandPreview) live in src/probes/index.ts and
+// are never exposed to a course build.
 
 const defaultProps: ShotsFile = {
   schema_version: 1,
@@ -84,43 +81,6 @@ export const RemotionRoot: React.FC = () => {
         }}
       />
       <Composition
-        id="AccessProbe"
-        component={AccessProbe}
-        durationInFrames={30}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={{src: '', kind: 'image' as const}}
-      />
-      <Composition
-        id="ChapterCard"
-        component={ChapterCard}
-        durationInFrames={90}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={chapterCardDefaults}
-      />
-      <Composition
-        id="PrimerQuad"
-        component={PrimerQuad}
-        durationInFrames={900}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={primerQuadDefaults}
-        calculateMetadata={({props}) => ({durationInFrames: Math.max(1, props.total_frames)})}
-      />
-      <Composition
-        id="PrimerPoc"
-        component={PrimerPoc}
-        durationInFrames={900}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={primerPocDefaults}
-      />
-      <Composition
         id="CourseTimeline"
         component={CourseTimeline}
         durationInFrames={30}
@@ -159,23 +119,6 @@ export const RemotionRoot: React.FC = () => {
           width: 1920,
           height: 1080,
         })}
-      />
-      <Composition
-        id="FormulaProbe"
-        component={FormulaProbe}
-        durationInFrames={60}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={{latex: 'a^2 + b^2 = c^2'}}
-      />
-      <Composition
-        id="R1Smoke"
-        component={R1Smoke}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
       />
 
       <Composition
@@ -217,15 +160,6 @@ export const RemotionRoot: React.FC = () => {
         height={1920}
         defaultProps={{...brandDefaults, durationInSeconds: BRAND.presets.short_signature.duration_s}}
         calculateMetadata={brandMetadata(BRAND.presets.short_signature.duration_s)}
-      />
-      <Composition
-        id="BrandPreview"
-        component={BrandPreview}
-        durationInFrames={510}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={brandDefaults}
       />
     </>
   );

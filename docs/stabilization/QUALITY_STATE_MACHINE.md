@@ -82,3 +82,19 @@ course-control release-approve --lesson <slug> --stage release --by "<name>"
 2. nvda 的 `quality-gate` 输出 `verification: incomplete`、`releasable: no`。
 3. `release-approve --stage release` 在没有 review 批准时 exit 2；补 review 后 exit 0，`RELEASE_APPROVED=true`。
 4. `QUALITY_VERIFIED` 只有在五个维度全 PASS 时才为真；05/06/nvda 当前都是 false。
+
+## 7. WARN 分类（2026-11-10 增补）
+
+`quality-report.dimensions[].warning_class`：
+
+- `human_review`：Q1/Q2/Q3 的 WARN；置 `NEEDS_HUMAN_REVIEW=true`，不自动阻断。
+- `blocking`：Q4 有 skipped 阶段、Q5 审批未完成；`quality-gate` 置 `verification_status=incomplete`、`releasable=false`。
+- 非 WARN 维度 `warning_class=null`。
+
+新增状态：`NEEDS_HUMAN_REVIEW`、`BLOCKED_WARNINGS`（blocking 维度 id 列表）。
+
+## 8. 裁决队列（2026-11-10 增补）
+
+- `review/decisions.json` 是唯一裁决文件；`review-status` 列出未裁决 finding；`review-decide` 记录裁决。
+- Q1 读取该文件：未裁决、unknown、accepted、deferred 都保持 WARN；全部 rejected/fixed 才 PASS。
+- 裁决不是自动批准：`RELEASE_APPROVED` 仍需要两次人工签核。

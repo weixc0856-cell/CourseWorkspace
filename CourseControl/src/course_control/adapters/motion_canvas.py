@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ..contracts import Status
 from ..paths import LessonPaths
+from ..timeouts import resolve_timeout
 from ..utils import MediaInfo, run_command, which_command
 from .base import StageOutcome, selected, verify_media
 
@@ -56,7 +57,7 @@ def _render_once(
     result = run_command(
         command,
         paths.engine_root("motion_canvas"),
-        timeout=1800,
+        timeout=resolve_timeout(paths, "render:motion_canvas"),
         log_path=log_dir / f"motion-canvas-{shot_id}-attempt{attempt}.log",
     )
     if result.exit_code != 0:
