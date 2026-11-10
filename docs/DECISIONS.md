@@ -582,3 +582,132 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 5. 版本一致优先于“用最新”：three 核心与 addons 必须同版本；当前锁定 r160，落后上游 0.187.0，升级作为独立任务并需重跑 `VERIFY.md`。
 
 **后果**：不再出现未登记的即兴依赖；依赖带来的收益与代价都有实测数字。代价是每个新依赖多一道评估工序，且升级需要回归验证。
+
+## D-063 品牌层独立于内容生产，复用既有色板，片头片尾在成片之后拼接
+
+**背景**：需要一套可复用的频道片头片尾（课程 3.5 s 片头 / 12 s 片尾、新闻 6 s 片尾、竖屏 1 s 签名）。外部方案提出独立色值（`#F7F7F8` / `#18191C` / `#F25F22`）与 Space Grotesk / Inter / JetBrains Mono 字体组合。
+
+**决策**：
+1. 视觉主品牌 `WAYNE`，副标题 `ENGINEERING & COMPUTATION`；频道名继续用 `Wayne-CFD`。
+2. 品牌色角色映射到 `shared/design-tokens/tokens.json`（paper / ink / orange / border），**不引入第二套 hex**；字体只用已打包的 Noto Sans SC（新增 Latin 600/700 子集），不新增字体依赖。
+3. 品牌资产放在 `RemotionStudio/src/brand/`，配置放 `shared/design-tokens/brand.json`，Remotion 与 `CourseControl` 读同一份文件。
+4. 品牌阶段在 compose / burn（可选）之后运行，产出 `final/course-video-delivery.mp4`；不改 `shots.json`、`timeline.spec.json`、旁白或字幕；`verify` 以 V-36 重新计算 `body + brand`。
+5. 新闻不开片头（第一句口播即开场）；竖屏只用 `short_signature`；时长越界、分辨率不匹配直接报错。
+6. 拼接先 `-c copy`，校验失败回退重编码，模式写进 `final/brand.json`。
+
+**后果**：片头片尾与课件共享同一色板与字体，不会在剪辑点出现色差；代价是品牌不能使用第三方字体个性，并且组件固定 1920×1080 / 1080×1920，4K 需要后续参数化。
+
+## D-064 教材知识库用页级事实 + SQLite FTS5，claim 验证保持 pending
+
+**背景**：需要把上千页教材变成可按章节调用、按知识点生产的本地知识库，且每节课有可追溯的原文依据。
+
+**决策**：
+1. 新建独立工程 `KnowledgeStudio`，按“原件 → 页 → 单元 → 索引 → 检索 → 证据”分层；不把教材管理塞进 Producer / Director。
+2. 第一版不引入向量库/RAG 框架：目录、章节、页码是明确结构，SQLite（标准库）+ FTS5 + Markdown + JSON 足够，且可复现；语义检索后续只作为补充。
+3. 检索是确定性的词法匹配，按 `max_pages` 截断，只读需要的页；返回 0 页视为失败，不是成功。
+4. 每条引用指向 PDF 页并记录页哈希；claim 只能引用本次检索读过的页，`verification` 固定 `pending`，工具不自动标 `verified`。
+5. 新增依赖 `pypdf==6.9.2`（BSD-3-Clause）。7.0.0 于 2026-11-06 发布，过于新，暂不升级；扫描件走 `import-text`，OCR 不在本模块。
+6. 导出只写 lesson 的 `authoring/sources/KS-*.md` 与 `sources.ks-*.yaml` 片段，不修改 `sources.yaml`；`knowledge/` 全部本地，`local_only` 默认 true。
+
+**后果**：课程生产在进入 LLM 之前就限定了阅读范围与引用来源；代价是中文检索依赖按字拆分的 FTS 短语，同义词与跨语言召回仍需人工扩词或后续语义补充。
+
+## D-065 多视觉语法生产系统：质量统一、语法分档、镜头为生产基元
+
+**背景**：目标参考视频（亚里《AI 配音怎么选？》，12:28）采用 3–6 秒硬切、每拍换构图、无长寿命对象的语法。现有 `beats.py` + `animation_score.py` 把 5–16 秒长镜头、长寿命对象 ≥50%、8–12 秒理想节奏写成了通用质量定义，导致该风格结构性只能拿约 55/100，低于 85 分发布线。问题不在模型、语言、音色或渲染器，而在契约把艺术语法与质量标准焊在一起。
+
+**决策**：
+1. 确立 **One Production System, Multiple Visual Grammars**：统一生产基础设施，允许多种视觉语法；风格不是质量。
+2. 四层解耦：内容表达目标（purpose） / 视觉语法（逐镜头 grammar + techniques） / 渲染能力（renderer registry） / 质量验收（Hard + Grammar + Metrics + Human）。
+3. 三份契约：Production Contract（Course → Lesson → Sequence → Shot）、Style Profile（只描述视觉语言）、Quality Profile（统一质量要求，按语法选择检测方式）。
+4. Shot 成为生产、渲染、验收、重渲的第一等公民；Page 只在 deck/scene 模式保留，不再是视频生产的唯一时间基元。
+5. 质量门禁分层：Hard 不可豁免；Grammar 可豁免但须书面理由与批准人；Metrics 只报告；人工审美验收是发布决定。**废止统一 85 分发布线**。
+6. 长镜头语法（`long_take`）保持现有阈值与 94.7 分基线，仅从“唯一标准”降为“一个 profile”。
+7. 兼容优先：`beats.yaml` 不写 grammar 时按 long_take 解释；deck/scene/recording 行为不变；新增能力全部可选；失败显式 blocked，不静默换引擎。
+8. 本轮只做审计、架构设计与四支真实样片验证，**不修改生产代码**；施工按 P1–P4 分阶段，每阶段以真实渲染收尾。
+
+**后果**：评分器不再把某一种艺术偏好伪装成通用质量标准；代价是必须维护多个 grammar profile，且人工签核不可省略。冻结检测等历史指标降为 metric，需重标定后才能再作门禁。
+
+## D-066 多视觉语法生产系统 P1–P4 落地
+
+**背景**：D-065 只定义了目标架构。目标参考片（短切、每拍换构图、无长寿命对象）需要把“镜头”变成第一等生产单位，并把质量拆成硬约束、语法约束、指标与人工签核。
+
+**决策**：
+1. 新增 `production.py`：Lesson → Sequence → Shot，镜头 `duration_s` 是唯一时间权威；新增 `compose.mode=shots`，`deck/scene/recording` 保持不变。
+2. 新增 `shared/grammars/visual-grammars.yaml` 与 `grammar.py`：7 个语法；`beats.py` 按镜头 grammar 校验，未写 grammar 时仍按 `long_take`，旧节拍表行为不变。
+3. 新增 `quality_gates.py` 与 `quality-gate`：Hard 不可豁免，Grammar 可书面豁免，Metrics 只报告，Human 必须签核；`animation-score` 降为指标工具（`release_gate=metric_only`），统一 85 分线废止。
+4. 镜头转场进入契约与时间线（`hard_cut/fade/dissolve/match_cut/wipe`），只改视觉、不改时间基。
+5. 逐词字幕：`Subtitles.mode=word` 消费 `asr-align` 的 `words`，V-16 按 word 模式检查；burn-in 不支持 word，显式报错。
+6. 长片捕获：`capture.mjs --chunk-seconds` 分块渲染后无损拼接；adapter 对 >120 s 镜头自动启用。
+7. 参考驱动：`reference.py` + `references/*.json` + `golden/golden.json` + `reference-compare`；composition/hierarchy/typography 固定 human_review。
+8. 兼容优先：旧模式、旧节拍表、旧字幕路径、旧评分输出键全部保留；未知 grammar/renderer/capability 一律 blocked。
+
+**后果**：质量判定不再是单一分数；代价是每门课需要声明 grammar（可缺省）、每个 grammar 需要维护 profile，且发布必须人工签核。shots 模式与逐词字幕尚未完成端到端渲染验证，状态记为 PARTIAL。
+
+## D-067 品牌画面全英文、片尾只做 CTA、正片为原子资产并核验音频对齐
+
+**背景**：审片指出片头出现分类编号与中文副题、片尾把课程元数据与下一课全部堆上屏、片头淡出后再接正片；同时怀疑正片音频在片头里抢跑。
+
+**核查**：对成品音频执行 `silencedetect`：0–3.085 s 静音，第一句人声出现在片头结束后的 85 ms（原片开头的自然停顿），正片音画整体后移，未发现抢跑。片头尾部空白与片尾信息堆砌成立。
+
+**决策**：
+1. 品牌画面只允许英文；`Branding` 删除 `series` / `next_title` / `episode` / `BrandSegment.subtitle`，写入即校验失败；文案固定 `Thanks for watching.` / `Subscribe for more deep dives.`。
+2. 课程片头 3.0 s：顶部 lockup + 居中英文单集标题；末帧保持标题卡，正片硬切。不做淡出、不做纸面遮罩、不出现分类编号或中文字幕。
+3. 课程/新闻片尾只保留 lockup + 致谢 + CTA；新闻保留英文栏目与真实日期。删除 `NEXT`、课程标题、中文口号与重复订阅标签。
+4. 正片是原子资产：不裁剪、不交叉淡化、不提前播放；品牌只做 `片头 → 正片 → 片尾` 线性 concat。
+5. 拼接后程序核验音频对齐：片头静音轨音频时长与视频差 ≤ 1 帧；正片首段非静音 `body_first` 与成片 `actual` 的差 ≤ 0.2 s；结果写入 `brand.json.audio_alignment`，V-36 遇 `fail` 直接失败。
+6. 移除 CJK 700 注入与字体文件：品牌帧不再需要中文粗体，避免合成粗体与多余字体包。
+
+**后果**：品牌帧信息密度显著降低，但片头/片尾各自只承担一个任务；中文课程标题不再进入品牌画面，依赖必填的 `title_en`。D-063 中 3.5 s 时长、分类标签与元数据相关描述由本条取代。
+
+## D-068 品牌拼接必须经 MPEG-TS 重封装，并用帧间距门禁
+
+**背景**：审片发现成片前 20 秒画面快闪、音画字幕对不上。定位：直接对 MP4 段做 `concat -c copy`，两段 timescale 不同，concat 没有重缩放映时间戳——正片所有帧被压到 2.921 s 起、每帧只递增 11 微秒。文件时长、DTS 单调与音频都正常，所以先前的时长/音轨检查全部通过。
+
+**决策**：
+1. 不再直接 copy 拼接 MP4：每段先 remux 为 MPEG-TS（`-c copy -bsf:v h264_mp4toannexb`），按**视频流时长**写 concat 的 `duration`，再 remux 为 MP4；编码帧与音频样本仍复制，不重编码。
+2. 新增 `video_timing` 门禁：读取全部视频 PTS 排序，`clustered_intervals`（间距 < 半帧）> 2，或唯一帧数与 `时长 × fps` 相差 > 2%，判 `fail` 并回退重编码；V-36 同样拒绝。
+3. 结论：时长、DTS 单调、音频对齐不足以证明画面正确；必须单独校验显示时间戳的帧间距。
+4. 抽样逐字节核验：正片第 30 帧与成片第 120 帧 `framemd5` 相同；正片音频包 `data_hash` 序列在成片中逐一对应。
+
+**后果**：交付时长 307.367 s、9221 帧，帧间距正常（clustered 1，为片段边界被显式 duration 截短的 12 ms，在阈值内）。代价是每段多一次 TS 重封装（copy，秒级）和临时文件。
+
+## D-069 片尾主轴按像素对齐，标签不得依附局部文本
+
+**背景**：片尾里 `ENGINEERING & COMPUTATION` 与细线只对齐了 `WAYNE` 文本，整组视觉中心右移约 40 px；而致谢句在全屏中心，上下不在一条轴上。
+
+**决策**：
+1. 新增 `CenteredLockup`：`[W 图标] + [WAYNE]` 作为整体行居中，图标按字标中心对齐；tagline 居中于整组宽度，不依附 WAYNE。
+2. 细线、致谢、CTA 各自独立居中，全部由 `flex-direction: column; align-items: center` 约束，不使用局部 `text-align` 猜测。
+3. 抵消字距在末字后留下的空隙（tagline `marginRight: -0.22em`），否则墨迹中心偏左 2–3 px。
+4. 新增 `scripts/brand-centers.py`：对渲染静帧逐行扫描非背景像素，输出每个内容带的墨迹 `center_x`，偏差 > 1 px 即 exit 1。
+
+**后果**：片尾 5 个内容带中心为 959.5/959.5/959.5/959.0/959.0，全部在 1 px 内。片尾是同一套组件，新闻片尾与竖屏签名同步获得居中约束。
+
+## D-070 垂直领域接入：品牌帧移除内容分类标签，领域方案只写内容
+
+**背景**：接入经济学内容线时发现 `shared/design-tokens/brand.json` 的 `content_kinds` 各带一个人读标签（ENGINEERING COURSES / ENGINEERING EXPLAINED / INDUSTRY BRIEFING）。这套标签把频道钉在工程语义上：经济学找不到合适标签，每接一个新领域都要改一次品牌契约。
+
+**决策**：
+1. **品牌帧不承载内容分类标签。** 片头片尾只有 lockup、单集英文标题、致谢与 CTA；内容归属由标题与封面承担。新闻的动态栏目与真实日期是内容字段，保留。
+2. 删除 `brand.json` 的 `content_kinds.*.label`，`content_kinds` 只保留 intro/outro 路由；`branding.py` 校验、Remotion 品牌组件与快照测试同步修改，label 出现即报错。
+3. 新领域**不新增 `content_kind`**，不 fork 品牌；领域方案只写内容、来源、选题、资产与验收（`docs/verticals/`），不改引擎、语法、门禁与品牌。
+4. 实施顺序：先完成标签移除并跑通品牌回归，再开经济学样片；在此之前经济学生产不启用 `branding`。
+
+**实施状态**：决定已记录，**代码未改**。改动点见 `docs/verticals/economics/经济学系列-第一季生产方案.md` §1。
+
+**后果**：品牌语义不再随内容线扩张；D-067 关于分类标签的约束继续有效并扩展到数据层。
+
+## D-071 质量以交付为准，运动语法阈值降为诊断指标
+
+**背景**：现有 `beats.yaml` 与 `quality-gate` 把镜头时长、动作间隔、长寿命对象比例、冻结段数当成放行条件，实际效果是"必须做满几秒动画""每 4 秒必须有一个动作"。这类约束与解释质量无关，还会把讲得清楚的长镜头拆碎。
+
+**决策**：
+1. 发布条件只有三条：**把问题讲明白、把画面做好、把交付做硬**。其余指标都是它们的代理，不是替代。
+2. 语法阈值（单镜时长、动作密度、长寿命比例、冻结段数）**只报告，不作放行**；`quality-gate` 的 grammar 层可逐条 `--waive` 并写明理由。
+3. `beats-validate` 的硬失败只保留结构缺陷（旁白覆盖漏洞、镜头重叠、越界、配色对比度）；时长与动作密度类改为 warning。
+4. 新增门禁必须是**可证明的缺陷**（解码失败、帧数不符、音画漂移、字幕缺失、文件哈希不符），不是审美偏好；不新增"秒数/帧数"型硬约束。
+5. 人工看片与签字不可替代：自动化只能证明产物符合契约，不能证明讲得对、看得下去。
+
+**实施状态**：决定已记录，**代码未改**（`beats.py` 的时长规则、`quality_gates.py` 的 grammar 判定待调整；`docs/工业化动画工作流.md`、`docs/ACCEPTANCE.md` 的门禁描述待复核）。
+
+**后果**：`animation-score` 与语法归档退为诊断工具；发布结论回到"三条真实约束 + 人工签核"。

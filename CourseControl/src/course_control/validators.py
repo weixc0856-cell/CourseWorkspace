@@ -186,6 +186,7 @@ def _check_beat_sheet(result: ValidationResult, paths: LessonPaths) -> None:
         return
     from . import palette_gate
     from .beats import load_segments, load_sheet, validate_sheet
+    from .grammar import try_load_registry
 
     try:
         sheet = load_sheet(sheet_path)
@@ -197,8 +198,50 @@ def _check_beat_sheet(result: ValidationResult, paths: LessonPaths) -> None:
         palette_ok = palette_gate.ok(palette_gate.report(paths.workspace, sheet.palette))
     except Exception:  # noqa: BLE001
         palette_ok = False
-    for issue in validate_sheet(sheet, segments, palette_ok=palette_ok):
+    for issue in validate_sheet(
+        sheet, segments, palette_ok=palette_ok, registry=try_load_registry(paths.workspace)
+    ):
         result.add("V-35", "error", issue)
+
+
+def _validate_shots(paths: LessonPaths, result: ValidationResult) -> ValidationResult:
+    """Validation path for shot-driven productions (no page contract)."""
+    from .grammar import try_load_registry
+    from .production import validate_plan
+
+    plan = paths.production
+    if plan is None:
+        result.add("V-40", "error", "shots mode requires a production contract")
+        return result
+    registry = try_load_registry(paths.workspace)
+    for issue in validate_plan(plan, workspace=paths.workspace, registry=registry):
+        result.add("V-40", "error", issue)
+    if paths.production_source is not None:
+        _check_path(result, "production", str(paths.production_source.relative_to(paths.lesson_dir)).replace("\\", "/"))
+    lesson = paths.lesson
+    if lesson.narration.enabled:
+        source = lesson.narration.source or "narration.wav"
+        narration = paths.narration_path(source)
+        if not narration.is_file():
+            result.add("V-41", "error", f"narration not found: {narration}")
+    if lesson.subtitles.enabled:
+        if lesson.subtitles.mode == "word":
+            source = lesson.subtitles.word_source or "quality/asr-alignment.json"
+            if not paths.build_path(source).is_file():
+                result.add("V-41", "error", f"word captions require {source}")
+        else:
+            subtitles = paths.subtitles_path()
+            if subtitles is None or not subtitles.is_file():
+                result.add("V-41", "error", "subtitles enabled but file not found")
+    policy = resolve(lesson)
+    if policy is not None:
+        for problem in planned_problems(plan.total_seconds, policy):
+            result.add("V-26", problem.level, problem.message)
+    notes = paths.content_path(lesson.content.notes)
+    if notes.is_file():
+        _check_authoring(result, paths, notes.read_text(encoding="utf-8"))
+    _check_beat_sheet(result, paths)
+    return result
 
 
 def validate(paths: LessonPaths) -> ValidationResult:
@@ -207,6 +250,9 @@ def validate(paths: LessonPaths) -> ValidationResult:
 
     if not SLUG_RE.match(paths.slug) or lesson.lesson_id != paths.lesson_dir.name:
         result.add("V-01", "error", "lesson_id must be a slug and match the directory name")
+
+    if lesson.compose.mode == "shots":
+        return _validate_shots(paths, result)
 
     content = lesson.content
     required = {

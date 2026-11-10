@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/contracts/quality-profile.schema.json",
+  "title": "Quality profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "hard", "profiles"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "hard": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/profile"}
+    },
+    "metrics": {"type": "array", "items": {"type": "string"}},
+    "human_review": {"enum": ["required", "optional", "none"]}
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checks"],
+      "properties": {
+        "checks": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

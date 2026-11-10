@@ -50,6 +50,7 @@ class CameraMove(StrictModel):
 class BeatShot(StrictModel):
     id: str = Field(min_length=1)
     segment: int = Field(ge=1)
+    grammar: str | None = None
     start: float = Field(ge=0.0, le=1.0)
     end: float = Field(gt=0.0, le=1.0)
     engine: Engine
@@ -71,6 +72,7 @@ class BeatShot(StrictModel):
 class BeatSheet(StrictModel):
     schema_version: int = 1
     lesson: str = Field(min_length=1)
+    grammar: str = "long_take"
     palette: str = "editorial"
     subtitle_safe_below: float = Field(le=-1.5)
     shots: list[BeatShot] = Field(min_length=1)
@@ -80,13 +82,31 @@ def _segment_durations(segments: list[tuple[float, float]]) -> list[float]:
     return [float(duration) for _, duration in segments]
 
 
+def _legacy_constraints():
+    return {
+        "shot_min": MIN_SHOT_SECONDS,
+        "shot_max": MAX_SHOT_SECONDS,
+        "first_action_by": 0.35,
+        "max_action_gap_s": MAX_GAP_SECONDS,
+        "long_lived_ratio_min": MIN_LONG_LIVED_RATIO,
+        "camera_motive_required": True,
+        "min_actions": 2,
+    }
+
+
 def validate_sheet(
     sheet: BeatSheet,
     segments: list[tuple[float, float]],
     *,
     palette_ok: bool = True,
+    registry=None,
 ) -> list[str]:
-    """Return a list of gate violations; empty means the sheet is shippable."""
+    """Return a list of gate violations; empty means the sheet is shippable.
+
+    Without ``registry`` the legacy long-take constants apply, so existing
+    beat sheets and tests keep their exact behaviour.  With a registry each
+    shot is checked against its own grammar.
+    """
     issues: list[str] = []
     if not palette_ok:
         issues.append("palette: accessibility gates failed")
@@ -102,6 +122,27 @@ def validate_sheet(
     if duplicates:
         issues.append(f"shots: duplicate ids {duplicates}")
 
+    def constraints_for(shot: BeatShot) -> dict:
+        if registry is None:
+            return _legacy_constraints()
+        name = shot.grammar or sheet.grammar
+        try:
+            spec = registry.get(name)
+        except KeyError:
+            issues.append(f"{shot.id}: unknown grammar '{name}'")
+            return _legacy_constraints()
+        window = spec.shot_seconds
+        item = spec.constraints
+        return {
+            "shot_min": window.min,
+            "shot_max": window.max,
+            "first_action_by": item.first_action_by,
+            "max_action_gap_s": item.max_action_gap_s,
+            "long_lived_ratio_min": item.long_lived_ratio_min,
+            "camera_motive_required": item.camera_motive_required,
+            "min_actions": item.min_actions,
+        }
+
     for segment_index, duration in enumerate(durations, start=1):
         shot_list = sorted(
             (shot for shot in sheet.shots if shot.segment == segment_index),
@@ -112,6 +153,7 @@ def validate_sheet(
             continue
         cursor = 0.0
         for shot in shot_list:
+            limits = constraints_for(shot)
             if abs(shot.start - cursor) > 1e-6:
                 issues.append(
                     f"segment {segment_index}: gap/overlap before {shot.id} "
@@ -119,37 +161,51 @@ def validate_sheet(
                 )
             cursor = shot.end
             span = (shot.end - shot.start) * duration
-            if span < MIN_SHOT_SECONDS:
-                issues.append(f"{shot.id}: {span:.1f}s is shorter than {MIN_SHOT_SECONDS:.0f}s")
-            if span > MAX_SHOT_SECONDS:
-                issues.append(f"{shot.id}: {span:.1f}s is longer than {MAX_SHOT_SECONDS:.0f}s")
-
+            if span < limits["shot_min"]:
+                issues.append(
+                    f"{shot.id}: {span:.1f}s is shorter than {limits['shot_min']:.2f}s "
+                    f"({shot.grammar or sheet.grammar})"
+                )
+            if span > limits["shot_max"]:
+                issues.append(
+                    f"{shot.id}: {span:.1f}s is longer than {limits['shot_max']:.1f}s "
+                    f"({shot.grammar or sheet.grammar})"
+                )
+            if len(shot.beats) < limits["min_actions"]:
+                issues.append(
+                    f"{shot.id}: {len(shot.beats)} actions, grammar needs "
+                    f"{limits['min_actions']}"
+                )
             first = shot.beats[0].at
-            if first > 0.35:
-                issues.append(f"{shot.id}: first beat at {first:.2f} (> 0.35)")
+            if first > limits["first_action_by"]:
+                issues.append(f"{shot.id}: first beat at {first:.2f} (> {limits['first_action_by']:.2f})")
             points = [beat.at for beat in shot.beats] + [1.0]
             for before, after in zip(points, points[1:]):
                 gap = (after - before) * span
-                if gap > MAX_GAP_SECONDS:
+                if gap > limits["max_action_gap_s"]:
                     issues.append(
                         f"{shot.id}: {gap:.1f}s without a beat "
                         f"({before:.2f}->{after:.2f})"
                     )
-            for move in shot.camera:
-                if len(move.motive.strip()) < 8:
-                    issues.append(f"{shot.id}: camera move at {move.at:.2f} needs a motive")
+            if limits["camera_motive_required"]:
+                for move in shot.camera:
+                    if len(move.motive.strip()) < 8:
+                        issues.append(f"{shot.id}: camera move at {move.at:.2f} needs a motive")
         if abs(cursor - 1.0) > 1e-6:
             issues.append(
                 f"segment {segment_index}: shots end at {cursor:.3f}, not 1.0"
             )
 
-    long_lived = sum(1 for shot in sheet.shots if shot.long_lived)
-    ratio = long_lived / len(sheet.shots)
-    if ratio < MIN_LONG_LIVED_RATIO:
-        issues.append(
-            f"continuity: {long_lived}/{len(sheet.shots)} shots declare long-lived objects "
-            f"({ratio:.0%} < {MIN_LONG_LIVED_RATIO:.0%})"
-        )
+    required = [shot for shot in sheet.shots if constraints_for(shot)["long_lived_ratio_min"] > 0]
+    if required:
+        ratio_needed = max(constraints_for(shot)["long_lived_ratio_min"] for shot in required)
+        declared = sum(1 for shot in required if shot.long_lived)
+        ratio = declared / len(required)
+        if ratio < ratio_needed:
+            issues.append(
+                f"continuity: {declared}/{len(required)} shots declare long-lived objects "
+                f"({ratio:.0%} < {ratio_needed:.0%})"
+            )
     return issues
 
 

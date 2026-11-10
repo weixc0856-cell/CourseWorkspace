@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "yari-ai-voiceover",
+  "title": "AI 配音怎么选？我用的是哪家：原理、选择、实操全流程",
+  "url": "https://www.youtube.com/watch?v=52uaFgT9jZI",
+  "duration_s": 748,
+  "sample_interval_s": 5,
+  "grammars": ["kinetic_edit", "kinetic_type", "montage"],
+  "metrics": {
+    "shot_seconds_min": 3.0,
+    "shot_seconds_max": 8.0,
+    "beats_per_10s_min": 4.0,
+    "cut_rate_per_10s_min": 1.2,
+    "camera_required": false
+  },
+  "visual": {
+    "palette": "warm paper (#F6F1E7) with orange accent",
+    "typography": "large Chinese type, word-synced captions",
+    "elements": ["paper grid", "kinetic type", "UI mockups", "waveform", "screen recording", "character illustration"],
+    "density": "high: roughly one new composition every 5 s (storyboard sampled at 5 s)"
+  },
+  "acceptance": [
+    "at 1080p the large type stays readable at phone size",
+    "cuts feel intentional; no decorative motion without a claim",
+    "screen recordings are real product captures, not mockups",
+    "word captions land on the spoken syllable within one frame"
+  ]
+}

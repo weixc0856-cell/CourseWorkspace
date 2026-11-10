@@ -135,6 +135,8 @@ def run(paths: LessonPaths) -> StageOutcome:
             ]
             if shot.expected_duration_s:
                 command.extend(["--dur", str(shot.expected_duration_s)])
+                if shot.expected_duration_s > 120:
+                    command.extend(["--chunk-seconds", "60"])
             try:
                 command.extend(capture_flags(project))
             except ValueError as exc:

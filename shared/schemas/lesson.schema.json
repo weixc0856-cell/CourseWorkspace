@@ -211,6 +211,103 @@
       "title": "BgmCue",
       "type": "object"
     },
+    "BrandSegment": {
+      "additionalProperties": false,
+      "description": "One brand segment (intro or outro) around the lesson body.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "preset": {
+          "default": "auto",
+          "title": "Preset",
+          "type": "string"
+        },
+        "duration_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.3,
+              "maximum": 30.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration S"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "title": "BrandSegment",
+      "type": "object"
+    },
+    "Branding": {
+      "additionalProperties": false,
+      "description": "Brand assets around the body. Disabled unless a lesson opts in.\n\nThe brand layer never touches narration, subtitles or shot timing: it is\nstitched after the viewing master is final, so the body timeline stays the\nsingle timing fact.",
+      "properties": {
+        "theme": {
+          "const": "wayne-light",
+          "default": "wayne-light",
+          "title": "Theme",
+          "type": "string"
+        },
+        "intro": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BrandSegment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "outro": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BrandSegment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Date"
+        },
+        "preview_safe_area": {
+          "default": false,
+          "title": "Preview Safe Area",
+          "type": "boolean"
+        }
+      },
+      "title": "Branding",
+      "type": "object"
+    },
     "BuildOptions": {
       "additionalProperties": false,
       "properties": {
@@ -235,7 +332,8 @@
           "enum": [
             "deck",
             "scene",
-            "recording"
+            "recording",
+            "shots"
           ],
           "title": "Mode",
           "type": "string"
@@ -569,6 +667,36 @@
           "title": "Render",
           "type": "string"
         },
+        "mode": {
+          "default": "cue",
+          "enum": [
+            "cue",
+            "word"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "position": {
+          "default": "bottom",
+          "enum": [
+            "bottom",
+            "low_center"
+          ],
+          "title": "Position",
+          "type": "string"
+        },
+        "word_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Word Source"
+        },
         "top_language": {
           "default": "en",
           "title": "Top Language",
@@ -675,6 +803,9 @@
       "default": {
         "enabled": false,
         "render": "remotion",
+        "mode": "cue",
+        "position": "bottom",
+        "word_source": null,
         "top_language": "en",
         "bottom_language": "zh-Hans",
         "bottom_margin": 190,
@@ -712,6 +843,16 @@
         "bgm": []
       }
     },
+    "branding": {
+      "$ref": "#/$defs/Branding",
+      "default": {
+        "theme": "wayne-light",
+        "intro": null,
+        "outro": null,
+        "date": null,
+        "preview_safe_area": false
+      }
+    },
     "video_form": {
       "default": "long",
       "enum": [
@@ -742,6 +883,18 @@
         }
       ],
       "default": null
+    },
+    "production": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Production"
     }
   },
   "required": [

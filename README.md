@@ -17,7 +17,7 @@
 | 内容 | 是否进远程 | 说明 |
 | --- | --- | --- |
 | `CourseControl/`、`CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`BlenderStudio/`、`RemotionStudio/` | 是 | 工作流与渲染入口 |
-| `ModelingStudio/`、`ContentQA/`、`CourseDemo/`、`shared/` | 是 | 内部能力、会话录制与运行时 |
+| `ModelingStudio/`、`ContentQA/`、`CourseDemo/`、`KnowledgeStudio/`、`shared/` | 是 | 内部能力、会话录制与运行时 |
 | `ScientificFigures/` | 是 | SymPy/LaTeX + Matplotlib/SciencePlots 科学图表 POC；`output/` 忽略 |
 | `index.html` | 是 | 根入口：把 `/?lesson=<slug>` 重定向到 Reveal 外壳 |
 | `CodeVideoStudio/` | 是 | Code2Video Skill（Apache 2.0）与镜头 POC；不含 27B 权重 |
@@ -76,6 +76,7 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 | `ScientificFigures/` | 科学图表 POC：SymPy/Matplotlib/SciencePlots | `ScientificFigures/output/*.svg|pdf|png`（忽略） | 否（POC/按需） |
 | `index.html` | 根入口重定向到 `CourseSlides/template/` | 浏览器入口 | 支撑 |
 | `ContentQA/` | 内容审查（默认 Claude Code，API 可选） | `build/<slug>/review/` | 否（内部能力） |
+| `KnowledgeStudio/` | 教材拆页、目录校准、按页检索与引用 | `knowledge/`（本地，不入库） | 否（内部能力） |
 | `CourseDemo/` | VS Code 会话驱动扩展 | `vscode-result.json` | 否（内部能力） |
 | `shared/ai_runtime/` | 跨进程锁、服务生命周期、任务记录、上下文预算 | `runtime/` | 支撑 |
 | `shared/scene_expr/` | 受限表达式：AST 白名单 + 解释器 | — | 支撑 |

@@ -1,0 +1,72 @@
+schema_version: 1
+lesson: sample-kinetic-cuts
+sequences:
+  - id: seq-01
+    title: 配音是时钟
+    shots:
+      - id: kinetic-001
+        duration_s: 3.0
+        purpose: orient
+        visual_type: kinetic_typography
+        grammar: kinetic_edit
+        techniques: [word_reveal, underline, scale]
+        renderer: code_video
+        source: docs/architecture/samples/kinetic-cuts
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        objects: []
+        actions:
+          - {type: reveal, target: word_clock, at: 0.26}
+          - {type: highlight, target: underline, at: 0.33}
+        audio: {}
+        captions: {mode: none}
+      - id: kinetic-002
+        duration_s: 3.0
+        purpose: explain
+        visual_type: kinetic_typography
+        grammar: kinetic_edit
+        techniques: [char_reveal, sweep_highlight]
+        renderer: code_video
+        source: docs/architecture/samples/kinetic-cuts
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        objects: []
+        actions:
+          - {type: reveal, target: sentence, at: 0.02}
+          - {type: highlight, target: sweep_band, at: 0.17}
+        audio: {}
+        captions: {mode: none}
+      - id: kinetic-003
+        duration_s: 3.0
+        purpose: explain
+        visual_type: kinetic_typography
+        grammar: kinetic_edit
+        techniques: [pulse, playhead]
+        renderer: code_video
+        source: docs/architecture/samples/kinetic-cuts
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        objects: []
+        actions:
+          - {type: reveal, target: word_frame, at: 0.02}
+          - {type: pulse, target: phrase_on_word, at: 0.32}
+          - {type: move, target: playhead, at: 0.18}
+        audio: {}
+        captions: {mode: none}
+      - id: kinetic-004
+        duration_s: 3.0
+        purpose: summarize
+        visual_type: kinetic_typography
+        grammar: kinetic_edit
+        techniques: [align, checkmark]
+        renderer: code_video
+        source: docs/architecture/samples/kinetic-cuts
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: static}
+        objects: []
+        actions:
+          - {type: reveal, target: conclusion, at: 0.02}
+          - {type: align, target: bars, at: 0.15}
+          - {type: draw, target: checkmark, at: 0.38}
+        audio: {}
+        captions: {mode: none}

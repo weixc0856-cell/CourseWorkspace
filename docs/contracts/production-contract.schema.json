@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/contracts/production-contract.schema.json",
+  "title": "Production contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "lesson", "sequences"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "lesson": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "style": {"type": "string"},
+    "quality": {"type": "string"},
+    "sequences": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/sequence"}
+    }
+  },
+  "$defs": {
+    "sequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "shots"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "shots": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/shot"}}
+      }
+    },
+    "shot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "duration_s", "purpose", "visual_type", "grammar", "renderer"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{1,63}$"},
+        "duration_s": {"type": "number", "exclusiveMinimum": 0},
+        "purpose": {
+          "enum": ["explain", "demonstrate", "simulate", "compare", "narrate", "emote", "orient", "summarize"]
+        },
+        "visual_type": {"type": "string", "minLength": 1},
+        "grammar": {"type": "string", "minLength": 1},
+        "techniques": {"type": "array", "items": {"type": "string"}},
+        "renderer": {"enum": ["code_video", "manim", "motion_canvas", "blender", "remotion"]},
+        "source": {"type": "string"},
+        "transition": {"$ref": "#/$defs/transition"},
+        "camera": {"$ref": "#/$defs/camera"},
+        "objects": {"type": "array", "items": {"type": "string"}},
+        "actions": {"type": "array", "items": {"$ref": "#/$defs/action"}},
+        "audio": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "narration_segment": {"type": "string"},
+            "sfx": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "captions": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "mode": {"enum": ["none", "burn", "events", "word_events"]},
+            "source": {"type": "string"}
+          }
+        },
+        "notes": {"type": "string"}
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "in": {"enum": ["hard_cut", "fade", "dissolve", "match_cut", "wipe"]},
+        "out": {"enum": ["hard_cut", "fade", "dissolve", "match_cut", "wipe"]}
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "movement": {"enum": ["static", "pan", "push_in", "pull_out", "orbit", "handheld"]},
+        "motive": {"type": ["string", "null"]}
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "minLength": 1},
+        "target": {"type": ["string", "null"]},
+        "at": {"type": "number", "minimum": 0, "maximum": 1},
+        "note": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

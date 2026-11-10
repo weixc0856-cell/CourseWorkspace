@@ -9,13 +9,50 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 const argv = process.argv.slice(2);
 const dir = path.resolve(argv[0] || '.');
 const opt = (k, d) => { const i = argv.indexOf('--' + k); return i < 0 ? d : (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true); };
 const page_ = opt('page', 'index.html'), fps = +opt('fps', 30), [W, H] = String(opt('size', '1920x1080')).split('x').map(Number);
 const out = path.resolve(dir, opt('out', 'out/video.mp4')), sel = opt('selector', null), jpeg = !!opt('jpeg', false);
+
+// Long shots can be captured in deterministic chunks.  Each chunk is a plain
+// invocation of this script with --start/--frames; the parts are concatenated.
+const durArg = +opt('dur', 0);
+const chunkSeconds = +opt('chunk-seconds', 0);
+if (chunkSeconds > 0) {
+  if (!durArg) throw new Error('--chunk-seconds requires --dur');
+  const total = Math.round(durArg * fps);
+  const chunkFrames = Math.max(1, Math.round(chunkSeconds * fps));
+  const base = path.basename(out, path.extname(out));
+  const parts = [];
+  for (let start = 0; start < total; start += chunkFrames) {
+    const frames = Math.min(chunkFrames, total - start);
+    const part = path.join(path.dirname(out), `${base}.part${String(parts.length).padStart(3, '0')}.mp4`);
+    const args = [process.argv[1], dir, '--fps', String(fps), '--size', `${W}x${H}`,
+      '--out', part, '--start', String(start), '--frames', String(frames)];
+    if (jpeg) args.push('--jpeg');
+    if (argv.includes('--gpu')) args.push('--gpu');
+    const res = spawnSync(process.execPath, args, { stdio: 'inherit' });
+    if (res.status !== 0) throw new Error(`chunk ${parts.length} failed (exit ${res.status})`);
+    parts.push(part);
+  }
+  const list = path.join(path.dirname(out), `${base}.concat.txt`);
+  fs.writeFileSync(list, parts.map(p => "file '" + p.split(String.fromCharCode(92)).join('/') + "'").join(String.fromCharCode(10)) + String.fromCharCode(10));
+  let res = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat',
+    '-safe', '0', '-i', list, '-c', 'copy', out], { stdio: 'inherit' });
+  if (res.status !== 0) {
+    res = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat',
+      '-safe', '0', '-i', list, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18',
+      '-preset', 'medium', out], { stdio: 'inherit' });
+  }
+  if (res.status !== 0) throw new Error(`chunk concat failed (exit ${res.status})`);
+  for (const part of parts) fs.rmSync(part, { force: true });
+  fs.rmSync(list, { force: true });
+  console.log(`wrote ${out} (${parts.length} chunks)`);
+  process.exit(0);
+}
 
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml',

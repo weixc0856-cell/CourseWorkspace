@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "primer-epidemic",
+  "title": "Simulating an epidemic (Primer)",
+  "url": "https://www.youtube.com/watch?v=gxAaO2rsdIs",
+  "duration_s": 1100,
+  "sample_interval_s": 5,
+  "grammars": ["simulation", "data_viz"],
+  "metrics": {
+    "shot_seconds_min": 8.0,
+    "shot_seconds_max": 30.0,
+    "beats_per_10s_min": 1.0,
+    "cut_rate_per_10s_min": 0.2,
+    "camera_required": true
+  },
+  "visual": {
+    "elements": ["agent population", "contact rules", "state colours", "statistics panel"],
+    "density": "low cut rate; long observation of one running system"
+  },
+  "acceptance": [
+    "counts and curves come from the simulation state",
+    "rules are stated before conclusions",
+    "no decorative particles unrelated to the model"
+  ]
+}

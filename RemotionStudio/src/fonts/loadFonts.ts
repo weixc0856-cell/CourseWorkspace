@@ -24,3 +24,21 @@ loadFont({
   format: 'woff2',
   unicodeRange: LATIN_UNICODE_RANGE,
 });
+
+// 600/700 are Latin-only subsets. Chinese text stays at 400 so a missing CJK
+// bold face can never trigger a synthetic bold in production.
+loadFont({
+  family: SANS_FAMILY,
+  url: staticFile('fonts/noto-sans-sc-latin-600-normal.woff2'),
+  weight: '600',
+  format: 'woff2',
+  unicodeRange: LATIN_UNICODE_RANGE,
+});
+
+loadFont({
+  family: SANS_FAMILY,
+  url: staticFile('fonts/noto-sans-sc-latin-700-normal.woff2'),
+  weight: '700',
+  format: 'woff2',
+  unicodeRange: LATIN_UNICODE_RANGE,
+});

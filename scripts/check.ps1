@@ -71,6 +71,14 @@ try {
         uv run --project ManimSandbox python -m unittest discover `
             -s ManimSandbox/tests -t ManimSandbox
     }
+    Invoke-Checked "unit tests: KnowledgeStudio" -Quiet {
+        uv run --project KnowledgeStudio python -m unittest discover `
+            -s KnowledgeStudio/tests -t KnowledgeStudio
+    }
+    Invoke-Checked "remotion typecheck" -Quiet {
+        & (Join-Path $root "RemotionStudio/node_modules/.bin/tsc.cmd") `
+            --noEmit -p (Join-Path $root "RemotionStudio/tsconfig.json")
+    }
 
     $lessons = @(
         @{Lesson = "01-shell-for-ai-era"; Dir = "lessons"},

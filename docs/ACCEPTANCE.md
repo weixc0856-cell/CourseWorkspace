@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.4（2026-11-08）
+- **版本**：v1.5（2026-11-09）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -10,20 +10,21 @@
 
 ```powershell
 .\scripts\check.ps1
-# 期望：五套单测 + 课程契约（本地有课程时 6 个，干净克隆时 4 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
+# 期望：六套单测（含 KnowledgeStudio）+ Remotion 类型检查 + 课程契约（本地有课程时 6 个，干净克隆时 4 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
-最近一次执行（2026-11-08）：**`check ok`，exit 0**。
+最近一次执行（2026-11-09）：**`check ok`，exit 0**。
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 298（293 通过 + 5 跳过；含 R1 + Code2Video POC/QC + Claude Code + scene/Formula/Direction + director/producer） | 293 通过，5 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 412（407 通过 + 5 跳过；含品牌、R1、Code2Video POC/QC、Claude Code、scene/Formula/Direction、director/producer、grammar/production/reference 用例） | 407 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
-| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 18 | 全部通过 |
+| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 24 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 18（17 通过 + 1 跳过） | 17 通过，1 跳过 |
+| KnowledgeStudio | `uv run --project KnowledgeStudio python -m unittest discover -s KnowledgeStudio/tests -t KnowledgeStudio` | 21 | 全部通过 |
 
-合计 **465** 个用例（459 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **550** 个用例（544 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -69,6 +70,7 @@ uv run --project CourseControl course-control e65-adapt --workspace . --manifest
 | V-20 | recording 时长与笔记累计一致 | `verify.py` | `lesson-smoke` 通过 |
 | V-21 | 所有声明路径合法 | `path_problem` | 单测覆盖绝对路径/反斜杠/`..` |
 | V-22 | 二维标注/图例在时间线内、内容有效、位置在 0–1 | `verify.py` | `resolve_annotations` 单测；真实 Remotion still 渲染 |
+| V-36 | 品牌交付成片 = 母版 + 片头片尾（时长/分辨率/fps/音轨/哈希/音频对齐） | `verify.py` / `branding.py` | `test_branding.py`；真实 292.367 s 母版拼接 307.367 s（`mode=copy`，TS 重封装）；`video_timing` 9221/9221 帧、clustered 1；`audio_alignment=pass`（delta 0.107 s）；`_brand_check` 实测 pass |
 
 失败注入证据：`tests/test_staging.py`（合成失败保留 staging、成功清理）；R5 历史故障注入见 `docs/archive/R5-验收矩阵.md`；本轮未重复构造全部故障样本（见 §6）。
 
@@ -288,6 +290,35 @@ Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重
 
 ---
 
+## 6.10 品牌层与教材知识库（2026-11-09）
+
+品牌层（`docs/品牌与片头片尾.md`）：
+
+| 检查 | 命令 | 实测 |
+| --- | --- | --- |
+| 计划 | `course-control brand-plan --lesson <slug>` | `formal_course` → intro 3.0 s（90 帧）+ outro 12 s（360 帧），合计 15.0 s；`news` 无 intro；`short` 只允许签名 |
+| 片段渲染 | `course-control brand-render --lesson <slug>` | `BrandCourseIntro` / `BrandCourseOutro` 真实渲染通过；缓存键命中时不重复渲染 |
+| 拼接 | `course-control brand-render --lesson <slug> --stitch` | 292.367 s 母版 + 15.0 s → 307.367 s，`mode=copy`（MPEG-TS 重封装 + 显式 duration）；`video_timing`：9221/9221 帧、最小间距 0.012 s、clustered 1、pass；`audio_alignment`：expected 3.0 / actual 3.107 / delta 0.107 / pass |
+| 类型检查 | `RemotionStudio/node_modules/.bin/tsc --noEmit` | 通过；已加入 `check.ps1` |
+| 视觉审查 | 抽帧：`build/brand-review/final-intro.png`、`final-outro.png`、`final-handoff.png`、`first12-final.png`、`outro-centered.png` | 修复记录：片头空白尾帧、片尾米色色块、标题换行压字、W 基线错位、元数据堆砌、MP4 直拼导致 PTS 塌缩（前 20 s 快闪）；最终为全英文、3.0 s 硬切、CTA-only 片尾、TS 重封装线性拼接 |
+| 片尾主轴 | `npx remotion still src/index.ts BrandCourseOutro build/x.png --frame=150` → `scripts/brand-centers.py <png>` | 5 个内容带 `center_x` 959.5/959.5/959.5/959.0/959.0，|Δ| ≤ 1 px；exit 0 |
+
+教材知识库（`docs/KnowledgeStudio.md`）：
+
+| 检查 | 命令 | 实测 |
+| --- | --- | --- |
+| PDF 导入 | `knowledge-studio import-source --pdf build/knowledge-smoke/pdf-smoke.pdf --source-id pdf-book --root build/knowledge-smoke/pdf-book` | 2 页，`extractor=pypdf==6.9.2` |
+| 文本教材 | `knowledge-studio import-text` → `toc` → `segment` → `index` | 12 页；目录 4 条，偏移 -4；3 个单元（2-5 / 6-8 / 9-12）；索引 12 页 3 单元 |
+| 英文检索 | `knowledge-studio retrieve --query "drag coefficient" --max-pages 4` | 4/12 页（33.3%），单元 U02 |
+| 中文检索 | `knowledge-studio retrieve --query "风洞 实验" --max-pages 3` | 3/12 页（25.0%），单元 U02/U03 |
+| 证据 | `knowledge-studio evidence --retrieval <json> --claims <json>` | 两条 claim 落盘，`verification=pending`；引用未检索页时 exit 1 |
+| 完整性 | `knowledge-studio verify --root build/knowledge-smoke/demo-book` | KS-01…KS-08 全 pass，exit 0 |
+| 提取质检 | `knowledge-studio extract-report --root build/knowledge-smoke/pdf-book` | 2/2 页，status pass；缺页/空页为 fatal，exit 1 |
+
+边界：品牌音效、新闻正片来源条、缩略图、4K 品牌渲染未实现；教材 OCR、表格/公式语义、语义检索未实现，均按 `blocked` 或文档边界记录，不写成通过。
+
+---
+
 ## 7. 复现顺序建议
 
 1. `.\scripts\check.ps1`
@@ -323,3 +354,18 @@ R1 真实产物：
 - `CodeVideoStudio/backends/hyperframes/hf-poc/out/hf-poc.mp4`（10s / 300 帧 / check 0 error 0 warning / 27.1s）
 - `build/videozero-poc/output/attention-flow.mp4`（Motion Canvas image sequence → ffmpeg，1920×1080 / 30fps / 3007 帧 / 100.2s）
 - `build/01-transformer-demo/narration/audition/s001-p1.wav`、`s001-p2.wav`（VoxCPM2 真实合成）
+
+## 6.11 多视觉语法生产（2026-11-10）
+
+| 检查 | 命令 | 期望 |
+| --- | --- | --- |
+| 语法注册表 | `course-control grammar-list` | 7 个 grammar，含 long_take / kinetic_edit / simulation |
+| 生产契约 | `course-control production-validate --plan <yaml>` | `verdict: pass`；未知 grammar / 能力缺口 blocked |
+| 镜头驱动校验 | `course-control validate --lesson <slug> --lesson-dir <dir>`（`compose.mode=shots`） | 不要求 slides/notes 页数对齐 |
+| 镜头驱动构建 | `course-control build --lesson <slug> --lesson-dir <dir>` | validate/render/collect/compose/verify 全 pass |
+| 分层质量 | `course-control quality-gate --lesson <slug>` | hard / grammar / metrics / human 四段；不输出 85 分线 |
+| 指标工具 | `course-control animation-score --lesson <slug> --profile kinetic_edit` | `release_gate: metric_only`，退出码 0 |
+| 参考对比 | `course-control reference-compare --lesson <slug> --reference 3b1b-attention` | 六维报告；三维修为 human_review |
+| 分块捕获 | `capture.mjs <dir> --dur 12 --chunk-seconds 4` | 帧数一致；PSNR vs 单次捕获 > 50 dB |
+
+本地证据（不入库）：`build/shots-demo/`（30 s shots 模式成片 + 逐词字幕抽帧）、`build/architecture-samples/`（四支语法样片 + 分块捕获对比）。

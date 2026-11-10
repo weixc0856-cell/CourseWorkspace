@@ -20,6 +20,8 @@ import {
   TimelineCue,
   TimelineSpec,
   TimelineVideo,
+  Transition,
+  TransitionKind,
 } from '../types';
 import {stagingPath} from '../utils/timing';
 
@@ -37,20 +39,50 @@ const timelineAssetPath = (lesson: string, assetPath: string): string => {
   return stagingPath(lesson, relative);
 };
 
-const Fade: React.FC<{durationInFrames: number; children: React.ReactNode}> = ({
-  durationInFrames,
-  children,
-}) => {
+const transitionOf = (
+  shot: TimelineVideo,
+  fallback: TransitionKind,
+): Transition => {
+  const raw = shot.metadata?.legacy_transition as Partial<Transition> | undefined;
+  return {in: raw?.in ?? fallback, out: raw?.out ?? fallback};
+};
+
+const TransitionWrap: React.FC<{
+  durationInFrames: number;
+  transition: Transition;
+  children: React.ReactNode;
+}> = ({durationInFrames, transition, children}) => {
   const frame = useCurrentFrame();
-  if (durationInFrames < 4) return <AbsoluteFill>{children}</AbsoluteFill>;
-  const fade = Math.min(9, Math.max(1, Math.floor(durationInFrames / 2)));
+  if (transition.in === 'hard_cut' && transition.out === 'hard_cut') {
+    return <AbsoluteFill>{children}</AbsoluteFill>;
+  }
+  const fade = Math.min(12, Math.max(1, Math.floor(durationInFrames / 3)));
+  const fadeIn = transition.in === 'hard_cut' ? 0 : fade;
+  const fadeOut = transition.out === 'hard_cut' ? 0 : fade;
   const opacity = interpolate(
     frame,
-    [0, fade, durationInFrames - fade, durationInFrames],
-    [0, 1, 1, 0],
+    [0, Math.max(1, fadeIn), Math.max(1, durationInFrames - fadeOut), durationInFrames],
+    [fadeIn ? 0 : 1, 1, 1, fadeOut ? 0 : 1],
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
   );
-  return <AbsoluteFill style={{opacity}}>{children}</AbsoluteFill>;
+  const wipe =
+    transition.in === 'wipe'
+      ? interpolate(frame, [0, Math.max(1, fadeIn)], [0, 100], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        })
+      : 100;
+  return (
+    <AbsoluteFill
+      style={{
+        opacity,
+        clipPath:
+          transition.in === 'wipe' ? `inset(0 ${100 - wipe}% 0 0)` : undefined,
+      }}
+    >
+      {children}
+    </AbsoluteFill>
+  );
 };
 
 const AssetFrame: React.FC<{
@@ -83,7 +115,12 @@ const BaseVideo: React.FC<{lesson: string; shot: TimelineVideo}> = ({
     durationInFrames={shot.duration_frames}
     name={`${shot.shot_id}:base`}
   >
-    <AssetFrame lesson={lesson} shot={shot} />
+    <TransitionWrap
+      durationInFrames={shot.duration_frames}
+      transition={transitionOf(shot, 'hard_cut')}
+    >
+      <AssetFrame lesson={lesson} shot={shot} />
+    </TransitionWrap>
   </Sequence>
 );
 
@@ -143,9 +180,12 @@ const OverlayVideo: React.FC<{lesson: string; shot: TimelineVideo}> = ({
     durationInFrames={shot.duration_frames}
     name={`${shot.shot_id}:overlay`}
   >
-    <Fade durationInFrames={shot.duration_frames}>
+    <TransitionWrap
+      durationInFrames={shot.duration_frames}
+      transition={transitionOf(shot, 'fade')}
+    >
       <OverlayContent lesson={lesson} shot={shot} />
-    </Fade>
+    </TransitionWrap>
   </Sequence>
 );
 
@@ -165,6 +205,67 @@ const TimelineAudioTrack: React.FC<{
   </Sequence>
 );
 
+type WordCaption = {start_frame: number; end_frame: number; text: string};
+type WordCaptionsData = {position: 'bottom' | 'low_center'; words: WordCaption[]};
+
+const WordCaptions: React.FC<{data: WordCaptionsData}> = ({data}) => {
+  const frame = useCurrentFrame();
+  const index = data.words.findIndex(
+    (word) => frame >= word.start_frame && frame < word.end_frame,
+  );
+  if (index < 0) return null;
+  const current = data.words[index];
+  const tail = data.words
+    .slice(index + 1, index + 9)
+    .map((word) => word.text)
+    .join('');
+  const lowCenter = data.position === 'low_center';
+  return (
+    <AbsoluteFill
+      style={{
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingBottom: lowCenter ? 300 : 90,
+        paddingLeft: 120,
+        paddingRight: 120,
+      }}
+    >
+      <div
+        style={{
+          background: 'rgba(246,241,231,0.82)',
+          borderRadius: 18,
+          padding: '18px 34px',
+          maxWidth: '90%',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+        }}
+      >
+        <span
+          style={{
+            color: COLORS.orange,
+            fontFamily: FONTS.sans,
+            fontSize: 64,
+            fontWeight: 700,
+          }}
+        >
+          {current.text}
+        </span>
+        <span
+          style={{
+            color: COLORS.text,
+            fontFamily: FONTS.sans,
+            fontSize: 54,
+            opacity: 0.45,
+          }}
+        >
+          {tail}
+        </span>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 const TimelineCaptions: React.FC<{cues: TimelineCue[]}> = ({cues}) => {
   const frame = useCurrentFrame();
   const cue = cues.find(
@@ -173,18 +274,19 @@ const TimelineCaptions: React.FC<{cues: TimelineCue[]}> = ({cues}) => {
   if (!cue) return null;
   return (
     <AbsoluteFill
-      style={{justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 64}}
+      style={{justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 120}}
     >
       <div
         style={{
-          background: 'rgba(255,255,255,0.92)',
+          background: 'rgba(246,241,231,0.94)',
           color: COLORS.text,
           fontFamily: FONTS.sans,
-          fontSize: 36,
-          lineHeight: 1.4,
-          padding: '18px 28px',
-          borderLeft: `4px solid ${COLORS.orange}`,
-          maxWidth: '80%',
+          fontSize: 44,
+          lineHeight: 1.35,
+          padding: '20px 34px',
+          borderLeft: `3px solid ${COLORS.orange}`,
+          borderRadius: 8,
+          maxWidth: '84%',
           textAlign: 'center',
           whiteSpace: 'pre-wrap',
         }}
@@ -203,6 +305,7 @@ export const CourseTimeline: React.FC<TimelineSpec> = (props) => {
     props.metadata?.annotations ??
     null) as Annotation[] | null);
   const sceneOverlay = props.metadata?.overlay as AgingHudOverlay | undefined;
+  const wordCaptions = props.metadata?.word_captions as WordCaptionsData | undefined;
   const showCaptions = props.captions !== false;
 
   return (
@@ -217,7 +320,9 @@ export const CourseTimeline: React.FC<TimelineSpec> = (props) => {
       {sceneOverlay?.kind === 'aging_hud' ? (
         <AgingHud overlay={sceneOverlay} />
       ) : null}
-      {showCaptions && props.subtitles?.length ? (
+      {showCaptions && wordCaptions ? (
+        <WordCaptions data={wordCaptions} />
+      ) : showCaptions && props.subtitles?.length ? (
         <TimelineCaptions cues={props.subtitles} />
       ) : null}
       {(props.audio ?? []).map((track) => (

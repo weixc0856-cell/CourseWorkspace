@@ -10,6 +10,23 @@
 - [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射
 
+## 1.0 多视觉语法生产架构（2026-11-10）
+
+- [architecture/多视觉语法生产系统-审计.md](architecture/多视觉语法生产系统-审计.md)：现有契约、门禁、评分器的耦合与影响面（P0）
+- [architecture/多视觉语法生产系统-设计.md](architecture/多视觉语法生产系统-设计.md)：四层架构、三份契约、Renderer Adapter、质量重构、迁移与风险
+- [architecture/多视觉语法生产系统-样片验证.md](architecture/多视觉语法生产系统-样片验证.md)：四支真实渲染样片与机器结果
+- [architecture/实施记录-P1-P4.md](architecture/实施记录-P1-P4.md)：生产契约、语法档、质量分层、转场/逐词/分块的落地与未完成项
+- [architecture/references/](architecture/references/)：参考库（Yari / 3B1B / Primer）
+- [architecture/golden/golden.json](architecture/golden/golden.json)：各语法的 Golden Sample 与渲染哈希
+- [architecture/样片-06-attention-sample.md](architecture/样片-06-attention-sample.md)：真实中文 62 秒课程样片、ASR/逐词字幕、参考对照与 180 s 捕获
+- [contracts/](contracts/)：Production Contract / Visual Grammar / Quality Profile 的 JSON Schema 与 grammar 注册表
+
+## 1.0.1 垂直领域（知识系列，2026-11-10）
+
+- [verticals/知识系列课程生产总纲.md](verticals/知识系列课程生产总纲.md)：把一个领域接进现有系统的通用规范（来源分层、选题准入、语法映射、资产准入、许可、接入清单）
+- [verticals/README.md](verticals/README.md)：领域方案索引与状态
+- [verticals/economics/经济学系列-第一季生产方案.md](verticals/economics/经济学系列-第一季生产方案.md)：首个实例（v0.1 草案，未执行）
+
 ## 1.1 许可与贡献
 
 - [LICENSE](../LICENSE)：AGPL-3.0-or-later
@@ -26,6 +43,8 @@
 - 内容与课程：[课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)、[课程生产交付物规范.md](课程生产交付物规范.md)、[课程交付清单模板.md](课程交付清单模板.md)
 - 导演/制片：[导演层.md](导演层.md)、[制片层.md](制片层.md)、[动画渲染适配器.md](动画渲染适配器.md)
 - 版式/配色/运镜：[版式系统.md](版式系统.md)、[配色规范.md](配色规范.md)、[运镜与剪辑.md](运镜与剪辑.md)、[动画视觉导演规范.md](动画视觉导演规范.md)
+- 品牌：[品牌与片头片尾.md](品牌与片头片尾.md)：WAYNE 标识、三种内容形态的片头片尾、流水线位置与 V-33
+- 教材知识库：[KnowledgeStudio.md](KnowledgeStudio.md)：PDF 拆页、目录校准、提取质检、按页检索、claim 引用与 QA
 - 公式与图形：[公式排版规范.md](公式排版规范.md)、[科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)
 - 三维：[Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)、[AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)

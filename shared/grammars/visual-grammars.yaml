@@ -1,0 +1,103 @@
+schema_version: 1
+# Visual grammar registry (design baseline for Phase 1).
+# Each shot names one grammar; a film may mix grammars freely.
+grammars:
+  long_take:
+    label: 长镜头连续演化
+    purpose: [explain, demonstrate, compare]
+    shot_seconds: {min: 5.0, max: 16.0}
+    constraints:
+      first_action_by: 0.35
+      max_action_gap_s: 4.0
+      long_lived_ratio_min: 0.5
+      camera_motive_required: true
+      min_actions: 2
+      freeze_counts_against: false
+      min_actions_per_10s: 2.5
+    capabilities: [2d_vector, transform, camera_move, deterministic]
+
+  kinetic_edit:
+    label: 短切动效
+    purpose: [orient, explain, emote]
+    shot_seconds: {min: 1.5, max: 8.0}
+    constraints:
+      first_action_by: 0.5
+      max_action_gap_s: 8.0
+      long_lived_ratio_min: 0.0
+      camera_motive_required: false
+      min_actions: 1
+      freeze_counts_against: false
+      max_cut_rate_per_10s: 4.0
+      min_actions_per_10s: 6.0
+    capabilities: [2d_vector, kinetic_type, hard_cut, deterministic]
+
+  montage:
+    label: 蒙太奇
+    purpose: [narrate, emote, summarize]
+    shot_seconds: {min: 1.0, max: 6.0}
+    constraints:
+      first_action_by: 0.6
+      max_action_gap_s: 6.0
+      long_lived_ratio_min: 0.0
+      camera_motive_required: false
+      min_actions: 1
+      freeze_counts_against: false
+      min_actions_per_10s: 5.0
+    capabilities: [2d_vector, kinetic_type, hard_cut, dissolve, deterministic]
+
+  geometric:
+    label: 几何/空间关系
+    purpose: [explain, demonstrate]
+    shot_seconds: {min: 4.0, max: 16.0}
+    constraints:
+      first_action_by: 0.4
+      max_action_gap_s: 4.0
+      long_lived_ratio_min: 0.6
+      camera_motive_required: true
+      min_actions: 2
+      freeze_counts_against: false
+      min_actions_per_10s: 3.0
+    capabilities: [2d_vector, 3d_scene, transform, camera_move, deterministic]
+
+  simulation:
+    label: 群体/粒子模拟
+    purpose: [simulate, demonstrate]
+    shot_seconds: {min: 6.0, max: 30.0}
+    constraints:
+      first_action_by: 0.2
+      max_action_gap_s: 10.0
+      long_lived_ratio_min: 0.0
+      camera_motive_required: false
+      min_actions: 1
+      freeze_counts_against: false
+      min_actions_per_10s: 1.0
+    capabilities: [population, particles, state_change, deterministic]
+
+  kinetic_type:
+    label: 动态文字/逐词
+    purpose: [explain, orient, emote, summarize]
+    shot_seconds: {min: 1.5, max: 8.0}
+    constraints:
+      first_action_by: 0.5
+      max_action_gap_s: 6.0
+      long_lived_ratio_min: 0.0
+      camera_motive_required: false
+      min_actions: 1
+      freeze_counts_against: false
+      max_cut_rate_per_10s: 4.0
+      min_actions_per_10s: 5.0
+    capabilities: [kinetic_type, word_events, 2d_vector, deterministic]
+
+  data_viz:
+    label: 数据可视化
+    purpose: [explain, compare, simulate]
+    shot_seconds: {min: 4.0, max: 15.0}
+    constraints:
+      first_action_by: 0.3
+      max_action_gap_s: 5.0
+      long_lived_ratio_min: 0.4
+      camera_motive_required: false
+      min_actions: 2
+      freeze_counts_against: false
+      min_actions_per_10s: 2.0
+    capabilities: [data_viz, 2d_vector, deterministic]

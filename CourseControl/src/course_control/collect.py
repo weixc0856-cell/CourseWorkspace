@@ -222,8 +222,203 @@ def _write_page_plan(
     return target
 
 
+def _word_captions(paths: LessonPaths, outputs: list[Path]) -> tuple[str, int]:
+    source_rel = paths.lesson.subtitles.word_source or "quality/asr-alignment.json"
+    source = paths.build_path(source_rel)
+    if not source.is_file():
+        raise ContractError(
+            f"word captions require ASR alignment: {source_rel} "
+            "(run `course-control asr-align`)"
+        )
+    data = json.loads(source.read_text(encoding="utf-8"))
+    raw = data.get("words") or []
+    words = [
+        {
+            "start_ms": int(item["start_ms"]),
+            "end_ms": int(item["end_ms"]),
+            "text": str(item.get("text") or "").strip(),
+        }
+        for item in raw
+        if item.get("text") and int(item.get("end_ms", 0)) > int(item.get("start_ms", 0))
+    ]
+    if not words:
+        raise ContractError(f"ASR alignment has no usable words: {source_rel}")
+    target = paths.build_root / "subtitles.words.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 1,
+        "lesson": paths.slug,
+        "language": data.get("language"),
+        "words": words,
+    }
+    target.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    outputs.append(target)
+    return "subtitles.words.json", len(words)
+
+
+def _prepare_subtitles(paths: LessonPaths, outputs: list[Path]) -> dict | None:
+    if not paths.lesson.subtitles.enabled:
+        return None
+    if paths.lesson.subtitles.mode == "word":
+        if paths.lesson.subtitles.render == "burn_in":
+            raise ContractError("word captions require subtitles.render=remotion")
+        words_path, word_count = _word_captions(paths, outputs)
+        subtitles: dict = {
+            "mode": "word",
+            "position": paths.lesson.subtitles.position,
+            "words": words_path,
+            "words_count": word_count,
+        }
+        srt = paths.subtitles_path()
+        if srt is not None and srt.is_file():
+            target = paths.build_root / "subtitles.srt"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(srt, target)
+            outputs.append(target)
+            subtitles.update({"path": "subtitles.srt", "cues": count_srt_cues(target)})
+        return subtitles
+    subtitle_path = paths.subtitles_path()
+    if subtitle_path is None or not subtitle_path.is_file():
+        raise ContractError(f"subtitles enabled but file not found: {subtitle_path}")
+    target = paths.build_root / "subtitles.srt"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(subtitle_path, target)
+    outputs.append(target)
+    subtitles = {"path": "subtitles.srt", "cues": count_srt_cues(target)}
+    if paths.lesson.subtitles.render == "burn_in":
+        from .subtitles import BilingualDraft, write_ass
+
+        draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
+        if not draft_path.is_file():
+            raise ContractError(
+                "subtitles.render=burn_in requires subtitles/bilingual.draft.json"
+            )
+        draft = BilingualDraft.model_validate(load_json(draft_path))
+        ass_path = paths.build_root / "subtitles.ass"
+        write_ass(
+            [cue.model_dump(mode="json") for cue in draft.cues],
+            ass_path,
+            paths.lesson.outputs.resolution[0],
+            paths.lesson.outputs.resolution[1],
+            paths.lesson.subtitles.bottom_margin,
+            paths.lesson.subtitles.text_color,
+            paths.lesson.subtitles.outline_color,
+            paths.lesson.subtitles.outline_width,
+        )
+        outputs.append(ass_path)
+        subtitles.update(
+            {
+                "ass": "subtitles.ass",
+                "render": "burn_in",
+                "languages": draft.languages,
+            }
+        )
+    return subtitles
+
+
+def _collect_shots(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
+    """Shot-driven collection: the production contract is the only clock."""
+    from .overlays import build_overlay
+    from .v1_timeline import write_timeline_contract
+
+    plan = paths.production
+    if plan is None:
+        raise ContractError("shots mode requires a production contract")
+    warnings: list[str] = []
+    outputs: list[Path] = []
+    fps = paths.lesson.outputs.fps
+    resolution = paths.lesson.outputs.resolution
+    specs = {spec.id: spec for spec in paths.storyboard.shots}
+    shots: list[Shot] = []
+    cursor = 0.0
+    for shot in plan.shots:
+        spec = specs[shot.id]
+        source = _animation_source(paths, spec)
+        if not source.is_file():
+            raise ContractError(f"{shot.id}: rendered source not found: {source}")
+        info = probe_media(source)
+        if info.duration is None:
+            raise ContractError(f"{shot.id}: cannot read duration: {source}")
+        if info.duration + 0.05 < shot.duration_s:
+            raise ContractError(
+                f"{shot.id}: rendered {info.duration:.3f}s is shorter than the "
+                f"contract {shot.duration_s:.3f}s"
+            )
+        if abs(info.duration - shot.duration_s) > max(2.0, shot.duration_s * 0.2):
+            warnings.append(
+                f"{shot.id}: rendered {info.duration:.3f}s differs from contract "
+                f"{shot.duration_s:.3f}s (timeline keeps the contract)"
+            )
+        shots.append(
+            Shot(
+                id=shot.id,
+                kind="animation",
+                engine=shot.renderer,
+                source=_relative_to_build(paths, source),
+                start_s=round(cursor, 3),
+                duration_s=shot.duration_s,
+                timeline_role="base",
+                presentation=None,
+                transition=shot.transition,
+            )
+        )
+        cursor += shot.duration_s
+    total_duration = round(cursor, 3)
+
+    narration = None
+    if paths.lesson.narration.enabled:
+        if not paths.lesson.narration.source:
+            raise ContractError("narration.enabled=true but narration.source is null")
+        narration_path = paths.narration_path(paths.lesson.narration.source)
+        if not narration_path.is_file():
+            raise ContractError(f"narration not found: {narration_path}")
+        duration = probe_audio(narration_path)
+        narration = {
+            "path": _relative_to_build(paths, narration_path),
+            "duration_s": round(duration, 3),
+        }
+
+    subtitles = _prepare_subtitles(paths, outputs)
+
+    shots_file = ShotsFile(
+        lesson=paths.slug,
+        generated_at=datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        timeline=Timeline(
+            fps=fps,
+            resolution=resolution,
+            total_duration_s=total_duration,
+        ),
+        shots=shots,
+        annotations=[],
+        narration=narration,
+        subtitles=subtitles,
+    )
+    output_path = paths.build_root / "shots.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(shots_file.model_dump(mode="json", by_alias=True), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    outputs.append(output_path)
+    v1_path, _timeline = write_timeline_contract(shots_file, paths)
+    try:
+        overlay = build_overlay(paths)
+    except Exception as exc:  # noqa: BLE001 - an overlay must never fail a build
+        overlay = None
+        warnings.append(f"overlay skipped: {exc}")
+    if overlay is not None:
+        _timeline.metadata = {**(_timeline.metadata or {}), "overlay": overlay}
+        v1_path.write_text(_timeline.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    outputs.append(v1_path)
+    return shots_file, warnings, outputs
+
+
 def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
     notes_path = paths.content_path(paths.lesson.content.notes)
+    if paths.lesson.compose.mode == "shots":
+        return _collect_shots(paths)
     notes_text = notes_path.read_text(encoding="utf-8")
     budgets, page_starts, timing, page_plan_pages = _page_timing(paths, notes_text)
 
@@ -379,44 +574,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
             "duration_s": round(duration, 3),
         }
 
-    subtitles = None
-    if paths.lesson.subtitles.enabled:
-        subtitle_path = paths.subtitles_path()
-        if subtitle_path is None or not subtitle_path.is_file():
-            raise ContractError(f"subtitles enabled but file not found: {subtitle_path}")
-        target = paths.build_root / "subtitles.srt"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(subtitle_path, target)
-        outputs.append(target)
-        subtitles = {"path": "subtitles.srt", "cues": count_srt_cues(target)}
-        if paths.lesson.subtitles.render == "burn_in":
-            from .subtitles import BilingualDraft, write_ass
-
-            draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
-            if not draft_path.is_file():
-                raise ContractError(
-                    "subtitles.render=burn_in requires subtitles/bilingual.draft.json"
-                )
-            draft = BilingualDraft.model_validate(load_json(draft_path))
-            ass_path = paths.build_root / "subtitles.ass"
-            write_ass(
-                [cue.model_dump(mode="json") for cue in draft.cues],
-                ass_path,
-                resolution[0],
-                resolution[1],
-                paths.lesson.subtitles.bottom_margin,
-                paths.lesson.subtitles.text_color,
-                paths.lesson.subtitles.outline_color,
-                paths.lesson.subtitles.outline_width,
-            )
-            outputs.append(ass_path)
-            subtitles.update(
-                {
-                    "ass": "subtitles.ass",
-                    "render": "burn_in",
-                    "languages": draft.languages,
-                }
-            )
+    subtitles = _prepare_subtitles(paths, outputs)
 
     colormaps = None
     if any(spec.kind == "legend" for spec in paths.storyboard.annotations):
@@ -446,7 +604,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
     output_path = paths.build_root / "shots.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
-        json.dumps(shots_file.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
+        json.dumps(shots_file.model_dump(mode="json", by_alias=True), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     outputs.append(output_path)

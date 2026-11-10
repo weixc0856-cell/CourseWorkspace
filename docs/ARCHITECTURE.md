@@ -19,6 +19,7 @@ CourseWorkspace/
 ├── RemotionStudio/     合成层：截图采集、staging、Remotion 合成（Node）
 ├── ModelingStudio/     三维内部能力：图片 → Blender（Python）
 ├── ContentQA/          审查内部能力：Claude Code 默认 / API 可选（Python）
+├── KnowledgeStudio/    教材知识库：PDF 拆页、目录校准、按页检索与引用（Python）
 ├── shared/
 │   ├── ai_runtime/     AI 运行时：跨进程锁、服务生命周期、任务状态、上下文预算
 │   ├── scene_expr/     受限表达式：AST 白名单 + 解释器（控制层与 Blender 共用）
@@ -60,6 +61,7 @@ CourseWorkspace/
 | `RemotionStudio` | 截图、staging、合成、字幕/旁白渲染 | 不做时间线推导 |
 | `ModelingStudio` | 图片→分析→规划→脚本→Blender→验收 | 不写 `lessons/` 与课程 `build/` |
 | `ContentQA` | 审查候选意见与报告（默认 Claude Code） | 不改课程、不影响 verdict |
+| `KnowledgeStudio` | 教材拆页、单元、索引、按页检索与 claim 引用 | 不生成课程内容、不判断结论真伪、不改 `lessons/` |
 | `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 

@@ -287,9 +287,37 @@ def run_media_qc(
         )
     )
 
+    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.mode == "word":
+        word_source = paths.lesson.subtitles.word_source or "quality/asr-alignment.json"
+        word_path = paths.build_path(word_source)
+        if not word_path.is_file():
+            checks.append(
+                _check("media.subtitles", INCOMPLETE, f"word captions not found: {word_source}")
+            )
+        else:
+            words = json.loads(word_path.read_text(encoding="utf-8")).get("words") or []
+            duration_ms = int((info.duration or 0) * 1000)
+            overlaps = sum(
+                1 for previous, current in zip(words, words[1:])
+                if int(current["start_ms"]) < int(previous["end_ms"])
+            )
+            out_of_range = sum(1 for item in words if int(item["end_ms"]) > duration_ms + 500)
+            status = PASS if words and not overlaps and not out_of_range else WARN
+            checks.append(
+                _check(
+                    "media.subtitles",
+                    status,
+                    f"{len(words)} words; overlaps={overlaps}; out_of_range={out_of_range}",
+                    words=len(words),
+                    overlaps=overlaps,
+                    out_of_range=out_of_range,
+                )
+            )
     subtitle_rel = paths.lesson.content.subtitles
     subtitle_path = paths.subtitles_path() if paths.lesson.subtitles.enabled else None
-    if not paths.lesson.subtitles.enabled or not subtitle_rel or subtitle_path is None:
+    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.mode == "word":
+        pass
+    elif not paths.lesson.subtitles.enabled or not subtitle_rel or subtitle_path is None:
         checks.append(
             _check("media.subtitles", INCOMPLETE, "subtitles are disabled")
         )

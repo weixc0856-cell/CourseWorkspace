@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "identity": {
+    "name": "WAYNE",
+    "channel": "Wayne-CFD",
+    "tagline": "ENGINEERING & COMPUTATION",
+    "descriptor": "Physics · Simulation · Software · AI · Technology",
+    "thanks": "Thanks for watching.",
+    "cta": "Subscribe for more deep dives."
+  },
+  "canvas": {
+    "safe_margin_px": 96,
+    "end_screen": {
+      "note": "YouTube 互动元素在 Studio 里配置，最多 4 个，视频需 ≥ 25 s，只出现在最后 5–20 s。Remotion 只预留区域，不画可点击控件。",
+      "reserved_width_ratio": 0.36,
+      "reserved_min_seconds": 5,
+      "reserved_max_seconds": 20
+    }
+  },
+  "content_kinds": {
+    "formal_course": {
+      "label": "ENGINEERING COURSES",
+      "intro": "course_intro",
+      "outro": "course_outro"
+    },
+    "popular_science": {
+      "label": "ENGINEERING EXPLAINED",
+      "intro": "course_intro",
+      "outro": "course_outro"
+    },
+    "news": {
+      "label": "INDUSTRY BRIEFING",
+      "intro": null,
+      "outro": "news_outro"
+    }
+  },
+  "presets": {
+    "course_intro": {
+      "composition": "BrandCourseIntro",
+      "duration_s": 3.0,
+      "min_s": 2.5,
+      "max_s": 4.5,
+      "aspect": "landscape",
+      "kind": "intro"
+    },
+    "course_outro": {
+      "composition": "BrandCourseOutro",
+      "duration_s": 12.0,
+      "min_s": 8.0,
+      "max_s": 15.0,
+      "aspect": "landscape",
+      "kind": "outro"
+    },
+    "news_outro": {
+      "composition": "BrandNewsOutro",
+      "duration_s": 6.0,
+      "min_s": 5.0,
+      "max_s": 8.0,
+      "aspect": "landscape",
+      "kind": "outro"
+    },
+    "short_signature": {
+      "composition": "BrandShortSignature",
+      "duration_s": 1.0,
+      "min_s": 0.6,
+      "max_s": 1.5,
+      "aspect": "portrait",
+      "kind": "signature"
+    }
+  },
+  "copy_rules": {
+    "language": "en",
+    "rule": "品牌画面只用英文。分类编号、中文副题、课程元数据、下一课预告不进入片头片尾。",
+    "intro": ["brand lockup", "episode title (English)"],
+    "outro": ["brand lockup", "thanks", "cta"]
+  },
+  "rules": {
+    "news_intro_forbidden": "新闻类不播品牌动画，第一句口播即开场；栏目与日期由动态字段承担。",
+    "short_signature_only": "竖屏短片只允许 short_signature，不复用长视频片尾。",
+    "outro_quiet_tail_s": 1.0,
+    "intro_handoff": "片头末帧保持标题卡，硬切进入正片；不做淡出，不留空白帧。"
+  }
+}

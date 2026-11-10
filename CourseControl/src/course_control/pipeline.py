@@ -66,7 +66,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
     if not validation.ok:
         _mark_not_run(
             builder,
-            ["capture_slides", "render:motion_canvas", "render:manim", "render:blender", "render:code_video", "collect", "compose", "verify"],
+            ["capture_slides", "render:motion_canvas", "render:manim", "render:blender", "render:code_video", "collect", "compose", "brand", "verify"],
             "upstream_failed",
         )
         report = builder.finalize()
@@ -76,6 +76,8 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
         builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="recording_mode"))
     elif paths.lesson.compose.mode == "scene":
         builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="scene_mode"))
+    elif paths.lesson.compose.mode == "shots":
+        builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="shots_mode"))
     elif options.skip_compose:
         builder.add_stage(_stage("capture_slides", Status.SKIPPED, reason="skip_compose"))
     else:
@@ -84,7 +86,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
         if outcome.status == Status.FAIL:
             _mark_not_run(
                 builder,
-                ["render:motion_canvas", "render:manim", "render:blender", "render:code_video", "collect", "compose", "verify"],
+                ["render:motion_canvas", "render:manim", "render:blender", "render:code_video", "collect", "compose", "brand", "verify"],
                 "upstream_failed",
             )
             report = builder.finalize()
@@ -108,7 +110,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
         outcome = adapter(paths)
         builder.add_stage(outcome)
         if outcome.status == Status.FAIL:
-            _mark_not_run(builder, ["collect", "compose", "verify"], "upstream_failed")
+            _mark_not_run(builder, ["collect", "compose", "brand", "verify"], "upstream_failed")
             report = builder.finalize()
             return report, builder.write(report)
         if outcome.status == Status.SKIPPED:
@@ -149,6 +151,7 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
 
     if options.skip_compose:
         builder.add_stage(_stage("compose", Status.SKIPPED, reason="skip_compose"))
+        builder.add_stage(_stage("brand", Status.SKIPPED, reason="skip_compose"))
         builder.add_check("V-14", Status.NOT_RUN, detail="compose skipped")
         builder.add_stage(_stage("verify", Status.SKIPPED, reason="skip_compose"))
         report = builder.finalize()
@@ -168,6 +171,16 @@ def run_build(workspace: Path, lesson_dir: Path, options: BuildOptions) -> tuple
             builder.add_stage(_stage("verify", Status.NOT_RUN, reason="upstream_failed"))
             report = builder.finalize()
             return report, builder.write(report)
+
+    if paths.lesson.branding.enabled:
+        brand_outcome = adapters.brand.run(paths)
+        builder.add_stage(brand_outcome)
+        if brand_outcome.status == Status.FAIL:
+            builder.add_stage(_stage("verify", Status.NOT_RUN, reason="upstream_failed"))
+            report = builder.finalize()
+            return report, builder.write(report)
+    else:
+        builder.add_stage(_stage("brand", Status.NOT_APPLICABLE, reason="branding_disabled"))
 
     started = time.monotonic()
     checks = verify(paths, shots_file)

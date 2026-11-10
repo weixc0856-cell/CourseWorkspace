@@ -1,0 +1,41 @@
+# KnowledgeStudio
+
+教材与知识资产管理：把一本专业教材拆成**按页可引用**的知识单元，让一节课只读它需要的十几页。
+
+```powershell
+uv sync --project KnowledgeStudio
+
+# 1. 导入（PDF 或已提取文本）
+uv run --project KnowledgeStudio knowledge-studio import-source `
+    --pdf <book>.pdf --source-id hucho --root knowledge/hucho --title "Aerodynamics of Road Vehicles"
+uv run --project KnowledgeStudio knowledge-studio import-text `
+    --text book.txt --source-id hucho --root knowledge/hucho
+
+# 2. 目录 + 印刷页→PDF 页校准
+uv run --project KnowledgeStudio knowledge-studio toc --root knowledge/hucho
+
+# 3. 按章切单元 → 4. 建索引
+uv run --project KnowledgeStudio knowledge-studio segment --root knowledge/hucho
+uv run --project KnowledgeStudio knowledge-studio index --root knowledge/hucho
+
+# 5. 提取质检：缺页 / 空页 / 断词 / 替换字符（先跑，再建索引）
+uv run --project KnowledgeStudio knowledge-studio extract-report `
+    --root knowledge/hucho --min-chars 200 --allow-empty 12,13-15
+
+# 6. 按主题取页（默认最多 18 页），可直接写成 lesson 的 sources 片段
+uv run --project KnowledgeStudio knowledge-studio retrieve --root knowledge/hucho `
+    --query "drag mechanisms" --max-pages 18 --into-lesson lessons/02-car-aerodynamics
+
+# 7. claim → 页 的证据，8. 完整性检查
+uv run --project KnowledgeStudio knowledge-studio evidence --root knowledge/hucho `
+    --retrieval knowledge/hucho/retrieval/<id>.json --claims claims.json
+uv run --project KnowledgeStudio knowledge-studio verify --root knowledge/hucho
+```
+
+- `knowledge/` 只在本机：教材通常受版权保护，原件与拆页不进仓库。
+- 规则：只读检索到的页；引用到页并带页哈希；claim 的 `verification` 由人工确认，工具从不自动标 `verified`。
+- 检索是确定性的词法匹配（SQLite FTS5），不引入向量库；需要语义检索时作为补充，不替换页级事实。
+
+- `extract-report` 只读：fatal 必须为 0 才允许建索引；`--allow-empty` 是唯一允许空页的出口，必须逐页声明。
+
+完整规范：[docs/KnowledgeStudio.md](../docs/KnowledgeStudio.md)

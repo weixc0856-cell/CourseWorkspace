@@ -1,3 +1,12 @@
+export type TransitionKind =
+  | 'hard_cut'
+  | 'fade'
+  | 'dissolve'
+  | 'match_cut'
+  | 'wipe';
+
+export type Transition = {in: TransitionKind; out: TransitionKind};
+
 export type TimelineRole = 'base' | 'overlay';
 export type Presentation = 'cutaway' | 'picture_in_picture' | 'transparent_overlay';
 export type ShotKind = 'slide' | 'animation' | 'recording';

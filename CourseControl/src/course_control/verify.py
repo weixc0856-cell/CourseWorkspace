@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
+from .branding import DELIVERY_NAME, sha256_file
 from .contracts import CheckRecord, ShotsFile, Status
 from .duration import resolve, window_problem
 from .paths import LessonPaths, path_problem
@@ -21,6 +23,95 @@ def _check(check_id: str, ok: bool, expected: str, actual: str, detail: str | No
         expected=expected,
         actual=actual,
         detail=detail,
+    )
+
+
+def _brand_check(paths: LessonPaths, build_root: Path) -> CheckRecord:
+    """V-36: the stitched delivery master equals body + brand segments.
+
+    The check recomputes the expectation from `brand/plan.json` and the actual
+    master probe; it never trusts `final/brand.json` on its own.
+    """
+
+    if not paths.lesson.branding.enabled:
+        return CheckRecord(id="V-36", status=Status.NOT_APPLICABLE, detail="branding disabled")
+
+    delivery = build_root / "final" / DELIVERY_NAME
+    plan_file = build_root / "brand" / "plan.json"
+    record_file = build_root / "final" / "brand.json"
+    problems: list[str] = []
+    if not delivery.is_file():
+        problems.append(f"delivery missing: {delivery.name}")
+    if not plan_file.is_file():
+        problems.append("brand/plan.json missing")
+    if not record_file.is_file():
+        problems.append("final/brand.json missing")
+    if problems:
+        return _check("V-36", False, "delivery, plan and brand.json exist", "missing", "; ".join(problems))
+
+    try:
+        plan = json.loads(plan_file.read_text(encoding="utf-8"))
+        record = json.loads(record_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return _check("V-36", False, "readable brand plan and record", "unreadable", str(exc))
+
+    segments = plan.get("segments") or []
+    brand_s = plan.get("brand_duration_s")
+    master_name = plan.get("master")
+    master = build_root / "final" / str(master_name or "")
+    if not master_name or not master.is_file():
+        problems.append(f"master missing: {master_name}")
+    if brand_s is None or not segments:
+        problems.append("plan has no brand segments")
+    if problems:
+        return _check("V-36", False, "branded master and plan", "missing", "; ".join(problems))
+
+    try:
+        body_info = probe_media(master)
+        out_info = probe_media(delivery)
+    except Exception as exc:  # noqa: BLE001
+        return _check("V-36", False, "readable delivery", "probe failed", str(exc))
+
+    fps = float(plan.get("fps") or paths.lesson.outputs.fps)
+    tolerance = len(segments) / fps + 0.15
+    expected = (body_info.duration or 0.0) + float(brand_s)
+    if out_info.duration is None or abs(out_info.duration - expected) > tolerance:
+        problems.append(
+            f"duration {out_info.duration} != body+brand {expected:.3f}s"
+        )
+    if (out_info.width, out_info.height) != (body_info.width, body_info.height):
+        problems.append("resolution differs from the master")
+    if out_info.fps is None or body_info.fps is None or abs(out_info.fps - body_info.fps) > 0.01:
+        problems.append("fps differs from the master")
+    if out_info.has_audio != body_info.has_audio:
+        problems.append("audio stream presence differs from the master")
+    if record.get("mode") not in ("copy", "reencode"):
+        problems.append(f"unknown stitch mode {record.get('mode')!r}")
+    if record.get("master") != master_name:
+        problems.append("brand.json records a different master")
+    if record.get("sha256") and record["sha256"] != sha256_file(delivery):
+        problems.append("delivery hash differs from brand.json")
+    timing = record.get("video_timing") or {}
+    if timing.get("status") == "fail":
+        problems.append(
+            "video timestamps are collapsed "
+            f"({timing.get('clustered_intervals')} intervals below half a frame)"
+        )
+    alignment = record.get("audio_alignment") or {}
+    if alignment.get("status") == "fail":
+        problems.append(
+            "body audio is offset by "
+            f"{alignment.get('delta_s')}s (expected {alignment.get('expected_s')}s)"
+        )
+    if record.get("problems"):
+        problems.append("brand.json lists problems")
+
+    return _check(
+        "V-36",
+        not problems,
+        f"delivery = body {body_info.duration}s + brand {float(brand_s)}s ± {tolerance:.2f}s",
+        f"{out_info.duration}s via {record.get('mode')}" if out_info.duration is not None else "unknown",
+        "; ".join(problems) if problems else None,
     )
 
 
@@ -428,16 +519,28 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
 
     if paths.lesson.subtitles.enabled:
         subtitles = shots_file.subtitles or {}
-        subtitle_path = build_root / str(subtitles.get("path", ""))
-        cues = int(subtitles.get("cues", 0))
-        checks.append(
-            _check(
-                "V-16",
-                subtitle_path.is_file() and cues > 0,
-                "subtitle file exists and has cues",
-                f"file={subtitle_path.is_file()}, cues={cues}",
+        if str(subtitles.get("mode") or "cue") == "word":
+            words_path = build_root / str(subtitles.get("words", ""))
+            count = int(subtitles.get("words_count", 0))
+            checks.append(
+                _check(
+                    "V-16",
+                    words_path.is_file() and count > 0,
+                    "word caption file exists and has words",
+                    f"file={words_path.is_file()}, words={count}",
+                )
             )
-        )
+        else:
+            subtitle_path = build_root / str(subtitles.get("path", ""))
+            cues = int(subtitles.get("cues", 0))
+            checks.append(
+                _check(
+                    "V-16",
+                    subtitle_path.is_file() and cues > 0,
+                    "subtitle file exists and has cues",
+                    f"file={subtitle_path.is_file()}, cues={cues}",
+                )
+            )
     else:
         checks.append(
             CheckRecord(id="V-16", status=Status.NOT_APPLICABLE, detail="subtitles disabled")
@@ -495,4 +598,5 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
             CheckRecord(id="V-22", status=Status.NOT_APPLICABLE, detail="no annotations")
         )
 
+    checks.append(_brand_check(paths, build_root))
     return checks

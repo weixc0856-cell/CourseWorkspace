@@ -1,0 +1,24 @@
+schema_version: 1
+lesson: sample-long-take-geometry
+sequences:
+  - id: seq-01
+    title: 方向与角度
+    shots:
+      - id: long-take-001
+        duration_s: 8.8
+        purpose: explain
+        visual_type: geometric_transform
+        grammar: long_take
+        techniques: [transform, camera_push]
+        renderer: manim
+        source: docs/architecture/samples/long-take-geometry/scene.py
+        transition: {in: hard_cut, out: hard_cut}
+        camera: {movement: push_in, motive: "跟住角度开口，让投影关系留在画面内"}
+        objects: [query_vector, key_vector, projection, angle_arc]
+        actions:
+          - {type: create, target: query_vector, at: 0.10}
+          - {type: create, target: key_vector, at: 0.22}
+          - {type: connect, target: projection, at: 0.34}
+          - {type: transform, target: key_vector, at: 0.62}
+        audio: {}
+        captions: {mode: none}

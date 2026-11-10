@@ -1,1 +1,1 @@
-from . import blender, burn, code_video, manim, motion_canvas, remotion, slides  # noqa: F401
+from . import blender, brand, burn, code_video, manim, motion_canvas, remotion, slides  # noqa: F401
