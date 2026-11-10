@@ -31,9 +31,9 @@
 | 建课 | 在 `lessons/<slug>/` 写 4 个文件 + 素材 | 课程契约 |
 | 校验 | `course-control validate --lesson <slug>` | 问题列表 |
 | 构建 | `build-lesson.ps1 -Lesson <slug>` | `build/<slug>/` |
-| 看进度 | 终端输出 + `build/report.json` | stages/checks |
+| 看进度 | 终端输出 + `build/<slug>/final/build-report.json` | stages/checks |
 | 看失败 | `build-report.json.failures` + `build/<slug>/logs/*.log` | 日志 |
-| 人工导出 | Motion Canvas 编辑器 → 指定文件名 | `animation/<scene>.mp4` |
+| 动画导出 | `build` 调用 Motion Canvas 无头导出（`render-headless.mjs`，D-054） | `animation/<scene>.mp4` |
 | 看成片 | 打开 `build/<slug>/final/course-video.mp4` | 视频 |
 | 内容审查 | `content-qa review` → `review.md` | 报告 |
 | 本地建模 | `modeling-studio run/status` | `workspace/jobs/<job>/` |
@@ -64,7 +64,7 @@
 - 课程内容质量与事实正确性。
 - 本地模型的输出可靠性、幻觉、超时。
 - Blender 渲染质量与构图。
-- Motion Canvas 的人工导出（没有 CLI，界面也调不动）。
+- Motion Canvas 场景本身的创作；渲染已由无头导出接管。
 - 在线模型供应商/凭据的可用性。
 - 从零生成课程知识。
 

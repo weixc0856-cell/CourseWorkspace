@@ -67,7 +67,7 @@
 
 ```powershell
 # 角色
-& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --background --factory-startup `
+& "<BLENDER_EXE>" --background --factory-startup `
   --python CodeVideoStudio/shots/brand-intro/build_character.py -- CodeVideoStudio/shots/brand-intro
 
 # 场景 / 收尾动作

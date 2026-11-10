@@ -1,6 +1,6 @@
 # 验收矩阵与命令
 
-- **版本**：v1.5（2026-11-09）
+- **版本**：v1.6（2026-11-10）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
 
@@ -8,7 +8,7 @@
 
 ## 0. 2026-11-10 复核
 
-本轮重跑六套单测，实际为 **585 个用例（579 通过 + 6 跳过）**：CourseControl 438、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 21；`check.ps1` exit 0。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
+本轮重跑六套单测，实际为 **636 个用例（630 通过 + 6 跳过）**：CourseControl 489、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 21；`check.ps1` exit 0。新增的配置解析、检查点、resume、字幕 QC、裁决队列、vendor、镜头分类与证据分类测试都在这 489 之内。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
 
 ## 1. 一键回归
 
@@ -21,14 +21,14 @@
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 412（407 通过 + 5 跳过；含品牌、R1、Code2Video POC/QC、Claude Code、scene/Formula/Direction、director/producer、grammar/production/reference 用例） | 407 通过，5 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 489（484 通过 + 5 跳过） | 484 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
-| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 24 | 全部通过 |
+| ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 25 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 18（17 通过 + 1 跳过） | 17 通过，1 跳过 |
 | KnowledgeStudio | `uv run --project KnowledgeStudio python -m unittest discover -s KnowledgeStudio/tests -t KnowledgeStudio` | 21 | 全部通过 |
 
-合计 **550** 个用例（544 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **633** 个用例（627 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
@@ -75,6 +75,9 @@ uv run --project CourseControl course-control e65-adapt --workspace . --manifest
 | V-21 | 所有声明路径合法 | `path_problem` | 单测覆盖绝对路径/反斜杠/`..` |
 | V-22 | 二维标注/图例在时间线内、内容有效、位置在 0–1 | `verify.py` | `resolve_annotations` 单测；真实 Remotion still 渲染 |
 | V-36 | 品牌交付成片 = 母版 + 片头片尾（时长/分辨率/fps/音轨/哈希/音频对齐） | `verify.py` / `branding.py` | `test_branding.py`；真实 292.367 s 母版拼接 307.367 s（`mode=copy`，TS 重封装）；`video_timing` 9221/9221 帧、clustered 1；`audio_alignment=pass`（delta 0.107 s）；`_brand_check` 实测 pass |
+| V-42 | 配置解析：blocking 冲突阻断构建，快照写入 `logs/config-resolution.json` | `config_resolve.py` / `pipeline.py` | `test_config_resolve.py`；05/06/01/nvda 实跑无 blocking 冲突 |
+| V-43 | V1 时间线的 `legacy_*` 字段必须登记 | `legacy_registry.py` / `verify.py` | `test_legacy_registry.py`；未登记字段判 fail |
+| V-44 | 字幕 QC：时间、语言、行宽、行首标点、术语/数字断裂 | `subtitles_qc.py` / `verify.py` | `test_subtitles_qc.py`；06 PASS，05/01 WARN（行首标点、英文悬空介词） |
 
 失败注入证据：`tests/test_staging.py`（合成失败保留 staging、成功清理）；R5 历史故障注入见 `docs/archive/R5-验收矩阵.md`；本轮未重复构造全部故障样本（见 §6）。
 

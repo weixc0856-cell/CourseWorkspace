@@ -13,6 +13,7 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .assets import collect_referenced_assets, safe_bundle_name
 from .paths import LessonPaths, is_under
 from .utils import probe_media
 
@@ -159,6 +160,33 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         for source in sorted(logs.glob("*.log")):
             records.append(_record(root, _copy(root, source, f"logs/{source.name}"), False))
 
+    # External assets (BGM bed, voice reference) are part of reproducibility.
+    # Bundle them so the package does not depend on this machine's libraries.
+    external_assets: list[dict] = []
+    referenced_assets = collect_referenced_assets(paths.workspace, build_root)
+    for asset in referenced_assets:
+        if asset["origin"] not in {"external", "voice-ref"}:
+            # Configured roots are recorded but not copied: the mixed master
+            # already carries the audio, and the source stays in its library.
+            continue
+        source = Path(asset["path"])
+        if not source.is_file():
+            missing.append(f"external asset: {asset['asset_id']}")
+            continue
+        name = safe_bundle_name(asset)
+        target = _copy(root, source, f"assets/external/{name}")
+        bundled = {
+            "asset_id": asset["asset_id"],
+            "source_path": asset["path"],
+            "origin": asset["origin"],
+            "license_status": asset.get("license_status"),
+            "attribution": asset.get("attribution"),
+            "bundled_path": f"assets/external/{name}",
+            "sha256": _sha(target),
+            "bytes": target.stat().st_size,
+        }
+        external_assets.append(bundled)
+
     if missing:
         raise PackageError("missing required artifacts: " + ", ".join(sorted(set(missing))))
 
@@ -204,6 +232,8 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         "generated_at": _now(),
         "verdict": "pass",
         "files": records,
+        "external_assets": external_assets,
+        "referenced_assets": referenced_assets,
         "missing": [],
     }
     manifest_path = root / "manifest.json"
@@ -254,4 +284,12 @@ def verify_package(root: Path) -> list[str]:
             continue
         if item.get("sha256") and _sha(path) != item["sha256"]:
             problems.append(f"hash mismatch: {item.get('path')}")
+    for item in manifest.get("external_assets") or []:
+        relative = item.get("bundled_path")
+        path = root / str(relative or "")
+        if not relative or not path.is_file():
+            problems.append(f"missing bundled asset: {relative or item.get('asset_id')}")
+            continue
+        if item.get("sha256") and _sha(path) != item["sha256"]:
+            problems.append(f"hash mismatch: {relative}")
     return problems

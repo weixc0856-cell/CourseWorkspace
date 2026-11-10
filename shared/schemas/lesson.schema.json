@@ -320,6 +320,15 @@
           "default": false,
           "title": "Strict Layout",
           "type": "boolean"
+        },
+        "storyboard_source": {
+          "default": "storyboard",
+          "enum": [
+            "storyboard",
+            "director"
+          ],
+          "title": "Storyboard Source",
+          "type": "string"
         }
       },
       "title": "BuildOptions",
@@ -831,7 +840,8 @@
       "$ref": "#/$defs/BuildOptions",
       "default": {
         "allow_manual_animation_export": true,
-        "strict_layout": false
+        "strict_layout": false,
+        "storyboard_source": "storyboard"
       }
     },
     "motion": {

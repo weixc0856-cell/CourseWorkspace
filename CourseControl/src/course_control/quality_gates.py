@@ -138,15 +138,19 @@ def decide(
     *,
     incomplete: Iterable[dict] = (),
     grammar_warnings: Iterable[str] = (),
+    blocking_warnings: Iterable[str] = (),
+    human_review_items: Iterable[str] = (),
 ) -> dict:
     waived = {item.strip() for item in waivers if item and item.strip()}
     remaining = [issue for issue in grammar if not any(issue.startswith(w) for w in waived)]
     hard_fail = list(hard)
     incomplete_fail = list(incomplete)
     warnings = list(grammar_warnings)
+    blocking = list(blocking_warnings)
+    human = list(human_review_items)
     if hard_fail:
         verification = "fail"
-    elif incomplete_fail:
+    elif incomplete_fail or blocking:
         verification = "incomplete"
     else:
         verification = "pass"
@@ -155,12 +159,15 @@ def decide(
         "incomplete_failures": incomplete_fail,
         "grammar_failures": remaining,
         "grammar_warnings": warnings,
+        "blocking_warnings": blocking,
+        "human_review_items": human,
         "waived": sorted(waived),
         "verification_status": verification,
         "hard_ok": not hard_fail and not incomplete_fail,
         "grammar_ok": not remaining,
         "human_review_required": True,
-        "releasable": not hard_fail and not incomplete_fail and not remaining,
+        "needs_human_review": bool(human),
+        "releasable": not hard_fail and not incomplete_fail and not remaining and not blocking,
         "note": "automatic checks never approve a release; human sign-off is required",
     }
 
@@ -172,6 +179,8 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
     grammar = grammar_report(paths, registry, profile)
     quality = _read_json(paths.build_root / "quality" / "quality-report.json") or {}
     quality_warnings: list[str] = []
+    blocking_warnings: list[str] = []
+    human_review_items: list[str] = []
     if quality:
         for dimension in quality.get("dimensions") or []:
             status = str(dimension.get("status") or "").upper()
@@ -184,9 +193,14 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
                     }
                 )
             elif status == "WARN":
-                quality_warnings.append(
+                message = (
                     f"{dimension.get('id')} {dimension.get('name')}: {dimension.get('reason')}"
                 )
+                quality_warnings.append(message)
+                if dimension.get("warning_class") == "blocking":
+                    blocking_warnings.append(message)
+                else:
+                    human_review_items.append(message)
     else:
         incomplete.append(
             {
@@ -205,6 +219,8 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
         "grammar": grammar["errors"],
         "grammar_warnings": grammar["warnings"],
         "quality_warnings": quality_warnings,
+        "blocking_warnings": blocking_warnings,
+        "human_review_items": human_review_items,
         "metrics": metrics(paths, registry, profile),
         **decide(
             hard,
@@ -212,6 +228,8 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
             waivers,
             incomplete=incomplete,
             grammar_warnings=warnings,
+            blocking_warnings=blocking_warnings,
+            human_review_items=human_review_items,
         ),
     }
     target = paths.build_root / "quality" / "gate.json"

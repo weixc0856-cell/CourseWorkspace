@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..contracts import Status
 from ..paths import LessonPaths
+from ..timeouts import resolve_timeout
 from ..utils import probe_media, run_command, which_command
 from .base import StageOutcome
 
@@ -78,7 +79,7 @@ def burn_subtitles(paths: LessonPaths, *, encoder: str = "auto") -> StageOutcome
         result = run_command(
             _command(clean, output, ass, name),
             paths.workspace,
-            timeout=3600,
+            timeout=resolve_timeout(paths, "burn_subtitles"),
             log_path=logs / f"burn-{name}.log",
         )
         attempts.append(f"{name}: exit {result.exit_code}")

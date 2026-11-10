@@ -51,9 +51,23 @@ try {
         & (Join-Path $PSScriptRoot "check-paths.ps1")
     }
 
-    # Non-strict: historical evidence may be gone, but the report must show it.
+    # Missing evidence is allowed only when every path has a recorded
+    # disposition in docs/audit/evidence-decisions.yaml.
     Invoke-Checked "evidence paths" -Quiet {
         uv run --project CourseControl python scripts/check_evidence.py --workspace .
+    }
+
+    Invoke-Checked "vendor three.js" -Quiet {
+        uv run --project CourseControl course-control vendor-check --workspace .
+    }
+
+    Invoke-Checked "shot taxonomy" -Quiet {
+        uv run --project CourseControl course-control shot-taxonomy --workspace . 2>&1 | Out-Null
+    }
+
+    Invoke-Checked "blender task 01-transformer-demo" -Quiet {
+        uv run --project CourseControl course-control blender-task-validate `
+            --task BlenderStudio/tasks/01-transformer-demo/stack_explode.json --workspace . 2>&1 | Out-Null
     }
 
     Invoke-Checked "unit tests: CourseControl" -Quiet {

@@ -44,6 +44,45 @@ def _now() -> str:
 
 
 def _q1(paths: LessonPaths) -> dict:
+    from .review_decisions import summarize as summarize_decisions
+
+    decisions = summarize_decisions(paths.build_root)
+    if decisions["present"] and decisions["findings"]:
+        counts = decisions["counts"]
+        if decisions["unknown_decisions"]:
+            return {
+                "status": WARN,
+                "reason": "decisions.json contains an unknown decision value",
+                "evidence": ["build/<slug>/review/decisions.json"],
+                "counts": counts,
+                "needs_human_review": True,
+            }
+        if decisions["undecided"]:
+            return {
+                "status": WARN,
+                "reason": f"{len(decisions['undecided'])} finding(s) have no decision",
+                "evidence": ["build/<slug>/review/decisions.json"],
+                "counts": counts,
+                "needs_human_review": True,
+            }
+        if counts.get("accepted") or counts.get("deferred"):
+            return {
+                "status": WARN,
+                "reason": (
+                    f"adjudicated, but {counts.get('accepted', 0)} accepted and "
+                    f"{counts.get('deferred', 0)} deferred finding(s) remain open"
+                ),
+                "evidence": ["build/<slug>/review/decisions.json"],
+                "counts": counts,
+                "needs_human_review": True,
+            }
+        return {
+            "status": PASS,
+            "reason": "every finding is rejected or fixed by a named reviewer",
+            "evidence": ["build/<slug>/review/decisions.json"],
+            "counts": counts,
+            "needs_human_review": False,
+        }
     cross = _load(paths.build_root / "review" / "review_cross.json")
     if cross is not None:
         summary = cross.get("summary") or {}
@@ -235,15 +274,37 @@ def _q5(paths: LessonPaths) -> dict:
     }
 
 
+WARNING_CLASS = {
+    # A warning that a human must read; it is not an automatic release veto.
+    "Q1": "human_review",
+    "Q2": "human_review",
+    "Q3": "human_review",
+    # Skipped stages and missing approvals block a release.
+    "Q4": "blocking",
+    "Q5": "blocking",
+}
+
+
+def _classify(dimensions: list[dict]) -> list[dict]:
+    for item in dimensions:
+        if item["status"] == WARN:
+            item["warning_class"] = WARNING_CLASS.get(item["id"], "human_review")
+        else:
+            item["warning_class"] = None
+    return dimensions
+
+
 def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Path]:
     workspace = workspace.resolve()
-    dimensions = [
-        {"id": "Q1", "name": "内容可信度", "engine": "Content QA", **_q1(paths)},
-        {"id": "Q2", "name": "教学有效性", "engine": "Teaching QA", **_q2(paths)},
-        {"id": "Q3", "name": "视听体验", "engine": "Media QA", **_q3(paths)},
-        {"id": "Q4", "name": "工程完整性", "engine": "Build QA", **_q4(paths)},
-        {"id": "Q5", "name": "最终交付", "engine": "Release QA", **_q5(paths)},
-    ]
+    dimensions = _classify(
+        [
+            {"id": "Q1", "name": "内容可信度", "engine": "Content QA", **_q1(paths)},
+            {"id": "Q2", "name": "教学有效性", "engine": "Teaching QA", **_q2(paths)},
+            {"id": "Q3", "name": "视听体验", "engine": "Media QA", **_q3(paths)},
+            {"id": "Q4", "name": "工程完整性", "engine": "Build QA", **_q4(paths)},
+            {"id": "Q5", "name": "最终交付", "engine": "Release QA", **_q5(paths)},
+        ]
+    )
     statuses = {item["status"] for item in dimensions}
     build_pass = dimensions[3]["status"] in {PASS, WARN}
     verify_fail = (not build_pass) or BLOCKED in statuses
@@ -251,6 +312,14 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
     verify_pass = not verify_fail and not verify_incomplete
     verify_warn = verify_pass and WARN in statuses
     quality_verified = verify_pass and statuses == {PASS}
+    needs_human_review = any(
+        item.get("warning_class") == "human_review" for item in dimensions
+    )
+    blocking_warnings = [
+        item["id"]
+        for item in dimensions
+        if item.get("warning_class") == "blocking"
+    ]
     review_approval = _load(paths.build_root / "quality" / "review-approval.json")
     release_approval = _load(paths.build_root / "quality" / "release-approval.json")
     review_approved = bool(
@@ -280,6 +349,8 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
             # Legacy name kept for readers; it means "verified, warnings allowed".
             "QUALITY_PASS": verify_pass,
             "QUALITY_VERIFIED": quality_verified,
+            "NEEDS_HUMAN_REVIEW": needs_human_review,
+            "BLOCKED_WARNINGS": blocking_warnings,
             "REVIEW_APPROVED": review_approved,
             "RELEASE_APPROVED": release_approved,
         },
@@ -316,6 +387,8 @@ def _write_markdown(report: dict, path: Path) -> None:
         "",
         f"- BUILD_PASS: {report['states']['BUILD_PASS']}",
         f"- QUALITY_PASS: {report['states']['QUALITY_PASS']}",
+        f"- NEEDS_HUMAN_REVIEW: {report['states']['NEEDS_HUMAN_REVIEW']}",
+        f"- BLOCKED_WARNINGS: {report['states']['BLOCKED_WARNINGS']}",
         f"- RELEASE_APPROVED: {report['states']['RELEASE_APPROVED']}",
         "",
         "## 风险",
@@ -353,6 +426,8 @@ code{{background:#efece6;padding:.1rem .3rem;border-radius:4px}}
 <ul>
 <li>BUILD_PASS: {report['states']['BUILD_PASS']}</li>
 <li>QUALITY_PASS: {report['states']['QUALITY_PASS']}</li>
+<li>NEEDS_HUMAN_REVIEW: {report['states']['NEEDS_HUMAN_REVIEW']}</li>
+<li>BLOCKED_WARNINGS: {report['states']['BLOCKED_WARNINGS']}</li>
 <li>RELEASE_APPROVED: {report['states']['RELEASE_APPROVED']}</li>
 </ul>
 <h2>风险</h2><ul>{risks}</ul>

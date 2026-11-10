@@ -536,6 +536,41 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
             CheckRecord(id="V-31", status=Status.NOT_APPLICABLE, detail="subtitles disabled")
         )
 
+    if paths.lesson.subtitles.enabled:
+        from .subtitles_qc import check_srt
+
+        qc_path = (
+            build_root / "subtitles.srt"
+            if paths.lesson.subtitles.render == "burn_in"
+            else paths.subtitles_path()
+        )
+        if qc_path is not None and qc_path.is_file():
+            glossary = paths.lesson_dir / "authoring" / "glossary.yaml"
+            qc = check_srt(
+                qc_path,
+                bilingual=paths.lesson.subtitles.bilingual,
+                glossary_path=glossary,
+            )
+            detail = "ok" if qc["status"] == "PASS" else "; ".join(
+                (qc["errors"] or qc["warnings"])[:6]
+            )
+            checks.append(
+                _check(
+                    "V-44",
+                    qc["status"] != "FAIL",
+                    "subtitle QC: timing, language, line breaks, glossary",
+                    f"{qc['status']} ({qc['cues']} cues)" + ("" if qc["status"] == "PASS" else f": {detail}"),
+                )
+            )
+        else:
+            checks.append(
+                CheckRecord(id="V-44", status=Status.NOT_APPLICABLE, detail="no subtitle file")
+            )
+    else:
+        checks.append(
+            CheckRecord(id="V-44", status=Status.NOT_APPLICABLE, detail="subtitles disabled")
+        )
+
     if paths.lesson.narration.enabled:
         audio_ok = final_info.has_audio and abs(
             (final_info.audio_duration or 0.0) - (final_info.duration or 0.0)
@@ -632,6 +667,40 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
     else:
         checks.append(
             CheckRecord(id="V-22", status=Status.NOT_APPLICABLE, detail="no annotations")
+        )
+
+    timeline_path = build_root / "contracts" / "timeline.spec.json"
+    if timeline_path.is_file():
+        try:
+            timeline_payload = json.loads(timeline_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            checks.append(
+                _check(
+                    "V-43",
+                    False,
+                    "timeline.spec.json legacy fields are registered",
+                    f"unreadable: {exc}",
+                )
+            )
+        else:
+            from .legacy_registry import problems as legacy_problems
+
+            issues = legacy_problems(timeline_payload)
+            checks.append(
+                _check(
+                    "V-43",
+                    not issues,
+                    "timeline.spec.json legacy fields are registered with an exit plan",
+                    "ok" if not issues else "; ".join(issues[:6]),
+                )
+            )
+    else:
+        checks.append(
+            CheckRecord(
+                id="V-43",
+                status=Status.NOT_APPLICABLE,
+                detail="timeline.spec.json missing",
+            )
         )
 
     checks.append(_brand_check(paths, build_root))

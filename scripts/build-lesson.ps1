@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory = $true)][string]$Lesson,
     [string]$LessonDir = "lessons",
     [switch]$SkipRender,
-    [switch]$SkipCompose
+    [switch]$SkipCompose,
+    [switch]$Resume,
+    [string]$ResumeFrom = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,6 +20,8 @@ $args = @(
 )
 if ($SkipRender) { $args += "--skip-render" }
 if ($SkipCompose) { $args += "--skip-compose" }
+if ($Resume) { $args += "--resume" }
+if ($ResumeFrom) { $args += @("--resume-from", $ResumeFrom) }
 
 Push-Location $root
 try {

@@ -26,15 +26,23 @@ if (!lesson) {
   process.exit(2);
 }
 
-const buildRoot = path.join(workspaceRoot, 'build', lesson);
+const buildRoot = args['build-root']
+  ? path.resolve(args['build-root'])
+  : path.join(workspaceRoot, 'build', lesson);
 const shotsPath = timeline ? null : path.resolve(args.shots ?? path.join(buildRoot, 'shots.json'));
 const stagingDir = path.join(projectRoot, 'public', 'staging', lesson);
 
 let sources;
 if (timeline) {
-  const prefix = `build/${lesson}/`;
-  const toBuildRelative = (assetPath) =>
-    assetPath.startsWith(prefix) ? assetPath.slice(prefix.length) : assetPath;
+  // Timeline assets are workspace-relative (`build/<lesson>/...`), but a
+  // build may live under a different root (fixtures, isolated production).
+  // Resolve against the workspace and make it relative to the actual root.
+  const toBuildRelative = (assetPath) => {
+    if (!assetPath.startsWith('build/')) return assetPath;
+    const absolute = path.resolve(workspaceRoot, assetPath);
+    const relative = path.relative(buildRoot, absolute);
+    return relative.startsWith('..') ? assetPath : relative;
+  };
   sources = new Set([
     ...(timeline.video ?? []).map((item) => toBuildRelative(item.asset.path)),
     ...(timeline.audio ?? []).map((item) => toBuildRelative(item.asset.path)),

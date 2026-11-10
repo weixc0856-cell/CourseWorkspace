@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 
+from ..blender_task import BlenderTaskError, load_blender_task
 from ..contracts import Status
 from ..paths import LessonPaths
+from ..timeouts import resolve_timeout
 from ..utils import run_command, which_command
 from .base import StageOutcome, selected, verify_media
 
@@ -48,12 +49,10 @@ def run(paths: LessonPaths) -> StageOutcome:
             errors.append(f"{shot.id}: blend task not found: {shot.blend_task}")
             continue
         try:
-            task_data = json.loads(task_path.read_text(encoding="utf-8"))
-            output = Path(task_data["output"])
-            if not output.is_absolute():
-                output = paths.workspace / output
-        except Exception as exc:  # noqa: BLE001
-            errors.append(f"{shot.id}: cannot read blender task output: {exc}")
+            task = load_blender_task(task_path, paths.workspace)
+            output = task.output
+        except BlenderTaskError as exc:
+            errors.append(f"{shot.id}: {exc}")
             continue
         # Reuse a valid output that is newer than the task file.  Rendering is
         # expensive and the output is already covered by the same media check.
@@ -76,7 +75,7 @@ def run(paths: LessonPaths) -> StageOutcome:
         result = run_command(
             command,
             paths.workspace,
-            timeout=1900,
+            timeout=resolve_timeout(paths, "render:blender"),
             log_path=log_dir / f"blender-{shot.id}.log",
         )
         if result.exit_code != 0:

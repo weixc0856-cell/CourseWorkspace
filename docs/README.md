@@ -10,6 +10,21 @@
 - [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射
 
+## 1.0.0 V1 全量修复与生产体系收敛（2026-11-10，现行）
+
+- [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)：C-01～C-30 唯一问题台账与最终裁决
+- [stabilization/DECISIONS.md](stabilization/DECISIONS.md)：本轮裁决索引与被取代说法
+- [stabilization/ARCHITECTURE_FINAL.md](stabilization/ARCHITECTURE_FINAL.md)：最终模块边界与权威链
+- [stabilization/PRODUCTION_CONTRACT.md](stabilization/PRODUCTION_CONTRACT.md)：Page/Scene/Storyboard/Shot
+- [stabilization/CONFIGURATION_STANDARD.md](stabilization/CONFIGURATION_STANDARD.md)：配置权威、继承与快照
+- [stabilization/TASK_EXECUTION_STANDARD.md](stabilization/TASK_EXECUTION_STANDARD.md)：状态、检查点、resume、超时、并发
+- [stabilization/QUALITY_STANDARD.md](stabilization/QUALITY_STANDARD.md)：四层结论、WARN 分类、字幕 QC、裁决
+- [stabilization/VISUAL_STANDARD.md](stabilization/VISUAL_STANDARD.md)：品牌、2D/3D、镜头分类、新闻密度
+- [stabilization/ASSET_GOVERNANCE.md](stabilization/ASSET_GOVERNANCE.md)：资产寻址、证据处置、vendor
+- [stabilization/DOCUMENTATION_STANDARD.md](stabilization/DOCUMENTATION_STANDARD.md)：文档层级、状态标记、数字来源
+- [stabilization/FINAL_ACCEPTANCE_REPORT.md](stabilization/FINAL_ACCEPTANCE_REPORT.md)：回归、故障注入与最终验收
+- [audit/evidence-decisions.yaml](audit/evidence-decisions.yaml)：缺失证据的处置清单
+
 ## 1.0 多视觉语法生产架构（2026-11-10）
 
 - [architecture/多视觉语法生产系统-审计.md](architecture/多视觉语法生产系统-审计.md)：现有契约、门禁、评分器的耦合与影响面（P0）

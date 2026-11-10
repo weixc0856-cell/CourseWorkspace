@@ -142,6 +142,11 @@ class BuildOptions(StrictModel):
     allow_manual_animation_export: bool = True
     # Fail the Manim render when runtime layout checks find overlaps/out-of-frame text.
     strict_layout: bool = False
+    # Which storyboard a build consumes. ``storyboard`` is the lesson's declared
+    # file; ``director`` reads build/<slug>/director/storyboard.director.yaml.
+    # Declaring it here keeps the choice in the lesson contract instead of in a
+    # one-off CLI flag.
+    storyboard_source: Literal["storyboard", "director"] = "storyboard"
 
 
 class BgmCue(StrictModel):
@@ -462,3 +467,9 @@ class BuildReport(StrictModel):
     checks: list[CheckRecord]
     verdict: Literal["pass", "fail", "incomplete"]
     failures: list[str] = Field(default_factory=list)
+    # Configuration identity for this run and, when --resume was used, which
+    # stages were reused instead of executed.
+    config_fingerprint: str = ""
+    config_snapshot: str = ""
+    resumed: bool = False
+    reused_stages: list[str] = Field(default_factory=list)

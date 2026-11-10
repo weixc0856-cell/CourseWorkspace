@@ -10,6 +10,8 @@ from ..code_video_qc import check_video, contact_sheet
 from ..contracts import Status
 from ..paths import LessonPaths, is_under
 from ..simulation import load_spec, run_simulation, write_data
+from ..vendor import sync_one, uses_three
+from ..timeouts import resolve_timeout
 from ..utils import run_command, which_command
 from .base import StageOutcome, selected
 
@@ -97,6 +99,15 @@ def run(paths: LessonPaths) -> StageOutcome:
             errors.append(f"{shot.id}: VERIFY.md contains a failing must-have")
             continue
 
+        if uses_three(project):
+            try:
+                vendor_status = sync_one(paths.workspace, project)
+                if vendor_status == "copied":
+                    warnings.append(f"{shot.id}: copied vendor three.js into the shot")
+            except (OSError, FileNotFoundError) as exc:
+                errors.append(f"{shot.id}: vendor three.js unavailable: {exc}")
+                continue
+
         try:
             simulated = materialize_simulation(paths.workspace, project, getattr(shot, "inputs", None))
         except Exception as exc:  # noqa: BLE001
@@ -145,7 +156,7 @@ def run(paths: LessonPaths) -> StageOutcome:
             result = run_command(
                 command,
                 project,
-                timeout=1800,
+                timeout=resolve_timeout(paths, "render:code_video"),
                 log_path=build_root / "logs" / f"code-video-{shot.id}.log",
             )
             if result.exit_code != 0:

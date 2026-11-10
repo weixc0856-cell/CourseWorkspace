@@ -78,6 +78,7 @@ def audit_plan(paths: LessonPaths) -> dict:
         "lesson": paths.slug,
         "mode": mode,
         "authority": authority,
+        "declared_source": paths.lesson.build.storyboard_source,
         "counts": counts,
         "expected": expected,
         "mismatches": mismatches,

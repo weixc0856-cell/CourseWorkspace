@@ -256,6 +256,28 @@
       },
       "title": "Failures",
       "type": "array"
+    },
+    "config_fingerprint": {
+      "default": "",
+      "title": "Config Fingerprint",
+      "type": "string"
+    },
+    "config_snapshot": {
+      "default": "",
+      "title": "Config Snapshot",
+      "type": "string"
+    },
+    "resumed": {
+      "default": false,
+      "title": "Resumed",
+      "type": "boolean"
+    },
+    "reused_stages": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reused Stages",
+      "type": "array"
     }
   },
   "required": [

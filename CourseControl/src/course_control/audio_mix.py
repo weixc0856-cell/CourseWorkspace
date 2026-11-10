@@ -143,6 +143,15 @@ def mix_lesson(
     source = bgm_source(workspace, cue.track_id)
     report["cue"] = cue.model_dump(mode="json")
     report["source_track"] = str(source) if source else None
+    if source is not None:
+        from .assets import describe_asset
+
+        report["source_asset"] = describe_asset(
+            workspace,
+            source,
+            license_status=cue.license_status,
+            attribution=cue.attribution,
+        )
     if source is None:
         return finish(
             Status.FAIL,

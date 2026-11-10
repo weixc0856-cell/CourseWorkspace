@@ -50,6 +50,19 @@
 | FR-37 分层质量门禁 | `quality_gates.py`、`animation_score.py`（profile/metric_only）、`course-control quality-gate` | `test_quality_gates.py`、05-transformer-5min 实跑 |
 | FR-38 逐词字幕与镜头转场 | `contracts.Subtitles.mode/position`、`collect._word_captions`、`v1_timeline` word_captions、`CourseTimeline.tsx`、`capture.mjs --chunk-seconds` | `tsc --noEmit`、分块捕获 PSNR 实测；逐词渲染未目检 |
 | FR-39 参考驱动比较 | `reference.py`、`docs/architecture/references/`、`docs/architecture/golden/`、`course-control reference-compare` | `test_reference.py`、3b1b-attention 实跑 |
+| 配置解析与快照（C-24/C-29） | `config_resolve.py`；`config-resolve`；build 写 `logs/config-resolution.json` | `test_config_resolve.py`；05/06/01/nvda 实跑 |
+| 检查点与 resume（C-20） | `checkpoint.py`、`pipeline.py`；`build --resume/--resume-from` | `test_checkpoint.py`、`test_pipeline_source.py` |
+| 阶段超时（C-19） | `timeouts.py`；各适配器调用 `resolve_timeout` | `test_timeouts.py`、`test_run_command.py` |
+| 资产寻址与交付包（C-21） | `assets.py`、`package.py`、`audio_mix.py` | `test_assets.py`、`test_package.py` |
+| Blender 任务入口（C-13） | `blender_task.py`、`adapters/blender.py`；`blender-task-validate` | `test_blender_task.py` |
+| legacy 时间线登记（C-14） | `legacy_registry.py`、`verify.py` V-43 | `test_legacy_registry.py` |
+| 字幕 QC（C-07/C-08） | `subtitles_qc.py`、`verify.py` V-44；`subtitles-qc` | `test_subtitles_qc.py`；06/05/01 实跑 |
+| 审查裁决队列（C-23） | `review_decisions.py`、`quality.py`；`review-status`/`review-decide` | `test_review_decisions.py`、`test_quality.py` |
+| 证据处置（C-11） | `scripts/check_evidence.py`、`docs/audit/evidence-decisions.yaml` | `check.ps1`；分类 90/90 |
+| 镜头分类（C-09） | `shot_taxonomy.py`、`shared/grammars/shot-taxonomy.yaml`；`shot-taxonomy` | `test_shot_taxonomy.py` |
+| 单一 three.js（C-17） | `vendor.py`；`vendor-sync`/`vendor-check` | `test_vendor.py` |
+| 脚本化计数（C-27） | `stats.py`；`stats` | `test_stats.py` |
+| 探针隔离（C-18） | `RemotionStudio/src/probes/`、`src/index.ts` | `tsc --noEmit` |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
 
 ## 人工依赖

@@ -731,3 +731,134 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **后果**：05 的评分从 100 降到 84.7；nvda/06 的 `INCOMPLETE` 阻止发布；01 的字幕草稿被重排并接受；05/06 生成可复核交付包。代价是发布前多两次人工签核，且旧课程需要重新构建才能获得 `run_id`。
 
 **实施记录**：`docs/stabilization/MIGRATION_PLAN.md`。
+
+## D-073 配置解析一次、快照不可变、指纹进入 resume
+
+**背景**：课程时长、字幕语言、合成模式、模型路由分散在 `lesson.yaml` 与五个 `config/*.yaml`；模块各自读取，导致同一门课出现四个时长值，且无法判断哪次构建用了哪套配置。
+
+**决策**：
+1. 每次 build 调用一次 `resolve_config`，把生效值、来源文件、来源 SHA-256、冲突与警告写入 `build/<slug>/logs/config-resolution.json`。
+2. 快照不覆盖、不合并后续修改；配置变化产生新指纹。
+3. `build-report.config_fingerprint` 记录本次指纹；resume 只复用指纹相同的检查点。
+4. 冲突分级：字幕语言声明不符、课程/新闻带 BGM、DeepSeek 非 flash、实测时长越界为 blocking；目标时长偏差与时间线偏差为 warning。
+5. 环境变量只记录"是否存在"，不记录值。
+
+**后果**：05 的 target 293 / measured 292.38 / timeline 292.37 / beats 286.08 有唯一解释；新增配置项必须同时更新 `CONFIGURATION_STANDARD.md` 与测试。
+
+**实施状态**：**2026-11-10 已实施**。`config_resolve.py`、`config-resolve` 命令、`test_config_resolve.py`。
+
+## D-074 Build 阶段检查点与顶层 resume
+
+**背景**：构建在第一个失败阶段返回，重跑从零开始；"阶段完成"没有输入/输出哈希，无法安全跳过。
+
+**决策**：
+1. 每个可复用阶段写 `runtime/checkpoints/<stage>.json`，记录配置指纹、输入哈希、输出哈希与 run_id。
+2. 复用条件：状态 pass、指纹相同、输入哈希相同、输出存在且哈希相同。任一不满足即重跑。
+3. `--resume` 复用全部有效检查点；`--resume-from <stage>` 复用之前阶段，强制重跑该阶段及其后。
+4. 每次运行写 `runtime/last-run.json`，记录 reused / replayed / invalid 原因；`build-report` 写 `resumed` 与 `reused_stages`。
+5. `validate` 与 `verify` 每次运行，不缓存。
+
+**后果**：中断后可只重跑受影响阶段；输出被删或被改不会被当作有效。已知限制：尚未在 01 的 20 分钟构建上做真实杀进程注入。
+
+**实施状态**：**2026-11-10 已实施**。`checkpoint.py`、`pipeline.py`、`test_checkpoint.py`。
+
+## D-075 Blender 任务统一入口，两代 Schema 并存但不可混淆
+
+**背景**：v1 课程任务与 v2 场景 IR 使用不同校验器；调用方按目录猜测格式，未知字段可能被静默忽略。
+
+**决策**：
+1. `blender_task.load_blender_task` 是唯一入口，按 `schema_version` 分派。
+2. v1 使用严格模型，未知字段拒绝；输出必须在 `build/<lesson>/blender/`，blend 必须在工作区内。
+3. v2 继续使用 `validate_scene_task`，保留 IR 校验与输出路径约束。
+4. 未知版本直接失败并列出支持版本；不提供"猜格式"回退。
+5. v2 不进入课程默认链路，除非课程显式引用。
+
+**后果**：`BlenderStudio/tasks/01-transformer-demo/stack_explode.json` 等 v1 任务在渲染前完成输入验证。
+
+**实施状态**：**2026-11-10 已实施**。`blender_task.py`、`blender-task-validate`、`test_blender_task.py`。
+
+## D-076 V1 时间线的 legacy 字段必须登记，未登记即失败
+
+**背景**：Remotion 仍读取 `timeline.spec.json` 中的 `legacy_*` 字段；没有清单，新增字段会形成第二套契约。
+
+**决策**：
+1. `legacy_registry.py` 为每个字段登记消费者、替代字段、退出目标与原因。
+2. V-43 扫描 `timeline.spec.json`，发现未登记 `legacy_*` 即失败。
+3. 退出顺序：先迁移消费者，再删除字段；迁移完成前字段保留，不并行维护第二套业务逻辑。
+
+**后果**：桥接层可枚举、可审计。当前 9 个字段全部登记。
+
+**实施状态**：**2026-11-10 已实施**。`legacy_registry.py`、`verify.py` V-43、`test_legacy_registry.py`。
+
+## D-077 缺失证据必须分类，未分类即失败
+
+**背景**：文档引用 88–90 个已不存在的 `build/` 路径；无法区分"该恢复"与"历史记录"。
+
+**决策**：
+1. `docs/audit/evidence-decisions.yaml` 按最长前缀给每个缺失路径一个处置：retained / regenerable / retired_poc / historical / stale_ref / external。
+2. `scripts/check_evidence.py` 输出分类报告；未分类缺失路径使检查失败。
+3. 不批量删除文档引用，不补空文件；先分类，再按处置修复。
+4. 规则变化必须有理由与所有者。
+
+**后果**：2026-11-10 引用 182、缺失 90、全部已分类、未分类 0。
+
+**实施状态**：**2026-11-10 已实施**。
+
+## D-078 八类镜头能力是生产边界
+
+**背景**：视觉生产逐镜头手写，没有能力清单；新增模板靠直觉，无法判断哪些能力经过验证。
+
+**决策**：
+1. `shared/grammars/shot-taxonomy.yaml` 固定 8 类：concept、mechanism、comparison、data、structure、transformation、narrative、summary。
+2. 每类必须有输入契约、视觉目标、适用/禁用场景、动画规则、质量检查、真实样片。
+3. 样片只有同时具备 `SPEC.md`、`VERIFY.md` 且无 `| fail |` 才算验证。
+4. Agent 可以组合类型，不得发明未登记能力；新增类型先补契约与样片。
+5. 镜头模板服务知识解释，不以模板数量为目标。
+
+**后果**：`shot-taxonomy` 命令同时检查契约完整性与样片覆盖；当前 8 类全部有已验证样片。
+
+**实施状态**：**2026-11-10 已实施**。Agent 生成对照实验仍未做。
+
+## D-079 WARN 分类与统一裁决队列
+
+**背景**：WARN 把"可接受提示"和"必须人工判断"混在一起；ContentQA、cross-review、teaching QA 各自产出，没有裁决记录。
+
+**决策**：
+1. `quality-report` 为每个 WARN 标注 `warning_class`：`human_review` 或 `blocking`。
+2. `blocking` 使 `quality-gate.verification_status=incomplete`、`releasable=false`；`human_review` 只置 `NEEDS_HUMAN_REVIEW=true`。
+3. `review/decisions.json` 是唯一裁决队列，取值 accepted / rejected / fixed / deferred。
+4. 未裁决、unknown 值、accepted、deferred 都使 Q1 保持 WARN；全部 rejected/fixed 才 PASS。
+5. 不新增第六个审查器。
+
+**后果**：审查意见有可追溯的人工裁决；自动化仍不批准发布。
+
+**实施状态**：**2026-11-10 已实施**。`review_decisions.py`、`review-status`、`review-decide`、`test_review_decisions.py`。
+
+## D-080 外部资产进入交付包，three.js 只保留一份
+
+**背景**：BGM 与声线参考在工作区外；换机后无法复核。three.js 在 5 个镜头目录各有一份 5 万行副本。
+
+**决策**：
+1. 资产用 `asset_id + sha256 + origin + license_status` 描述；绝对路径只作本机映射。
+2. `package` 把外部资产复制到 `assets/external/`，写入 `manifest.external_assets[]`；缺失即失败。
+3. `CodeVideoStudio/vendor/three/three.module.js` 是唯一 checked-in 副本。
+4. 镜头目录的副本由 `vendor-sync` 或 `render:code_video` 生成，`.gitignore` 排除。
+5. `vendor-check` 校验副本哈希；升级只改 vendor 一处。
+
+**后果**：交付包自包含；three.js 从 5 份降为 1 份。
+
+**实施状态**：**2026-11-10 已实施**。`assets.py`、`vendor.py`、`test_assets.py`、`test_vendor.py`。
+
+## D-081 探针与生产入口分离
+
+**背景**：Remotion Root 同时注册生产合成与 POC 探针，生产构建可能误用未验证 composition。
+
+**决策**：
+1. `src/index.ts` / `src/Root.tsx` 只注册生产 composition：CourseVideo、CourseTimeline、ScenePage 与四种品牌片段。
+2. 探针移至 `src/probes/`，使用 `src/probes/index.ts` 独立入口。
+3. `ChapterCard`、`BrandPreview` 属于探针，不进入生产入口。
+4. 基准脚本引用探针入口时必须写明。
+
+**后果**：生产入口暴露的 composition 从 14 个降到 7 个；`tsc --noEmit` 通过。
+
+**实施状态**：**2026-11-10 已实施**。

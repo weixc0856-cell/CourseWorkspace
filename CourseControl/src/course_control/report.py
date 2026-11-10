@@ -9,6 +9,7 @@ from pathlib import Path
 
 import yaml
 
+from .atomic import write_json_atomic
 from .contracts import Artifact, BuildReport, CheckRecord, StageRecord, Status
 from .duration import resolve
 from .paths import LessonPaths, path_problem
@@ -58,6 +59,10 @@ class ReportBuilder:
         self.checks: list[CheckRecord] = []
         self.artifacts: list[Artifact] = []
         self.failures: list[str] = []
+        self.config_fingerprint: str = ""
+        self.config_snapshot: str = ""
+        self.resumed: bool = False
+        self.reused_stages: list[str] = []
 
     def add_stage(self, outcome) -> None:
         self.stages.append(
@@ -210,15 +215,16 @@ class ReportBuilder:
             checks=self.checks,
             verdict=verdict,
             failures=failures,
+            config_fingerprint=self.config_fingerprint,
+            config_snapshot=self.config_snapshot,
+            resumed=self.resumed,
+            reused_stages=self.reused_stages,
         )
 
     def write(self, report: BuildReport) -> Path:
         target = self.paths.build_root / "final" / "build-report.json"
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(
-            json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        write_json_atomic(target, report.model_dump(mode="json"))
         return target
 
 

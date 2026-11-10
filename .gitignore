@@ -90,3 +90,6 @@ ScientificFigures/output/
 # BrandIntro: reference captures and render tests are media, not workflow
 BrandIntro/art_direction/frames/
 BrandIntro/art_tests/*/out/
+
+# Vendored three.js is copied into shots at build time.
+CodeVideoStudio/shots/*/three.module.js

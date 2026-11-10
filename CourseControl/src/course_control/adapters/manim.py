@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ..contracts import Status
 from ..paths import LessonPaths
+from ..timeouts import resolve_timeout
 from ..utils import probe_media, run_command, which_command
 from .base import StageOutcome, selected, verify_media
 
@@ -61,7 +62,7 @@ def run(paths: LessonPaths) -> StageOutcome:
         result = run_command(
             command,
             paths.engine_root("manim"),
-            timeout=1800,
+            timeout=resolve_timeout(paths, "render:manim"),
             log_path=log_dir / f"manim-{shot.id}.log",
             env={
                 "STRICT_LAYOUT": "1"
