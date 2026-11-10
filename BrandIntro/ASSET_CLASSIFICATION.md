@@ -20,7 +20,7 @@
 | 源码/契约 | `SPEC.md`、`VERIFY.md`、`build_character.py`、`build_scene.py`、`film.html`、`film.js`、`scene.html`、`scene.js`、`index.html`、`main.js` | 提交 |
 | 角色/场景资产 | `character.blend`、`character.json`、`scene.blend` | 提交（重新渲染所需的最小资产） |
 | 依赖 | `fonts/*.woff2`、`vendor/three/addons/**/*.js` | 提交 |
-| 生成物 | `out/**`、`brand-rise/frame-*.png`、`env-*.png`、`character-{front,back,side,45,preview}.png` | 本地保留，不提交 |
+| 生成物 | `out/**`（试验帧/片段已删，保留 before/after 整片与 Gate 证据）、`env-*.png`、`character-{front,back,side,45,preview}.png` | 本地保留，不提交 |
 | 临时备份 | `character.blend1`、`scene.blend1`、`film.before-c16.js` | 不提交 |
 | 运行时副本 | `three.module.js` | 由 `vendor-sync` 生成，`.gitignore` 排除 |
 
@@ -28,8 +28,8 @@
 
 ## 3. 重复与无效文件
 
-- `character.blend1`、`scene.blend1`：Blender 自动备份，删除不影响源文件；本轮保留在本地，不提交。
-- `out/` 下有大量命名试验（`t*.mp4`、`k-*.png`、`e*-*.png`）：历史试验，保留本地，不提交。
+- `character.blend1`、`scene.blend1`、`film.before-c16.js`：已删除；源文件与 `film.js` 不受影响。
+- `out/` 下的命名试验（`t*.mp4`、`k-*.png`、`e*-*.png`、`test-*.mp4` 等）与 `brand-rise/frame-*.png` 中间帧已删除；保留 `wayne-atelier*.mp4`、`wayne-opener.mp4`、概念帧、`brand-rise.mp4` 与 `det-check.mp4`。
 - `three.module.js` 五份副本已由上轮收敛为唯一 `CodeVideoStudio/vendor/three/three.module.js`；镜头副本是构建产物。
 
 ## 4. 提交拆分
