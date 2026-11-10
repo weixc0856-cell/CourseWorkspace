@@ -35,7 +35,7 @@
 
 - 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)
-- 配色规范（浅色主题/语义色/对比度）：[docs/配色规范.md](docs/配色规范.md)
+- 配色规范（三套视觉主题/语义色/对比度/字体）：[docs/配色规范.md](docs/配色规范.md)、[shared/design-tokens/themes.json](shared/design-tokens/themes.json)
 - 品牌与片头片尾（WAYNE / 三种形态 / V-33）：[docs/品牌与片头片尾.md](docs/品牌与片头片尾.md)
 - 片头美术方向（参考板/角色/场景/Gate）：[BrandIntro/README.md](BrandIntro/README.md)
 - 教材驱动课程生产（KnowledgeStudio 拆页/检索/引用）：[docs/KnowledgeStudio.md](docs/KnowledgeStudio.md)、[KnowledgeStudio/README.md](KnowledgeStudio/README.md)

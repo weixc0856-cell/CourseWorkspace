@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "note": "建议默认值，不是校验门槛。镜头自己声明用哪套主题；渲染器按 token 取色，不对成片套统一滤镜。",
+  "default": "editorial_science",
+  "themes": {
+    "editorial_science": {
+      "label": "Editorial Science",
+      "role": "频道主视觉：日常讲解、公式推导、数据图表、概念解释、动态文字",
+      "light": true,
+      "colors": {
+        "paper": "#FBFAF7",
+        "surface": "#F3F1EA",
+        "ink": "#252A31",
+        "body": "#2E3338",
+        "muted": "#6B7280",
+        "border": "#E3E0D7",
+        "accent": "#E8733B",
+        "blue": "#4A82B8",
+        "teal": "#42A69A",
+        "purple": "#7A6FB0",
+        "red": "#C75B55"
+      }
+    },
+    "deep_space": {
+      "label": "Deep Space",
+      "role": "场景主题：粒子与流场、三维结构、能量与信号传播、复杂系统的空间关系",
+      "light": false,
+      "colors": {
+        "paper": "#0A0908",
+        "surface": "#15120F",
+        "ink": "#F4F1EA",
+        "body": "#E4DFD4",
+        "muted": "#9A917F",
+        "border": "#2A2620",
+        "accent": "#E8A33D",
+        "blue": "#7FA8C9",
+        "teal": "#5FB3A6",
+        "purple": "#9C90D0",
+        "red": "#E0766F"
+      }
+    },
+    "engineering_studio": {
+      "label": "Engineering Studio",
+      "role": "场景主题：机械结构、设备、汽车内外饰、产品拆解、工程场景重建",
+      "light": true,
+      "neutral": true,
+      "colors": {
+        "paper": "#E8E6E1",
+        "surface": "#DCD9D2",
+        "ink": "#1E2226",
+        "body": "#2C3238",
+        "muted": "#666C72",
+        "border": "#C9C5BC",
+        "accent": "#C4652F",
+        "blue": "#4F7EA3",
+        "teal": "#4E8C84",
+        "purple": "#7C74A8",
+        "red": "#B5534D"
+      }
+    }
+  },
+  "semantics": {
+    "note": "语义固定，主题只换底色与色阶。具体学科可覆盖（例如流场的红蓝代表压力与速度）。",
+    "focus": "accent",
+    "structure": "ink",
+    "body": "body",
+    "secondary": "muted",
+    "input": "blue",
+    "process": "teal",
+    "output": "purple",
+    "error": "red"
+  },
+  "rules": [
+    "默认用 editorial_science；切到 deep_space 必须有内容理由（粒子/空间/发光），不是为了好看",
+    "一帧只允许一个强调色（accent），其余语义色只用于它们对应的对象",
+    "主题在一场戏内部保持稳定；深浅切换要发生在镜头边界，并且由内容决定",
+    "颜色在场景设计阶段确定：Blender 材质、Motion Canvas 图形、Manim 对象、Remotion 字幕共用同一套 token，不叠加全局滤镜"
+  ]
+}

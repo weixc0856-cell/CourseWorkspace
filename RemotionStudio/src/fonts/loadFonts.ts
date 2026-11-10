@@ -3,6 +3,11 @@ import {staticFile} from 'remotion';
 
 export const SANS_FAMILY = 'Noto Sans SC';
 
+// Display face for large numerals and short Latin statements. Jost is a Futura
+// lineage with a real 200, so a 500 px figure keeps a thin stroke instead of
+// turning into a slab. OFL 1.1, bundled — see public/fonts/README.md.
+export const DISPLAY_FAMILY = 'Jost';
+
 // Fontsource's Latin subset, copied verbatim from
 // node_modules/@fontsource/noto-sans-sc/files/noto-sans-sc-latin-400-normal.woff2
 const LATIN_UNICODE_RANGE =
@@ -41,4 +46,19 @@ loadFont({
   weight: '700',
   format: 'woff2',
   unicodeRange: LATIN_UNICODE_RANGE,
+});
+
+// 200 is the display weight: thin geometric numerals at 300-600 px.
+loadFont({
+  family: DISPLAY_FAMILY,
+  url: staticFile('fonts/jost-latin-200-normal.woff2'),
+  weight: '200',
+  format: 'woff2',
+});
+
+loadFont({
+  family: DISPLAY_FAMILY,
+  url: staticFile('fonts/jost-latin-300-normal.woff2'),
+  weight: '300',
+  format: 'woff2',
 });
