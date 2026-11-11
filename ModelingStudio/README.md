@@ -1,7 +1,7 @@
 # ModelingStudio
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本地自动化建模工作流：单张图片 → Qwen3-VL 视觉分析 → Qwen3 建模规划 → Qwen3-Coder 生成 bpy 脚本 → Blender 执行 → 预览与验收 →（可选）VL 视觉修正建议。
 
 不使用云端 API、不引入图生 3D 模型、不新增推理服务。模型全部走本机 `<AI_ROOT>` 的 8080 单实例 llama.cpp 服务，按阶段启动和停止。

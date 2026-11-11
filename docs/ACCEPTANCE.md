@@ -8,7 +8,45 @@
 
 ## 0. 2026-11-10 复核
 
-本轮重跑六套单测，实际为 **640 个用例（634 通过 + 6 跳过）**：CourseControl 493、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 21；`check.ps1` exit 0。新增的配置解析、检查点、resume、字幕 QC、裁决队列、vendor、镜头分类与证据分类测试都在这 493 之内。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
+本轮重跑六套单测，实际为 **647 个用例（641 通过 + 6 跳过）**：CourseControl 494、ModelingStudio 33、ai_runtime 50、ContentQA 25、Manim 18、KnowledgeStudio 27；`check.ps1` exit 0。新增的配置解析、检查点、resume、字幕 QC、裁决队列、vendor、镜头分类与证据分类测试都在这 494 之内。下面 §1 与 §8 的历史计数（412 / 550 / 465）保留为当时记录，不再作为当前基线；旧的加法 412+33+50+24+18+21=558 与"合计 550"也不一致，已按实跑数字更正。
+
+## 0.1 2026-11-10 真实教材试点（Docling → KnowledgeStudio）
+
+第一本真书：一本 352 页英文教材（标题与路径不入库），文本层完整。
+
+| 项 | 实测 | 状态 |
+| --- | --- | --- |
+| Docling 转换 | 352/352 页，0 空页，0 warning，209.9 s | pass |
+| Docling `validate` | 14 pass / 0 warn / 0 fail | pass |
+| PDF 书签 | 18 条；章节边界以书签为准 | pass |
+| KnowledgeStudio 导入 | 18 个单元；`verify` KS-01…KS-08 | pass |
+| `extract-report` | pass；短页 3、超长页 11，长行多为 cosmetic | pass |
+| 教材 claim | 5 条；`evidence` + `span-check` 5/5 | pass |
+| 现代产业证据 | 0 条 | **未开始** |
+
+命令与结果见 [KnowledgeStudio.md](KnowledgeStudio.md) §7.1、§12，以及 Docling `README.md` §12。`span-check` 第一次运行抓到一条"看起来对、实际不连续"的 quote（版面侧栏插进正文），修正后通过——这是结构校验，不是真伪判断。
+
+**未完成**：现代成本/价格/能源证据尚未采集；该集未写旁白、未做幻灯片、未渲染。不要把本节的"教材入库"当成"课程已验证"。
+
+## 0.2 无声观看原则（Silent Viewing Principle）
+
+> 如果把旁白关掉，单看画面，它是不是仍然像一条有设计、有过程、有表达目的的视频，而不是一份会动的 PPT？
+
+这是 CourseWorkspace 的最高层视觉验收原则，优先级高于动画数量、镜头数量、3D 使用比例和特效复杂度。任何样片与成片在人工验收前，先做一次无声播放审查。
+
+它要求：
+
+1. **画面独立成立**：不能只靠旁白解释画面上有什么。
+2. **画面有发展过程**：视觉对象应发生变化，而不是依次出现。
+3. **画面有表达目的**：每个镜头都在展示、解释、比较、揭示或强调某件事。
+4. **画面有视觉设计**：构图、层次、色彩、空间、运动保持统一。
+5. **画面有节奏**：有建立、发展、强调、停顿和转换，而不是全程匀速播放。
+
+边界：无声观看不等于“所有知识必须仅凭画面完整理解”。公式、复杂理论和专业术语仍可由旁白解释；要求的是画面本身有独立的视觉叙事价值，不是把视频变成无声教学。
+
+判定：无声播放时如果只剩文字、箭头、公式和逐页切换，即使 `check.ps1`、`media-qc`、构图检查全部通过，视觉质量仍不算达标。审查结果写入人工验收记录；未做无声审查的样片不得标为 `pass`。
+
+---
 
 ## 1. 一键回归
 
@@ -17,18 +55,18 @@
 # 期望：六套单测（含 KnowledgeStudio）+ Remotion 类型检查 + 课程契约（本地有课程时 6 个，干净克隆时 4 个夹具）+ 20 个场景契约，最后打印 check ok，exit 0
 ```
 
-最近一次执行（2026-11-09）：**`check ok`，exit 0**。
+最近一次执行（2026-11-10）：**`check ok`，exit 0**。
 
 | 套件 | 命令 | 用例数 | 结果 |
 | --- | --- | --- | --- |
-| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 493（488 通过 + 5 跳过） | 488 通过，5 跳过 |
+| CourseControl | `uv run --project CourseControl python -m unittest discover -s CourseControl/tests -t CourseControl` | 494（489 通过 + 5 跳过） | 489 通过，5 跳过 |
 | ModelingStudio | `uv run --project ModelingStudio python -m unittest discover -s ModelingStudio/tests -t ModelingStudio` | 33 | 全部通过 |
 | ai_runtime | `uv run --project shared/ai_runtime python -m unittest discover -s shared/ai_runtime/tests -t shared/ai_runtime` | 50 | 全部通过 |
 | ContentQA | `uv run --project ContentQA python -m unittest discover -s ContentQA/tests -t ContentQA` | 25 | 全部通过 |
 | ManimSandbox | `uv run --project ManimSandbox python -m unittest discover -s ManimSandbox/tests -t ManimSandbox` | 18（17 通过 + 1 跳过） | 17 通过，1 跳过 |
-| KnowledgeStudio | `uv run --project KnowledgeStudio python -m unittest discover -s KnowledgeStudio/tests -t KnowledgeStudio` | 21 | 全部通过 |
+| KnowledgeStudio | `uv run --project KnowledgeStudio python -m unittest discover -s KnowledgeStudio/tests -t KnowledgeStudio` | 27 | 全部通过 |
 
-合计 **633** 个用例（627 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
+合计 **647** 个用例（641 通过 + 6 跳过）；跳过项（Docker/录制等环境依赖）不计为通过。
 
 ### 1.1 V1-B 契约命令
 
