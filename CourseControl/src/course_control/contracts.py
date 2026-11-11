@@ -40,6 +40,10 @@ class Outputs(StrictModel):
 
 TransitionKind = Literal["hard_cut", "fade", "dissolve", "match_cut", "wipe"]
 
+# Mirrors shared/design-tokens/themes.json.  Declaring a theme is optional and
+# never blocks a render; it only tells the scene which token set to read.
+SceneTheme = Literal["editorial_science", "deep_space", "engineering_studio"]
+
 
 class Transition(StrictModel):
     """Visual transition into/out of a shot; never changes the shot's duration."""
@@ -273,6 +277,7 @@ class ShotSpec(StrictModel):
     inputs: dict | None = None
     validation: dict | None = None
     formula_ids: list[str] = Field(default_factory=list)
+    theme: SceneTheme | None = None
 
 
 class AnnotationBase(StrictModel):
@@ -355,6 +360,7 @@ class Shot(StrictModel):
     timeline_role: Literal["base", "overlay"]
     presentation: Literal["cutaway", "picture_in_picture", "transparent_overlay"] | None = None
     transition: Transition | None = None
+    theme: SceneTheme | None = None
 
     @model_validator(mode="after")
     def overlay_needs_presentation(self):

@@ -212,6 +212,23 @@
             }
           ],
           "default": null
+        },
+        "theme": {
+          "anyOf": [
+            {
+              "enum": [
+                "editorial_science",
+                "deep_space",
+                "engineering_studio"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Theme"
         }
       },
       "required": [

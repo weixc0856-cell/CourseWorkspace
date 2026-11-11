@@ -1,11 +1,18 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-10（V1 全量修复与生产体系收敛：配置快照、resume、字幕 QC、裁决队列、资产与文档治理）
-- **代码基线**：`origin/main` = `b771408`；当前分支 `feat/v1-pipeline-remote-fallback` 本地 `eaea74e`
-- **基线核实**：2026-11-10 实跑 `check.ps1` = `check ok`；六套 633 个用例（627 通过、6 跳过），Remotion `tsc --noEmit` 通过
+- **最近更新**：2026-11-11（新增知识视频质量基准与 E01 单集验收标准；2026-11-10 V1 全量修复与生产体系收敛、Docling 真实教材试点）
+- **代码基线**：`origin/main` = `b6fb662`（PR #16）；当前分支 `feat/v1-pipeline-remote-fallback`，基线提交 `07bef7b`，工作区含本轮改动（未提交）
+- **基线核实**：2026-11-10 实跑 `check.ps1` = `check ok`；六套 647 个用例（641 通过、6 跳过），Remotion `tsc --noEmit` 通过
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
+
+## 0.0000B 2026-11-11 知识视频质量基准
+
+- 新增 [知识视频质量基准.md](知识视频质量基准.md)：内容 / 视觉 / 交付三层验收，L1 必须、L2 分块努力、L3 长期探索；参考频道只校准方法，不按“像不像”评分。
+- 明确镜头时长、动画类型、语法选择不是契约或门禁；发布结论仍按 D-071 的三条，并需要人工签核。
+- 首个实例为本机 AI 经济系列 E01（`runtime/course-content/ai-economics/episodes/E01/acceptance-standard.md`），当前为 `design`，现代证据未采集，未进入生产。
+- 未新增 `FR-*` / `NFR-*`、模块、语法、评分器或门禁；`check.ps1` 不受影响。
 
 ## 0.0000 2026-11-10 Production Stabilization 基线
 
@@ -13,7 +20,7 @@
 
 | 项 | 实际 |
 | --- | --- |
-| 单测 | 六套 640 个用例，634 通过、6 跳过（CourseControl 493 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
+| 单测 | 六套 647 个用例，641 通过、6 跳过（CourseControl 494 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 27） |
 | 回归 | `scripts/check.ps1` exit 0；新增非阻断 `evidence paths` 报告 |
 | 01-transformer-demo | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；成片 1195.605 s / 1080p30，build-report pass |
 | 02-car-aerodynamics | 正文、4 个 Manim 镜头、已批准 SRT 存在；build 目录与 22 分钟成片不在本机 |

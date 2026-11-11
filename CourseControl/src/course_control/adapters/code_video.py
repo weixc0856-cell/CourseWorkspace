@@ -10,6 +10,7 @@ from ..code_video_qc import check_video, contact_sheet
 from ..contracts import Status
 from ..paths import LessonPaths, is_under
 from ..simulation import load_spec, run_simulation, write_data
+from ..theme import write_theme_json
 from ..vendor import sync_one, uses_three
 from ..timeouts import resolve_timeout
 from ..utils import run_command, which_command
@@ -87,6 +88,14 @@ def run(paths: LessonPaths) -> StageOutcome:
     for shot in shots:
         spec_path, _ = paths.scene_path(shot)
         project = _project_for(paths, shot)
+        # A declared scene theme is materialised next to the scene so the page
+        # can read the same tokens every engine uses.  No theme, no file.
+        if getattr(shot, "theme", None):
+            try:
+                write_theme_json(paths.workspace, project / "theme.json", shot.theme)
+            except (OSError, KeyError) as exc:
+                errors.append(f"{shot.id}: theme not written: {exc}")
+                continue
         verify = project / "VERIFY.md"
         if not spec_path.is_file():
             errors.append(f"{shot.id}: SPEC not found: {spec_path}")
