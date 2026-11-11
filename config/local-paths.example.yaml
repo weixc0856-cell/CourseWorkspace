@@ -13,3 +13,6 @@ tts:
   auto_start: true
   wait_timeout_s: 1800
 bgm_root: <BGM_LIBRARY_ROOT>
+docling_root: "<DOCLING_ROOT>"
+source_libraries:
+  automotive-aerodynamics: "<SOURCE_LIBRARY_ROOT>"
