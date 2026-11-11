@@ -22,6 +22,7 @@ WORKSPACE = Path(__file__).resolve().parents[2]
 LESSON = WORKSPACE / "lessons" / "01-transformer-demo"
 
 
+@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
 class ProducerRunTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -106,6 +107,7 @@ class ProducerRunTest(unittest.TestCase):
             self.assertEqual(result.manifest.status, "blocked")
 
 
+@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
 class DeliveryPolicyTest(unittest.TestCase):
     def test_delivered_requires_every_item_present(self):
         with self.assertRaises(ValidationError):
@@ -119,6 +121,7 @@ class DeliveryPolicyTest(unittest.TestCase):
             )
 
 
+@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
 class IncrementalDiffTest(unittest.TestCase):
     def base(self, **updates) -> ShotFingerprint:
         payload = dict(
@@ -162,6 +165,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
+@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
 class RebuildPlanTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
