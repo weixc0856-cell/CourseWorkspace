@@ -219,7 +219,7 @@ def _readme(order: ProductionOrder, manifest: DeliveryManifest) -> str:
 
 
 def write_manifest(manifest: DeliveryManifest, order: ProductionOrder, build_root: Path) -> dict[str, Path]:
-    out = build_root / "delivery"
+    out = build_root / "producer"
     out.mkdir(parents=True, exist_ok=True)
     manifest_path = out / "manifest.json"
     manifest_path.write_text(

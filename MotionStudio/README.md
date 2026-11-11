@@ -1,7 +1,7 @@
 # Motion Studio
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 **首选动画引擎。** 基于 Motion Canvas 3.17（TypeScript + Vite），负责课件里"盒子、箭头、序列、流程"这一类离散结构的动画。与 [../CourseSlides](../CourseSlides) 同属前端技术栈，配色令牌直接共用。
 
 ## 适用与不适用
@@ -42,7 +42,7 @@ npm run serve
 - 中间是画布预览，下方是时间轴，可以拖播放头、拖节点、改属性并实时热重载
 - 左上 **VIDEO SETTINGS** 里设置分辨率（默认 1920×1080）、帧率、渲染范围
 - 右下 **RENDER** 导出：`Image sequence` 出 PNG 序列，装好 `@motion-canvas/ffmpeg` 后可选 `Video (FFmpeg)` 直接出 MP4/WebM
-- 编辑器草稿默认落在 `output/`，已 gitignore；**用于课程构建的成片不要留在 `output/`**，见下一节
+- 编辑器草稿默认落在 `output/`，已 gitignore；**用于课程构建的成片不要留在 `output/`**，见下一节。课程构建产物在 `build/<slug>/animation/`，最终交付在 `deliver/<slug>/`；旧的 `MotionStudio/output/` 已清理
 
 键盘：`Space` 播放/暂停，`End` 跳到末帧，方向键逐帧。
 

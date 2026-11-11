@@ -1,8 +1,10 @@
 # KnowledgeStudio
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 教材与知识资产管理：把一本专业教材拆成**按页可引用**的知识单元，让一节课只读它需要的十几页。
+
+教材、论文与视频来源统一进入本机 Docling 资料区；采集与预处理见 [docs/资料采集与预处理.md](../docs/资料采集与预处理.md)。PDF 的 `document.md` / `pages/` 与 YouTube 的 `transcript.clean.md` 都从该区读取。
 
 ```powershell
 uv sync --project KnowledgeStudio
@@ -28,9 +30,18 @@ uv run --project KnowledgeStudio knowledge-studio extract-report `
 uv run --project KnowledgeStudio knowledge-studio retrieve --root knowledge/hucho `
     --query "drag mechanisms" --max-pages 18 --into-lesson lessons/02-car-aerodynamics
 
-# 7. claim → 页 的证据，8. 完整性检查
+# 7. claim → 页 的证据
 uv run --project KnowledgeStudio knowledge-studio evidence --root knowledge/hucho `
     --retrieval knowledge/hucho/retrieval/<id>.json --claims claims.json
+
+# 8. 结构校验：引用页哈希、quote 是否在页上、数字是否出现（不判断真伪）
+uv run --project KnowledgeStudio knowledge-studio span-check --root knowledge/hucho `
+    --evidence knowledge/hucho/evidence/<id>.evidence.json
+
+# 9. 书图：章节 / PDF 页范围 / 单元 / 图表计数
+uv run --project KnowledgeStudio knowledge-studio map --root knowledge/hucho
+
+# 10. 完整性检查
 uv run --project KnowledgeStudio knowledge-studio verify --root knowledge/hucho
 ```
 

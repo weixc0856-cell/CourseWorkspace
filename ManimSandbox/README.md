@@ -1,7 +1,7 @@
 # Manim Sandbox
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 **备选动画引擎。** Manim Community 0.22 + Python 3.12，只在需要坐标系连续变换、空间投影、微积分曲线这类"硬核几何"时启用。日常的盒子箭头流程请用 [../MotionStudio](../MotionStudio)。
 
 ## 什么时候来这里
@@ -71,7 +71,7 @@ uv run manim render -r 1920,1080 --fps 30 `
 
 产物：`media/videos/<脚本名>/<画质目录>/<场景类名>.mp4`，例如 `media/videos/dot_product/1080p60/DotProduct.mp4`。
 
-`media/` 只作为手动试渲染缓存，不是构建产物目录。
+`media/` 只作为手动试渲染缓存，不是构建产物目录；课程构建用 `build/<slug>/tmp/manim-media/`，旧的 `ManimSandbox/media/` 已归入 `build/_engine-cache/manim-media/`。最终交付在 `deliver/<slug>/`。
 
 ## 构建集成
 
@@ -111,7 +111,7 @@ ManimSandbox/
 ├── common/                       # design_system.py（配色/字号/安全区）、formula.py
 │   ├── test_demo.py              # 环境自检：橙白配色
 │   └── dot_product.py            # 点积与投影
-└── media/                        # 渲染产物与缓存（不入库）
+└── media/                        # 手动试渲染缓存（不入库；课程构建用 build/<slug>/tmp/manim-media）
 ```
 
 ## 约定

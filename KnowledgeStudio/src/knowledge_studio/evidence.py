@@ -36,10 +36,12 @@ def attach(root: Path, retrieval_path: Path, claims_path: Path) -> Path:
             citations.append(citation)
         if not citations:
             problems.append(f"{claim_id}: no valid citation")
+        quote = str(item.get("quote") or "").strip() or None
         claims.append(
             ClaimRef(
                 claim_id=claim_id,
                 statement=statement,
+                quote=quote,
                 citations=citations,
                 verification="pending",
             )

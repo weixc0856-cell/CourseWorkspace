@@ -1,13 +1,13 @@
 # RemotionStudio
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 最终视频编排工程。读取 `build/<lesson>/shots.json` 或 `build/<lesson>/contracts/timeline.spec.json`，把幻灯片画面、Blender / Motion Canvas / Manim / CodeVideo 成片、旁白和字幕组合成课程视频。
 
 ## 边界
 
 - 读取：`shots.json` 或 `timeline.spec.json` 指向的素材、`lessons/<slug>/subtitles.srt`（可选）、`shared/design-tokens/tokens.json`。
-- 写入：`build/<lesson>/final/`、`build/<lesson>/remotion/`、本工程 `public/staging/`（临时）。
+- 写入：`build/<lesson>/final/`（渲染临时）、`build/<lesson>/remotion/`（临时）、本工程 `public/staging/`（渲染器要求的临时镜像）。最终交付由 CourseControl `package` 复制到 `deliver/<slug>/`。
 - 不读取 `MotionStudio/`、`ManimSandbox/`、`BlenderStudio/` 的源码或产物目录；一切素材先进入 `build/`。
 - 不做 TTS、不做语音识别、不做云端渲染。
 
@@ -60,7 +60,7 @@ npx remotion render src/index.ts CourseTimeline `
 1. `shots.json` 中的 `source` 始终相对 `build/<lesson>/`。
 2. `stage-assets.mjs` 按 `source` 复制到 `public/staging/<lesson>/`，保持相对路径不变。
 3. 组件通过 `staticFile('staging/<lesson>/<source>')` 引用。
-4. `public/staging/` 已忽略；成功构建后由 R4 控制层清理。
+4. `public/staging/` 是临时镜像，不作为事实源；成功构建后由 CourseControl 清理。旧的 staging 缓存已归入 `build/_engine-cache/remotion-staging/`。
 
 ## 时间线
 

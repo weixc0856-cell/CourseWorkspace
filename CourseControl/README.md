@@ -1,8 +1,8 @@
 # CourseControl
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
-课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`；`package` 把最终资产复制到 `deliver/<slug>/`。
 
 在上游还包含三个设计/管理层：
 
@@ -12,7 +12,7 @@
 
 ## 边界
 
-- 只写 `build/<slug>/` 与各工程的 `.venv` / `node_modules` 缓存。
+- 临时产物只写 `build/<slug>/`，最终交付只写 `deliver/<slug>/`；各工程的 `.venv` / `node_modules` 只作缓存。
 - 不修改课程正文、`CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`BlenderStudio/` 的源码。
 - 课程文本/审查经 `shared/ai_runtime` 显式调用 Claude Code 或配置的后端；不自动发布，不自动提交 Git。
 - 课程 YAML 由本层解析；Blender 只接收 JSON 任务。
@@ -120,7 +120,7 @@ uv run course-control scene-schema
 
 - 引擎不在 `engines` 中 → `not_applicable`
 - 任一阶段失败 → `fail`，下游写 `not_run`
-- 合成失败时保留 `public/staging/<slug>/` 与日志，便于排查；成功后才清理
+- 合成失败时保留 `build/<slug>/tmp/remotion-staging/<slug>/` 与日志；Remotion 渲染器所需的 `public/staging/<slug>/` 是临时镜像，成功后清理
 
 ## Blender 场景任务（IR v2）
 
@@ -186,6 +186,12 @@ build/<slug>/animation/<scene-stem>.mp4
 
 报告包含 `stages[]`、`checks[]`、`artifacts[]`、`toolchain`、`verdict` 与 `failures[]`。
 
+## 交付分区（D-085）
+
+- `build/<slug>/` 是临时区：渲染、预览、缓存、日志与 `producer/` 制片清单；可删除重建。
+- `deliver/<slug>/` 是最终交付区：`final/master.mp4`、字幕、报告、证据、`manifest.json`、`delivery-checklist.md`；不要删。
+- `producer-run` 的清单在 `build/<slug>/producer/`，不是最终交付。
+
 ## V1 收敛命令（2026-11-10）
 
 ```powershell
@@ -204,7 +210,7 @@ course-control subtitles-qc --lesson <slug>
 course-control review-status --lesson <slug>
 course-control review-decide --lesson <slug> --id <finding> --decision fixed --by <name>
 course-control package --lesson <slug>
-course-control package-verify --package build/<slug>/package
+course-control package-verify --package deliver/<slug>
 
 # Blender 任务入口 / three.js / 镜头分类
 course-control blender-task-validate --task BlenderStudio/tasks/<lesson>/<task>.json

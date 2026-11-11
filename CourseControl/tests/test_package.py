@@ -93,6 +93,7 @@ class PackageTest(unittest.TestCase):
 
     def test_package_collects_and_hashes(self) -> None:
         manifest, root = build_package(self.paths)
+        self.assertEqual(root, self.workspace / "deliver" / "demo")
         self.assertEqual(manifest["run_id"], "run-1")
         self.assertEqual(manifest["verdict"], "pass")
         paths = {item["path"]: item for item in manifest["files"]}
@@ -107,6 +108,22 @@ class PackageTest(unittest.TestCase):
         (self.paths.build_root / "final" / "course-video.mp4").unlink()
         with self.assertRaises(PackageError):
             build_package(self.paths)
+
+    def test_failed_rebuild_keeps_the_previous_package(self) -> None:
+        manifest, root = build_package(self.paths)
+        before = {item["path"]: item.get("sha256") for item in manifest["files"]}
+        (self.paths.build_root / "final" / "course-video.mp4").unlink()
+        with self.assertRaises(PackageError):
+            build_package(self.paths)
+        self.assertTrue((root / "manifest.json").is_file())
+        self.assertEqual(verify_package(root), [])
+        after = {
+            item["path"]: item.get("sha256")
+            for item in json.loads(
+                (root / "manifest.json").read_text(encoding="utf-8")
+            )["files"]
+        }
+        self.assertEqual(before["final/master.mp4"], after["final/master.mp4"])
 
     def test_tampered_package_is_detected(self) -> None:
         manifest, root = build_package(self.paths)

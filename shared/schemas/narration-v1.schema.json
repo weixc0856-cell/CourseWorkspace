@@ -189,7 +189,7 @@
           "$ref": "#/$defs/AssetRef"
         },
         "language": {
-          "default": "zh",
+          "default": "en",
           "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
           "title": "Language",
           "type": "string"

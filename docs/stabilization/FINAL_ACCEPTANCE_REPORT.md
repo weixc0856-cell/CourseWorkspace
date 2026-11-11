@@ -126,7 +126,7 @@
 | 项 | 结果 |
 | --- | --- |
 | `check.ps1` | exit 0，`check ok` |
-| 单测 | 六套 640：634 通过、6 跳过（CourseControl 493 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 21） |
+| 单测 | 六套 647：641 通过、6 跳过（CourseControl 494 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 27） |
 | Remotion | `tsc --noEmit` exit 0 |
 | 06 | 65.533 s，`verdict=pass`；V-31/V-44 PASS；ASR 0.935、0 mismatch；media-qc 9 段冻结 WARN；quality-report Q1/Q2 INCOMPLETE，`RELEASE_APPROVED=false` |
 | NVDA | 354.304 s，`verdict=pass`；V-44 PASS；ASR 0.919、3 条 mismatch WARN；media-qc 19 段冻结 WARN；`VERIFY_PASS=true`，`RELEASE_APPROVED=false` |

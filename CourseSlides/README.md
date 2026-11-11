@@ -1,7 +1,7 @@
 # Reveal.js 技术课件工程
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 640 用例（634 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 一个以 **纸白/橙色 Light Technical Editorial** 为视觉基调的双语技术课件环境。项目只包含一个 `reveal.js` 渲染外壳，具体课件内容全部放在**工作区根目录**的 `lessons/` 下，通过 URL 参数切换。生成课件前，请先阅读 [课件生成调用指南](docs/课件生成调用指南.md)。
 
 ## 快速开始

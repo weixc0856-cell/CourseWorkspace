@@ -732,6 +732,8 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 
 **实施记录**：`docs/stabilization/MIGRATION_PLAN.md`。
 
+**后续**：D-085 将最终交付包移到 `deliver/<slug>/`；`build/<slug>/` 只作临时区。D-072 第 4 条中 `build/<slug>/package/` 的路径表述由 D-085 取代。
+
 ## D-073 配置解析一次、快照不可变、指纹进入 resume
 
 **背景**：课程时长、字幕语言、合成模式、模型路由分散在 `lesson.yaml` 与五个 `config/*.yaml`；模块各自读取，导致同一门课出现四个时长值，且无法判断哪次构建用了哪套配置。
@@ -892,3 +894,34 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **后果**：知识系列有了统一质量口径；领域方案只写内容与证据，不再各自发明质量标准；成片验收回到画面、证据与人工签核。
 
 **实施状态**：**2026-11-11 已记录**。基准文档已写入 `docs/`；E01 标准为 `design`，证据未采集，未进入生产。
+
+## D-084 所有视频英文制作，字幕英上中下
+
+**背景**：各垂直领域方案把语言写成待定，脚本、配音、字幕链路容易反复；已有课程也存在中文旁白或中文字幕的历史配置。
+
+**决策**：
+1. 所有新生产视频的画面文字与旁白用英文；英文稿直接写，不从中文逐句翻译。
+2. 中文只做字幕与文章版本；默认不做中文配音。需要中文配音的单集必须显式批准，不进入默认链路。
+3. 字幕固定英文在上、中文在下；术语按全季术语表统一；行宽、CPS、cue 数按 V-31 / V-44 检查。
+4. 规则适用于长视频与 Shorts；不新增运行时字段或门禁，验收时人工核对。
+5. 已有课程若用于正式发布，先核对语言与字幕；不符合的重做或补字幕，不静默保留。
+
+**后果**：脚本、TTS、字幕与审片统一按英文主产品执行；中文版本基于同一知识结构重写，不做逐句直译。
+
+**实施状态**：**2026-11-11 已记录**。质量基准、知识系列总纲、叙事规范、视觉指南、三个垂直领域方案与本机课程方案已同步；未新增代码检查。
+
+## D-085 构建临时区与最终交付区分开
+
+**背景**：最终交付分散在 `build/<slug>/final/`、`build/<slug>/package/`、`build/<slug>/delivery/`，引擎缓存又在 `RemotionStudio/public/staging/`、`ManimSandbox/media/`、`MotionStudio/output/`、`CodeVideoStudio/shots/*/out/`。清理与归档容易误删，或把中间产物当成交付。
+
+**决策**：
+1. `build/<slug>/` 是唯一临时区：可删除、可重建；不承载最终交付。
+2. `deliver/<slug>/` 是唯一最终交付区：`course-control package` 默认输出到这里，含 master、captioned、字幕、报告、证据、review、metadata、manifest 与 checklist。
+3. 制片清单从 `build/<slug>/delivery/` 改名到 `build/<slug>/producer/`，避免与最终交付混淆。
+4. 引擎缓存归入 `build/_engine-cache/`；Remotion 的 `public/staging` 是渲染器要求的临时镜像，构建结束清理，不作为事实源。
+5. `deliver/` 与 `build/` 一样不入库。
+6. `scripts/organize-build.ps1` 负责迁移：`package/` → `deliver/`，`delivery/` → `producer/`，可选 `-EngineCaches`；不删除任何交付。
+
+**后果**：清理 `build/` 不会删除最终交付；交付包可独立校验、归档；旧路径由迁移脚本处理。
+
+**实施状态**：**2026-11-11 已实施**。`package` / `producer` 路径、tests、`.gitignore`、迁移脚本与现有产物已更新。

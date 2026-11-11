@@ -152,6 +152,11 @@ class LessonPaths:
             return self.build_root_override.resolve()
         return self.workspace / "build" / self.slug
 
+    @property
+    def delivery_root(self) -> Path:
+        """Final, self-contained delivery package; never the temporary build area."""
+        return (self.workspace / "deliver" / self.slug).resolve()
+
     def content_path(self, relative: str) -> Path:
         return (self.lesson_dir / relative).resolve()
 

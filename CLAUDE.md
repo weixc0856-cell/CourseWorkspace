@@ -32,7 +32,7 @@
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 多视觉语法生产系统（架构/审计/样片/实施）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)、[docs/architecture/实施记录-P1-P4.md](docs/architecture/实施记录-P1-P4.md)
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
-- 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)、[经济学第一季方案](docs/verticals/economics/经济学系列-第一季生产方案.md)
+- 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)、[经济学第一季方案](docs/verticals/economics/经济学系列-第一季生产方案.md)、[历史系列生产方向](docs/verticals/history/历史系列-生产方向.md)、[AI 时代基础知识生产方向](docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)、[汽车空气动力学生产方向](docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)
 
 - 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)
@@ -40,6 +40,7 @@
 - 品牌与片头片尾（WAYNE / 三种形态 / V-33）：[docs/品牌与片头片尾.md](docs/品牌与片头片尾.md)
 - 片头美术方向（参考板/角色/场景/Gate）：[BrandIntro/README.md](BrandIntro/README.md)
 - 教材驱动课程生产（KnowledgeStudio 拆页/检索/引用）：[docs/KnowledgeStudio.md](docs/KnowledgeStudio.md)、[KnowledgeStudio/README.md](KnowledgeStudio/README.md)
+- 资料采集与预处理（PDF / YouTube → 本机 Docling 区）：[docs/资料采集与预处理.md](docs/资料采集与预处理.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - Primer 式模拟视频 POC：[docs/evaluations/评估-Primer模拟视频POC.md](docs/evaluations/评估-Primer模拟视频POC.md)
@@ -66,7 +67,7 @@
 3. **本地模型严格串行。** 任何本地模型调用必须经过 `shared/ai_runtime` 的跨进程锁；同一时刻 8080 只允许一个推理任务；谁启动谁停止。
 4. **AI 输出不等于已完成。** LLM 生成的结构化计划、脚本、审查意见都是候选结果，必须经程序校验；最终事实判断由人工与来源证据负责。
 5. **上下文硬上限 64K。** 默认 8K–16K；复杂任务 16K–32K；禁止把整份课程/历史对话塞进一次请求。
-6. **工程隔离。** 不全局安装依赖、不改系统 PATH、不写入 `<AI_ROOT>`；产物只写 `build/<slug>/` 与各工程自己的运行时目录。
+6. **工程隔离。** 不全局安装依赖、不改系统 PATH、不写入 `<AI_ROOT>`；临时产物只写 `build/<slug>/` 与各工程自己的运行时目录，最终交付只写 `deliver/<slug>/`。
 7. **不伪造验收。** 不能为了通过而修改测试预期、跳过检查或补写内容。
 8. **远程仓库只放工作流。** `lessons/` 真实课程、`build/`、`runtime/`、模型权重与媒体文件不入库；远程仓库必须保持可克隆、可测试、无课程内容。
 9. **Claude Code 默认后端。** 课程文本生产（brief/outline/script/content）、字幕翻译、ContentQA 与 ModelingStudio 文本规划默认走 Claude Code；文本阶段必须禁用工具（`--tools=`），镜头 Agent 阶段只允许写 `build/` 暂存目录。不可用即 `blocked`；只有 `claude_code_fallback: local_first` 才可回退本地/远程，禁止静默降级。
@@ -74,6 +75,7 @@
 11. **创作规范是硬约束。** 长视频与 Shorts 必须提供 `authoring/narrative-plan.json` 并通过 `narrative-validate`；Shorts 30–90 秒、竖屏、独立脚本，不从长视频裁切；A/B 画面必须标注 `real_data / simulation / schematic`。规范见 `docs/creative/叙事设计与观众留存规范.md`。
 13. **片头片尾不得影响正片。** 品牌片段只允许 `片头 → 正片 → 片尾` 线性拼接；正片的视频、音频、字幕与时间线是原子资产，不裁剪、不重编码、不交叉淡化、不提前播放。拼接后必须通过帧时间戳与音频对齐核验（`video_timing` / `audio_alignment`，V-36）；品牌默认关闭，只有 `lesson.yaml.branding` 显式开启才生效。
 12. **复用优先，但准入要过关。** 有成熟实现时不自造轮子；引入前校核上游许可、口碑（star/fork/open issues）、近 6 个月活跃度与版本一致性，并在 `docs/第三方依赖准入规范.md` 登记；引入后产生负面效果（性能回退、不可确定性复现、许可污染、维护停滞）的一律 pass 掉。依赖落后 ≥2 个 minor 版本必须开升级任务或记录不升级理由。
+14. **所有视频英文制作。** 画面文字与旁白用英文；中文只做字幕与文章版本，默认不做中文配音；字幕英文在上、中文在下。
 
 ## 3. 常用入口
 
@@ -102,3 +104,4 @@ uv run --project ContentQA content-qa review --lesson <slug>
 - Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - 本机配置：`config/tools.yaml`、`config/local-paths.yaml`、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
 - 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 VoxCPM2 TTS。8082 不存在。
+- `build/<slug>/` 是临时区，可删除重建；`deliver/<slug>/` 是最终交付区，不随 `build/` 清理。两者都不入库。

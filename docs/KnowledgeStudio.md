@@ -1,8 +1,10 @@
 # KnowledgeStudio：教材驱动的课程生产
 
 日期：2026-11-09
+
+> 教材、论文与视频来源统一进入本机 Docling 资料区；采集与预处理见 [资料采集与预处理.md](资料采集与预处理.md)。
 代码：`KnowledgeStudio/`（`src/knowledge_studio/`）
-命令：`knowledge-studio import-source | toc | segment | index | retrieve | evidence | verify | extract-report | status`
+命令：`knowledge-studio import-source | toc | segment | index | retrieve | evidence | span-check | map | verify | extract-report | status`
 
 ## 1. 它解决什么
 
@@ -104,6 +106,31 @@ knowledge-studio evidence --root knowledge/hucho \
 - 写出 `evidence/<query_id>.evidence.json`，`verification` 固定 `pending`：是否成立由人工与来源负责，工具不替它下结论；
 - 课程正文里的每个关键结论都应能落到一条 claim → 一页原文。
 
+### 7.1 `span-check`：只证明"文本在页上"
+
+```powershell
+knowledge-studio span-check --root knowledge/hucho `
+    --evidence knowledge/hucho/evidence/<query>.evidence.json [--claims claims.json]
+```
+
+它做三件事，都是结构检查：
+
+1. 引用页仍然存在，页面哈希与引用记录一致；
+2. claim 的可选 `quote` 能在至少一个被引页上找到（大小写、连字符换行、空白做归一化）；
+3. claim 语句里的数字能在被引页上找到（缺数字默认 warning，`--strict-numbers` 改为 blocking）。
+
+它**不判断** quote 是否支持 claim，也不把 `verification` 改成 `verified`。输出 `evidence/<query>.spancheck.json|md`；blocked 退出 1，warn/pass 退出 0。
+
+真实教材试点（352 页）第一次运行就抓到一个"看起来对、实际不连续"的引用：页面版面把侧栏文字插进了正文，quote 少了首词就无法在归一化文本中命中。修正 quote 后 5/5 pass。这正是它该做的事。
+
+### 7.2 `map`：确定性的书图
+
+```powershell
+knowledge-studio map --root knowledge/hucho
+```
+
+输出 `map/book-map.json|md`：一级章节、PDF 页范围、覆盖单元、图/表/公式计数、单元关键词。它只索引"书里有什么、在哪里"，不生成概念图，也不判断哪些内容值得讲。概念选择写在领域方案里；具体课程方案留在本机 `runtime/course-content/`，不进仓库。
+
 ## 8. 接入 CourseControl
 
 ```powershell
@@ -159,7 +186,7 @@ uv run --project KnowledgeStudio knowledge-studio extract-report `
 - 图注识别是规则匹配（`Fig.` / `Figure` / `Table` / `Eq.`），非英文教材需要先扩规则或人工 `figures.json`。
 - 检索是词法匹配，不做同义词/跨语言扩展；需要语义检索时，等 R1/R2 稳定后再作为补充，而不是替换页级事实。
 - 单元按一级目录切分；一本书若一级目录下没有二级结构，单元会较大，可先人工提供 `metadata/toc.json`。
-- `evidence` 只做“引用可追溯”，不做 claim 真伪判断，也不校验模型生成的表述是否被原文支持——那需要人工或独立审查。
+- `evidence` 与 `span-check` 只做“引用可追溯 + 文本/数字在场”，不做 claim 真伪判断，也不校验模型生成的表述是否被原文支持——那需要人工或独立审查。quote 不在页上会 blocked；quote 在页上不代表结论成立。
 - `extract-report` 只能检查文本层，不能判断阅读顺序：pypdf 不提供坐标，双栏是否串行无法验证；需要这条能力时，换带 bbox 的抽取器（如 PyMuPDF）并补一条基于块的检查。
 - 图注仍是规则匹配；`extract-report` 不校验“图注是否跟在图后面”。
 
@@ -169,7 +196,8 @@ uv run --project KnowledgeStudio knowledge-studio extract-report `
 
 ## 12. 已验证
 
-- `KnowledgeStudio` 单测 21 个（含 `extract-report` 8 个：空页/允许为空/缺页 fatal、断词与替换字符、重复页眉、目录锚点、落盘格式）：页切分、标记校验、pypdf 真实解析、目录解析与偏移校准（-4 页）、单元范围、英文/中文检索、页预算、检索落盘与 QA、claim 只能引用已检索页、导出片段、篡改页哈希后 QA blocked、无目录时回退章节标题。
+- `KnowledgeStudio` 单测 27 个（`extract-report` 8 个、`span-check` 5 个、`map` 1 个；其余为页切分/目录/单元/检索/证据）：页切分、标记校验、pypdf 真实解析、目录解析与偏移校准（-4 页）、单元范围、英文/中文检索、页预算、检索落盘与 QA、claim 只能引用已检索页、导出片段、篡改页哈希后 QA blocked、无目录时回退章节标题。
 - CLI 真实运行（`build/knowledge-smoke/`）：PDF 导入 2 页（`pypdf==6.9.2`）、文本教材 12 页 → 目录 4 条、偏移 -4 → 3 个单元 → 检索 `drag coefficient` 4/12 页、`风洞 实验` 3/12 页 → 两条 claim 证据 → `verify` KS-01…KS-08 全 pass。
 - `extract-report` 真实运行（`build/knowledge-smoke/pdf-book`）：2/2 页，status pass，短页 2 条为 cosmetic，TOC 缺失如实记入报告。
+- 真实教材试点（2026-11-10）：一本 352 页英文教材经 Docling 转成 352 页资料包，`to-knowledge` 用 PDF 书签建 18 个单元，`verify` KS-01…KS-08 pass；`map` 输出 18 章；5 条教材 claim 经 `evidence` + `span-check` 5/5 pass。
 - `scripts/check.ps1` 已包含 KnowledgeStudio 单测。
