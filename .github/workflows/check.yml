@@ -60,10 +60,14 @@ jobs:
       - name: Node dependencies
         shell: pwsh
         run: |
-          npm ci --prefix CourseSlides
-          npm ci --prefix MotionStudio
-          npm ci --prefix RemotionStudio
+          Push-Location CourseSlides; npm ci; Pop-Location
+          Push-Location MotionStudio; npm ci; Pop-Location
+          Push-Location RemotionStudio; npm ci; Pop-Location
+
+      - name: Vendor sync
+        shell: pwsh
+        run: uv run --project CourseControl course-control vendor-sync --workspace .
 
       - name: Run check.ps1
         shell: pwsh
-        run: .\scripts\check.ps1
+        run: .\scripts\check.ps1 -CleanClone
