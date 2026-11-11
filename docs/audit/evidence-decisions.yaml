@@ -174,3 +174,38 @@ rules:
     disposition: stale_ref
     owner: docs
     reason: "Placeholder path in a documentation example."
+
+  - prefix: build/01-transformer-demo/final/
+    disposition: regenerable
+    owner: CourseControl
+    reason: "Media intermediates cleaned on 2026-11-11 with user approval; deliver/01-transformer-demo/ holds the master. Rerun build-lesson.ps1 -Lesson 01-transformer-demo to regenerate."
+
+  - prefix: build/01-transformer-demo/narration/
+    disposition: regenerable
+    owner: narrate
+    reason: "Narration media cleaned on 2026-11-11 with user approval; regenerate with narration-build."
+
+  - prefix: build/05-transformer-5min/final/
+    disposition: regenerable
+    owner: CourseControl
+    reason: "Media intermediates cleaned on 2026-11-11 with user approval; deliver/05-transformer-5min/ holds the master. Rerun build-lesson.ps1 -Lesson 05-transformer-5min to regenerate."
+
+  - prefix: build/05-transformer-5min/narration/
+    disposition: regenerable
+    owner: narrate
+    reason: "Narration media cleaned on 2026-11-11 with user approval; regenerate with narration-build."
+
+  - prefix: build/05-transformer-5min/quality/frames/
+    disposition: regenerable
+    owner: CourseControl
+    reason: "QC frame samples cleaned on 2026-11-11 with user approval; regenerate with quality-report / media-qc."
+
+  - prefix: build/06-attention-sample/final/
+    disposition: regenerable
+    owner: CourseControl
+    reason: "Media intermediates cleaned on 2026-11-11 with user approval; deliver/06-attention-sample/ holds the master. Rerun build-lesson.ps1 -Lesson 06-attention-sample to regenerate."
+
+  - prefix: build/nvda-gpu-control/final/
+    disposition: regenerable
+    owner: CourseControl
+    reason: "Media intermediates cleaned on 2026-11-11 with user approval; deliver/nvda-gpu-control/ holds the master. Rerun build-lesson.ps1 -Lesson nvda-gpu-control to regenerate."

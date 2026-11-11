@@ -30,6 +30,7 @@
 - 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
 - 工业化动画工作流（节拍表/配色/评分门禁）：[docs/工业化动画工作流.md](docs/工业化动画工作流.md)
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
+- 主生产路线（Slide-first / Motion-enhanced / Narration-led，路线建议非门禁）：[docs/生产路线.md](docs/生产路线.md)
 - 多视觉语法生产系统（架构/审计/样片/实施）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)、[docs/architecture/实施记录-P1-P4.md](docs/architecture/实施记录-P1-P4.md)
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
 - 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)；各领域方案在本机 `docs/verticals/<domain>/`，不入库。
@@ -41,6 +42,7 @@
 - 片头美术方向（参考板/角色/场景/Gate）：[BrandIntro/README.md](BrandIntro/README.md)
 - 教材驱动课程生产（KnowledgeStudio 拆页/检索/引用）：[docs/KnowledgeStudio.md](docs/KnowledgeStudio.md)、[KnowledgeStudio/README.md](KnowledgeStudio/README.md)
 - 资料采集与预处理（PDF / YouTube → 本机 Docling 区）：[docs/资料采集与预处理.md](docs/资料采集与预处理.md)
+- 本地图像生成（FLUX.3 只出静帧，不能生成视频）：[docs/本地图像生成-FLUX3.md](docs/本地图像生成-FLUX3.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - Primer 式模拟视频 POC：[docs/evaluations/评估-Primer模拟视频POC.md](docs/evaluations/评估-Primer模拟视频POC.md)
@@ -76,6 +78,8 @@
 13. **片头片尾不得影响正片。** 品牌片段只允许 `片头 → 正片 → 片尾` 线性拼接；正片的视频、音频、字幕与时间线是原子资产，不裁剪、不重编码、不交叉淡化、不提前播放。拼接后必须通过帧时间戳与音频对齐核验（`video_timing` / `audio_alignment`，V-36）；品牌默认关闭，只有 `lesson.yaml.branding` 显式开启才生效。
 12. **复用优先，但准入要过关。** 有成熟实现时不自造轮子；引入前校核上游许可、口碑（star/fork/open issues）、近 6 个月活跃度与版本一致性，并在 `docs/第三方依赖准入规范.md` 登记；引入后产生负面效果（性能回退、不可确定性复现、许可污染、维护停滞）的一律 pass 掉。依赖落后 ≥2 个 minor 版本必须开升级任务或记录不升级理由。
 14. **所有视频英文制作。** 画面文字与旁白用英文；中文只做字幕与文章版本，默认不做中文配音；字幕英文在上、中文在下。
+15. **本地 FLUX.3 只生成静帧，图生视频写死禁用。** ComfyUI 8188 上的 FLUX.3 仅用于单张图像；Wan2.2 I2V 等图生视频因配置原因不可用，不得调用。动态画面只走 Blender（2.5D 分层绑定 / 运镜）或 Remotion；最终由 FFmpeg 编码。GPU 独占，同一时间只跑一个生成任务，谁启动谁停止。详见 `docs/本地图像生成-FLUX3.md`。
+15. **调试与推送熔断。** 同一问题（推送、CI、构建、测试等）连续失败或反复修复超过 3 次时，立即停止继续试错与自动推送；记录问题、已尝试的修复、当前证据与下一步建议，等待人工决定。不得用连续推送代替本地验证。
 
 ## 3. 常用入口
 
@@ -102,6 +106,6 @@ uv run --project ContentQA content-qa review --lesson <slug>
 ## 5. 环境
 
 - Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
-- 本机配置：`config/tools.yaml`、`config/local-paths.yaml`、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
+- 本机配置：`config/tools.yaml`、`config/local-paths.yaml`（含 `docling_root`、`source_libraries`、TTS）、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
 - 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 VoxCPM2 TTS。8082 不存在。
 - `build/<slug>/` 是临时区，可删除重建；`deliver/<slug>/` 是最终交付区，不随 `build/` 清理。两者都不入库。
