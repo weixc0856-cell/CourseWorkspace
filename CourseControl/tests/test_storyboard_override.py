@@ -15,6 +15,7 @@ WORKSPACE = Path(__file__).resolve().parents[2]
 LESSON = WORKSPACE / "lessons" / "01-transformer-demo"
 
 
+@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
 class StoryboardOverrideTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

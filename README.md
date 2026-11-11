@@ -11,6 +11,7 @@
 - **决策记录**：[docs/DECISIONS.md](docs/DECISIONS.md)
 - **需求映射**：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - **Claude Code 入口**：[CLAUDE.md](CLAUDE.md)
+- **CI**：`.github/workflows/check.yml`（Windows，运行 `scripts/check.ps1`）
 - **质量基准**：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - **资料采集**：[docs/资料采集与预处理.md](docs/资料采集与预处理.md)
 
