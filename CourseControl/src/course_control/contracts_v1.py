@@ -320,7 +320,7 @@ class ShotSpecV1(V1Model):
 class NarrationVoice(V1Model):
     provider: Literal["voxcpm2"]
     ref_audio: AssetRef
-    language: str = Field("zh", pattern=r"^[a-z]{2}(-[A-Z]{2})?$")
+    language: str = Field("en", pattern=r"^[a-z]{2}(-[A-Z]{2})?$")
     speed: float = Field(1.0, ge=0.5, le=2.0)
 
 

@@ -42,7 +42,10 @@
 
 - [verticals/知识系列课程生产总纲.md](verticals/知识系列课程生产总纲.md)：把一个领域接进现有系统的通用规范（来源分层、选题准入、语法映射、资产准入、许可、接入清单）
 - [verticals/README.md](verticals/README.md)：领域方案索引与状态
-- [verticals/economics/经济学系列-第一季生产方案.md](verticals/economics/经济学系列-第一季生产方案.md)：首个实例（v0.1 草案，未执行）
+- [verticals/economics/经济学系列-第一季生产方案.md](verticals/economics/经济学系列-第一季生产方案.md)：首个实例（v0.3 草案，未执行）
+- [verticals/history/历史系列-生产方向.md](verticals/history/历史系列-生产方向.md)：历史领域生产方向（v0.1 草案，未展开）
+- [verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md](verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)：AI 时代基础知识（v0.1 草案，未展开）
+- [verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md](verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)：汽车空气动力学（v0.1 草案，未展开）
 
 ## 1.1 许可与贡献
 

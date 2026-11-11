@@ -63,6 +63,7 @@ class ProducerRunTest(unittest.TestCase):
         self.assertGreaterEqual(self.result.state.usage.disk_gb, 0)
 
     def test_delivery_reports_missing_artifacts_honestly(self):
+        self.assertTrue((self.root / "producer" / "manifest.json").is_file())
         manifest = self.result.manifest
         self.assertEqual(manifest.status, "blocked")
         by_id = {item.id: item for item in manifest.items}

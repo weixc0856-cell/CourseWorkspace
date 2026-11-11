@@ -93,7 +93,7 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     invented.
     """
     build_root = paths.build_root
-    final_root = (output_root or (build_root / "package")).resolve()
+    final_root = (output_root or paths.delivery_root).resolve()
     if not is_under(paths.workspace, final_root):
         raise PackageError(f"package output must stay inside the workspace: {final_root}")
     # Build beside the target and swap only after the new package is complete.

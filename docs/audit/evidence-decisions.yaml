@@ -10,6 +10,21 @@ rules:
     owner: CourseControl
     reason: "Lesson content is present but no build exists on this machine; rerun build-lesson.ps1 -Lesson 01-shell-for-ai-era."
 
+  - prefix: build/01-transformer-demo/delivery/
+    disposition: historical
+    owner: docs
+    reason: "Producer manifest moved to build/<slug>/producer/ by D-085; historical session records keep the old path."
+
+  - prefix: build/01-transformer-demo/package/
+    disposition: historical
+    owner: docs
+    reason: "Delivery package moved to deliver/01-transformer-demo/ by D-085; session records keep the old path."
+
+  - prefix: build/05-transformer-5min/delivery/
+    disposition: historical
+    owner: docs
+    reason: "Producer manifest moved to build/<slug>/producer/ by D-085; historical session records keep the old path."
+
   - prefix: build/01-transformer-demo/authoring/candidates/
     disposition: regenerable
     owner: authoring

@@ -239,7 +239,7 @@ def status(workspace: Path, lesson_dir: Path, build_root: Path | None = None) ->
         raise ContractError("no production order/state; run producer-run first")
     order = load_order(order_file)
     state = load_state(state_file)
-    manifest_file = root / "delivery" / "manifest.json"
+    manifest_file = root / "producer" / "manifest.json"
     manifest = (
         DeliveryManifest.model_validate_json(manifest_file.read_text(encoding="utf-8"))
         if manifest_file.is_file()

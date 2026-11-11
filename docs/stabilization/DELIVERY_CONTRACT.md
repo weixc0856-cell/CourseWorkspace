@@ -21,7 +21,7 @@
 `course-control package --lesson <slug>` 生成：
 
 ```text
-build/<slug>/package/
+deliver/<slug>/
 ├── final/
 │   ├── master.mp4              # course-video-mixed.mp4 优先，否则 course-video.mp4
 │   ├── captioned.mp4           # 存在则复制；否则 not_applicable
@@ -41,7 +41,7 @@ build/<slug>/package/
 
 说明：
 
-- 包在 `build/<slug>/package/`，不新建仓库根 `delivery/`；这样仍然落在既有 `build/<slug>/` 边界内，`.gitignore` 不需要新增规则。
+- 包在 `deliver/<slug>/`；`build/<slug>/` 只作临时区。`.gitignore` 同时忽略 `build/` 与 `deliver/`。D-085 取代了本文件早期“不新建仓库根 delivery/”的规则。
 - `package` 只复制，不渲染、不转码、不混音；它不改变任何源产物。
 - 可选资产缺失写 `not_applicable`，不伪造空文件。
 
@@ -88,7 +88,7 @@ build/<slug>/package/
 
 ```powershell
 course-control package --lesson <slug>
-course-control package-verify --package build/<slug>/package
+course-control package-verify --package deliver/<slug>
 ```
 
 `package-verify` 重新计算每个 `status=present` 文件的 SHA-256：
@@ -111,8 +111,8 @@ package 成功不等于可发布：`quality-gate` 的 `incomplete` 与 `release-
 
 ## 7. 与 producer delivery 的关系
 
-- `producer` 的 `build/<slug>/delivery/manifest.json` 是**制片清单**：判断七类资产是否齐全、订单是否批准、增量指纹。
-- `package` 的 `build/<slug>/package/` 是**交付副本**：把已存在的资产复制、哈希、可独立验证。
+- `producer` 的 `build/<slug>/producer/manifest.json` 是**制片清单**：判断七类资产是否齐全、订单是否批准、增量指纹。
+- `package` 的 `deliver/<slug>/` 是**最终交付**：把已存在的资产复制、哈希、可独立验证。
 - 两者不互相替代；短期保留。未来如果合并，以 package 的哈希与 producer 的订单状态为输入，不新增第三份清单。
 
 ## 8. 验收

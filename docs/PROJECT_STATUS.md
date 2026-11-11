@@ -7,12 +7,20 @@
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
+## 0.0000C 2026-11-11 交付与临时分区
+
+- `build/<slug>/` 只作临时区，可删除重建；`deliver/<slug>/` 是唯一最终交付区，不随 `build/` 清理。
+- `course-control package` 默认输出 `deliver/<slug>/`；`producer` 清单在 `build/<slug>/producer/`。
+- 引擎缓存归入 `build/_engine-cache/`；迁移脚本 `scripts/organize-build.ps1`（`-Apply` 才移动，`-EngineCaches` 含引擎缓存）。
+- 现有 01 / 05 / 06 / nvda 的 package 已迁移到 `deliver/`，`package-verify` 通过；`check.ps1` = `check ok`。
+
 ## 0.0000B 2026-11-11 知识视频质量基准
 
 - 新增 [知识视频质量基准.md](知识视频质量基准.md)：内容 / 视觉 / 交付三层验收，L1 必须、L2 分块努力、L3 长期探索；参考频道只校准方法，不按“像不像”评分。
 - 明确镜头时长、动画类型、语法选择不是契约或门禁；发布结论仍按 D-071 的三条，并需要人工签核。
 - 首个实例为本机 AI 经济系列 E01（`runtime/course-content/ai-economics/episodes/E01/acceptance-standard.md`），当前为 `design`，现代证据未采集，未进入生产。
 - 未新增 `FR-*` / `NFR-*`、模块、语法、评分器或门禁；`check.ps1` 不受影响。
+- 统一语言规则（D-084）：所有视频英文画面与旁白；字幕英文在上、中文在下；中文只做字幕与文章版本，默认不做中文配音。
 
 ## 0.0000 2026-11-10 Production Stabilization 基线
 

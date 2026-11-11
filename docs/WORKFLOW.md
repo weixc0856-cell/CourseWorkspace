@@ -255,7 +255,7 @@ uv run --project CourseControl course-control validate --lesson <slug>
   → brief → outline → script → content-draft（候选，写 build/<slug>/authoring/candidates/）
   → [人工] author-accept（sha256 批准，写 lessons/<slug>/）
   → director-plan（章节/镜头/引擎/旁白/连续性；写 build/<slug>/director/）
-  → producer-run（内部含 director-plan：订单 → 校验 → 导演计划 → 交付清单 → 状态；写 build/<slug>/{production,delivery}/）
+  → producer-run（内部含 director-plan：订单 → 校验 → 导演计划 → 交付清单 → 状态；写 build/<slug>/{production,producer}/）
   → narration-build（本地 VoxCPM2，整课或 --sample-pages 样片）
   → subtitles-build（实测音频；--planned 可先生成计划版草稿）
   → [人工] subtitles-accept
@@ -271,7 +271,7 @@ uv run --project CourseControl course-control validate --lesson <slug>
 | 静帧运镜 | `lesson.yaml.motion`（ken_burns/static） | `TimelineSpec` 元数据 → Remotion MotionImage |
 | 版式校验 | `layout-templates` / `layout-validate --template process_flow` | 8 个模板与容量检查 |
 | 导演计划 | `director-plan --lesson <slug>` | `build/<slug>/director/{director_plan.json,storyboard.director.yaml,directions/,shot_specs/,director_review.md}` |
-| 制片 | `producer-order` / `producer-run` / `producer-status` / `producer-affected` / `producer-rebuild` | `build/<slug>/{production/order.json,production/state.json,delivery/manifest.json,delivery/README.md}` |
+| 制片 | `producer-order` / `producer-run` / `producer-status` / `producer-affected` / `producer-rebuild` | `build/<slug>/{production/order.json,production/state.json,producer/manifest.json,producer/README.md}` |
 | 局部重渲染 | `producer-rebuild [--execute] [--compose]` | `build/<slug>/animation/<scene>.mp4`，state 指纹刷新 |
 | 整课旁白 | `narration-build --mode reference_only --timing measured` | `narration/narration.wav`、`narration.meta.json` |
 | 样片 | `narration-build --sample-pages 3` | `narration/sample/sample.wav`、`sample.meta.json` |
