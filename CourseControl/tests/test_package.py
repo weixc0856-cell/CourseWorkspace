@@ -9,6 +9,7 @@ from pathlib import Path
 
 from course_control.package import PackageError, build_package, verify_package
 from course_control.paths import LessonPaths
+from tests._process import NO_CONSOLE
 
 LESSON = """schema_version: 1
 lesson_id: demo
@@ -85,6 +86,7 @@ class PackageTest(unittest.TestCase):
                 str(build / "final" / "course-video.mp4"),
             ],
             check=True,
+            creationflags=NO_CONSOLE,
         )
         self.paths = LessonPaths.load(self.workspace, self.lesson_dir)
 

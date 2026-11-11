@@ -23,6 +23,7 @@ from course_control.branding import (
     segment_key,
 )
 from course_control.contracts import Branding, BrandSegment, LessonConfig
+from tests._process import NO_CONSOLE
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-smoke" / "lesson.yaml"
@@ -211,6 +212,7 @@ class AudioAlignmentTest(unittest.TestCase):
             [shutil.which("ffmpeg"), "-y", *args],
             capture_output=True,
             text=True,
+            creationflags=NO_CONSOLE,
         )
         self.assertEqual(result.returncode, 0, result.stderr[-600:])
 
