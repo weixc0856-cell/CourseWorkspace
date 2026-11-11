@@ -68,6 +68,17 @@ jobs:
         shell: pwsh
         run: uv run --project CourseControl course-control vendor-sync --workspace .
 
+      - name: Unit tests
+        shell: powershell
+        run: |
+          $projects = @("CourseControl", "ModelingStudio", "shared/ai_runtime", "ContentQA", "ManimSandbox", "KnowledgeStudio")
+          foreach ($project in $projects) {
+            Write-Host "unit tests: $project"
+            $python = Join-Path $project ".venv\Scripts\python.exe"
+            & $python -m unittest discover -s "$project/tests" -t $project
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
       - name: Run check.ps1
         shell: powershell
-        run: .\scripts\check.ps1 -CleanClone
+        run: .\scripts\check.ps1 -CleanClone -SkipUnitTests
