@@ -93,9 +93,12 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     invented.
     """
     build_root = paths.build_root
-    root = (output_root or (build_root / "package")).resolve()
-    if not is_under(paths.workspace, root):
-        raise PackageError(f"package output must stay inside the workspace: {root}")
+    final_root = (output_root or (build_root / "package")).resolve()
+    if not is_under(paths.workspace, final_root):
+        raise PackageError(f"package output must stay inside the workspace: {final_root}")
+    # Build beside the target and swap only after the new package is complete.
+    # A failed run must never destroy the last valid delivery package.
+    root = final_root.with_name(final_root.name + ".tmp")
     if root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True, exist_ok=True)
@@ -259,7 +262,20 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     (root / "delivery-checklist.md").write_text(
         "\n".join(checklist) + "\n", encoding="utf-8"
     )
-    return manifest, root
+    backup = final_root.with_name(final_root.name + ".old")
+    if backup.exists():
+        shutil.rmtree(backup)
+    if final_root.exists():
+        final_root.rename(backup)
+    try:
+        root.rename(final_root)
+    except Exception:
+        if backup.exists() and not final_root.exists():
+            backup.rename(final_root)
+        raise
+    if backup.exists():
+        shutil.rmtree(backup)
+    return manifest, final_root
 
 
 def verify_package(root: Path) -> list[str]:
