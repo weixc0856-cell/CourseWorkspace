@@ -1,7 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
@@ -11,6 +11,17 @@
 - **决策记录**：[docs/DECISIONS.md](docs/DECISIONS.md)
 - **需求映射**：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - **Claude Code 入口**：[CLAUDE.md](CLAUDE.md)
+- **质量基准**：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
+- **资料采集**：[docs/资料采集与预处理.md](docs/资料采集与预处理.md)
+
+## 知识板块
+
+- 历史：[docs/verticals/history/历史系列-生产方向.md](docs/verticals/history/历史系列-生产方向.md)
+- AI 时代基础知识：[docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md](docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)
+- 汽车空气动力学：[docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md](docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)
+- 经济学：[docs/verticals/economics/经济学系列-第一季生产方案.md](docs/verticals/economics/经济学系列-第一季生产方案.md)
+
+具体课程方案、教材页映射、图片账本、讲稿与素材留在本机 `runtime/`，不进仓库。
 
 ## 仓库范围（远程 vs 本地）
 
@@ -25,7 +36,7 @@
 | `CodeVideoStudio/` | 是 | Code2Video Skill（Apache 2.0）与镜头 POC；不含 27B 权重 |
 | `scripts/`、`config/*.example.yaml`、`docs/` | 是 | 入口、模板与指导 |
 | `lessons/` 真实课程 | **否** | 本地内容，仓库只保留 `lessons/README.md` |
-| `build/`、`runtime/`、`ModelingStudio/workspace/` | 否 | 生成物与运行态 |
+| `build/`、`deliver/`、`runtime/`、`knowledge/`、`ModelingStudio/workspace/` | 否 | 临时构建、最终交付、运行态与本地资料；`deliver/` 不随 `build/` 清理 |
 | 模型权重、视频、音频、`*.blend1` | 否 | 大文件与媒体 |
 | `config/tools.yaml`、`config/local-paths.yaml`、`config/content-qa.yaml`、`ModelingStudio/config/workflow.yaml` | 否 | 本机路径与凭据 |
 
@@ -50,6 +61,9 @@ compose（staging + Remotion）           → build/<slug>/final/course-video.mp
         │
         ▼
 verify                                 → build/<slug>/final/build-report.json（V-10~V-22）
+        │
+        ▼
+package                                → deliver/<slug>/（唯一最终交付包）
 ```
 
 Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` 通过 core `Renderer`、帧接收器和 ffmpeg 直接产出 `build/<slug>/animation/<scene-stem>.mp4`；adapter 重试并 ffprobe，失败即 `fail`，不写 `skipped`。
@@ -62,23 +76,25 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 
 详见 [内容类型与音频策略](docs/内容类型与音频策略.md)；曲目、许可与试听见 [音乐资产盘点](docs/音乐资产盘点.md)。
 
+**语言**：所有视频英文画面与旁白；字幕英文在上、中文在下。中文只做字幕与文章版本，默认不做中文配音（D-084）。
+
 ## 工程分工
 
 | 目录 | 职责 | 产物 | 是否主流程 |
 | --- | --- | --- | --- |
 | `lessons/` | 课程唯一入口 | 双文件内容 + 契约 | 是 |
-| `CourseControl/` | 校验、调度、收集、报告；含 `director/` 与 `producer/` | `shots.json`、`build-report.json`、导演计划、交付清单 | 是 |
+| `CourseControl/` | 校验、调度、收集、报告；含 `director/` 与 `producer/` | `shots.json`、`build-report.json`、导演计划、制片清单、`deliver/<slug>/` 交付包 | 是 |
 | `CourseSlides/` | Reveal 6 外壳 | 浏览器页面 | 是 |
 | `MotionStudio/` | 结构动画（无头自动导出） | `animation/<stem>.mp4` | 是 |
 | `ManimSandbox/` | 数学动画备选 | `animation/*.mp4` | 否 |
 | `CodeVideoStudio/` | Code2Video Skill：动效/HTML/SVG 镜头 | `animation/<project>.mp4` + `VERIFY.md` | 是（镜头级） |
 | `BlenderStudio/` | 课程渲染任务（v1）+ 场景系统（v2） | `blender/*.png|mp4|blend` | 是（可选引擎） |
-| `RemotionStudio/` | 截图、staging、合成 | `final/course-video.mp4` | 是 |
+| `RemotionStudio/` | 截图、staging、合成 | `build/<slug>/final/course-video.mp4`（临时）+ `deliver/<slug>/`（交付包） | 是 |
 | `ModelingStudio/` | 图片 → Blender 模型 | `workspace/jobs/<job>/` | 否（内部能力） |
 | `ScientificFigures/` | 科学图表 POC：SymPy/Matplotlib/SciencePlots | `ScientificFigures/output/*.svg|pdf|png`（忽略） | 否（POC/按需） |
 | `index.html` | 根入口重定向到 `CourseSlides/template/` | 浏览器入口 | 支撑 |
 | `ContentQA/` | 内容审查（默认 Claude Code，API 可选） | `build/<slug>/review/` | 否（内部能力） |
-| `KnowledgeStudio/` | 教材拆页、目录校准、按页检索与引用 | `knowledge/`（本地，不入库） | 否（内部能力） |
+| `KnowledgeStudio/` | 教材拆页、目录校准、按页检索与引用 | `knowledge/` 与 Docling 资料区（本地，不入库） | 否（内部能力） |
 | `CourseDemo/` | VS Code 会话驱动扩展 | `vscode-result.json` | 否（内部能力） |
 | `shared/ai_runtime/` | 跨进程锁、服务生命周期、任务记录、上下文预算 | `runtime/` | 支撑 |
 | `shared/scene_expr/` | 受限表达式：AST 白名单 + 解释器 | — | 支撑 |
@@ -112,7 +128,7 @@ uv run --project CourseControl course-control build --lesson 01-shell-for-ai-era
 uv run --project CourseControl course-control stats --lesson 01-shell-for-ai-era
 uv run --project CourseControl course-control subtitles-qc --lesson 01-shell-for-ai-era
 uv run --project CourseControl course-control package --lesson 01-shell-for-ai-era
-uv run --project CourseControl course-control package-verify --package build/01-shell-for-ai-era/package
+uv run --project CourseControl course-control package-verify --package deliver/01-shell-for-ai-era
 
 # 完整构建
 .\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era

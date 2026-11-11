@@ -1,8 +1,10 @@
 # KnowledgeStudio
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 教材与知识资产管理：把一本专业教材拆成**按页可引用**的知识单元，让一节课只读它需要的十几页。
+
+教材、论文与视频来源统一进入本机 Docling 资料区；采集与预处理见 [docs/资料采集与预处理.md](../docs/资料采集与预处理.md)。PDF 的 `document.md` / `pages/` 与 YouTube 的 `transcript.clean.md` 都从该区读取。
 
 ```powershell
 uv sync --project KnowledgeStudio

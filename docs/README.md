@@ -1,7 +1,7 @@
 # 文档索引
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本目录按“现行契约 / 生产规范 / 评估与雷达 / 状态与验收 / 本地归档”组织。
 
 ## 1. 现行契约
@@ -47,6 +47,14 @@
 - [verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md](verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)：AI 时代基础知识（v0.1 草案，未展开）
 - [verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md](verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)：汽车空气动力学（v0.1 草案，未展开）
 
+## 1.0.2 交付分区与资料采集（2026-11-11）
+
+- [课程生产交付物规范.md](课程生产交付物规范.md)：`build/<slug>/` 临时区、`deliver/<slug>/` 最终交付区、manifest 与 QC
+- [stabilization/DELIVERY_CONTRACT.md](stabilization/DELIVERY_CONTRACT.md)：`package` / `package-verify` 的交付契约（D-085）
+- [资料采集与预处理.md](资料采集与预处理.md)：PDF 与 YouTube 来源进入本机 Docling 区，生成 Markdown/JSON 与 catalog
+- [知识视频质量基准.md](知识视频质量基准.md)：内容 / 视觉 / 交付三层；L1 必须、L2 分块努力、L3 长期探索
+- [DECISIONS.md](DECISIONS.md)：D-084 英文成片与英上中下字幕；D-085 临时区与最终交付区
+
 ## 1.1 许可与贡献
 
 - [LICENSE](../LICENSE)：AGPL-3.0-or-later
@@ -67,6 +75,7 @@
 - 品牌：[品牌与片头片尾.md](品牌与片头片尾.md)：WAYNE 标识、三种内容形态的片头片尾、流水线位置与 V-33
 - [品牌片头-3D桌面戏-设计.md](品牌片头-3D桌面戏-设计.md)：12 秒独立 3D 桌面片头设计稿 v1.1（Gate 1 粗剪已出）
 - [../BrandIntro/README.md](../BrandIntro/README.md)：片头美术方向工程（参考板、角色/场景概念、美术 Gate）
+- 资料采集：[资料采集与预处理.md](资料采集与预处理.md)：PDF 与 YouTube 来源进入本机 Docling 区，处理后 Markdown/JSON 与 catalog；原始文件不入库
 - 教材知识库：[KnowledgeStudio.md](KnowledgeStudio.md)：PDF 拆页、目录校准、提取质检、按页检索、claim 引用与 QA
 - 公式与图形：[公式排版规范.md](公式排版规范.md)、[科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
 - 音频：[内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)、[本地模型与配音工作流.md](本地模型与配音工作流.md)

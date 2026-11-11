@@ -1,7 +1,7 @@
 # shared/ai_runtime
 
 
-> **2026-11-10 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。C-16 片头 DEFERRED，不阻塞 V1。生产契约与验收见 [最终验收报告](../../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本机 AI 运行时：跨进程锁、单一模型服务生命周期、任务记录、上下文预算。纯标准库实现。
 
 - 需求：`docs/PRD.md` FR-09 / FR-10 / FR-11

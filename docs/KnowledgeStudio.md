@@ -1,6 +1,8 @@
 # KnowledgeStudio：教材驱动的课程生产
 
 日期：2026-11-09
+
+> 教材、论文与视频来源统一进入本机 Docling 资料区；采集与预处理见 [资料采集与预处理.md](资料采集与预处理.md)。
 代码：`KnowledgeStudio/`（`src/knowledge_studio/`）
 命令：`knowledge-studio import-source | toc | segment | index | retrieve | evidence | span-check | map | verify | extract-report | status`
 
