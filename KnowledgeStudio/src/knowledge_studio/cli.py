@@ -11,6 +11,8 @@ import typer
 import yaml
 
 from . import index as index_mod
+from .bookmap import build as build_bookmap
+from .bookmap import write as write_bookmap
 from .evidence import EvidenceError, attach
 from .extract import (
     ExtractorUnavailable,
@@ -29,6 +31,8 @@ from .report import (
 )
 from .retrieve import RetrieveError, export_lesson, retrieve, write as write_retrieval
 from .segment import SegmentError, build_units, load_units
+from .spancheck import check as check_spans
+from .spancheck import write as write_spancheck
 from .toc import (
     TocError,
     load as load_toc,
@@ -274,6 +278,69 @@ def evidence_command(
         typer.echo(f"blocked: {exc}", err=True)
         raise typer.Exit(1)
     typer.echo(f"evidence: {target}")
+
+
+@app.command("span-check")
+def span_check_command(
+    root: Path = typer.Option(..., "--root"),
+    evidence: Path = typer.Option(..., "--evidence", exists=True, dir_okay=False),
+    claims: Path | None = typer.Option(
+        None, "--claims", exists=True, dir_okay=False, help="Optional quote source."
+    ),
+    strict_numbers: bool = typer.Option(
+        False, "--strict-numbers", help="Treat missing numbers as blocking."
+    ),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Check that quoted spans and numbers exist on the cited pages."""
+    root = root.resolve()
+    try:
+        report = check_spans(
+            root,
+            evidence.resolve(),
+            claims_path=claims.resolve() if claims else None,
+            strict_numbers=strict_numbers,
+        )
+    except Exception as exc:  # noqa: BLE001 - unreadable evidence blocks
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(1)
+    paths = write_spancheck(root, report, evidence.resolve())
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(
+            f"span-check: {report['status']} · claims {report['counts']['claims']} · "
+            f"ok {report['counts']['ok']} · warnings {report['counts']['warnings']} · "
+            f"blocking {report['counts']['blocking']}"
+        )
+        typer.echo(f"json: {paths['json']}")
+        typer.echo(f"markdown: {paths['markdown']}")
+    raise typer.Exit(0 if report["status"] in {"pass", "warn"} else 1)
+
+
+@app.command("map")
+def map_command(
+    root: Path = typer.Option(..., "--root"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Write a deterministic chapter/page/unit map for the source."""
+    root = root.resolve()
+    try:
+        report = build_bookmap(root)
+    except Exception as exc:  # noqa: BLE001 - an unindexed source is a block
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(1)
+    paths = write_bookmap(root, report)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(
+            f"map: {len(report['chapters'])} chapters · "
+            f"{report['units_total']} units · {report['pdf_pages']} pages"
+        )
+        typer.echo(f"json: {paths['json']}")
+        typer.echo(f"markdown: {paths['markdown']}")
+    raise typer.Exit(0)
 
 
 @app.command("verify")

@@ -129,6 +129,9 @@ class RetrievalResult(StrictModel):
 class ClaimRef(StrictModel):
     claim_id: str
     statement: str
+    # Optional verbatim span the page must contain. ``span-check`` verifies
+    # presence only; it never decides whether the quote supports the claim.
+    quote: str | None = None
     citations: list[Citation] = Field(default_factory=list)
     # A human or an explicit review pass decides; the tool never marks verified.
     verification: Literal["pending", "verified", "rejected"] = "pending"
