@@ -81,27 +81,27 @@ try {
         }
     }
 
-    Invoke-Checked "unit tests: CourseControl" -Quiet {
+    Invoke-Checked "unit tests: CourseControl" {
         uv run --project CourseControl python -m unittest discover `
             -s CourseControl/tests -t CourseControl
     }
-    Invoke-Checked "unit tests: ModelingStudio" -Quiet {
+    Invoke-Checked "unit tests: ModelingStudio" {
         uv run --project ModelingStudio python -m unittest discover `
             -s ModelingStudio/tests -t ModelingStudio
     }
-    Invoke-Checked "unit tests: ai_runtime" -Quiet {
+    Invoke-Checked "unit tests: ai_runtime" {
         uv run --project shared/ai_runtime python -m unittest discover `
             -s shared/ai_runtime/tests -t shared/ai_runtime
     }
-    Invoke-Checked "unit tests: ContentQA" -Quiet {
+    Invoke-Checked "unit tests: ContentQA" {
         uv run --project ContentQA python -m unittest discover `
             -s ContentQA/tests -t ContentQA
     }
-    Invoke-Checked "unit tests: ManimSandbox" -Quiet {
+    Invoke-Checked "unit tests: ManimSandbox" {
         uv run --project ManimSandbox python -m unittest discover `
             -s ManimSandbox/tests -t ManimSandbox
     }
-    Invoke-Checked "unit tests: KnowledgeStudio" -Quiet {
+    Invoke-Checked "unit tests: KnowledgeStudio" {
         uv run --project KnowledgeStudio python -m unittest discover `
             -s KnowledgeStudio/tests -t KnowledgeStudio
     }
