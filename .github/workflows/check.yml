@@ -82,6 +82,14 @@ jobs:
             if ($code -ne 0) { exit $code }
           }
 
+      - name: Upload console event log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-events
+          path: build/ci-console-events.log
+          if-no-files-found: ignore
+
       - name: Run check.ps1
         shell: powershell
         run: .\scripts\check.ps1 -CleanClone -SkipUnitTests

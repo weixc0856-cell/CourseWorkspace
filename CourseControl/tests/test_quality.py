@@ -99,7 +99,7 @@ shots:
         import shutil
         import subprocess
 
-        from tests._process import NO_CONSOLE
+        from course_control.utils import NO_CONSOLE
 
         if not shutil.which("ffmpeg"):
             self.skipTest("ffmpeg is not available")

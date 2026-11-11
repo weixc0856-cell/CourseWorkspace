@@ -23,7 +23,7 @@ from course_control.branding import (
     segment_key,
 )
 from course_control.contracts import Branding, BrandSegment, LessonConfig
-from tests._process import NO_CONSOLE
+from course_control.utils import NO_CONSOLE
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-smoke" / "lesson.yaml"
