@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$CleanClone)
+param([switch]$CleanClone, [switch]$SkipUnitTests)
 
 # Native commands (uv) write progress to stderr. With ErrorActionPreference=Stop,
 # PowerShell 5.1 turns that into NativeCommandError and aborts the script, so the
@@ -81,29 +81,34 @@ try {
         }
     }
 
-    Invoke-Checked "unit tests: CourseControl" {
-        uv run --project CourseControl python -m unittest discover `
-            -s CourseControl/tests -t CourseControl
+    if ($SkipUnitTests) {
+        Write-Host "skip unit tests (run separately)"
     }
-    Invoke-Checked "unit tests: ModelingStudio" {
-        uv run --project ModelingStudio python -m unittest discover `
-            -s ModelingStudio/tests -t ModelingStudio
-    }
-    Invoke-Checked "unit tests: ai_runtime" {
-        uv run --project shared/ai_runtime python -m unittest discover `
-            -s shared/ai_runtime/tests -t shared/ai_runtime
-    }
-    Invoke-Checked "unit tests: ContentQA" {
-        uv run --project ContentQA python -m unittest discover `
-            -s ContentQA/tests -t ContentQA
-    }
-    Invoke-Checked "unit tests: ManimSandbox" {
-        uv run --project ManimSandbox python -m unittest discover `
-            -s ManimSandbox/tests -t ManimSandbox
-    }
-    Invoke-Checked "unit tests: KnowledgeStudio" {
-        uv run --project KnowledgeStudio python -m unittest discover `
-            -s KnowledgeStudio/tests -t KnowledgeStudio
+    else {
+        Invoke-Checked "unit tests: CourseControl" {
+            uv run --project CourseControl python -m unittest discover `
+                -s CourseControl/tests -t CourseControl
+        }
+        Invoke-Checked "unit tests: ModelingStudio" {
+            uv run --project ModelingStudio python -m unittest discover `
+                -s ModelingStudio/tests -t ModelingStudio
+        }
+        Invoke-Checked "unit tests: ai_runtime" {
+            uv run --project shared/ai_runtime python -m unittest discover `
+                -s shared/ai_runtime/tests -t shared/ai_runtime
+        }
+        Invoke-Checked "unit tests: ContentQA" {
+            uv run --project ContentQA python -m unittest discover `
+                -s ContentQA/tests -t ContentQA
+        }
+        Invoke-Checked "unit tests: ManimSandbox" {
+            uv run --project ManimSandbox python -m unittest discover `
+                -s ManimSandbox/tests -t ManimSandbox
+        }
+        Invoke-Checked "unit tests: KnowledgeStudio" {
+            uv run --project KnowledgeStudio python -m unittest discover `
+                -s KnowledgeStudio/tests -t KnowledgeStudio
+        }
     }
     Invoke-Checked "remotion typecheck" -Quiet {
         & (Join-Path $root "RemotionStudio/node_modules/.bin/tsc.cmd") `
