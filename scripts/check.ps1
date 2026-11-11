@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([switch]$CleanClone)
 
 # Native commands (uv) write progress to stderr. With ErrorActionPreference=Stop,
 # PowerShell 5.1 turns that into NativeCommandError and aborts the script, so the
@@ -52,9 +52,15 @@ try {
     }
 
     # Missing evidence is allowed only when every path has a recorded
-    # disposition in docs/audit/evidence-decisions.yaml.
-    Invoke-Checked "evidence paths" -Quiet {
-        uv run --project CourseControl python scripts/check_evidence.py --workspace .
+    # disposition in docs/audit/evidence-decisions.yaml. A clean clone has no
+    # build outputs, so this check is local-only.
+    if ($CleanClone) {
+        Write-Host "skip evidence paths (clean clone: build outputs are not present)"
+    }
+    else {
+        Invoke-Checked "evidence paths" -Quiet {
+            uv run --project CourseControl python scripts/check_evidence.py --workspace .
+        }
     }
 
     Invoke-Checked "vendor three.js" -Quiet {
@@ -65,9 +71,14 @@ try {
         uv run --project CourseControl course-control shot-taxonomy --workspace . 2>&1 | Out-Null
     }
 
-    Invoke-Checked "blender task 01-transformer-demo" -Quiet {
-        uv run --project CourseControl course-control blender-task-validate `
-            --task BlenderStudio/tasks/01-transformer-demo/stack_explode.json --workspace . 2>&1 | Out-Null
+    if ($CleanClone -and -not (Test-Path "BlenderStudio/scenes/01-transformer-demo")) {
+        Write-Host "skip blender task 01-transformer-demo (local scene not present)"
+    }
+    else {
+        Invoke-Checked "blender task 01-transformer-demo" -Quiet {
+            uv run --project CourseControl course-control blender-task-validate `
+                --task BlenderStudio/tasks/01-transformer-demo/stack_explode.json --workspace . 2>&1 | Out-Null
+        }
     }
 
     Invoke-Checked "unit tests: CourseControl" -Quiet {
