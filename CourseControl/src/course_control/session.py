@@ -133,6 +133,7 @@ class Trim(StrictModel):
 class CommandSpec(StrictModel):
     id: str
     run: list[str] = Field(min_length=1)
+    pause_before_ms: int = Field(0, ge=0, le=30000)
     expect: Expect = Expect()
     trim: Trim | None = None
 
@@ -184,6 +185,7 @@ class SessionSpec(StrictModel):
     offline_commands: list[CommandSpec] = Field(default_factory=list)
     record: RecordSpec = RecordSpec()
     typing_cps: float | None = Field(None, gt=0.0, le=240.0)
+    hold_after_ms: int = Field(0, ge=0, le=30000)
 
     @field_validator("lesson")
     @classmethod

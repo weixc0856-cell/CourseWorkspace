@@ -140,13 +140,28 @@ class PrintWindowRecorder:
             except Exception as exc:  # noqa: BLE001
                 self._capture_error = str(exc)
                 break
-            try:
-                self._process.stdin.write(frame)
-                self._process.stdin.flush()
-            except (BrokenPipeError, OSError) as exc:
-                self._capture_error = str(exc)
-                break
-            next_frame += frame_interval
+            now = time.monotonic()
+            # PrintWindow can be slower than the target fps. Duplicate the
+            # current frame for every elapsed frame so the encoded timeline
+            # matches wall-clock time; dropping frames would compress the
+            # recording and desynchronise it from the narration.
+            writes = 0
+            while next_frame <= now and writes < self.fps * 2:
+                try:
+                    self._process.stdin.write(frame)
+                    self._process.stdin.flush()
+                except (BrokenPipeError, OSError) as exc:  # noqa: PERF203
+                    self._capture_error = str(exc)
+                    return
+                next_frame += frame_interval
+                writes += 1
+            if writes == 0:
+                try:
+                    self._process.stdin.write(frame)
+                    self._process.stdin.flush()
+                except (BrokenPipeError, OSError) as exc:  # noqa: PERF203
+                    self._capture_error = str(exc)
+                    return
             delay = next_frame - time.monotonic()
             if delay > 0:
                 time.sleep(delay)

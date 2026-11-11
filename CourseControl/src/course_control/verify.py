@@ -393,8 +393,6 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
                 )
             )
         else:
-            import json
-
             problems: list[str] = []
             try:
                 meta = json.loads(meta_path.read_text(encoding="utf-8"))

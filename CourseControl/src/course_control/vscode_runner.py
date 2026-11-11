@@ -97,6 +97,20 @@ def _prepare(workspace: Path, lesson_dir: Path, spec: SessionSpec, session_id: s
         "git.openRepositoryInParentFolders": "never",
         "workbench.secondarySideBar.defaultVisibility": "hidden",
         "chat.commandCenter.enabled": False,
+        "workbench.colorTheme": "Default Light Modern",
+        "workbench.activityBar.visible": False,
+        "workbench.statusBar.visible": False,
+        "workbench.sideBar.visible": False,
+        "workbench.tips.enabled": False,
+        "window.menuBarVisibility": "hidden",
+        "terminal.integrated.defaultLocation": "editor",
+        "terminal.integrated.fontSize": 28,
+        "terminal.integrated.fontFamily": "Cascadia Mono",
+        "terminal.integrated.lineHeight": 1.3,
+        "workbench.editor.showTabs": "none",
+        "terminal.integrated.cursorBlinking": "solid",
+        "terminal.integrated.focusAfterRun": "terminal",
+        "window.zoomLevel": 0,
     }
     (profile / "User" / "settings.json").write_text(
         json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -108,9 +122,15 @@ def _write_session(workdir: Path, spec: SessionSpec, session_id: str) -> Path:
     payload = {
         "cwd": str(workdir),
         "shellPath": _bash_path(),
-        "startDelayMs": 2500,
+        "startDelayMs": 500,
+        "typingCps": spec.typing_cps,
+        "holdAfterMs": spec.hold_after_ms,
         "commands": [
-            {"id": command.id, "command": shlex.join(command.run)}
+            {
+                "id": command.id,
+                "command": shlex.join(command.run),
+                "pauseBeforeMs": command.pause_before_ms,
+            }
             for command in spec.commands
         ],
     }
@@ -147,6 +167,7 @@ def run_vscode_session(
     env = os.environ.copy()
     env["COURSE_DEMO_SESSION"] = str(session_file)
     env["COURSE_DEMO_RESULT"] = str(result_file)
+    env["COURSE_DEMO_READY"] = str(build_root / "recording.started")
     args = [
         code,
         "--new-window",
@@ -158,6 +179,7 @@ def run_vscode_session(
         "--skip-welcome",
         str(workdir),
     ]
+    (build_root / "recording.started").unlink(missing_ok=True)
     started_at = now()
     recording = None
     recording_error = None
@@ -183,6 +205,7 @@ def run_vscode_session(
         process = PrintWindowRecorder(
             hwnd, video, spec.record.fps, build_root / "ffmpeg.log"
         ).start()
+        (build_root / "recording.started").write_text("", encoding="ascii")
     else:
         hwnd = 0
         process = None

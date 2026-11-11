@@ -15,6 +15,13 @@
           "title": "Run",
           "type": "array"
         },
+        "pause_before_ms": {
+          "default": 0,
+          "maximum": 30000,
+          "minimum": 0,
+          "title": "Pause Before Ms",
+          "type": "integer"
+        },
         "expect": {
           "$ref": "#/$defs/Expect",
           "default": {
@@ -353,6 +360,13 @@
       ],
       "default": null,
       "title": "Typing Cps"
+    },
+    "hold_after_ms": {
+      "default": 0,
+      "maximum": 30000,
+      "minimum": 0,
+      "title": "Hold After Ms",
+      "type": "integer"
     }
   },
   "required": [

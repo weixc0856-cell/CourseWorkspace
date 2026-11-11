@@ -58,8 +58,26 @@ async function runSession(sessionPath, resultPath) {
     cwd: session.cwd || undefined,
     shellPath: session.shellPath || undefined,
     shellArgs: session.shellArgs || [],
+    env: session.env || undefined,
+    location: vscode.TerminalLocation.Editor,
   });
   terminal.show();
+  await vscode.commands.executeCommand('workbench.action.closeSidebar');
+  await vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar');
+  terminal.sendText("export PS1='demo@lab:~$ '", true);
+  terminal.sendText('clear', true);
+  await new Promise((resolve) => setTimeout(resolve, 900));
+  const readyPath = env('COURSE_DEMO_READY');
+  if (readyPath) {
+    const deadline = Date.now() + 30000;
+    while (!fs.existsSync(readyPath) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+  const startDelay = Number(session.startDelayMs || 0);
+  if (startDelay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, startDelay));
+  }
 
   const shell = await waitForShellIntegration(terminal, 15000);
   if (!shell) {
@@ -73,6 +91,10 @@ async function runSession(sessionPath, resultPath) {
 
   const results = [];
   for (const command of session.commands) {
+    const pause = Number(command.pauseBeforeMs || 0);
+    if (pause > 0) {
+      await new Promise((resolve) => setTimeout(resolve, pause));
+    }
     let output = '';
     let exitCode = null;
     let error = null;
@@ -102,6 +124,11 @@ async function runSession(sessionPath, resultPath) {
       output,
       error,
     });
+  }
+
+  const hold = Number(session.holdAfterMs || 0);
+  if (hold > 0) {
+    await new Promise((resolve) => setTimeout(resolve, hold));
   }
 
   writeResult(resultPath, {
