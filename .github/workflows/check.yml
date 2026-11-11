@@ -69,5 +69,5 @@ jobs:
         run: uv run --project CourseControl course-control vendor-sync --workspace .
 
       - name: Run check.ps1
-        shell: pwsh
+        shell: powershell
         run: .\scripts\check.ps1 -CleanClone
