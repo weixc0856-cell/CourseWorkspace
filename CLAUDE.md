@@ -32,7 +32,7 @@
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 多视觉语法生产系统（架构/审计/样片/实施）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)、[docs/architecture/实施记录-P1-P4.md](docs/architecture/实施记录-P1-P4.md)
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
-- 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)、[经济学第一季方案](docs/verticals/economics/经济学系列-第一季生产方案.md)、[历史系列生产方向](docs/verticals/history/历史系列-生产方向.md)、[AI 时代基础知识生产方向](docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)、[汽车空气动力学生产方向](docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)
+- 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)；各领域方案在本机 `docs/verticals/<domain>/`，不入库。
 
 - 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)

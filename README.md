@@ -1,7 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
@@ -16,12 +16,14 @@
 
 ## 知识板块
 
-- 历史：[docs/verticals/history/历史系列-生产方向.md](docs/verticals/history/历史系列-生产方向.md)
-- AI 时代基础知识：[docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md](docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)
-- 汽车空气动力学：[docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md](docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)
-- 经济学：[docs/verticals/economics/经济学系列-第一季生产方案.md](docs/verticals/economics/经济学系列-第一季生产方案.md)
+领域方案属于实际课程开发内容，只在本机，不入库：
 
-具体课程方案、教材页映射、图片账本、讲稿与素材留在本机 `runtime/`，不进仓库。
+- 历史：`docs/verticals/history/历史系列-生产方向.md`
+- AI 时代基础知识：`docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md`
+- 汽车空气动力学：`docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md`
+- 经济学：`docs/verticals/economics/经济学系列-第一季生产方案.md`
+
+具体课程方案、教材页映射、图片账本、讲稿与素材也留在本机 `runtime/`；远程仓库只保留生产系统、总纲与索引。
 
 ## 仓库范围（远程 vs 本地）
 
