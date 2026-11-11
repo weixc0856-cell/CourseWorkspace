@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -132,6 +133,7 @@ class FormulaVideoQCImageTest(unittest.TestCase):
             self.assertLess(image_similarity(formula, blank), 0.2)
 
 
+@unittest.skipUnless(shutil.which("pdflatex"), "pdflatex is required for LaTeX compile checks")
 class FormulaRenderTest(unittest.TestCase):
     def test_render_percent_and_greek(self):
         with tempfile.TemporaryDirectory() as tmp:

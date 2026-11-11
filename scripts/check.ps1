@@ -12,10 +12,10 @@ function Invoke-Checked {
     param([string]$Label, [scriptblock]$Action, [switch]$Quiet)
     Write-Host $Label
     if ($Quiet) {
-        $output = & $Action 2>&1
+        $output = (& $Action 2>&1 | Out-String)
         $code = $LASTEXITCODE
         if ($code -ne 0) {
-            $output | ForEach-Object { Write-Host $_ }
+            Write-Host $output
             Write-Host "FAILED: $Label (exit $code)"
             $script:failed = $true
         }
