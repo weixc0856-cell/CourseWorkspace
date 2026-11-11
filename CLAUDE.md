@@ -29,6 +29,7 @@
 - 动画渲染适配器：[docs/动画渲染适配器.md](docs/动画渲染适配器.md)
 - 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
 - 工业化动画工作流（节拍表/配色/评分门禁）：[docs/工业化动画工作流.md](docs/工业化动画工作流.md)
+- 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 多视觉语法生产系统（架构/审计/样片/实施）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)、[docs/architecture/实施记录-P1-P4.md](docs/architecture/实施记录-P1-P4.md)
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
 - 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)、[经济学第一季方案](docs/verticals/economics/经济学系列-第一季生产方案.md)
