@@ -1,7 +1,7 @@
 # CourseControl
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`；`package` 把最终资产复制到 `deliver/<slug>/`。
 
 在上游还包含三个设计/管理层：

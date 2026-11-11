@@ -1,7 +1,7 @@
 # 文档索引
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个领域方案；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本目录按“现行契约 / 生产规范 / 评估与雷达 / 状态与验收 / 本地归档”组织。
 
 ## 1. 现行契约
@@ -38,14 +38,11 @@
 - [architecture/样片-06-attention-sample.md](architecture/样片-06-attention-sample.md)：真实中文 62 秒课程样片、ASR/逐词字幕、参考对照与 180 s 捕获
 - [contracts/](contracts/)：Production Contract / Visual Grammar / Quality Profile 的 JSON Schema 与 grammar 注册表
 
-## 1.0.1 垂直领域（知识系列，2026-11-10）
+## 1.0.1 垂直领域（知识系列，2026-11-11）
 
 - [verticals/知识系列课程生产总纲.md](verticals/知识系列课程生产总纲.md)：把一个领域接进现有系统的通用规范（来源分层、选题准入、语法映射、资产准入、许可、接入清单）
-- [verticals/README.md](verticals/README.md)：领域方案索引与状态
-- [verticals/economics/经济学系列-第一季生产方案.md](verticals/economics/经济学系列-第一季生产方案.md)：首个实例（v0.3 草案，未执行）
-- [verticals/history/历史系列-生产方向.md](verticals/history/历史系列-生产方向.md)：历史领域生产方向（v0.1 草案，未展开）
-- [verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md](verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md)：AI 时代基础知识（v0.1 草案，未展开）
-- [verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md](verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md)：汽车空气动力学（v0.1 草案，未展开）
+- [verticals/README.md](verticals/README.md)：领域索引与本机方案路径
+- 领域方案（经济学、历史、AI 时代基础、汽车空气动力学）属于课程开发内容，只在本机 `docs/verticals/<domain>/`，不入库；本索引不链接。
 
 ## 1.0.2 交付分区与资料采集（2026-11-11）
 
