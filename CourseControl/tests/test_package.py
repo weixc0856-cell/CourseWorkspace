@@ -93,7 +93,7 @@ class PackageTest(unittest.TestCase):
 
     def test_package_collects_and_hashes(self) -> None:
         manifest, root = build_package(self.paths)
-        self.assertEqual(root, self.workspace / "deliver" / "demo")
+        self.assertEqual(root.resolve(), (self.workspace / "deliver" / "demo").resolve())
         self.assertEqual(manifest["run_id"], "run-1")
         self.assertEqual(manifest["verdict"], "pass")
         paths = {item["path"]: item for item in manifest["files"]}
