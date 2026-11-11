@@ -64,6 +64,7 @@ node_modules/
 .venv/
 __pycache__/
 *.pyc
+debug.log
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -91,6 +92,15 @@ CodeVideoStudio/backends/hyperframes/hf-poc/.hyperframes/
 /ManimSandbox/01-transformer-demo/
 /ManimSandbox/02-car-aerodynamics/
 ScientificFigures/output/
+
+# Course-specific shot and scene sources (real course content stays local)
+/CodeVideoStudio/shots/e01-*/
+/CodeVideoStudio/shots/vibe-*/
+/CodeVideoStudio/shots/_e01-template/
+/ManimSandbox/ai-economics-e01/
+/ManimSandbox/ai-era-01-shell/
+/ManimSandbox/b01-b02-bluff-body/
+/BlenderStudio/scenes/b01-b02-bluff-body/
 
 # Local archive: finished project reports stay out of the remote
 /docs/archive/*
