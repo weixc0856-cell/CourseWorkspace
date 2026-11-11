@@ -12,6 +12,13 @@ from pathlib import Path
 
 from .paths import ContractError
 
+# Windows runs every step in a console shared with its child processes, so a
+# console control event (Ctrl+C / Ctrl+Break) terminates attached tools with
+# STATUS_CONTROL_C_EXIT (0xC000013A). External tools started here only read
+# inputs and write outputs, so they run without a console on Windows; other
+# platforms keep the subprocess default.
+NO_CONSOLE = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+
 
 @dataclass
 class CommandResult:
@@ -109,6 +116,7 @@ def run_command(
                 text=True,
                 encoding="utf-8",
                 errors="replace",
+                creationflags=NO_CONSOLE,
             )
             try:
                 exit_code = process.wait(timeout=timeout)
@@ -164,7 +172,9 @@ def probe_media(path: Path) -> MediaInfo:
     ]
     result = run_command(command, path.parent, timeout=60)
     if result.exit_code != 0:
-        raise ContractError(f"ffprobe failed for {path}: {result.stderr.strip()}")
+        raise ContractError(
+            f"ffprobe failed for {path} (exit {result.exit_code}): {result.stderr.strip()}"
+        )
     data = json.loads(result.stdout or "{}")
     streams = data.get("streams", [])
     video = next((item for item in streams if item.get("codec_type") == "video"), None)
@@ -251,7 +261,9 @@ def probe_audio(path: Path) -> float:
     ]
     result = run_command(command, path.parent, timeout=60)
     if result.exit_code != 0:
-        raise ContractError(f"ffprobe failed for {path}: {result.stderr.strip()}")
+        raise ContractError(
+            f"ffprobe failed for {path} (exit {result.exit_code}): {result.stderr.strip()}"
+        )
     streams = json.loads(result.stdout or "{}").get("streams", [])
     audio = next((item for item in streams if item.get("codec_type") == "audio"), None)
     if audio is None:

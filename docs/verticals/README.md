@@ -9,7 +9,7 @@
 
 | 领域 | 本机方案（不入库） | 状态 |
 | --- | --- | --- |
-| 经济学 | `docs/verticals/economics/经济学系列-第一季生产方案.md` | v0.3 草案，未执行 |
+| 经济学 | `docs/verticals/economics/经济学系列-第一季生产方案.md`（领域方案）、`docs/verticals/economics/AI经济学-第一季生产方案.md`（启动季）、`docs/verticals/economics/AI经济学-第一季-分集大纲.md` | 领域方案 v0.3；AI 经济季 8 集大纲完成，正式课程未启动 |
 | 历史 | `docs/verticals/history/历史系列-生产方向.md` | v0.1 草案，未展开 |
 | AI 时代基础知识 | `docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md` | v0.1 草案，未展开 |
 | 汽车空气动力学 | `docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md` | v0.1 草案，未展开 |

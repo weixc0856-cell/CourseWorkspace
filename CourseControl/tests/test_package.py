@@ -9,7 +9,7 @@ from pathlib import Path
 
 from course_control.package import PackageError, build_package, verify_package
 from course_control.paths import LessonPaths
-from tests._process import NO_CONSOLE
+from course_control.utils import NO_CONSOLE
 
 LESSON = """schema_version: 1
 lesson_id: demo
