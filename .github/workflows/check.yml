@@ -87,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: console-events
-          path: build/ci-console-events.log
+          path: build/ci-console-*.log
           if-no-files-found: ignore
 
       - name: Run check.ps1
