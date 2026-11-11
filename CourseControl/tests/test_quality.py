@@ -99,6 +99,8 @@ shots:
         import shutil
         import subprocess
 
+        from tests._process import NO_CONSOLE
+
         if not shutil.which("ffmpeg"):
             self.skipTest("ffmpeg is not available")
         final_dir = self.paths.build_root / "final"
@@ -114,6 +116,7 @@ shots:
             ],
             check=True,
             capture_output=True,
+            creationflags=NO_CONSOLE,
         )
         result = mix_lesson(self.workspace, self.paths)
         self.assertEqual(result.status, Status.PASS, result.errors)

@@ -76,7 +76,10 @@ jobs:
             Write-Host "unit tests: $project"
             $python = Join-Path $project ".venv\Scripts\python.exe"
             & $python scripts/run_tests_ci.py "$project/tests" $project
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $succeeded = $?
+            $code = $LASTEXITCODE
+            Write-Host ("  diag project={0} exit={1} success={2}" -f $project, $code, $succeeded)
+            if ($code -ne 0) { exit $code }
           }
 
       - name: Run check.ps1
