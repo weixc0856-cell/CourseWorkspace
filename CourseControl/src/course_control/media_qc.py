@@ -13,6 +13,7 @@ from pathlib import Path
 
 from .code_video_qc import detect_black_freeze
 from .paths import LessonPaths
+from .srt import parse_srt
 from .utils import probe_media, run_command, which_command
 
 PASS = "PASS"
@@ -115,24 +116,7 @@ def _silence_intervals(video: Path, workspace: Path) -> list[dict]:
     ]
 
 
-def _parse_srt(text: str) -> list[dict]:
-    cues = []
-    blocks = re.split(r"\r?\n\s*\r?\n", text.strip())
-    for block in blocks:
-        lines = [line for line in block.splitlines() if line.strip()]
-        if len(lines) < 2:
-            continue
-        match = re.match(
-            r"(\d+):(\d+):(\d+)[,.](\d+)\s*-->\s*(\d+):(\d+):(\d+)[,.](\d+)",
-            lines[1],
-        )
-        if not match:
-            continue
-        h1, m1, s1, ms1, h2, m2, s2, ms2 = (int(part) for part in match.groups())
-        start = ((h1 * 60 + m1) * 60 + s1) * 1000 + ms1
-        end = ((h2 * 60 + m2) * 60 + s2) * 1000 + ms2
-        cues.append({"start_ms": start, "end_ms": end, "text": "\n".join(lines[2:])})
-    return cues
+_parse_srt = parse_srt
 
 
 def run_media_qc(

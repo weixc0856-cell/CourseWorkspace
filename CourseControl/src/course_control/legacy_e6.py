@@ -9,13 +9,10 @@ into V1 check results.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
-import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -23,7 +20,6 @@ from pydantic import Field, ValidationError, field_validator
 
 from .contracts import StrictModel
 from .contracts_v1 import (
-    AssetRef,
     RationalFPS,
     RenderCheck,
     RenderManifest,
@@ -33,14 +29,22 @@ from .contracts_v1 import (
     RenderShot,
     RenderSubtitles,
 )
-from .paths import path_problem
-from .timecode import TimecodeError, frame_to_ms, ms_to_frame, parse_srt_timestamp
+from .media import (
+    MediaError,
+    MediaProbe,
+    _resolve,
+    asset_ref,
+    ffprobe_version,
+    parse_rate,
+    probe_media,
+    seconds_to_ms,
+)
+from .srt import SrtCue, parse_srt_strict as parse_srt
+from .timecode import frame_to_ms, ms_to_frame
+
+LegacyE6Error = MediaError
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-
-
-class LegacyE6Error(RuntimeError):
-    """Raised when the V0 manifest or its media cannot be read safely."""
 
 
 class LegacyHashed(StrictModel):
@@ -91,216 +95,6 @@ class LegacyManifest(StrictModel):
     subtitles: LegacySubtitles
     video: LegacyVideo
     checks: dict[str, str] = Field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class MediaStream:
-    codec_type: str
-    codec_name: str | None = None
-    width: int | None = None
-    height: int | None = None
-    r_frame_rate: str | None = None
-    avg_frame_rate: str | None = None
-    duration_s: float | None = None
-    nb_frames: int | None = None
-    sample_rate: int | None = None
-    channels: int | None = None
-
-
-@dataclass(frozen=True)
-class MediaProbe:
-    path: Path
-    duration_s: float | None
-    size: int | None
-    streams: tuple[MediaStream, ...]
-
-    def first(self, codec_type: str) -> MediaStream | None:
-        return next((item for item in self.streams if item.codec_type == codec_type), None)
-
-
-@dataclass(frozen=True)
-class SrtCue:
-    index: int
-    start_ms: int
-    end_ms: int
-    text: str
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    try:
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-    except OSError as exc:
-        raise LegacyE6Error(f"cannot read {path}: {exc}") from exc
-    return digest.hexdigest()
-
-
-def seconds_to_ms(value: float | int) -> int:
-    """Legacy seconds -> integer milliseconds, half up, via Decimal."""
-
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise LegacyE6Error(f"duration must be a number, got {value!r}")
-    if value < 0:
-        raise LegacyE6Error(f"duration must be non-negative, got {value!r}")
-    return int(
-        (Decimal(str(value)) * Decimal(1000)).quantize(
-            Decimal("1"), rounding=ROUND_HALF_UP
-        )
-    )
-
-
-def _resolve(base: Path, relative: str) -> Path:
-    problem = path_problem(relative)
-    if problem:
-        raise LegacyE6Error(f"invalid manifest path {relative!r}: {problem}")
-    return (base / relative).resolve()
-
-
-def asset_ref(path: Path, workspace: Path, kind: str, origin: str = "rendered") -> AssetRef:
-    resolved = path.resolve()
-    root = workspace.resolve()
-    try:
-        relative = resolved.relative_to(root).as_posix()
-        origin_value = origin
-    except ValueError:
-        relative = str(resolved)
-        origin_value = "external"
-    if not resolved.is_file():
-        raise LegacyE6Error(f"asset not found: {resolved}")
-    return AssetRef(
-        path=relative,
-        sha256=sha256_file(resolved),
-        bytes=resolved.stat().st_size,
-        kind=kind,
-        origin=origin_value,
-        version=None,
-    )
-
-
-def _optional_int(value) -> int | None:
-    if value is None:
-        return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _optional_float(value) -> float | None:
-    if value is None:
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _parse_stream(raw: dict) -> MediaStream:
-    return MediaStream(
-        codec_type=str(raw.get("codec_type", "")),
-        codec_name=raw.get("codec_name"),
-        width=_optional_int(raw.get("width")),
-        height=_optional_int(raw.get("height")),
-        r_frame_rate=raw.get("r_frame_rate"),
-        avg_frame_rate=raw.get("avg_frame_rate"),
-        duration_s=_optional_float(raw.get("duration")),
-        nb_frames=_optional_int(raw.get("nb_frames")),
-        sample_rate=_optional_int(raw.get("sample_rate")),
-        channels=_optional_int(raw.get("channels")),
-    )
-
-
-def probe_media(path: Path) -> MediaProbe:
-    """Run ffprobe and return only the fields the adapter checks."""
-
-    command = [
-        "ffprobe",
-        "-v",
-        "error",
-        "-show_entries",
-        (
-            "format=duration,size:"
-            "stream=index,codec_type,codec_name,width,height,"
-            "r_frame_rate,avg_frame_rate,duration,nb_frames,sample_rate,channels"
-        ),
-        "-of",
-        "json",
-        str(path),
-    ]
-    try:
-        result = subprocess.run(
-            command, capture_output=True, text=True, check=False, timeout=30
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise LegacyE6Error(f"ffprobe could not run for {path}: {exc}") from exc
-    if result.returncode != 0:
-        detail = (result.stderr or result.stdout or "").strip()
-        raise LegacyE6Error(f"ffprobe failed for {path}: {detail}")
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise LegacyE6Error(f"ffprobe returned invalid JSON for {path}: {exc}") from exc
-    fmt = payload.get("format", {})
-    return MediaProbe(
-        path=path,
-        duration_s=_optional_float(fmt.get("duration")),
-        size=_optional_int(fmt.get("size")),
-        streams=tuple(_parse_stream(raw) for raw in payload.get("streams", [])),
-    )
-
-
-def ffprobe_version() -> str:
-    try:
-        result = subprocess.run(
-            ["ffprobe", "-version"], capture_output=True, text=True, check=False, timeout=10
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return "unavailable"
-    first = (result.stdout or "").splitlines()
-    return first[0] if first else "unknown"
-
-
-def parse_rate(value: str | None) -> tuple[int, int] | None:
-    if not value or value == "0/0":
-        return None
-    match = re.match(r"^(\d+)/(\d+)$", value)
-    if not match:
-        return None
-    num, den = int(match.group(1)), int(match.group(2))
-    if num <= 0 or den <= 0:
-        return None
-    return num, den
-
-
-def parse_srt(text: str) -> list[SrtCue]:
-    """Parse the small SRT subset used by E6, with explicit failures."""
-
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n").strip()
-    if not normalized:
-        raise LegacyE6Error("SRT file is empty")
-    cues: list[SrtCue] = []
-    for block in re.split(r"\n\s*\n", normalized):
-        lines = [line.strip() for line in block.splitlines() if line.strip()]
-        if len(lines) < 3:
-            raise LegacyE6Error(f"invalid SRT block: {block!r}")
-        try:
-            index = int(lines[0])
-        except ValueError as exc:
-            raise LegacyE6Error(f"invalid SRT cue index: {lines[0]!r}") from exc
-        match = re.match(r"^(\S+)\s*-->\s*(\S+)$", lines[1])
-        if not match:
-            raise LegacyE6Error(f"invalid SRT time line: {lines[1]!r}")
-        try:
-            start_ms = parse_srt_timestamp(match.group(1))
-            end_ms = parse_srt_timestamp(match.group(2))
-        except TimecodeError as exc:
-            raise LegacyE6Error(f"invalid SRT cue {index}: {exc}") from exc
-        if end_ms <= start_ms:
-            raise LegacyE6Error(f"SRT cue {index} ends before it starts")
-        cues.append(SrtCue(index=index, start_ms=start_ms, end_ms=end_ms, text="\n".join(lines[2:])))
-    return cues
 
 
 @dataclass(frozen=True)
