@@ -12,6 +12,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from .workspace_layout import engine_root
+
 VENDOR_RELATIVE = Path("CodeVideoStudio") / "vendor" / "three" / "three.module.js"
 TARGET_NAME = "three.module.js"
 
@@ -69,7 +71,7 @@ def audit(workspace: Path) -> list[str]:
         return [f"canonical three.js is missing: {source}"]
     digest = _sha(source)
     problems: list[str] = []
-    shots = workspace / "CodeVideoStudio" / "shots"
+    shots = engine_root(workspace, "code_video") / "shots"
     if not shots.is_dir():
         return problems
     for project in sorted(path for path in shots.iterdir() if path.is_dir()):

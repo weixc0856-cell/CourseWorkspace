@@ -76,6 +76,9 @@ class Narration(StrictModel):
     style_enabled: bool = True
     text_frontend: bool = True
     speed: float = Field(default=1.0, gt=0.5, le=2.0)
+    # Optional voice assets under <content_root>/audio/; see docs/声音资产.
+    voice_bible: str | None = None
+    lexicon: str | None = None
 
 
 class Subtitles(StrictModel):
@@ -264,6 +267,24 @@ class LessonConfig(StrictModel):
         return value
 
 
+# What a shot is for.  The director plan and the shot sheet share one list so a
+# sheet never has to invent a second vocabulary.
+ShotPurpose = Literal[
+    "explain", "demonstrate", "simulate", "compare",
+    "narrate", "emote", "orient", "summarize",
+]
+
+CONTINUITY_ID = r"^[a-z0-9][a-z0-9_.-]{0,47}$"
+
+
+class ContinuityObject(StrictModel):
+    """A thing that must look the same every time it appears."""
+
+    id: str = Field(pattern=CONTINUITY_ID)
+    label: str = Field(min_length=1, max_length=80)
+    note: str | None = None
+
+
 class ShotSpec(StrictModel):
     id: str
     slide: int = Field(ge=1)
@@ -278,6 +299,53 @@ class ShotSpec(StrictModel):
     validation: dict | None = None
     formula_ids: list[str] = Field(default_factory=list)
     theme: SceneTheme | None = None
+
+    # --- Shot Sheet fields (storyboard schema_version: 2 only) -------------
+    purpose: ShotPurpose | None = None
+    visual_action: str | None = Field(default=None, max_length=600)
+    composition: str | None = Field(default=None, max_length=300)
+    continuity_refs: list[str] = Field(default_factory=list)
+    asset_refs: list[str] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    transition: Transition | None = None
+    director_notes: str | None = Field(default=None, max_length=1200)
+
+    @field_validator("continuity_refs")
+    @classmethod
+    def _continuity_ids(cls, value: list[str]) -> list[str]:
+        for item in value:
+            if not re.match(CONTINUITY_ID, item):
+                raise ValueError(f"continuity ref '{item}' is not a continuity id")
+        return value
+
+    @field_validator("asset_refs", "evidence_refs")
+    @classmethod
+    def _refs_not_blank(cls, value: list[str]) -> list[str]:
+        if any(not item.strip() for item in value):
+            raise ValueError("refs must not be blank")
+        if len(set(value)) != len(value):
+            raise ValueError("refs must be unique within a shot")
+        return value
+
+    def sheet_fields(self) -> dict:
+        """The v2 fields, in a stable order, for hashing and review."""
+        return {
+            "purpose": self.purpose,
+            "visual_action": self.visual_action,
+            "composition": self.composition,
+            "continuity_refs": list(self.continuity_refs),
+            "asset_refs": list(self.asset_refs),
+            "evidence_refs": list(self.evidence_refs),
+            "transition": self.transition.model_dump(mode="json", by_alias=True) if self.transition else None,
+            "director_notes": self.director_notes,
+        }
+
+    @property
+    def is_sheet(self) -> bool:
+        return any(
+            value not in (None, [], {})
+            for value in self.sheet_fields().values()
+        )
 
 
 class AnnotationBase(StrictModel):
@@ -329,10 +397,12 @@ AnnotationSpec = Annotated[
 
 
 class Storyboard(StrictModel):
-    schema_version: Literal[1]
+    schema_version: Literal[1, 2] = 1
     lesson: str
     shots: list[ShotSpec] = Field(min_length=1)
     annotations: list[AnnotationSpec] = Field(default_factory=list)
+    # The objects a shot sheet keeps continuous; only meaningful in v2.
+    continuity: list[ContinuityObject] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_ids(self):
@@ -340,6 +410,28 @@ class Storyboard(StrictModel):
         duplicates = sorted({name for name in names if names.count(name) > 1})
         if duplicates:
             raise ValueError(f"storyboard ids must be unique: {duplicates}")
+        return self
+
+    @model_validator(mode="after")
+    def _sheet_needs_v2(self):
+        if self.schema_version >= 2:
+            return self
+        sheet_shots = [shot.id for shot in self.shots if shot.is_sheet]
+        if sheet_shots or self.continuity:
+            raise ValueError(
+                "shot sheet fields require schema_version: 2 "
+                f"(found on: {', '.join(sheet_shots) or 'continuity'})"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _continuity_ids_unique(self):
+        ids = [item.id for item in self.continuity]
+        duplicates = sorted({name for name in ids if ids.count(name) > 1})
+        if duplicates:
+            raise ValueError(f"continuity ids must be unique: {duplicates}")
+        # Unknown refs are reported by ``course-control validate`` (V-45) so the
+        # storyboard still loads and the rest of the rules can run.
         return self
 
 

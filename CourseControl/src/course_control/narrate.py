@@ -10,6 +10,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Sequence
 from pathlib import Path
 
 import yaml
@@ -106,6 +107,8 @@ def segment_cache_key(
     timesteps: int = 10,
     cfg: float = 2.0,
     text_frontend: bool = True,
+    voice_bible_sha256: str | None = None,
+    lexicon_hits: Sequence[tuple[str, str]] = (),
 ) -> str:
     payload = {
         "text": normalize_stream(text),
@@ -119,6 +122,12 @@ def segment_cache_key(
         "speed": speed,
         "text_frontend": text_frontend,
     }
+    # Only present when a lesson opts into voice assets, so every key produced
+    # before this existed stays valid.
+    if voice_bible_sha256:
+        payload["voice_bible_sha256"] = voice_bible_sha256
+    if lexicon_hits:
+        payload["lexicon_hits"] = [[term, say] for term, say in lexicon_hits]
     return sha256_text(json.dumps(payload, sort_keys=True, ensure_ascii=False))
 
 

@@ -257,3 +257,54 @@ def narration_build_command(
         typer.echo(f"sample: {paths.build_root / 'narration' / 'sample' / 'sample.wav'}")
     else:
         typer.echo(f"meta: {paths.build_root / 'narration' / 'narration.meta.json'}")
+
+
+@app.command("shot-sheet")
+def shot_sheet_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Compile storyboard.yaml as a shot sheet: resolved refs, fingerprints, review."""
+    from ..authoring import shot_sheet
+
+    workspace = workspace.resolve()
+    try:
+        paths = LessonPaths.load(workspace, _lesson_path(workspace, lesson_dir, lesson))
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    plan = shot_sheet.compile_sheet(paths)
+    outputs = shot_sheet.write(paths, plan)
+    summary = plan["summary"]
+
+    if as_json:
+        typer.echo(
+            json.dumps(
+                {
+                    **summary,
+                    "status": "blocked" if plan["issues"] else "ok",
+                    "issues": plan["issues"],
+                    "outputs": {name: str(path) for name, path in outputs.items()},
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    else:
+        typer.echo(
+            f"sheet: {plan['source']['path']} (schema v{plan['source']['schema_version']})"
+        )
+        typer.echo(
+            f"shots: {summary['shots']} ({summary['designed']} with sheet fields)  "
+            f"continuity: {summary['continuity_objects']}  "
+            f"assets: {summary['with_assets']}  evidence: {summary['with_evidence']}"
+        )
+        if summary["unused_continuity"]:
+            typer.echo("unused continuity: " + ", ".join(summary["unused_continuity"]))
+        for issue in plan["issues"]:
+            typer.echo(f"  [{issue['rule']}] {issue['message']}", err=True)
+        for name, path in outputs.items():
+            typer.echo(f"{name}: {path}")
+    raise typer.Exit(1 if plan["issues"] else 0)

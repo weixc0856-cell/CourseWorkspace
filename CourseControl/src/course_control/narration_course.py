@@ -15,6 +15,7 @@ import wave
 from datetime import datetime
 from pathlib import Path
 
+from .audio import resolve_assets
 from .narrate import (
     TtsError,
     TtsService,
@@ -25,7 +26,7 @@ from .narrate import (
 from .paths import ContractError, LessonPaths
 from .utils import notes_blocks, probe_audio, run_command, which_command
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 DEFAULT_PAGE_PAUSE_MS = 600
 SAMPLE_RATE = 48000
 
@@ -217,10 +218,28 @@ def synthesize_course(
     tts = config.get("tts") or {}
     ai_root = Path(config.get("ai_root") or "").resolve()
     runtime = Path(tts.get("runtime_dir") or (ai_root / "VoxCPM-Runtime"))
-    voice_ref, prompt_text, mode = _voice_config(lesson, tts, getattr(script, "language", "en"))
+    assets = resolve_assets(workspace, lesson)
+    if assets.problems:
+        raise NarrationCourseBlocked("voice assets are unusable: " + "; ".join(assets.problems))
     style_enabled = bool(lesson.narration.style_enabled)
     text_frontend = bool(lesson.narration.text_frontend)
     speed = float(lesson.narration.speed)
+    style_default = None
+    if assets.voice_bible is not None:
+        # The bible owns the voice; the lesson owns delivery when it says so.
+        explicit = set(getattr(lesson.narration, "model_fields_set", set()))
+        voice_ref = assets.ref_audio()
+        prompt_text = assets.voice_bible.prompt_text or None
+        mode = lesson.narration.mode if "mode" in explicit else assets.voice_bible.mode
+        if "speed" not in explicit:
+            speed = assets.voice_bible.speed
+        if "text_frontend" not in explicit:
+            text_frontend = assets.voice_bible.text_frontend
+        style_default = assets.voice_bible.style
+    else:
+        voice_ref, prompt_text, mode = _voice_config(
+            lesson, tts, getattr(script, "language", "en")
+        )
 
     narration_dir = paths.build_root / "narration"
     target_dir = narration_dir / "sample" if sample else narration_dir
@@ -293,14 +312,19 @@ def synthesize_course(
                     offset_s += pause_ms / 1000.0
                     continue
                 style = segment.style if (style_enabled and mode == "reference_only") else None
+                style = style or (style_default if style_enabled else None)
+                application = assets.apply(segment.text)
+                spoken = application.text
                 key = segment_cache_key(
-                    segment.text,
+                    spoken,
                     voice_ref,
                     prompt_text or "",
                     mode=mode,
                     style=style,
                     speed=speed,
                     text_frontend=text_frontend,
+                    voice_bible_sha256=assets.voice_bible_sha256,
+                    lexicon_hits=application.applied,
                 )
                 raw = segments_dir / f"{segment.id}.wav"
                 meta_file = segments_dir / f"{segment.id}.meta.json"
@@ -316,7 +340,7 @@ def synthesize_course(
                     try:
                         details = synthesize(
                             service.base_url,
-                            segment.text,
+                            spoken,
                             voice_ref,
                             prompt_text,
                             raw,
@@ -337,6 +361,8 @@ def synthesize_course(
                         "segment_id": segment.id,
                         "slide": page.slide,
                         "text_sha256": _sha_text(segment.text),
+                        "spoken_text_sha256": _sha_text(spoken),
+                        "lexicon_applied": [list(pair) for pair in application.applied],
                         "voice_ref": str(voice_ref),
                         "voice_ref_sha256": _sha(voice_ref),
                         "prompt_text_sha256": _sha_text(prompt_text or ""),
@@ -405,6 +431,7 @@ def synthesize_course(
         "mode": mode,
         "style_enabled": style_enabled,
         "text_frontend": text_frontend,
+        "assets": assets.as_dict(),
         "voice": {
             "ref_audio": str(voice_ref),
             "ref_audio_sha256": _sha(voice_ref),

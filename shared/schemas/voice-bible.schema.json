@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "ApprovedSample": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "ApprovedSample",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "language": {
+      "default": "en",
+      "maxLength": 16,
+      "minLength": 2,
+      "title": "Language",
+      "type": "string"
+    },
+    "ref_audio": {
+      "title": "Ref Audio",
+      "type": "string"
+    },
+    "ref_audio_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ref Audio Sha256"
+    },
+    "prompt_text": {
+      "default": "",
+      "title": "Prompt Text",
+      "type": "string"
+    },
+    "backend": {
+      "const": "voxcpm2",
+      "default": "voxcpm2",
+      "title": "Backend",
+      "type": "string"
+    },
+    "model": {
+      "default": "VoxCPM2",
+      "title": "Model",
+      "type": "string"
+    },
+    "mode": {
+      "default": "reference_only",
+      "enum": [
+        "reference_only",
+        "prompt_reference"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "speed": {
+      "default": 1.0,
+      "exclusiveMinimum": 0.5,
+      "maximum": 2.0,
+      "title": "Speed",
+      "type": "number"
+    },
+    "text_frontend": {
+      "default": true,
+      "title": "Text Frontend",
+      "type": "boolean"
+    },
+    "style": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Style"
+    },
+    "approved_samples": {
+      "items": {
+        "$ref": "#/$defs/ApprovedSample"
+      },
+      "title": "Approved Samples",
+      "type": "array"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "id",
+    "ref_audio"
+  ],
+  "title": "VoiceBible",
+  "type": "object"
+}

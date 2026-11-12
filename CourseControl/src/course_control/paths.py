@@ -10,9 +10,11 @@ from pydantic import ValidationError
 from .contracts import LessonConfig, SLUG_RE, ShotSpec, Storyboard
 from .production import ProductionPlan, load_production, synthetic_storyboard
 from .workspace_layout import (
+    ENGINE_DIRS,
     build_root_for,
     content_root,
     delivery_root_for,
+    engine_roots,
     lessons_root,
 )
 
@@ -173,44 +175,16 @@ class LessonPaths:
     def build_path(self, relative: str) -> Path:
         return (self.build_root / relative).resolve()
 
-    ENGINE_DIRS = {
-        "motion_canvas": "MotionStudio",
-        "manim": "ManimSandbox",
-        "blender": "BlenderStudio",
-        "code_video": "CodeVideoStudio",
-    }
-    # Directory layout inside <content_root>/engines/
-    ENGINE_CONTENT = {
-        "motion_canvas": "motion_canvas",
-        "manim": "manim",
-        "blender": "blender",
-        "code_video": "code_video",
-    }
-
     def engine_home(self, engine: str) -> Path:
         """The engine project inside the workspace: skills, scripts, venvs."""
         try:
-            return (self.workspace / self.ENGINE_DIRS[engine]).resolve()
+            return (self.workspace / ENGINE_DIRS[engine]).resolve()
         except KeyError as exc:
             raise ContractError(f"unknown engine: {engine}") from exc
 
     def engine_roots(self, engine: str) -> list[Path]:
-        """Where this engine's scenes may live, most specific first.
-
-        Course scenes live under the content root once it is configured; the
-        workspace engine directory stays as the fallback so fixtures, samples
-        and a clean clone keep working.
-        """
-        home = self.engine_home(engine)
-        roots: list[Path] = []
-        if self.content_base is not None and self.content_base != self.workspace:
-            candidate = (
-                self.content_base / "engines" / self.ENGINE_CONTENT[engine]
-            ).resolve()
-            if candidate.is_dir():
-                roots.append(candidate)
-        roots.append(home)
-        return roots
+        """Where this engine's scenes may live, most specific first."""
+        return engine_roots(self.workspace, engine, self.content_base)
 
     def engine_root(self, engine: str) -> Path:
         """The preferred scene root for this engine."""

@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .authoring.shot_sheet import issues as sheet_issues
 from .contracts import SLUG_RE
 from .duration import (
     duplicate_authority_problem,
@@ -214,7 +215,9 @@ def _validate_shots(paths: LessonPaths, result: ValidationResult) -> ValidationR
         result.add("V-40", "error", "shots mode requires a production contract")
         return result
     registry = try_load_registry(paths.workspace)
-    for issue in validate_plan(plan, workspace=paths.workspace, registry=registry):
+    for issue in validate_plan(
+        plan, workspace=paths.workspace, engine_roots=paths.engine_roots, registry=registry
+    ):
         result.add("V-40", "error", issue)
     if paths.production_source is not None:
         _check_path(result, "production", str(paths.production_source.relative_to(paths.lesson_dir)).replace("\\", "/"))
@@ -294,6 +297,8 @@ def validate(paths: LessonPaths) -> ValidationResult:
         scene = shot.scene.split("::", 1)[0] if shot.engine == "manim" else shot.scene
         _check_path(result, f"shot {shot.id}.scene", scene)
         _check_path(result, f"shot {shot.id}.blend_task", shot.blend_task)
+    for issue in sheet_issues(paths):
+        result.add(issue["rule"], issue["level"], issue["message"])
 
     slides_text = required["slides"].read_text(encoding="utf-8")
     notes_text = required["notes"].read_text(encoding="utf-8")

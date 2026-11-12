@@ -317,6 +317,7 @@ def production_validate_command(
     from ..grammar import try_load_registry
     from ..paths import ContractError, LessonPaths
     from ..production import load_production, validate_plan
+    from ..workspace_layout import engine_roots
 
     workspace = workspace.resolve()
     registry = try_load_registry(workspace)
@@ -325,7 +326,7 @@ def production_validate_command(
             typer.echo("give --plan or --lesson", err=True)
             raise typer.Exit(2)
         try:
-            paths = LessonPaths.load(workspace, (workspace / lesson_dir / lesson).resolve())
+            paths = LessonPaths.load(workspace, _lesson_path(workspace, lesson_dir, lesson))
         except ContractError as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
@@ -341,7 +342,12 @@ def production_validate_command(
         except (OSError, ValueError) as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
-    issues = validate_plan(production, workspace=workspace, registry=registry)
+    issues = validate_plan(
+        production,
+        workspace=workspace,
+        engine_roots=lambda engine: engine_roots(workspace, engine),
+        registry=registry,
+    )
     payload = {
         "lesson": production.lesson,
         "sequences": len(production.sequences),
@@ -377,7 +383,7 @@ def quality_gate_command(
 
     workspace = workspace.resolve()
     try:
-        paths = LessonPaths.load(workspace, (workspace / lesson_dir / lesson).resolve())
+        paths = LessonPaths.load(workspace, _lesson_path(workspace, lesson_dir, lesson))
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
@@ -423,7 +429,7 @@ def reference_compare_command(
 
     workspace = workspace.resolve()
     try:
-        paths = LessonPaths.load(workspace, (workspace / lesson_dir / lesson).resolve())
+        paths = LessonPaths.load(workspace, _lesson_path(workspace, lesson_dir, lesson))
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)

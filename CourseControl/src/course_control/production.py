@@ -13,6 +13,7 @@ import yaml
 from pydantic import Field, ValidationError, model_validator
 
 from .renderers import RENDERERS, missing_capabilities
+from .workspace_layout import ENGINE_DIRS
 from .contracts import ShotSpec, Storyboard, StrictModel, Transition, TransitionKind
 
 Purpose = Literal[
@@ -165,6 +166,7 @@ def validate_plan(
     plan: ProductionPlan,
     *,
     workspace: Path | None = None,
+    engine_roots=None,
     registry=None,
 ) -> list[str]:
     issues: list[str] = []
@@ -192,16 +194,16 @@ def validate_plan(
         if shot.renderer not in RENDERERS:
             issues.append(f"{shot.id}: unknown renderer '{shot.renderer}'")
             continue
-        if workspace is None:
+        if engine_roots is not None:
+            roots = list(engine_roots(shot.renderer))
+        elif workspace is not None:
+            roots = [(workspace / ENGINE_DIRS[shot.renderer]).resolve()]
+        else:
             continue
-        roots = {
-            "code_video": "CodeVideoStudio",
-            "manim": "ManimSandbox",
-            "motion_canvas": "MotionStudio",
-            "blender": "BlenderStudio",
-        }
         source = normalize_source(shot.renderer, shot.source or "")
-        target = (workspace / roots[shot.renderer] / source.split("::", 1)[0]).resolve()
+        relative = source.split("::", 1)[0]
+        candidates = [(root / relative).resolve() for root in roots]
+        target = next((item for item in candidates if item.exists()), candidates[0])
         if target.is_dir():
             target = target / "SPEC.md"
         if not target.is_file():

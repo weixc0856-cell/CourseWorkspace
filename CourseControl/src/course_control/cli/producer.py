@@ -415,8 +415,9 @@ def vendor_sync_command(
 ) -> None:
     """Copy the canonical three.js into shot directories."""
     from ..vendor import sync, uses_three
+    from ..workspace_layout import engine_root
 
-    shots_root = workspace.resolve() / "CodeVideoStudio" / "shots"
+    shots_root = engine_root(workspace, "code_video") / "shots"
 
     projects = (
         [shots_root / shot]

@@ -181,6 +181,76 @@ def narrate_command(
     )
 
 
+@app.command("narration-assets")
+def narration_assets_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    show_text: bool = typer.Option(
+        False, "--show-text", help="Print every segment after lexicon substitution"
+    ),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Show the Voice Bible and Lexicon a lesson resolves to, and check them."""
+    from ..audio import AudioAssetError, resolve_assets
+    from ..authoring.models import NarrationScript
+
+    workspace = workspace.resolve()
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    try:
+        assets = resolve_assets(workspace, paths.lesson)
+    except AudioAssetError as exc:
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+
+    payload = assets.as_dict()
+    if as_json:
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        bible = payload["voice_bible"]
+        if bible is None:
+            typer.echo("voice bible: none (config tts.voice_ref*)")
+        else:
+            typer.echo(f"voice bible: {bible['id']}  sha256 {bible['sha256'][:12]}…")
+            typer.echo(f"  ref audio: {bible['ref_audio']}")
+            typer.echo(f"  model: {bible['model']} / {bible['backend']} / {bible['language']}")
+        lexicon = payload["lexicon"]
+        if lexicon is None:
+            typer.echo("lexicon: none")
+        else:
+            typer.echo(
+                f"lexicon: {lexicon['id']}  sha256 {lexicon['sha256'][:12]}…  "
+                f"{lexicon['entries']} entries"
+            )
+        for problem in payload["problems"]:
+            typer.echo(f"  problem: {problem}", err=True)
+
+    if show_text:
+        script_rel = paths.lesson.authoring.script if paths.lesson.authoring else None
+        if not script_rel:
+            typer.echo("lesson declares no authoring script", err=True)
+            raise typer.Exit(1)
+        script = NarrationScript.model_validate(
+            json.loads(paths.content_path(script_rel).read_text(encoding="utf-8"))
+        )
+        changed = 0
+        for page in script.pages:
+            for segment in page.segments:
+                application = assets.apply(segment.text)
+                if application.changed:
+                    changed += 1
+                    pairs = ", ".join(f"{term} -> {say}" for term, say in application.applied)
+                    typer.echo(f"[{segment.id}] {pairs}")
+                    typer.echo(f"    {application.text}")
+        typer.echo(f"segments rewritten by the lexicon: {changed}")
+
+    raise typer.Exit(1 if payload["problems"] else 0)
+
+
 @app.command("subtitles-build")
 def subtitles_build_command(
     lesson: str = typer.Option(..., "--lesson"),
@@ -218,6 +288,18 @@ def subtitles_build_command(
         json.loads(script_path.read_text(encoding="utf-8"))
     )
     meta = None if planned else json.loads(meta_path.read_text(encoding="utf-8"))
+    if meta is not None:
+        from ..media import sha256_file
+
+        recorded = (meta.get("source") or {}).get("script_sha256")
+        current = sha256_file(script_path)
+        if recorded and recorded != current:
+            typer.echo(
+                "blocked: the narration was built from a different script "
+                f"({recorded[:12]}… vs {current[:12]}…); re-run narration-build first",
+                err=True,
+            )
+            raise typer.Exit(3)
     try:
         if not planned:
             assert_approved(root, script_relative)

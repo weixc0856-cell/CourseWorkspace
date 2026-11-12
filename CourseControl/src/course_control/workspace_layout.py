@@ -66,6 +66,48 @@ def _resolve(workspace: Path, config: Path, env: str | None) -> Path:
     return workspace
 
 
+# Engine project directories inside the workspace (skills, scripts, venvs) and
+# their scene directories inside the content root (``<content_root>/engines/``).
+ENGINE_DIRS = {
+    "motion_canvas": "MotionStudio",
+    "manim": "ManimSandbox",
+    "blender": "BlenderStudio",
+    "code_video": "CodeVideoStudio",
+}
+ENGINE_CONTENT = {
+    "motion_canvas": "motion_canvas",
+    "manim": "manim",
+    "blender": "blender",
+    "code_video": "code_video",
+}
+
+
+def engine_roots(workspace: Path, engine: str, content_base: Path | None = None) -> list[Path]:
+    """Where an engine's scenes may live, most specific first.
+
+    Course scenes move to the content root when one is configured; the
+    workspace engine directory stays as the fallback so fixtures, samples and a
+    clean clone keep working.
+    """
+    try:
+        home = (Path(workspace).resolve() / ENGINE_DIRS[engine]).resolve()
+    except KeyError as exc:
+        raise ValueError(f"unknown engine: {engine}") from exc
+    base = Path(content_base).resolve() if content_base is not None else content_root(workspace)
+    roots: list[Path] = []
+    if base != Path(workspace).resolve():
+        candidate = (base / "engines" / ENGINE_CONTENT[engine]).resolve()
+        if candidate.is_dir():
+            roots.append(candidate)
+    roots.append(home)
+    return roots
+
+
+def engine_root(workspace: Path, engine: str, content_base: Path | None = None) -> Path:
+    """The preferred scene root for one engine."""
+    return engine_roots(workspace, engine, content_base)[0]
+
+
 def lessons_root(workspace: Path) -> Path:
     return content_root(workspace) / "lessons"
 
@@ -84,6 +126,11 @@ def delivery_root_for(workspace: Path, slug: str) -> Path:
 
 def runtime_root(workspace: Path) -> Path:
     return content_root(workspace) / "runtime"
+
+
+def audio_root(workspace: Path) -> Path:
+    """Shared voice assets: voice bibles and lexicons."""
+    return content_root(workspace) / "audio"
 
 
 def reset_cache() -> None:

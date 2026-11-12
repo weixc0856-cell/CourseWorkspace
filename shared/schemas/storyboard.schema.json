@@ -1,5 +1,40 @@
 {
   "$defs": {
+    "ContinuityObject": {
+      "additionalProperties": false,
+      "description": "A thing that must look the same every time it appears.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,47}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "title": "ContinuityObject",
+      "type": "object"
+    },
     "LegendAnnotationSpec": {
       "additionalProperties": false,
       "properties": {
@@ -237,6 +272,99 @@
           ],
           "default": null,
           "title": "Theme"
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "enum": [
+                "explain",
+                "demonstrate",
+                "simulate",
+                "compare",
+                "narrate",
+                "emote",
+                "orient",
+                "summarize"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purpose"
+        },
+        "visual_action": {
+          "anyOf": [
+            {
+              "maxLength": 600,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Visual Action"
+        },
+        "composition": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Composition"
+        },
+        "continuity_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Continuity Refs",
+          "type": "array"
+        },
+        "asset_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Asset Refs",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "transition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Transition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "director_notes": {
+          "anyOf": [
+            {
+              "maxLength": 1200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Director Notes"
         }
       },
       "required": [
@@ -348,12 +476,48 @@
       ],
       "title": "TextAnnotationSpec",
       "type": "object"
+    },
+    "Transition": {
+      "additionalProperties": false,
+      "description": "Visual transition into/out of a shot; never changes the shot's duration.",
+      "properties": {
+        "in": {
+          "default": "hard_cut",
+          "enum": [
+            "hard_cut",
+            "fade",
+            "dissolve",
+            "match_cut",
+            "wipe"
+          ],
+          "title": "In",
+          "type": "string"
+        },
+        "out": {
+          "default": "hard_cut",
+          "enum": [
+            "hard_cut",
+            "fade",
+            "dissolve",
+            "match_cut",
+            "wipe"
+          ],
+          "title": "Out",
+          "type": "string"
+        }
+      },
+      "title": "Transition",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": 1,
+      "default": 1,
+      "enum": [
+        1,
+        2
+      ],
       "title": "Schema Version",
       "type": "integer"
     },
@@ -389,10 +553,16 @@
       },
       "title": "Annotations",
       "type": "array"
+    },
+    "continuity": {
+      "items": {
+        "$ref": "#/$defs/ContinuityObject"
+      },
+      "title": "Continuity",
+      "type": "array"
     }
   },
   "required": [
-    "schema_version",
     "lesson",
     "shots"
   ],
