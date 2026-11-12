@@ -9,6 +9,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "_layout.ps1")
+$content = Get-ContentRoot -Workspace $root
 $configPath = Join-Path $root "config/tools.yaml"
 
 function Stop-WithError {
@@ -83,7 +85,7 @@ $taskData = $null
 
 if ($Smoke) {
     $script = Join-Path $root "BlenderStudio/scripts/render_smoke.py"
-    $output = Join-Path $root "build/$Lesson/blender/smoke.mp4"
+    $output = Join-Path $content "build/$Lesson/blender/smoke.mp4"
     $logName = "blender-smoke.log"
     $pyArgs = @("--lesson", $Lesson, "--out", $output)
     $engineOverride = if ($Engine) { $Engine } else { $defaultEngine }
@@ -114,14 +116,14 @@ else {
 
 if ($engineOverride) { $pyArgs += @("--engine", $engineOverride) }
 
-$allowedRoot = [IO.Path]::GetFullPath((Join-Path $root "build/$Lesson/blender"))
+$allowedRoot = [IO.Path]::GetFullPath((Join-Path $content "build/$Lesson/blender"))
 $outputAbs = [IO.Path]::GetFullPath($output)
 $prefix = $allowedRoot.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 if (-not $outputAbs.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
     Stop-WithError "output must be inside build/$Lesson/blender/: $outputAbs" 5
 }
 
-$logDir = Join-Path $root "build/$Lesson/logs"
+$logDir = Join-Path $content "build/$Lesson/logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputAbs) | Out-Null
 

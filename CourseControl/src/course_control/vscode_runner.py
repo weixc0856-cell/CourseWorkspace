@@ -36,6 +36,7 @@ from .session_runner import (
     _window_text,
     _unfocus_window,
 )
+from .workspace_layout import build_root_for
 
 CREATE_NEW_CONSOLE = 0x00000010
 
@@ -67,7 +68,7 @@ def _bash_path() -> str:
 
 
 def _prepare(workspace: Path, lesson_dir: Path, spec: SessionSpec, session_id: str) -> tuple[Path, dict[str, str]]:
-    build_root = workspace / "build" / spec.lesson / "code" / spec.shot_id
+    build_root = build_root_for(workspace, spec.lesson) / "code" / spec.shot_id
     workdir = build_root / "vscode-workspace"
     if workdir.exists():
         shutil.rmtree(workdir)
@@ -151,7 +152,7 @@ def run_vscode_session(
     spec = load_session_spec(spec_path)
     if spec.environment.kind == "docker":
         raise SessionRunError("use session-run for docker environments")
-    build_root = workspace / "build" / spec.lesson / "code" / spec.shot_id
+    build_root = build_root_for(workspace, spec.lesson) / "code" / spec.shot_id
     build_root.mkdir(parents=True, exist_ok=True)
     workdir, file_hashes = _prepare(workspace, lesson_dir, spec, spec.session_id)
     session_file = _write_session(workdir, spec, spec.session_id)

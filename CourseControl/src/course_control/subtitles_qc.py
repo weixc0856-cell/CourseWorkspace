@@ -16,11 +16,9 @@ from pathlib import Path
 
 import yaml
 
+from .srt import parse_srt
 from .subtitles import CuePolicy, display_width
 
-TS_RE = re.compile(
-    r"(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})"
-)
 CJK_RE = re.compile("[㐀-鿿]")
 CJK_PUNCT = "。，、；：！？（）《》「」『』"
 LETTER_RE = re.compile("[A-Za-z]")
@@ -30,37 +28,6 @@ DANGLING_EN = {
     "but", "as", "by", "from", "that", "which", "is", "are", "was", "were", "be",
     "it", "its", "this", "these", "those", "we", "you", "they", "he", "she",
 }
-
-
-def _ts(hours: str, minutes: str, seconds: str, millis: str) -> int:
-    return ((int(hours) * 60 + int(minutes)) * 60 + int(seconds)) * 1000 + int(millis)
-
-
-def parse_srt(text: str) -> list[dict]:
-    cues: list[dict] = []
-    blocks = re.split(r"\r?\n\r?\n+", text.strip())
-    for block in blocks:
-        lines = [line for line in block.splitlines() if line.strip()]
-        if not lines:
-            continue
-        index = None
-        if lines[0].strip().isdigit():
-            index = int(lines[0].strip())
-            lines = lines[1:]
-        match = TS_RE.search(lines[0]) if lines else None
-        if match is None:
-            continue
-        start = _ts(*match.groups()[:4])
-        end = _ts(*match.groups()[4:])
-        cues.append(
-            {
-                "index": index or len(cues) + 1,
-                "start_ms": start,
-                "end_ms": end,
-                "lines": lines[1:],
-            }
-        )
-    return cues
 
 
 def _is_zh(line: str) -> bool:

@@ -52,6 +52,7 @@ from .scope import (
     resolve_repo_root,
     resolve_scope,
 )
+from .workspace_layout import content_root
 
 EXIT_OK = 0
 EXIT_CONTRACT = 1
@@ -373,11 +374,12 @@ def run_review(
     except ScopeError as exc:
         return RunOutcome(EXIT_CONTRACT, None, None, str(exc))
 
-    output_root = options.output_root or (repo / "build" / "reviews")
+    content = content_root(repo)
+    output_root = options.output_root or (content / "build" / "reviews")
     review_dir = _review_dir(output_root, options.review_type, resolution.review_rev, moment)
     review_dir.mkdir(parents=True, exist_ok=True)
     try:
-        review_id = review_dir.relative_to(repo).as_posix()
+        review_id = review_dir.relative_to(content).as_posix()
     except ValueError:
         review_id = review_dir.as_posix()
 

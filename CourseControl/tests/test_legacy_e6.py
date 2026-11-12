@@ -7,17 +7,19 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
+from course_control.srt import parse_srt_strict as parse_srt
+from course_control.media import (
+    asset_ref,
+    parse_rate,
+    seconds_to_ms,
+    sha256_file,
+)
 from course_control.legacy_e6 import (
     LegacyE6Error,
     LegacyShot,
     adapt_e6_manifest,
-    asset_ref,
     build_shot_timings,
     load_manifest,
-    parse_rate,
-    parse_srt,
-    seconds_to_ms,
-    sha256_file,
 )
 
 WORKSPACE = Path(__file__).resolve().parents[2]

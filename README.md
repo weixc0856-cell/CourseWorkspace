@@ -228,7 +228,4 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 - 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
 - 导演/制片：[导演层](docs/导演层.md) · [制片层](docs/制片层.md)
 - 版式/配色/运镜：[版式系统](docs/版式系统.md) · [配色规范](docs/配色规范.md) · [运镜与剪辑](docs/运镜与剪辑.md)
-- 模拟/音频：[Primer 式模拟 POC](docs/evaluations/评估-Primer模拟视频POC.md) · [音乐资产盘点](docs/音乐资产盘点.md) · [内容类型与音频策略](docs/内容类型与音频策略.md)
-- 项目差距：[项目差距清单](docs/项目差距清单.md)
-- 产品决策：[前端必要性评估](docs/evaluations/FRONTEND_ASSESSMENT.md)
 - 历史：[docs/archive/](docs/archive/README.md)

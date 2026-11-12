@@ -6,6 +6,8 @@ param([switch]$CleanClone, [switch]$SkipUnitTests)
 # checks below run with Continue and inspect $LASTEXITCODE explicitly.
 $ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "_layout.ps1")
+$content = Get-ContentRoot -Workspace $root
 $script:failed = $false
 
 function Invoke-Checked {
@@ -116,8 +118,8 @@ try {
     }
 
     $lessons = @(
-        @{Lesson = "01-shell-for-ai-era"; Dir = "lessons"},
-        @{Lesson = "01-transformer-demo"; Dir = "lessons"},
+        @{Lesson = "01-shell-for-ai-era"; Dir = (Join-Path $content "lessons")},
+        @{Lesson = "01-transformer-demo"; Dir = (Join-Path $content "lessons")},
         @{Lesson = "lesson-smoke"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-blender-only"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-manual"; Dir = "CourseControl/tests/fixtures"}
@@ -135,11 +137,11 @@ try {
         }
     }
 
-    if (Test-Path "lessons/01-transformer-demo") {
+    if (Test-Path (Join-Path $content "lessons/01-transformer-demo")) {
         Invoke-Checked "director plan 01-transformer-demo" {
             uv run --project CourseControl course-control director-plan `
                 --lesson 01-transformer-demo --workspace . `
-                --out build/01-transformer-demo/director 2>&1 | Out-Null
+                --out (Join-Path $content "build/01-transformer-demo/director") 2>&1 | Out-Null
         }
     }
 

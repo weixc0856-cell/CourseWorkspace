@@ -3,6 +3,8 @@ param()
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "_layout.ps1")
+$content = Get-ContentRoot -Workspace $root
 
 function New-FixtureVideo {
     param(
@@ -16,10 +18,10 @@ function New-FixtureVideo {
 }
 
 foreach ($slug in @("lesson-smoke", "lesson-blender-only", "lesson-manual")) {
-    New-FixtureVideo -Path (Join-Path $root "build/$slug/slides/recording.mp4") -Seconds 6
+    New-FixtureVideo -Path (Join-Path $content "build/$slug/slides/recording.mp4") -Seconds 6
 }
 
-$narration = Join-Path $root "build/lesson-smoke/narration/narration.wav"
+$narration = Join-Path $content "build/lesson-smoke/narration/narration.wav"
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $narration) | Out-Null
 ffmpeg -v error -f lavfi -i "sine=frequency=440:sample_rate=48000" -t 6 -y $narration
 if ($LASTEXITCODE -ne 0) { throw "ffmpeg failed for $narration" }

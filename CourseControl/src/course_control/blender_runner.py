@@ -15,6 +15,7 @@ from .blender_scene import BlenderSceneTask, validate_scene_task
 from .paths import ContractError
 from .scene_presets import expand_task
 from .utils import probe_media, run_command, which_command
+from .workspace_layout import build_root_for
 
 
 class SceneRunError(RuntimeError):
@@ -475,8 +476,8 @@ def run_scene_task(
     executable, timeout = _tools(workspace)
     output = _resolve(workspace, task.render.output)
     blend = _resolve(workspace, task.render.save_blend) if task.render.save_blend else None
-    manifest_dir = workspace / "build" / task.lesson / "blender" / "manifests"
-    log_dir = workspace / "build" / task.lesson / "logs"
+    manifest_dir = build_root_for(workspace, task.lesson) / "blender" / "manifests"
+    log_dir = build_root_for(workspace, task.lesson) / "logs"
     manifest_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = manifest_dir / f"{task.task_id}.json"

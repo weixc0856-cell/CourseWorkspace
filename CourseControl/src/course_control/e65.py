@@ -40,14 +40,14 @@ from .contracts_v1 import (
     TimelineSpec,
     TimelineVideo,
 )
-from .legacy_e6 import (
-    LegacyE6Error,
+from .media import (
+    MediaError,
     asset_ref,
     ffprobe_version,
-    parse_srt,
     probe_media,
     seconds_to_ms,
 )
+from .srt import parse_srt_strict as parse_srt
 from .timecode import frame_to_ms, ms_to_frame
 
 BEATS = ("b1", "b2", "b3", "b4", "b5")

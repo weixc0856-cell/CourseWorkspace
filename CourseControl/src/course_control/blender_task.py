@@ -24,6 +24,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from .blender_scene import BlenderSceneTask, SceneContractError, validate_scene_task
+from .workspace_layout import build_root_for, content_root
 
 
 class BlenderTaskError(ValueError):
@@ -91,9 +92,10 @@ def _check_relative(value: str, label: str) -> None:
 
 def _resolve_under_workspace(workspace: Path, value: str, label: str) -> Path:
     _check_relative(value, label)
-    candidate = (workspace / value).resolve()
+    base = content_root(workspace) if value.startswith("build/") else workspace
+    candidate = (base / value).resolve()
     try:
-        candidate.relative_to(workspace.resolve())
+        candidate.relative_to(base.resolve())
     except ValueError as exc:
         raise BlenderTaskError(f"{label} must stay inside the workspace") from exc
     return candidate
@@ -101,7 +103,7 @@ def _resolve_under_workspace(workspace: Path, value: str, label: str) -> Path:
 
 def _validate_v1(task: CourseTaskV1, workspace: Path) -> BlenderTaskRef:
     output = _resolve_under_workspace(workspace, task.output, "output")
-    expected_root = (workspace / "build" / task.lesson / "blender").resolve()
+    expected_root = build_root_for(workspace, task.lesson) / "blender"
     if expected_root not in output.parents and output.parent != expected_root:
         raise BlenderTaskError(
             f"output must be under build/{task.lesson}/blender/, got {task.output}"
@@ -145,9 +147,9 @@ def load_blender_task(path: Path, workspace: Path) -> BlenderTaskRef:
             task = validate_scene_task(data, workspace)
         except SceneContractError as exc:
             raise BlenderTaskError(str(exc)) from exc
-        output = (workspace / task.render.output).resolve()
+        output = _resolve_under_workspace(workspace, task.render.output, "render.output")
         blend = (
-            (workspace / task.render.save_blend).resolve()
+            _resolve_under_workspace(workspace, task.render.save_blend, "render.save_blend")
             if task.render.save_blend
             else None
         )

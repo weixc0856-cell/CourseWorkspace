@@ -23,6 +23,7 @@ from .paths import ContractError, LessonPaths
 from .report import ReportBuilder
 from .validators import validate
 from .verify import verify
+from .workspace_layout import build_root_for
 
 
 @dataclass
@@ -63,7 +64,7 @@ def storyboard_override(
     if options.storyboard is not None:
         return options.storyboard
     if options.storyboard_source == "director":
-        root = options.build_root or (workspace / "build" / lesson_dir.name)
+        root = options.build_root or build_root_for(workspace, lesson_dir.name)
         return root / "director" / "storyboard.director.yaml"
     return None
 

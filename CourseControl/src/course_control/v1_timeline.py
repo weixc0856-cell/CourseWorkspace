@@ -38,7 +38,8 @@ from .contracts_v1 import (
     TimelineVideo,
 )
 from .motion import slide_motion
-from .legacy_e6 import LegacyE6Error, asset_ref, parse_srt, seconds_to_ms
+from .media import MediaError, asset_ref, seconds_to_ms
+from .srt import parse_srt_strict as parse_srt
 from .paths import ContractError, LessonPaths
 from .timecode import frame_to_ms, ms_to_frame
 
@@ -194,7 +195,7 @@ def timeline_from_shots(
             path = build_root / relative
             try:
                 cues = parse_srt(path.read_text(encoding="utf-8"))
-            except LegacyE6Error as exc:
+            except MediaError as exc:
                 raise V1TimelineError(f"cannot parse {path}: {exc}") from exc
             for cue in cues:
                 start = ms_to_frame(cue.start_ms, fps_num, fps_den)

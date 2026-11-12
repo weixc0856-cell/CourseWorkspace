@@ -14,9 +14,10 @@ from course_control.director.inputs import load_inputs
 from course_control.director.planners import plan_all
 from course_control.director.schema import ApprovalState
 from course_control.director.validator import validate
+from course_control.workspace_layout import lessons_root
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-LESSON = WORKSPACE / "lessons" / "01-transformer-demo"
+LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
 
 
 @unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")

@@ -20,6 +20,8 @@ Third-party components retain their own licenses:
   ISC, upstream HyperFrames package.
 - RemotionStudio/public/fonts/NotoSansSC:
   SIL Open Font License 1.1; see RemotionStudio/public/fonts/LICENSE-NotoSansSC.txt.
+- CourseSlides/fonts: Inter, Manrope and Source Serif 4 web fonts,
+  SIL Open Font License 1.1.
 - Playwright (Apache-2.0) and Chromium (BSD-style) are used through local
   node_modules; they are not vendored.
 - FFmpeg is an external executable; its license depends on the installed build.

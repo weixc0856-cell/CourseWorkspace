@@ -2,6 +2,7 @@ ai_root: "<AI_ROOT>"
 blender_exe: "<BLENDER_EXE>"
 workspace: "<WORKSPACE>"
 reference_project: "<REFERENCE_PROJECT>"
+local_drama_root: "<LOCAL_DRAMA_ROOT>"
 tts:
   runtime_dir: "<AI_ROOT>/VoxCPM-Runtime"
   voice_ref: "<VOICE_REF_WAV>"

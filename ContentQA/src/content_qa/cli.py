@@ -8,6 +8,7 @@ import typer
 from .config import ConfigError, PROJECT_ROOT
 from .contracts import Finding, ModelReply, ReviewReport, ReviewTask
 from .review import load_report, run_review
+from .workspace_layout import build_root_for, lesson_path
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -15,7 +16,7 @@ app = typer.Typer(no_args_is_help=True, add_completion=False)
 @app.command("review")
 def review_command(
     lesson: str = typer.Option(..., "--lesson"),
-    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     config: Path | None = typer.Option(None, "--config"),
 ) -> None:
@@ -23,7 +24,7 @@ def review_command(
     config_path = config or (workspace / "config" / "content-qa.yaml")
     try:
         report, path = run_review(
-            workspace, lesson_dir / lesson, config_path=config_path
+            workspace, lesson_path(workspace, lesson_dir, lesson), config_path=config_path
         )
     except ConfigError as exc:
         typer.echo(str(exc), err=True)
@@ -80,7 +81,7 @@ if __name__ == "__main__":
 def claims_command(
     lesson: str = typer.Option(..., "--lesson"),
     report: Path = typer.Option(..., "--report"),
-    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Build a Claim Registry from one review report."""
@@ -90,10 +91,10 @@ def claims_command(
         typer.echo(f"report not found: {report}", err=True)
         raise typer.Exit(1)
     data = json.loads(report.read_text(encoding="utf-8"))
-    sources = load_source_ids(workspace.resolve() / lesson_dir / lesson)
+    sources = load_source_ids(lesson_path(workspace, lesson_dir, lesson))
     registry = registry_from_report(data, source_ids=sources)
     target = write_registry(
-        workspace.resolve() / "build" / lesson / "review" / "claim_registry.json",
+        build_root_for(workspace, lesson) / "review" / "claim_registry.json",
         registry,
     )
     typer.echo(f"claims: {len(registry.claims)}")
@@ -107,7 +108,7 @@ def cross_review_command(
     lesson: str = typer.Option(..., "--lesson"),
     a: Path = typer.Option(..., "--a"),
     b: Path = typer.Option(..., "--b"),
-    lesson_dir: Path = typer.Option(Path("lessons"), "--lesson-dir"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Align two independent reviews; never treats agreement as proof."""
@@ -117,9 +118,9 @@ def cross_review_command(
         if not path.is_file():
             typer.echo(f"report not found: {path}", err=True)
             raise typer.Exit(1)
-    out = workspace.resolve() / "build" / lesson / "review"
+    out = build_root_for(workspace, lesson) / "review"
     paths = run_cross_review(
-        workspace.resolve() / lesson_dir / lesson, a, b, out_dir=out
+        lesson_path(workspace, lesson_dir, lesson), a, b, out_dir=out
     )
     cross = json.loads(paths["cross"].read_text(encoding="utf-8"))
     typer.echo(f"claims: {cross['summary']['claims']}")

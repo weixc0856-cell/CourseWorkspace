@@ -128,6 +128,7 @@ def compose(paths: LessonPaths) -> StageOutcome:
             composition,
             str(output),
             f"--props={props_path}",
+            "--timeout=120000",
         ],
         remotion_root,
         timeout=render_timeout,

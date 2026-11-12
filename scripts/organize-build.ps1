@@ -13,9 +13,11 @@ param(
 # Without -Apply it prints the planned moves.
 
 $root = (Resolve-Path $Workspace).Path
+. (Join-Path $PSScriptRoot "_layout.ps1")
+$content = Get-ContentRoot -Workspace $root
 $moves = New-Object System.Collections.Generic.List[object]
 
-$buildRoot = Join-Path $root "build"
+$buildRoot = Join-Path $content "build"
 if (Test-Path $buildRoot) {
     Get-ChildItem $buildRoot -Directory | Where-Object { $_.Name -notlike "_*" } | ForEach-Object {
         $slug = $_.Name
@@ -24,7 +26,7 @@ if (Test-Path $buildRoot) {
             $moves.Add([pscustomobject]@{
                 Kind   = "package"
                 Source = $package
-                Target = (Join-Path (Join-Path $root "deliver") $slug)
+                Target = (Join-Path (Join-Path $content "deliver") $slug)
             })
         }
         $legacy = Join-Path $_.FullName "delivery"

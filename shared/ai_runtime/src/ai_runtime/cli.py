@@ -3,6 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import os
+from pathlib import Path
+
+
+def _content_default(relative: str) -> str:
+    """Follow the workspace content root when the caller sets it."""
+    root = os.environ.get("COURSEWORKSPACE_CONTENT_ROOT")
+    return str(Path(root) / relative) if root else relative
 import json
 import sys
 from pathlib import Path
@@ -63,19 +71,19 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     status = sub.add_parser("status", help="show lock and local service state")
-    status.add_argument("--lock", default="runtime/locks/llama-8080.lock")
+    status.add_argument("--lock", default=_content_default("runtime/locks/llama-8080.lock"))
     status.add_argument("--executable", default="")
     status.add_argument("--host", default="127.0.0.1")
     status.add_argument("--port", type=int, default=8080)
     status.set_defaults(func=_status)
 
     unlock = sub.add_parser("unlock", help="remove a stale lock")
-    unlock.add_argument("--lock", default="runtime/locks/llama-8080.lock")
+    unlock.add_argument("--lock", default=_content_default("runtime/locks/llama-8080.lock"))
     unlock.add_argument("--force", action="store_true")
     unlock.set_defaults(func=_unlock)
 
     tasks = sub.add_parser("tasks", help="list model task records")
-    tasks.add_argument("--root", default="runtime/tasks")
+    tasks.add_argument("--root", default=_content_default("runtime/tasks"))
     tasks.add_argument("--status", choices=["pending", "running", "completed", "failed", "blocked", "needs_review", "skipped"])
     tasks.set_defaults(func=_tasks)
 

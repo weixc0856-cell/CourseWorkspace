@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .paths import LessonPaths
 from .utils import run_command, which_command
+from .workspace_layout import runtime_root
 
 PASS = "PASS"
 WARN = "WARN"
@@ -284,7 +285,7 @@ def run_alignment(
         )
         return finish()
 
-    download_root = workspace / "runtime" / "asr" / "models"
+    download_root = runtime_root(workspace) / "asr" / "models"
     download_root.mkdir(parents=True, exist_ok=True)
     try:
         model = WhisperModel(
