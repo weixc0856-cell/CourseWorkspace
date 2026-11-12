@@ -1,3 +1,5 @@
+@import url("../fonts/fonts.css");
+
 /* ==========================================================================
    McKinsey Orange — a restrained white/orange theme for technical courseware
    ========================================================================== */
@@ -10,8 +12,10 @@
   --mk-orange-soft: #FBEEE6;
   --mk-border: #E3E0D7;
   --mk-code-bg: #F3F1EA;
-  --mk-font-sans: "Helvetica Neue", Aptos, "Segoe UI", "PingFang SC",
+  --mk-font-sans: "Inter", "Helvetica Neue", Aptos, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mk-font-display: "Manrope", "Inter", "Helvetica Neue", "Segoe UI", sans-serif;
+  --mk-font-serif: "Source Serif 4", "Cambria", Georgia, serif;
   --mk-font-mono: "Cascadia Mono", "SFMono-Regular", Consolas,
     "Liberation Mono", monospace;
   --mk-font-math: "Cambria Math", Cambria, "Times New Roman", serif;
@@ -100,7 +104,7 @@ body {
 .reveal h2,
 .reveal h3,
 .reveal h4 {
-  font-family: var(--mk-font-sans);
+  font-family: var(--mk-font-display);
   color: var(--mk-text);
   text-transform: none;
   letter-spacing: -0.02em;
@@ -238,11 +242,15 @@ body {
   background: var(--mk-orange);
 }
 
-.reveal .footnote {
-  margin-top: 1.1em;
+.reveal .slides section .footnote {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  margin: 0;
+  max-width: 78%;
   color: var(--mk-text-muted);
-  font-size: 0.38em;
-  line-height: 1.5;
+  font-size: 0.42em;
+  line-height: 1.4;
   letter-spacing: 0.01em;
 }
 
@@ -251,6 +259,7 @@ body {
    -------------------------------------------------------------------------- */
 
 .reveal blockquote {
+  font-family: var(--mk-font-serif);
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -811,4 +820,27 @@ body {
   .reveal .slide-number {
     display: none !important;
   }
+}
+
+.reveal img.formula-inline {
+  display: inline-block;
+  height: 26px;
+  width: auto;
+  max-height: none;
+  vertical-align: -0.14em;
+  margin: 0 0.08em;
+}
+
+.reveal h2 img.formula-title {
+  display: inline-block;
+  height: 0.82em;
+  width: auto;
+  max-height: none;
+  vertical-align: -0.06em;
+  margin: 0 0.06em;
+}
+
+.reveal ul.compact li {
+  font-size: 0.66em;
+  line-height: 1.3;
 }
