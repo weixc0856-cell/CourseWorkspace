@@ -43,6 +43,32 @@ def validate_lesson(
     raise typer.Exit(0 if result.ok else 1)
 
 
+@app.command("separation")
+def separation_command(
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Report course files that leaked into the program workspace."""
+    from ..separation import audit as separation_audit
+
+    report = separation_audit(workspace)
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    elif not report["configured"]:
+        typer.echo(report["note"])
+    else:
+        typer.echo(f"content root: {report['content_root']}  lessons: {report['lessons']}")
+        for entry in report["entries"]:
+            mark = "allowed" if entry["allowed"] else "PROBLEM"
+            reason = f"  ({entry['reason']})" if entry["allowed"] else ""
+            typer.echo(f"  [{mark}] {entry['path']}{reason}")
+        if not report["entries"]:
+            typer.echo("  no lesson-shaped files in the workspace")
+        for item in report.get("docs_data") or []:
+            typer.echo(f"  [warn] docs carries non-prose data: {item}")
+    raise typer.Exit(1 if report["problems"] else 0)
+
+
 @app.command("content-root")
 def content_root_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
@@ -155,6 +181,8 @@ def schemas_command(
     from ..director.schema import DirectorPlan
     from ..layout.schema import LayoutTemplate
     from ..simulation import SimulationSpec
+    from ..audio.voice_bible import VoiceBible
+    from ..audio.lexicon import Lexicon
     from ..producer.schema import DeliveryManifest, ProductionOrder, ProductionState
     from ..formulas import FormulaSpec
     from ..session import EvidenceManifest, SessionSpec
@@ -179,6 +207,8 @@ def schemas_command(
         "delivery-manifest": DeliveryManifest,
         "layout-template": LayoutTemplate,
         "simulation-spec": SimulationSpec,
+        "voice-bible": VoiceBible,
+        "lexicon": Lexicon,
     }
     for name, model in models.items():
         target = output / f"{name}.schema.json"

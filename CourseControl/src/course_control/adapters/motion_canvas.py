@@ -46,6 +46,8 @@ def _render_once(
         str(height),
         "--out",
         str(target),
+        "--run-root",
+        str(paths.build_root / "tmp" / "motion-canvas"),
         "--vite-port",
         os.environ.get("MOTION_CANVAS_VITE_PORT", str(DEFAULT_VITE_PORT)),
         "--sink-port",

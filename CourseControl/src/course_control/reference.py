@@ -12,8 +12,16 @@ from pathlib import Path
 from pydantic import Field
 
 from .contracts import StrictModel
+from .workspace_layout import content_root
 
 REFERENCES_REL = Path("docs/architecture/references")
+
+
+def reference_roots(workspace: Path) -> list[Path]:
+    """Reference records live with the projects; the old docs path is the fallback."""
+    roots = [(content_root(workspace) / "references").resolve()]
+    roots.append((Path(workspace).resolve() / REFERENCES_REL))
+    return roots
 
 
 class ReferenceMetrics(StrictModel):
@@ -47,10 +55,15 @@ def resolve_reference(workspace: Path, name: str) -> Path:
     candidate = Path(name)
     if candidate.suffix == ".json" and candidate.is_file():
         return candidate.resolve()
-    path = (workspace / REFERENCES_REL / f"{name}.json").resolve()
-    if not path.is_file():
-        raise FileNotFoundError(f"reference not found: {name}")
-    return path
+    for root in reference_roots(workspace):
+        path = (root / f"{name}.json").resolve()
+        if path.is_file():
+            return path
+    raise FileNotFoundError(
+        f"reference not found: {name} (looked in "
+        + ", ".join(str(root) for root in reference_roots(workspace))
+        + ")"
+    )
 
 
 def _dimension(status: str, detail: str) -> dict:
