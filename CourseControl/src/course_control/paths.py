@@ -173,29 +173,76 @@ class LessonPaths:
     def build_path(self, relative: str) -> Path:
         return (self.build_root / relative).resolve()
 
-    def engine_root(self, engine: str) -> Path:
-        roots = {
-            "motion_canvas": "MotionStudio",
-            "manim": "ManimSandbox",
-            "blender": "BlenderStudio",
-            "code_video": "CodeVideoStudio",
-        }
+    ENGINE_DIRS = {
+        "motion_canvas": "MotionStudio",
+        "manim": "ManimSandbox",
+        "blender": "BlenderStudio",
+        "code_video": "CodeVideoStudio",
+    }
+    # Directory layout inside <content_root>/engines/
+    ENGINE_CONTENT = {
+        "motion_canvas": "motion_canvas",
+        "manim": "manim",
+        "blender": "blender",
+        "code_video": "code_video",
+    }
+
+    def engine_home(self, engine: str) -> Path:
+        """The engine project inside the workspace: skills, scripts, venvs."""
         try:
-            return (self.workspace / roots[engine]).resolve()
+            return (self.workspace / self.ENGINE_DIRS[engine]).resolve()
         except KeyError as exc:
             raise ContractError(f"unknown engine: {engine}") from exc
 
-    def scene_path(self, shot: ShotSpec) -> tuple[Path, str | None]:
+    def engine_roots(self, engine: str) -> list[Path]:
+        """Where this engine's scenes may live, most specific first.
+
+        Course scenes live under the content root once it is configured; the
+        workspace engine directory stays as the fallback so fixtures, samples
+        and a clean clone keep working.
+        """
+        home = self.engine_home(engine)
+        roots: list[Path] = []
+        if self.content_base is not None and self.content_base != self.workspace:
+            candidate = (
+                self.content_base / "engines" / self.ENGINE_CONTENT[engine]
+            ).resolve()
+            if candidate.is_dir():
+                roots.append(candidate)
+        roots.append(home)
+        return roots
+
+    def engine_root(self, engine: str) -> Path:
+        """The preferred scene root for this engine."""
+        return self.engine_roots(engine)[0]
+
+    def resolve_engine_path(self, engine: str, relative: str) -> tuple[Path, Path]:
+        """Resolve a scene path and report which root matched it."""
+        roots = self.engine_roots(engine)
+        for root in roots:
+            candidate = (root / relative).resolve()
+            if candidate.exists():
+                return candidate, root
+        return (roots[0] / relative).resolve(), roots[0]
+
+    def scene_target(self, shot: ShotSpec) -> tuple[Path, Path, str | None]:
+        """Resolve a shot's scene, its root and the Manim class name."""
         scene = shot.scene
         class_name = None
         if shot.engine == "manim" and "::" in scene:
             scene, class_name = scene.split("::", 1)
-        return (self.engine_root(shot.engine) / scene).resolve(), class_name
+        path, root = self.resolve_engine_path(shot.engine, scene)
+        return path, root, class_name
+
+    def scene_path(self, shot: ShotSpec) -> tuple[Path, str | None]:
+        path, _root, class_name = self.scene_target(shot)
+        return path, class_name
 
     def blend_task_path(self, shot: ShotSpec) -> Path | None:
         if not shot.blend_task:
             return None
-        return (self.engine_root("blender") / shot.blend_task).resolve()
+        path, _root = self.resolve_engine_path("blender", shot.blend_task)
+        return path
 
     def narration_path(self, relative: str) -> Path:
         return (self.build_root / "narration" / relative).resolve()

@@ -52,7 +52,8 @@ if ($EngineCaches) {
             $moves.Add([pscustomobject]@{ Kind = "engine"; Source = $item.Source; Target = $item.Target })
         }
     }
-    $shots = Join-Path $root "CodeVideoStudio/shots"
+    $shots = Join-Path $content "engines/code_video/shots"
+    if (-not (Test-Path $shots)) { $shots = Join-Path $root "CodeVideoStudio/shots" }
     if (Test-Path $shots) {
         Get-ChildItem $shots -Directory | ForEach-Object {
             $out = Join-Path $_.FullName "out"

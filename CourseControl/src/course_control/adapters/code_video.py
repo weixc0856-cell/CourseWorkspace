@@ -71,7 +71,7 @@ def run(paths: LessonPaths) -> StageOutcome:
     build_root = paths.build_root
     fps = paths.lesson.outputs.fps
     width, height = paths.lesson.outputs.resolution
-    skill = paths.engine_root("code_video") / "skills" / "code-video" / "scripts" / "capture.mjs"
+    skill = paths.engine_home("code_video") / "skills" / "code-video" / "scripts" / "capture.mjs"
     outputs: list[Path] = []
     errors: list[str] = []
     warnings: list[str] = []

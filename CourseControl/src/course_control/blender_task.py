@@ -92,7 +92,19 @@ def _check_relative(value: str, label: str) -> None:
 
 def _resolve_under_workspace(workspace: Path, value: str, label: str) -> Path:
     _check_relative(value, label)
-    base = content_root(workspace) if value.startswith("build/") else workspace
+    if value.startswith("build/"):
+        base = content_root(workspace)
+    elif value.startswith("BlenderStudio/"):
+        # Blender scene sources follow the engine roots: content first, then the
+        # workspace copy that fixtures and samples still use.
+        relative = value[len("BlenderStudio/"):]
+        content = content_root(workspace)
+        candidate = (content / "engines" / "blender" / relative).resolve()
+        if content != workspace and candidate.exists():
+            return candidate
+        base = workspace
+    else:
+        base = workspace
     candidate = (base / value).resolve()
     try:
         candidate.relative_to(base.resolve())

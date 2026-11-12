@@ -24,7 +24,7 @@ def run(paths: LessonPaths) -> StageOutcome:
     errors: list[str] = []
 
     for shot in shots:
-        scene_path, class_name = paths.scene_path(shot)
+        scene_path, _scene_root, class_name = paths.scene_target(shot)
         if not class_name:
             errors.append(f"{shot.id}: manim scene must use <file>.py::<ClassName>")
             continue
@@ -44,7 +44,6 @@ def run(paths: LessonPaths) -> StageOutcome:
                 warnings.extend(f"{shot.id}: {item}" for item in shot_warnings)
                 outputs.append(target)
                 continue
-        relative_scene = scene_path.relative_to(paths.engine_root("manim"))
         command = [
             *which_command("uv"),
             "run",
@@ -56,18 +55,20 @@ def run(paths: LessonPaths) -> StageOutcome:
             str(paths.lesson.outputs.fps),
             "--media_dir",
             str(media_dir),
-            str(relative_scene),
+            str(scene_path),
             class_name,
         ]
         result = run_command(
             command,
-            paths.engine_root("manim"),
+            paths.engine_home("manim"),
             timeout=resolve_timeout(paths, "render:manim"),
             log_path=log_dir / f"manim-{shot.id}.log",
             env={
                 "STRICT_LAYOUT": "1"
                 if paths.lesson.build.strict_layout
-                else "0"
+                else "0",
+                # Scenes may live under the content root; common/ stays with the project.
+                "PYTHONPATH": str(paths.engine_home("manim")),
             },
         )
         if result.exit_code != 0:

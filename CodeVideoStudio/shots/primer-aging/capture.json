@@ -1,5 +1,0 @@
-{
-  "gpu": true,
-  "jpeg": true,
-  "note": "GPU raster + JPEG frame pipe: 36 ms/frame vs 777 ms on SwiftShader+PNG. Determinism re-verified on this machine (VERIFY.md)."
-}

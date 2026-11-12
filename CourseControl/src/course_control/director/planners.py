@@ -240,7 +240,7 @@ def resolve_scene(paths: LessonPaths, engine: str, scene: str | None) -> Path | 
     if not scene or engine == "remotion":
         return None
     relative = scene.split("::", 1)[0] if engine == "manim" else scene
-    return (paths.engine_root(engine) / relative).resolve()
+    return paths.resolve_engine_path(engine, relative)[0]
 
 
 def scene_classes(path: Path) -> list[str]:
@@ -268,8 +268,12 @@ def _infer_scene(paths: LessonPaths, engine: str, animation: str | None) -> str 
         return None
     slug = paths.slug
     if engine == "manim":
-        candidate = paths.engine_root("manim") / slug / f"{animation}.py"
-        if not candidate.is_file():
+        candidate = next(
+            (root / slug / f"{animation}.py" for root in paths.engine_roots("manim")
+             if (root / slug / f"{animation}.py").is_file()),
+            None,
+        )
+        if candidate is None:
             return None
         classes = scene_classes(candidate)
         expected = _camel(animation)
@@ -278,11 +282,15 @@ def _infer_scene(paths: LessonPaths, engine: str, animation: str | None) -> str 
             return None
         return f"{slug}/{animation}.py::{chosen}"
     if engine == "blender":
-        candidate = paths.engine_root("blender") / "scenes" / slug / f"{animation}.blend"
-        return f"scenes/{slug}/{animation}.blend" if candidate.is_file() else None
+        relative = f"scenes/{slug}/{animation}.blend"
+        if any((root / relative).is_file() for root in paths.engine_roots("blender")):
+            return relative
+        return None
     if engine == "code_video":
-        candidate = paths.engine_root("code_video") / "shots" / animation / "SPEC.md"
-        return f"shots/{animation}/SPEC.md" if candidate.is_file() else None
+        relative = f"shots/{animation}/SPEC.md"
+        if any((root / relative).is_file() for root in paths.engine_roots("code_video")):
+            return relative
+        return None
     return None
 
 
@@ -309,8 +317,13 @@ def plan_visual(paths: LessonPaths, page: OutlinePage, storyboard_shots: dict[in
     if existing is not None and existing.inputs:
         inputs = dict(existing.inputs)
     elif engine == "code_video" and page.animation:
-        shot_spec = paths.engine_root("code_video") / "shots" / page.animation / "shot.spec.json"
-        if shot_spec.is_file():
+        shot_spec = next(
+            (root / "shots" / page.animation / "shot.spec.json"
+             for root in paths.engine_roots("code_video")
+             if (root / "shots" / page.animation / "shot.spec.json").is_file()),
+            None,
+        )
+        if shot_spec is not None:
             try:
                 inputs = dict(json.loads(shot_spec.read_text(encoding="utf-8")).get("inputs") or {})
             except (OSError, json.JSONDecodeError):

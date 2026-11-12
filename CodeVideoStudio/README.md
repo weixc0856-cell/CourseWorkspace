@@ -24,7 +24,7 @@ uv run --project CourseControl course-control vendor-check
 ```text
 CodeVideoStudio/
 ├── skills/code-video/        # SKILL.md、8 类 crafts、capture/check/contact 脚本
-├── shots/
+├── shots/                # 课程镜头源码；已移到 <内容根>/engines/code_video/shots/
 │   ├── attention-flow/       # 30s 验证镜头：SPEC.md、index.html、main.js、VERIFY.md
 │   └── primer-rps/           # 30s 模拟镜头：Three.js + SimulationData，900 帧约 46 s
 ├── scripts/contact_sheet.py  # Windows/Pillow fallback（ffmpeg drawtext 会段错误）
@@ -47,7 +47,7 @@ CodeVideoStudio/
 ## 复现 attention-flow
 
 ```powershell
-cd CodeVideoStudio/shots/attention-flow
+cd <内容根>/engines/code_video/shots/attention-flow
 node ../../skills/code-video/scripts/capture.mjs . --fps 30 --dur 30 --size 1920x1080 --out out/final.mp4
 PATH="../../bin:$PATH" sh ../../skills/code-video/scripts/check_video.sh out/final.mp4 1920 1080 30 29.5 30.5 0
 uv run --project CourseControl python ../../scripts/contact_sheet.py out/final.mp4 out/contact.jpg --step 2 --cols 5 --thumb 384

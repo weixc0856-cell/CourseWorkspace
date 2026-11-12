@@ -3,6 +3,7 @@ param()
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot "_layout.ps1")
 
 $configPath = Join-Path $root "config/tools.yaml"
 $examplePath = Join-Path $root "config/tools.example.yaml"
@@ -53,7 +54,9 @@ foreach ($project in @("CourseSlides", "MotionStudio", "RemotionStudio")) {
 # CodeVideo shots reuse RemotionStudio's Playwright. A junction keeps one
 # install while the capture server still serves each shot directory.
 $remotionModules = Join-Path $root "RemotionStudio/node_modules"
-$shotsRoot = Join-Path $root "CodeVideoStudio/shots"
+$content = Get-ContentRoot -Workspace $root
+$shotsRoot = Join-Path $content "engines/code_video/shots"
+if (-not (Test-Path $shotsRoot)) { $shotsRoot = Join-Path $root "CodeVideoStudio/shots" }
 if ((Test-Path $shotsRoot) -and (Test-Path $remotionModules)) {
     foreach ($shot in Get-ChildItem $shotsRoot -Directory) {
         if (-not (Test-Path (Join-Path $shot.FullName "index.html"))) { continue }

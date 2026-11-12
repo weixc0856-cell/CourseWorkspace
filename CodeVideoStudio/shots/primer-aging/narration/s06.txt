@@ -1,1 +1,0 @@
-To see this, we built a small world. Each blob carries a genome, ages, and reproduces. Mutations appear at random ages, and death comes from both the environment and the genome.

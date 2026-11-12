@@ -152,7 +152,7 @@ def stage_inputs(paths: LessonPaths, stage: str) -> dict[str, str]:
         files = list(common) + _shot_files(paths, engine)
         if engine == "code_video":
             files.append(
-                paths.engine_root("code_video")
+                paths.engine_home("code_video")
                 / "skills"
                 / "code-video"
                 / "scripts"

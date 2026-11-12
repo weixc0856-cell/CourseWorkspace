@@ -43,6 +43,7 @@ class CodeVideoAdapterTest(unittest.TestCase):
             lesson=SimpleNamespace(outputs=SimpleNamespace(fps=30, resolution=(1920, 1080))),
             scene_path=lambda shot: (self.spec, None),
             engine_root=lambda engine: self.root / "CodeVideoStudio",
+            engine_home=lambda engine: self.root / "CodeVideoStudio",
         )
 
     def tearDown(self):

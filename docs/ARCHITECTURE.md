@@ -29,6 +29,7 @@ CourseWorkspace/
 └── docs/               权威文档 + docs/archive/
 
 <内容根>/                 课程内容；默认等于工作区，取值见 config/local-paths.yaml 的 content_root
+├── engines/            课程场景：manim/、blender/scenes/、code_video/shots/
 ├── lessons/            内容层：唯一的课程输入
 ├── build/              全部生成物（不入库）
 ├── deliver/            最终交付包（不入库）
