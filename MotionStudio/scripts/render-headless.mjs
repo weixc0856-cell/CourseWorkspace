@@ -24,8 +24,12 @@ const width = Number(args.width || 1920);
 const height = Number(args.height || 1080);
 const failAt = Number(args['fail-at'] || 0);
 const keepFrames = args['keep-frames'] === 'true';
+// Run artefacts are build output: keep them under the content root when one is
+// configured, so a direct `node scripts/render-headless.mjs` run does not drop
+// them into the program repository.
+const contentRoot = process.env.COURSEWORKSPACE_CONTENT_ROOT;
 const runRoot = path.resolve(
-  args['run-root'] || path.join(workspaceRoot, 'build', 'motion-canvas'),
+  args['run-root'] || path.join(contentRoot || workspaceRoot, 'build', 'motion-canvas'),
 );
 const out = path.resolve(args.out || path.join(runRoot, `${scene}.mp4`));
 const runId = `${scene}-${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}`;

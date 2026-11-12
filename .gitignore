@@ -117,3 +117,4 @@ CodeVideoStudio/shots/brand-intro/film.before-*.js
 # 课程场景目录（junction 指向内容根；仓库不保存课程内容）
 MotionStudio/src/scenes/01-shell-for-ai-era/
 MotionStudio/src/scenes/01-transformer-demo/
+/build/
