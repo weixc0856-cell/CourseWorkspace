@@ -11,6 +11,7 @@
 - [课程生产统一契约V1.md](课程生产统一契约V1.md)：Lesson / Shot / Narration / Timeline / Evidence / Render
 - [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射
+- [仓库与项目边界.md](仓库与项目边界.md)：工具、项目、产物三层；什么进仓库、什么只在内容根（`course-control separation`）
 
 ## 1.0.0 V1 全量修复与生产体系收敛（2026-11-10，现行）
 
@@ -31,8 +32,7 @@
 - [architecture/多视觉语法生产系统-审计.md](architecture/多视觉语法生产系统-审计.md)：现有契约、门禁、评分器的耦合与影响面（P0）
 - [architecture/多视觉语法生产系统-设计.md](architecture/多视觉语法生产系统-设计.md)：四层架构、三份契约、Renderer Adapter、质量重构、迁移与风险
 - [architecture/多视觉语法生产系统-样片验证.md](architecture/多视觉语法生产系统-样片验证.md)：四支真实渲染样片与机器结果
-- [architecture/references/](architecture/references/)：参考库（Yari / 3B1B / Primer）
-- [architecture/golden/golden.json](architecture/golden/golden.json)：各语法的 Golden Sample 与渲染哈希
+- 参考库与 Golden Sample：`<内容根>/references/`（3B1B / Primer / Yari 的参考记录与 golden.json，项目材料，不入库）；`course-control reference-compare` 优先从这里解析
 - [architecture/样片-06-attention-sample.md](architecture/样片-06-attention-sample.md)：真实中文 62 秒课程样片、ASR/逐词字幕、参考对照与 180 s 捕获
 - [contracts/](contracts/)：Production Contract / Visual Grammar / Quality Profile 的 JSON Schema 与 grammar 注册表
 
@@ -40,7 +40,7 @@
 
 - [verticals/知识系列课程生产总纲.md](verticals/知识系列课程生产总纲.md)：把一个领域接进现有系统的通用规范（来源分层、选题准入、语法映射、资产准入、许可、接入清单）
 - [verticals/README.md](verticals/README.md)：领域索引与本机方案路径
-- 领域方案（经济学、历史、AI 时代基础、汽车空气动力学）属于课程开发内容，只在本机 `docs/verticals/<domain>/`，不入库；本索引不链接。
+- 领域方案（经济学、历史、AI 时代基础、汽车空气动力学）属于课程开发内容，只在本机 `<内容根>/projects/<domain>/`，不入库；本索引不链接。
 
 ## 1.0.2 交付分区与资料采集（2026-11-11）
 
@@ -53,6 +53,11 @@
 ## 1.0.3 内容根迁移（2026-11-12，设计稿）
 
 - [内容根迁移方案.md](内容根迁移方案.md)：把 `lessons`、`build`、`deliver`、`runtime`、`knowledge`、`assets` 移出程序目录；含代码改动点、执行步骤、回滚与第二阶段（引擎课程目录）边界。
+
+## 1.0.4 工业化生产流程 V2.0（2026-11-12，已采纳，逐步落地）
+
+- [v2/工业化生产流程V2.0-建议稿.md](v2/工业化生产流程V2.0-建议稿.md)：生产线八阶段、六个工作包（WP-0～WP-5）、执行顺序 P0～P6 与各阶段验收标准（D-089）
+- [v2/P0-基线审计.md](v2/P0-基线审计.md)：建议稿与现有代码的逐条对照、实测缺陷清单、文档不一致范围与落地顺序
 
 ## 1.1 许可与贡献
 
@@ -71,6 +76,10 @@
 - 主生产路线：[生产路线.md](生产路线.md)：Slide-first / Motion-enhanced / Narration-led；Explainer 与 Course 两条产品线、四类画面、M0–M3 里程碑。路线建议，不是契约或门禁，交付质量仍按质量基准判定
 - 内容与课程：[课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)、[课程生产交付物规范.md](课程生产交付物规范.md)、[课程交付清单模板.md](课程交付清单模板.md)
 - 导演/制片：[导演层.md](导演层.md)、[制片层.md](制片层.md)、[动画渲染适配器.md](动画渲染适配器.md)
+- 预览：[动画预览-Animatic.md](动画预览-Animatic.md)：正式渲染前的 480p 时间线预览，四条检查与片段缓存
+- 声音：[声音资产-VoiceBible与Lexicon.md](声音资产-VoiceBible与Lexicon.md)：声线身份、读法词典、按片段失效的缓存键
+- 镜头表：[镜头表-ShotSheet.md](镜头表-ShotSheet.md)：storyboard v2 设计字段、连续性与资产引用、编译复核与设计指纹
+- 锁定：[锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
 - 版式/配色/运镜：[版式系统.md](版式系统.md)、[配色规范.md](配色规范.md)、[运镜与剪辑.md](运镜与剪辑.md)、[动画视觉导演规范.md](动画视觉导演规范.md)
 - 品牌：[品牌与片头片尾.md](品牌与片头片尾.md)：WAYNE 标识、三种内容形态的片头片尾、流水线位置与 V-33
 - [品牌片头-3D桌面戏-设计.md](品牌片头-3D桌面戏-设计.md)：12 秒独立 3D 桌面片头设计稿 v1.1（Gate 1 粗剪已出）
@@ -101,7 +110,7 @@
 
 ## 4.1 项目审计（已归档）
 
-2026-11-10 的七份审计报告已移出仓库，保留在本机 `docs/archive/records-2026-11/audit/`；其中可执行的结论已收进 [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)。
+2026-11-10 的七份审计报告已移出仓库，保留在本机 `<内容根>/archive/records-2026-11/audit/`；其中可执行的结论已收进 [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)。
 
 ## 4.2 Production Stabilization（2026-11-10）
 
@@ -110,8 +119,10 @@
 - [stabilization/ANIMATION_QUALITY_MODEL.md](stabilization/ANIMATION_QUALITY_MODEL.md)：结构/像素/人工三分，D-071 与评分修正
 - [stabilization/DELIVERY_CONTRACT.md](stabilization/DELIVERY_CONTRACT.md)：`package` / `package-verify`、哈希与缺项失败
 
-## 5. 本地归档（不入远程）
+## 5. 项目材料与本地归档（不入远程）
 
-- [archive/README.md](archive/README.md)：归档索引
-- `records-2026-11/`：2026-11-12 文档收敛时移出的 24 份一次性记录（审计、迁移、会话、已完成评估）
-- `docs/archive/**` 除 README 外由 `.gitignore` 排除；干净克隆中不存在。
+历史记录与项目材料都在**内容根**下，不在仓库里：
+
+- `<内容根>/archive/`：历史归档——决策、E6/E6.5/R1/Primer 证据、`records-2026-11/`（2026-11-12 收敛时移出的 24 份一次性记录）、`stabilization-evidence/`
+- `<内容根>/projects/<系列>/`：各系列的生产方向、分集方案、混合动效流程；索引 `<内容根>/projects/README.md`
+- 仓库只保留现行权威文档与可复用规范；归档原件不参与任何检查。

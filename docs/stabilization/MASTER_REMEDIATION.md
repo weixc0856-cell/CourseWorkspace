@@ -59,7 +59,7 @@ C-15、C-26 均存在，不是缺号。统计脚本化没有独立编号，作�
 | C-23 | 五层审查无统一裁决队列 | `review_decisions`、`quality` | `review/decisions.json`；Q1 读取；未裁决即人工复核 | — | 每条 finding 有裁决或明确未裁决 | **VERIFIED**：`review-status`/`review-decide`；`test_review_decisions` |
 | C-24 | 同一行为多配置源 | `config_resolve`、`pipeline` | 每次 build 生成不可变 `config-resolution.json`；冲突阻断 | — | 05 的四个时长值有唯一解释；指纹进入 resume | **VERIFIED**：`config-resolve` 对 05/06/01/nvda 实测；`test_config_resolve` |
 | C-25 | 内容小矛盾 | `lessons/06` 正文 | 标题时长、因果遮罩表述、示意矩阵标注 | 所有者批准 | 内容与实测一致 | **VERIFIED**：标题改为 `How Attention Works in About a Minute`；s005 改为“解码器里的注意力，能看当前和之前的位置，不能看未来”；重生成 10.24 s，全片 65.533 s；V-31/V-44 PASS，ASR 0.935、0 mismatch；画面文案与 SRT 同步 |
-| C-26 | 新闻片幻灯片密度 | `lessons/nvda`、版式 | 中文段落移出幻灯片，交给字幕 | 所有者批准、视觉验收 | 抽帧可读 | **VERIFIED**：删除 8 页中文段；6 条 ASR mismatch 已分类，重定时 cue 80–84、111–116；重建 354.304 s，V-44 PASS；审阅记录在 `docs/stabilization/evidence/c26/EDITORIAL_REVIEW.md` |
+| C-26 | 新闻片幻灯片密度 | `lessons/nvda`、版式 | 中文段落移出幻灯片，交给字幕 | 所有者批准、视觉验收 | 抽帧可读 | **VERIFIED**：删除 8 页中文段；6 条 ASR mismatch 已分类，重定时 cue 80–84、111–116；重建 354.304 s，V-44 PASS；审阅记录在 `docs/<内容根>/archive/stabilization-evidence/c26/EDITORIAL_REVIEW.md` |
 | C-27 | 验收文档算术错误 | `ACCEPTANCE`、`stats` | 计数由 `stats` 生成；更新数字 | C-25 | 文档数字与产物一致 | **VERIFIED**：`stats` 命令；ACCEPTANCE 2026-11-10 段 |
 | C-28 | 未提交的品牌工作 | `BrandIntro`、3D shots | 记录设计/失败/当前版本，交由所有者决定提交 | 所有者 | 下一次会话能判断哪些已决定 | **VERIFIED**：源码分两笔提交（`84d5d5c`、`e611886`）；`out/`、预览帧、`*.blend1`、渲染副本被忽略；分类见 `BrandIntro/ASSET_CLASSIFICATION.md` |
 | C-29 | 06 的 `subtitle disabled` 文案 | `verify` | 只在字幕禁用时使用该文案 | — | 06 的报告不再误导 | **VERIFIED**：`test_burnin`/verify 测试；06 V-31 已执行 |
@@ -89,7 +89,7 @@ C-25 / C-26 ── 所有者内容批准
 ### 4.1 C-25 / C-26（已处理）
 
 - C-25：标题、因果遮罩、画面文案、旁白、SRT 已同步；06 重建 64.405 s，V-31/V-44 PASS，ASR 0.935、0 mismatch。原稿在 `lessons/06-attention-sample/authoring/original-2026-11-10/`。
-- C-26：8 页中文重复段落已移除，NVDA 重建 354.304 s，V-44 PASS；前后帧与 15 s 片段在 `docs/stabilization/evidence/c26/`。
+- C-26：8 页中文重复段落已移除，NVDA 重建 354.304 s，V-44 PASS；前后帧与 15 s 片段在 `docs/<内容根>/archive/stabilization-evidence/c26/`。
 - 仍待所有者：新措辞与新闻写作的编辑签核；不是工程阻塞。
 
 ### 4.2 C-28（已处理）

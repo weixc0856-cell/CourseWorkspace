@@ -26,7 +26,7 @@ CourseWorkspace/
 │   └── design-tokens/  设计令牌
 ├── config/             本机配置（*.yaml 本地文件不入库）
 ├── scripts/            PowerShell 工作区入口
-└── docs/               权威文档 + docs/archive/
+└── docs/               权威文档与生产规范（项目材料与归档不在这里）
 
 <内容根>/                 课程内容；默认等于工作区，取值见 config/local-paths.yaml 的 content_root
 ├── engines/            课程场景：manim/、blender/scenes/、code_video/shots/
@@ -34,7 +34,11 @@ CourseWorkspace/
 ├── build/              全部生成物（不入库）
 ├── deliver/            最终交付包（不入库）
 ├── runtime/            锁与模型任务记录（不入库）
-└── knowledge/          教材区（不入库）
+├── knowledge/          教材区（不入库）
+├── audio/              共享声音资产：voice-bibles/、lexicons/（人工维护）
+├── references/         参考库：对标影片记录、Golden Sample 哈希（不入库）
+├── projects/           各系列项目材料：生产方向、分集方案、研究（不入库）
+└── archive/            历史记录：一次性报告、证据、旧方案（不入库）
 ```
 
 ### 1.1 写入归属
@@ -43,6 +47,7 @@ CourseWorkspace/
 | --- | --- | --- |
 | `<内容根>/lessons/` | 人工 | 课程正文与契约 |
 | `<内容根>/build/<slug>/` | CourseControl 及其适配器 | 截图、动画、三维、时间线、日志、报告 |
+| `<内容根>/audio/` | 人工 | Voice Bible 与 Lexicon；按哈希标识，课程用 id 引用 |
 | `RemotionStudio/public/staging/<slug>/` | Remotion staging | 合成期临时素材（成功后清理） |
 | `<内容根>/runtime/locks/` | `shared/ai_runtime` | 跨进程锁 |
 | `<内容根>/runtime/tasks/` | `shared/ai_runtime` | 模型任务记录 |
@@ -59,6 +64,11 @@ CourseWorkspace/
 | `CourseControl` | 解析契约、调度阶段、收集时间线、合成调用、报告 | 不改课程正文；不判定内容正确性 |
 | `CourseControl/director` | 把已批准内容收敛为章节/镜头/引擎/旁白计划并做硬校验 | 不写场景代码、不调用渲染引擎 |
 | `CourseControl/producer` | 生产订单、资源授权、用量、交付清单、增量指纹 | 不读密钥、不渲染、不自动发布 |
+| `CourseControl/animatic` | 把时间线变成 480p 可看预览：单元解析、分段编码、拼接混音、预览报告 | 不改课程正文；不写 `deliver/`；不做正式合成 |
+| `CourseControl/audio` | Voice Bible / Lexicon 的契约、解析与改写 | 不调用 TTS、不合成；不改讲稿 |
+| `CourseControl/authoring/shot_sheet` | 解析镜头表的引用、计算设计指纹、编译复核报告 | 不改课程正文；不重写导演计划 |
+| `CourseControl/locks` | 画面与旁白的锁定快照、哈希比对与失效映射 | 不阻止修改、不自动重建、不产出交付物 |
+| `course_control/separation.py` | 检查仓库里是否混入课程文件 | 不移动文件；只报告 |
 | `CourseSlides` | 加载指定课程为 Reveal 页面 | 不写 `build/` |
 | `MotionStudio` | 动画场景源码 | 不做最终合成；无头导出由 `render-headless.mjs` 完成（D-054） |
 | `ManimSandbox` | 数学动画备选 | 不进入主流程 |
@@ -134,6 +144,60 @@ content-qa review
 
 ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 
+### 3.5 动画预览
+
+```text
+animatic
+  ├─ 读时间线：build/<slug>/timeline/page-plan.json → shots.json(base) → scenes/manifest.json
+  ├─ 每单元选画面：scenes/pages/page-NNN.mp4 → slides/slide-NNN.png → 占位黑帧
+  ├─ 480p 分段编码（片段按内容哈希缓存）→ concat -c copy → 旁白 apad 混音
+  └─ build/<slug>/animatic/{animatic.mp4, animatic.json, timeline.json, animatic-report.json, contact-sheet.png}
+```
+
+预览是决策工具：不写 `deliver/`，`overlay` 镜头不合成（只在报告里计数），分辨率与时长都不作为通过条件。
+
+### 3.6 声音资产
+
+```text
+narration-build
+  ├─ 解析：<内容根>/audio/voice-bibles/<id>.yaml、lexicons/<id>.yaml（lesson.yaml 声明）
+  ├─ 校验：参考音频存在 + 声明哈希一致 + 模式与 prompt 匹配
+  ├─ 改写：Lexicon 单次扫描替换送 TTS 的文本；讲稿与字幕保持原文
+  ├─ 合成：缓存键 = 文本 + 声线哈希 + 本段命中词条 + 模型与参数
+  └─ build/<slug>/narration/narration.meta.json（schema v3，含 assets 与逐段 lexicon_applied）
+```
+
+不声明资产的课完全走原路径，缓存键不变。
+
+### 3.7 镜头表
+
+```text
+storyboard.yaml (schema_version: 2)
+  ├─ continuity 对象表 → continuity_refs 校验（V-45）
+  ├─ asset_refs  → lesson 目录 / assets/ 解析与哈希（V-46）
+  ├─ evidence_refs → id 格式（V-47）
+  └─ shot-sheet 命令 → build/<slug>/shot-sheet/{plan.json, review.md}
+                       逐镜头设计指纹（设计字段 + 资产哈希）
+```
+
+v1 镜头表原样通过；v2 字段只在 `schema_version: 2` 下可用。导演计划仍是视图，编译器不重写它。
+
+### 3.8 锁定与失效
+
+```text
+lock
+  ├─ picture.lock.json：画面单元哈希 + 镜头表版本 + 设计指纹 + 场景/资产哈希 + 审核记录
+  └─ dialogue.lock.json：脚本/旁白/声音资产哈希 + 逐段测量 + 字幕 cue 对应
+
+lock-status
+  └─ 当前哈希 vs 锁定哈希 → 每处差异映射到下游（locks/dependencies.py: RULES）
+
+subtitles-build
+  └─ 旁白 meta 的脚本哈希与当前脚本不一致 → blocked（3）
+```
+
+锁是快照不是禁令：它报告失效范围，重建仍由 `producer-rebuild` 等显式命令执行。
+
 ---
 
 ## 4. 数据契约
@@ -143,7 +207,7 @@ ContentQA 不读取也不写 `shots.json` / `build-report.json`。
 | 文件 | 契约 | Schema |
 | --- | --- | --- |
 | `lessons/<slug>/lesson.yaml` | 课程配置 | `shared/schemas/lesson.schema.json` |
-| `lessons/<slug>/storyboard.yaml` | 镜头表 | `shared/schemas/storyboard.schema.json` |
+| `lessons/<slug>/storyboard.yaml` | 镜头表；`schema_version: 2` 起即镜头表（Shot Sheet） | `shared/schemas/storyboard.schema.json` |
 | `build/<slug>/shots.json` | 时间线（生成物） | `shared/schemas/shots.schema.json` |
 | `build/<slug>/final/build-report.json` | 构建报告（生成物） | `shared/schemas/build-report.schema.json` |
 | Blender 任务 v2 | 场景任务 | `shared/schemas/blender-scene-task.schema.json` |

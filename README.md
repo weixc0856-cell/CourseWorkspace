@@ -19,10 +19,10 @@
 
 领域方案属于实际课程开发内容，只在本机，不入库：
 
-- 历史：`docs/verticals/history/历史系列-生产方向.md`
-- AI 时代基础知识：`docs/verticals/ai-era-fundamentals/AI时代基础知识-生产方向.md`
-- 汽车空气动力学：`docs/verticals/automotive-aerodynamics/汽车空气动力学-生产方向.md`
-- 经济学：`docs/verticals/economics/经济学系列-第一季生产方案.md`
+- 历史：`<内容根>/projects/history/历史系列-生产方向.md`
+- AI 时代基础知识：`<内容根>/projects/ai-era-fundamentals/AI时代基础知识-生产方向.md`
+- 汽车空气动力学：`<内容根>/projects/automotive-aerodynamics/汽车空气动力学-生产方向.md`
+- 经济学：`<内容根>/projects/economics/经济学系列-第一季生产方案.md`
 
 具体课程方案、教材页映射、图片账本、讲稿与素材也留在本机 `runtime/`；远程仓库只保留生产系统、总纲与索引。
 
@@ -38,12 +38,14 @@
 | `index.html` | 是 | 根入口：把 `/?lesson=<slug>` 重定向到 Reveal 外壳 |
 | `CodeVideoStudio/` | 是 | Code2Video Skill（Apache 2.0）与镜头 POC；不含 27B 权重 |
 | `scripts/`、`config/*.example.yaml`、`docs/` | 是 | 入口、模板与指导 |
-| `lessons/` 真实课程 | **否** | 本地内容，仓库只保留 `lessons/README.md` |
-| `build/`、`deliver/`、`runtime/`、`knowledge/`、`ModelingStudio/workspace/` | 否 | 临时构建、最终交付、运行态与本地资料；`deliver/` 不随 `build/` 清理 |
+| `<内容根>/lessons/` 真实课程 | **否** | 本地内容，仓库只保留 `lessons/README.md` |
+| `<内容根>/build/`、`deliver/`、`runtime/`、`knowledge/`；`ModelingStudio/workspace/` | 否 | 临时构建、最终交付、运行态与本地资料；`deliver/` 不随 `build/` 清理 |
 | 模型权重、视频、音频、`*.blend1` | 否 | 大文件与媒体 |
 | `config/tools.yaml`、`config/local-paths.yaml`、`config/content-qa.yaml`、`ModelingStudio/config/workflow.yaml` | 否 | 本机路径与凭据 |
 
 克隆后是一个**没有课程内容**的工作流仓库：先按 [lessons/README.md](lessons/README.md) 在本地创建课程，再运行 `scripts/setup.ps1` 生成本机配置。
+
+课程内容不在仓库里：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 与 `engines/` 都相对**内容根**（见 `config/local-paths.yaml` 的 `content_root`，默认等于工作区；`course-control content-root` 可查询）。2026-11-12 起本机内容根在工作区外，仓库只剩程序、共用模块与夹具。下文路径除特别说明外都相对内容根。
 
 ## 生产闭环
 
@@ -85,7 +87,7 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 
 | 目录 | 职责 | 产物 | 是否主流程 |
 | --- | --- | --- | --- |
-| `lessons/` | 课程唯一入口 | 双文件内容 + 契约 | 是 |
+| `<内容根>/lessons/` | 课程唯一入口 | 双文件内容 + 契约 | 是 |
 | `CourseControl/` | 校验、调度、收集、报告；含 `director/` 与 `producer/` | `shots.json`、`build-report.json`、导演计划、制片清单、`deliver/<slug>/` 交付包 | 是 |
 | `CourseSlides/` | Reveal 6 外壳 | 浏览器页面 | 是 |
 | `MotionStudio/` | 结构动画（无头自动导出） | `animation/<stem>.mp4` | 是 |
@@ -103,7 +105,7 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 | `shared/scene_expr/` | 受限表达式：AST 白名单 + 解释器 | — | 支撑 |
 | `shared/schemas/` | JSON Schema | — | 支撑 |
 | `config/`、`scripts/` | 本机配置与工作区入口 | — | 支撑 |
-| `docs/` | 权威文档；`docs/archive/` 为历史 | — | — |
+| `docs/` | 权威文档；`<内容根>/archive/` 为历史 | — | — |
 
 ## 快速开始
 
@@ -228,4 +230,4 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 - 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
 - 导演/制片：[导演层](docs/导演层.md) · [制片层](docs/制片层.md)
 - 版式/配色/运镜：[版式系统](docs/版式系统.md) · [配色规范](docs/配色规范.md) · [运镜与剪辑](docs/运镜与剪辑.md)
-- 历史：[docs/archive/](docs/archive/README.md)
+- 历史归档与项目材料在内容根下：`<内容根>/archive/`、`<内容根>/projects/<系列>/`（不入库）

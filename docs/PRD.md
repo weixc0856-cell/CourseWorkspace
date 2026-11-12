@@ -3,7 +3,7 @@
 - **版本**：v1.0
 - **日期**：2026-11-03
 - **地位**：本文件是唯一有效的产品需求基线。任何开发任务必须能对应到本文的 `FR-*` / `NFR-*` 条目。
-- **取代**：`docs/archive/CourseWorkspace-R0-R5改造PRD.md`（改造规格，已执行完毕）、`docs/archive/ContentQA_实施评估.md`（设计稿，仅保留审查内核）、`docs/archive/AI-Blender落地路线图.md`（历史状态快照）。
+- **取代**：`<内容根>/archive/CourseWorkspace-R0-R5改造PRD.md`（改造规格，已执行完毕）、`<内容根>/archive/ContentQA_实施评估.md`（设计稿，仅保留审查内核）、`<内容根>/archive/AI-Blender落地路线图.md`（历史状态快照）。
 - **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；真实工作流见 [WORKFLOW.md](WORKFLOW.md)；当前状态见 [PROJECT_STATUS.md](PROJECT_STATUS.md)。
 
 ---
@@ -56,7 +56,7 @@
 
 | 模块 | 定位 | 是否在主流程 | 说明 |
 | --- | --- | --- | --- |
-| `lessons/` | 核心 | 是 | 唯一内容入口 |
+| `<内容根>/lessons/` | 核心 | 是 | 唯一内容入口 |
 | `CourseControl/` | 核心 | 是 | 唯一课程调度与验收入口 |
 | `CourseSlides/` | 核心 | 是 | Reveal 预览与截图源 |
 | `RemotionStudio/` | 核心 | 是 | 截图、staging、最终合成 |
@@ -83,6 +83,8 @@
 ### FR-01 课程内容契约
 
 **目标**：一门课只由 `lessons/<slug>/` 下的文件描述。
+
+`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 与 `engines/` 都相对**内容根**（`config/local-paths.yaml` 的 `content_root`，默认等于工作区）。本节及下文路径除特别说明外均为内容根相对路径。
 
 - 必需：`lesson.yaml`、`slides.md`、`lecture_notes.md`、`storyboard.yaml`。
 - 可选：`outline.md`、`assets/`、`subtitles.srt`。
@@ -576,3 +578,69 @@ R1 增量完成条件：
 - 导演层 `visual_kind: simulation` 路由 code_video，并在计划中携带/校验 `inputs.simulation_spec`。
 
 **验收**：`docs/evaluations/评估-Primer模拟视频POC.md`、`test_simulation.py`、`simulation.spec.json`、POC 成片。
+
+### FR-40 动画预览（Animatic）
+
+**目标**：正式渲染之前，先按真实时间线看一遍画面与旁白，把返工留在预览阶段。
+
+- `course-control animatic --lesson <slug>` 输出 `build/<slug>/animatic/`：`animatic.mp4`（480p + AAC）、`picture.mp4`、`animatic.json`、`timeline.json`、`animatic-report.json`、`contact-sheet.png`、`frames/`、`audio/`。
+- 时间线权威依次为 `timeline/page-plan.json`、`shots.json` 的 `base` 镜头、`scenes/manifest.json`；三者都没有时报错并列出查找位置。因此 animatic 依赖先跑过 `collect`。
+- 每个单元的画面独立选择：`scenes/pages/page-NNN.mp4` > `slides/slide-NNN.png` > 占位黑帧；静态页、动画片、渲染过的三维预览可混排在同一条时间线上。
+- 镜头号烧在画面左下角；片段按内容哈希缓存，`--shot` 只重编指定单元，其余复用。
+- 报告四项检查：`pictures`、`picture_duration`、`audio_sync`、`source_length`；`ok` 只看是否存在 `fail`，`warn` 不阻断。
+- 480p 是预览规格，不是质量上限；不写 `deliver/`，不参与交付判定。
+
+**验收**：`docs/动画预览-Animatic.md`、`test_animatic.py`；`a01-why-cars-need-aerodynamics`（24 单元 / 1293 s / 有旁白）、`01-transformer-demo`、`ai-economics-e01` 三门真实课程实测。
+
+### FR-41 声音资产（Voice Bible / Lexicon）
+
+**目标**：把"谁的声音"和"这个词怎么读"变成内容根里可版本化的资产，不再靠复制配置路径保持一致。
+
+- 资产位置：`<内容根>/audio/voice-bibles/<id>.yaml`、`<内容根>/audio/lexicons/<id>.yaml`；课程在 `lesson.yaml.narration.voice_bible` / `.lexicon` 按 id 引用，两者都可选。
+- Voice Bible 固定语言、参考录音（按 SHA-256 校验，路径相对 bible 解析）、prompt 文本、合成模式与基准参数；身份是文档哈希，移动内容根不改变声线。
+- Lexicon 是 `term -> say` 列表：拉丁词条整词、大小写不敏感匹配，CJK 与符号字面匹配，长词优先、单次扫描；只改写送 TTS 的文本，讲稿与字幕保持原文。
+- 片段缓存键增加 `voice_bible_sha256` 与**本段命中的词条对**，使词典改动只失效用到该词条的片段。
+- `narration.meta.json` 升到 schema v3，记录 `assets` 与逐段 `spoken_text_sha256`、`lexicon_applied`。
+- 未声明资产的课程完全走原路径，缓存键保持不变；声明的文件缺失时报错，不静默回退到 config。
+
+**验收**：`docs/声音资产-VoiceBible与Lexicon.md`、`test_audio_assets.py`；a01 副本实测 24 段中 5 段被改写、旧缓存键不变。真实 VoxCPM2 合成未执行。
+
+### FR-42 镜头表（Shot Sheet）
+
+**目标**：人工的镜头设计有唯一权威，机器产物可以由它重新得出，旧课程不需要重写。
+
+- 镜头表就是 `storyboard.yaml` 的 `schema_version: 2`，不新增文件；保持"每个 compose 模式一个权威"。
+- v2 新增八个可选字段：`purpose`、`visual_action`、`composition`、`continuity_refs`、`asset_refs`、`evidence_refs`、`transition`、`director_notes`；顶层新增 `continuity` 对象表。
+- `schema_version: 1` 的课程行为不变；v1 文件里写 v2 字段时加载即报错，不做静默降级。
+- 新增校验：V-45 连续性引用必须已声明、V-46 资产引用必须存在且为相对路径、V-47 证据引用必须是合法 id，均定位到具体镜头。
+- `course-control shot-sheet --lesson <slug>` 产出 `build/<slug>/shot-sheet/{plan.json,review.md}`：逐镜头资产解析与哈希、设计指纹、连续性使用、问题清单。
+- 指纹由设计字段与资产字节哈希构成，用于 P4 的锁定与增量重建。
+
+**验收**：`docs/镜头表-ShotSheet.md`、`test_shot_sheet.py`（9 例）；a01 副本上 v2 表编译通过、三处故意错误各自定位、指纹稳定；13 门 v1 课程校验与构建不变。
+
+### FR-43 锁定与失效（Picture / Dialogue Lock）
+
+**目标**：画面与旁白各有一次可追溯的人工认可，上游改动能让下游失效可见，而不是被禁止修改。
+
+- `course-control lock --lesson <slug>` 写出 `build/<slug>/locks/{picture,dialogue}.lock.json`；`--picture` / `--dialogue` 可只打一个，`--approved-by` / `--note` 记录审核。
+- Picture Lock 记录画面单元与文件 SHA-256、镜头表版本与逐镜头设计指纹、场景与资产哈希、审核记录；检查画面完整、镜头表版本、资产存在。
+- Dialogue Lock 记录脚本哈希、旁白音频哈希与时长、Voice Bible / Lexicon 版本、逐段测量与词典命中、字幕 cue 与旁白段落的对应；检查脚本与旁白是否同版、字幕是否落在段落内。
+- `course-control lock-status --lesson <slug>` 比对当前哈希与锁，列出每处差异及需要重新检查的下游；有漂移时退出码 1。
+- 失效规则表在 `locks/dependencies.py: RULES`：脚本/Voice Bible/Lexicon/旁白/镜头表/单镜头/场景/资产/画面单元/BGM/合成配置各自映射到下游。
+- `subtitles-build` 在旁白脚本哈希不一致时 `blocked`，防止字幕消费旧版旁白。
+
+**验收**：`docs/锁定与失效.md`、`test_locks.py`（12 例）；a01 真实课程打锁与复查无漂移。
+
+
+### FR-44 仓库与项目分离
+
+**目标**：程序仓库只放工具，课程与项目材料一律在内容根。
+
+- 边界：仓库 = 代码、契约、Schema、测试夹具、可复用规范、决策记录；内容根 = `lessons/`、`engines/`、`audio/`、`projects/<系列>/`、`archive/`、`knowledge/` 与产物目录。
+- 系列方案、历史归档、验收证据不再放在 `docs/` 下；项目材料在 `<内容根>/projects/<系列>/`，历史记录在 `<内容根>/archive/`。
+- `course-control separation` 扫描仓库中与课程同名的目录：夹具白名单必须写明理由，junction / 符号链接跳过，内容根等于工作区时检查自动关闭；有问题时退出码 1。
+- 参考库与 Golden Sample 在 `<内容根>/references/`，`reference-compare` 优先从这里解析。
+- 引擎根（场景、Blender 任务、Motion Canvas 场景）统一按内容根优先、工作区兜底解析。
+
+**验收**：`docs/仓库与项目边界.md`、`test_separation.py`（5 例）；2026-11-12 迁移后 `course-control separation` 仅剩三处有理由的夹具。
+

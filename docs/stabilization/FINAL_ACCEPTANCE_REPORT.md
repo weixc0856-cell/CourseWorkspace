@@ -37,7 +37,7 @@
 3. 修复后 `--resume-from compose`：复用 manim/collect，重跑 code_video（输入清单新增 vendor 哈希）与 compose。
 4. `--resume`：复用 manim / code_video / collect / compose，只跑 verify，**pass**。
 
-验证到的内容（本轮补做两项真实注入，见 `docs/stabilization/evidence/RESUME_VERIFICATION.md`）：
+验证到的内容（本轮补做两项真实注入，见 `docs/<内容根>/archive/stabilization-evidence/RESUME_VERIFICATION.md`）：
 
 - 输入哈希：新增 vendor 文件使 code_video 检查点失效。
 - 输出哈希：截断 `animation/attn-hook.mp4` 并改旧 mtime 后，`--resume` 记录 `output hash changed: animation/attn-hook.mp4`，重跑 code_video 并恢复为相同哈希，compose 复用。
@@ -75,7 +75,7 @@
 
 - 06 重建 `verdict=pass`，V-14 65.533 s，V-31/V-44 PASS。
 - ASR 覆盖 0.935，0 cue mismatch。
-- 画面帧确认“能看当前和之前 / 不能看未来”与字幕一致；前后帧在 `docs/stabilization/evidence/c25/`。
+- 画面帧确认“能看当前和之前 / 不能看未来”与字幕一致；前后帧在 `docs/<内容根>/archive/stabilization-evidence/c25/`。
 - 原始版本保存在 `lessons/06-attention-sample/authoring/original-2026-11-10/`；审批记录通过 `author-accept` 写入，措辞的最终编辑签核仍需所有者确认。
 
 ## 3. C-26：NVDA 新闻片密度
@@ -90,7 +90,7 @@
 
 - 完整重建 354.304 s，`verdict=pass`，V-44 PASS。
 - 6 条 ASR mismatch 已逐条分类：3 条日期/专名识别差异保留，3 条真实时间轴提前已重定时（cue 80–84、111–116）。重跑后 ASR 0.919、3 条 mismatch。
-- 抽帧：第 1 页与第 2 页中文小字消失，英文要点可读；见 `docs/stabilization/evidence/c26/`（4 张前后帧、2 个 15 s 片段、编辑审阅记录）。
+- 抽帧：第 1 页与第 2 页中文小字消失，英文要点可读；见 `docs/<内容根>/archive/stabilization-evidence/c26/`（4 张前后帧、2 个 15 s 片段、编辑审阅记录）。
 - 未删除 cue 提升覆盖率。
 
 事实/观点：第 06 页明确标注 `MY JUDGMENT`，并有 `What this is not`；未新增事实或把判断写成结论。
@@ -111,7 +111,7 @@
 - V-44 规则修正：下一 cue 小写续行、当前 cue 句末标点，不再报悬空介词。
 - `subtitles-qc` 05 = PASS。复核记录：`lessons/05-transformer-5min/authoring/subtitles-review-2026-11-10.md`。
 - 05 已按新 SRT 重建：292.373 s，`verdict=pass`，V-44 PASS；ASR 0.992、0 mismatch。
-- 01 的 18 条“行首标点”WARN 单独记录在 `docs/stabilization/evidence/c07/01-review.md`，不与 05 修复混为同一状态。
+- 01 的 18 条“行首标点”WARN 单独记录在 `docs/<内容根>/archive/stabilization-evidence/c07/01-review.md`，不与 05 修复混为同一状态。
 
 ## 6. C-28：品牌工作提交
 

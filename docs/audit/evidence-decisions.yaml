@@ -122,12 +122,12 @@ rules:
 
   - prefix: build/manim-multi-head/
     disposition: historical
-    owner: docs/archive
+    owner: <内容根>/archive
     reason: "E6.5 archive evidence; the archive records the result and the source remains in ManimSandbox."
 
   - prefix: build/manim-transformer/
     disposition: historical
-    owner: docs/archive
+    owner: <内容根>/archive
     reason: "E6 / V1 archive evidence; the archive records the result and the source remains in ManimSandbox."
 
   - prefix: build/narration/
@@ -147,12 +147,12 @@ rules:
 
   - prefix: build/r1-smoke/
     disposition: historical
-    owner: docs/archive
+    owner: <内容根>/archive
     reason: "R1 engine smoke evidence; the archive records the result."
 
   - prefix: build/r1/
     disposition: historical
-    owner: docs/archive
+    owner: <内容根>/archive
     reason: "R1 baseline and benchmark evidence; the archive records the result."
 
   - prefix: build/report.json

@@ -27,22 +27,28 @@
 - 决策记录：[docs/DECISIONS.md](docs/DECISIONS.md)
 - 当前状态与 PRD 盘点：[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
 - 真实工作流：[docs/WORKFLOW.md](docs/WORKFLOW.md)
+- 仓库与项目边界（工具 / 项目 / 产物三层，`course-control separation`）：[docs/仓库与项目边界.md](docs/仓库与项目边界.md)
 - 需求—模块—测试映射：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - 统一契约 V1：[docs/课程生产统一契约V1.md](docs/课程生产统一契约V1.md)
-- E6.5 成片（本地归档，不入库）：`docs/archive/E6.5/E6.5-成片报告.md`
+- E6.5 成片（本地归档，不入库）：`<内容根>/archive/E6.5/E6.5-成片报告.md`
 - 课程复刻差距与视觉规范：[docs/evaluations/课程复刻差距与稳定工作流.md](docs/evaluations/课程复刻差距与稳定工作流.md)、[docs/课程视觉风格指南.md](docs/课程视觉风格指南.md)
 - Blender 写实渲染能力评估：[docs/evaluations/评估-Blender写实渲染能力.md](docs/evaluations/评估-Blender写实渲染能力.md)
 - 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
 - 科学计算/绘图接入：[docs/evaluations/科学图形与图表接入评估.md](docs/evaluations/科学图形与图表接入评估.md)
 - 动画视觉导演规范：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md)
 - 动画渲染适配器：[docs/动画渲染适配器.md](docs/动画渲染适配器.md)
+- 动画预览 Animatic（480p 预览 / 时间线权威 / 片段缓存）：[docs/动画预览-Animatic.md](docs/动画预览-Animatic.md)
+- 声音资产（Voice Bible / Lexicon / 缓存失效）：[docs/声音资产-VoiceBible与Lexicon.md](docs/声音资产-VoiceBible与Lexicon.md)
+- 镜头表 Shot Sheet（storyboard v2 / 连续性 / 设计指纹）：[docs/镜头表-ShotSheet.md](docs/镜头表-ShotSheet.md)
+- 锁定与失效（Picture / Dialogue Lock / 依赖映射）：[docs/锁定与失效.md](docs/锁定与失效.md)
 - 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
 - 工业化动画工作流（节拍表/配色/评分门禁）：[docs/工业化动画工作流.md](docs/工业化动画工作流.md)
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 主生产路线（Slide-first / Motion-enhanced / Narration-led，路线建议非门禁）：[docs/生产路线.md](docs/生产路线.md)
+- 工业化生产流程 V2.0（已采纳、逐步落地：八阶段 / WP-0～WP-5 / P0～P6）：[docs/v2/工业化生产流程V2.0-建议稿.md](docs/v2/工业化生产流程V2.0-建议稿.md) · [docs/v2/P0-基线审计.md](docs/v2/P0-基线审计.md)
 - 多视觉语法生产系统（架构/审计/样片）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
-- 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)；各领域方案在本机 `docs/verticals/<domain>/`，不入库。
+- 项目材料（系列方案/分集/研究，本机内容根，不入库）：`<内容根>/projects/<系列>/`，索引 `<内容根>/projects/README.md`；知识系列的通用方法在 `<内容根>/projects/knowledge-series/知识系列课程生产总纲.md`
 
 - 制片层（订单/授权/交付包/增量）：[docs/制片层.md](docs/制片层.md)
 - 版式系统（设计 token/模板/校验）：[docs/版式系统.md](docs/版式系统.md)
@@ -113,5 +119,5 @@ uv run --project ContentQA content-qa review --lesson <slug>
 - Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - 本机配置：`config/tools.yaml`、`config/local-paths.yaml`（含 `docling_root`、`source_libraries`、TTS）、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
 - 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 VoxCPM2 TTS。8082 不存在。
-- 课程内容在**内容根**下：`<content_root>/lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/`。默认等于工作区，取值见 `config/local-paths.yaml` 的 `content_root`；`course-control content-root` 可查询。
+- 课程内容在**内容根**下：`<content_root>/lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/`、`audio/`（声音资产）、`projects/`（各系列项目材料）、`references/`（参考库与 Golden Sample）、`archive/`（历史记录）。默认等于工作区，取值见 `config/local-paths.yaml` 的 `content_root`；`course-control content-root` 可查询。
 - `build/<slug>/` 是临时区，可删除重建；`deliver/<slug>/` 是最终交付区，不随 `build/` 清理。两者都不入库。
