@@ -1,7 +1,7 @@
 # 文档索引
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-12 状态**：V1 收敛完成；`check.ps1` exit 0。本轮完成 CLI 拆分、字幕解析合并、媒体原语归位，并把 24 份一次性记录移入本机归档；仓库只保留在用与后续要用的文档。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](stabilization/FINAL_ACCEPTANCE_REPORT.md)。
 本目录按“现行契约 / 生产规范 / 评估与雷达 / 状态与验收 / 本地归档”组织。
 
 ## 1. 现行契约
@@ -15,7 +15,6 @@
 ## 1.0.0 V1 全量修复与生产体系收敛（2026-11-10，现行）
 
 - [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)：C-01～C-32 唯一问题台账；现状 VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16）/ OPEN 0
-- [stabilization/DECISIONS.md](stabilization/DECISIONS.md)：本轮裁决索引与被取代说法
 - [stabilization/ARCHITECTURE_FINAL.md](stabilization/ARCHITECTURE_FINAL.md)：最终模块边界与权威链
 - [stabilization/PRODUCTION_CONTRACT.md](stabilization/PRODUCTION_CONTRACT.md)：Page/Scene/Storyboard/Shot
 - [stabilization/CONFIGURATION_STANDARD.md](stabilization/CONFIGURATION_STANDARD.md)：配置权威、继承与快照
@@ -32,7 +31,6 @@
 - [architecture/多视觉语法生产系统-审计.md](architecture/多视觉语法生产系统-审计.md)：现有契约、门禁、评分器的耦合与影响面（P0）
 - [architecture/多视觉语法生产系统-设计.md](architecture/多视觉语法生产系统-设计.md)：四层架构、三份契约、Renderer Adapter、质量重构、迁移与风险
 - [architecture/多视觉语法生产系统-样片验证.md](architecture/多视觉语法生产系统-样片验证.md)：四支真实渲染样片与机器结果
-- [architecture/实施记录-P1-P4.md](architecture/实施记录-P1-P4.md)：生产契约、语法档、质量分层、转场/逐词/分块的落地与未完成项
 - [architecture/references/](architecture/references/)：参考库（Yari / 3B1B / Primer）
 - [architecture/golden/golden.json](architecture/golden/golden.json)：各语法的 Golden Sample 与渲染哈希
 - [architecture/样片-06-attention-sample.md](architecture/样片-06-attention-sample.md)：真实中文 62 秒课程样片、ASR/逐词字幕、参考对照与 180 s 捕获
@@ -51,6 +49,10 @@
 - [资料采集与预处理.md](资料采集与预处理.md)：PDF 与 YouTube 来源进入本机 Docling 区，生成 Markdown/JSON 与 catalog
 - [知识视频质量基准.md](知识视频质量基准.md)：内容 / 视觉 / 交付三层；L1 必须、L2 分块努力、L3 长期探索
 - [DECISIONS.md](DECISIONS.md)：D-084 英文成片与英上中下字幕；D-085 临时区与最终交付区
+
+## 1.0.3 内容根迁移（2026-11-12，设计稿）
+
+- [内容根迁移方案.md](内容根迁移方案.md)：把 `lessons`、`build`、`deliver`、`runtime`、`knowledge`、`assets` 移出程序目录；含代码改动点、执行步骤、回滚与第二阶段（引擎课程目录）边界。
 
 ## 1.1 许可与贡献
 
@@ -86,40 +88,20 @@
 
 ## 3. 评估与雷达（`evaluations/`）
 
-- [技术雷达-视频生产.md](evaluations/技术雷达-视频生产.md)
-- [评估-Code2Video接入.md](evaluations/评估-Code2Video接入.md)
-- [评估-DeepSeek Harness.md](evaluations/评估-DeepSeek%20Harness.md)
-- [评估-四后端对比.md](evaluations/评估-四后端对比.md)
-- [评估-Codex审核.md](evaluations/评估-Codex审核.md)
-- [评估-PBR与科学可视化接入.md](evaluations/评估-PBR与科学可视化接入.md)
-- [评估-Primer模拟视频POC.md](evaluations/评估-Primer模拟视频POC.md)
-- [评估-代码镜头与执行验证.md](evaluations/评估-代码镜头与执行验证.md)
-- [评估-动画音频口播-整合.md](evaluations/评估-动画音频口播-整合.md)
 - [科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
 - [课程复刻差距与稳定工作流.md](evaluations/课程复刻差距与稳定工作流.md)
 - [样片-注意力-3B1B差距与路线.md](evaluations/样片-注意力-3B1B差距与路线.md)
 - [配色方案-学科适配.md](evaluations/配色方案-学科适配.md)
-- [评估-Primer-3D-hero-v2.md](evaluations/评估-Primer-3D-hero-v2.md)
-- [复刻-Primer衰老模拟-计划.md](evaluations/复刻-Primer衰老模拟-计划.md)
 - [评估-Blender写实渲染能力.md](evaluations/评估-Blender写实渲染能力.md)
-- [FRONTEND_ASSESSMENT.md](evaluations/FRONTEND_ASSESSMENT.md)
 
 ## 4. 状态与验收
 
 - [PROJECT_STATUS.md](PROJECT_STATUS.md)：当前状态与 PRD 盘点
 - [ACCEPTANCE.md](ACCEPTANCE.md)：验收规则、命令与证据
-- [项目差距清单.md](项目差距清单.md)：P0–P2 缺口
-- [课程质量保障体系-差距审查.md](课程质量保障体系-差距审查.md)：五条质量防线的实现差距与 P0/P1 路线
 
-## 4.1 项目审计（2026-11-10）
+## 4.1 项目审计（已归档）
 
-- [audit/EXECUTIVE_SUMMARY.md](audit/EXECUTIVE_SUMMARY.md)：一页结论
-- [audit/PROJECT_REALITY_AUDIT.md](audit/PROJECT_REALITY_AUDIT.md)：项目现状、模块核对、成熟度、文档偏差
-- [audit/ARCHITECTURE_CONFLICTS.md](audit/ARCHITECTURE_CONFLICTS.md)：架构矛盾、规则冲突、优先级
-- [audit/AUTOMATION_CAPABILITY_MATRIX.md](audit/AUTOMATION_CAPABILITY_MATRIX.md)：A0–A4 自动化等级与恢复能力
-- [audit/SUPPORTED_CAPABILITIES.md](audit/SUPPORTED_CAPABILITIES.md)：内容与软件开发的能力边界
-- [audit/OUTPUT_QUALITY_ASSESSMENT.md](audit/OUTPUT_QUALITY_ASSESSMENT.md)：真实成片的内容/视觉/声音/交付质量
-- [audit/NEXT_STAGE_ROADMAP.md](audit/NEXT_STAGE_ROADMAP.md)：必须做、值得做、保留、停止、未来
+2026-11-10 的七份审计报告已移出仓库，保留在本机 `docs/archive/records-2026-11/audit/`；其中可执行的结论已收进 [stabilization/MASTER_REMEDIATION.md](stabilization/MASTER_REMEDIATION.md)。
 
 ## 4.2 Production Stabilization（2026-11-10）
 
@@ -127,10 +109,9 @@
 - [stabilization/QUALITY_STATE_MACHINE.md](stabilization/QUALITY_STATE_MACHINE.md)：BUILD/VERIFY/QUALITY/REVIEW/RELEASE 状态与签核
 - [stabilization/ANIMATION_QUALITY_MODEL.md](stabilization/ANIMATION_QUALITY_MODEL.md)：结构/像素/人工三分，D-071 与评分修正
 - [stabilization/DELIVERY_CONTRACT.md](stabilization/DELIVERY_CONTRACT.md)：`package` / `package-verify`、哈希与缺项失败
-- [stabilization/MIGRATION_PLAN.md](stabilization/MIGRATION_PLAN.md)：R0–R5 状态、未完成项、回滚与待批准事项
-- [stabilization/SESSION_2026-11-10.md](stabilization/SESSION_2026-11-10.md)：本轮实际改动、01 结果、矛盾点修复状态与操作教训
 
 ## 5. 本地归档（不入远程）
 
 - [archive/README.md](archive/README.md)：归档索引
+- `records-2026-11/`：2026-11-12 文档收敛时移出的 24 份一次性记录（审计、迁移、会话、已完成评估）
 - `docs/archive/**` 除 README 外由 `.gitignore` 排除；干净克隆中不存在。

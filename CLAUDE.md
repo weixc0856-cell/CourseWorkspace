@@ -1,5 +1,16 @@
 # CourseWorkspace — 项目指导（Claude Code 入口）
 
+
+> ## 重试熔断（强制，每次任务开始先看）
+>
+> 任何构建、测试、合成、渲染、推送、部署或外部调用，**同一个问题最多尝试 3 次**。
+>
+> - 第 3 次仍然失败：立即停止，不再自动重试、不再连续重跑、不再连续推送。
+> - 停止后记录：问题、已尝试的修复、当前证据（文件/时间戳/日志）、下一步建议。
+> - 等待人工决定；不得用反复重跑代替定位根因。
+> - 本规则优先于“继续把任务做完”的默认倾向。详见 §2 硬约束 15。
+
+
 本文件是所有开发任务的入口。**具体规则只在 `docs/` 的权威文件中定义，本文件只做索引与硬约束摘要**，不得在此复制 PRD 或架构细节。
 
 ## 1. 项目是什么
@@ -17,10 +28,8 @@
 - 当前状态与 PRD 盘点：[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)
 - 真实工作流：[docs/WORKFLOW.md](docs/WORKFLOW.md)
 - 需求—模块—测试映射：[docs/TRACEABILITY.md](docs/TRACEABILITY.md)
-- 前端评估：[docs/evaluations/FRONTEND_ASSESSMENT.md](docs/evaluations/FRONTEND_ASSESSMENT.md)
 - 统一契约 V1：[docs/课程生产统一契约V1.md](docs/课程生产统一契约V1.md)
 - E6.5 成片（本地归档，不入库）：`docs/archive/E6.5/E6.5-成片报告.md`
-- 技术雷达与外部项目评估：[docs/evaluations/技术雷达-视频生产.md](docs/evaluations/技术雷达-视频生产.md)、[docs/evaluations/评估-Codex审核.md](docs/evaluations/评估-Codex审核.md)、[docs/evaluations/评估-Code2Video接入.md](docs/evaluations/评估-Code2Video接入.md)、[docs/evaluations/评估-DeepSeek Harness.md](docs/evaluations/评估-DeepSeek%20Harness.md)、[docs/evaluations/评估-四后端对比.md](docs/evaluations/评估-四后端对比.md)
 - 课程复刻差距与视觉规范：[docs/evaluations/课程复刻差距与稳定工作流.md](docs/evaluations/课程复刻差距与稳定工作流.md)、[docs/课程视觉风格指南.md](docs/课程视觉风格指南.md)
 - Blender 写实渲染能力评估：[docs/evaluations/评估-Blender写实渲染能力.md](docs/evaluations/评估-Blender写实渲染能力.md)
 - 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
@@ -31,7 +40,7 @@
 - 工业化动画工作流（节拍表/配色/评分门禁）：[docs/工业化动画工作流.md](docs/工业化动画工作流.md)
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 主生产路线（Slide-first / Motion-enhanced / Narration-led，路线建议非门禁）：[docs/生产路线.md](docs/生产路线.md)
-- 多视觉语法生产系统（架构/审计/样片/实施）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)、[docs/architecture/实施记录-P1-P4.md](docs/architecture/实施记录-P1-P4.md)
+- 多视觉语法生产系统（架构/审计/样片）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
 - 垂直领域（知识系列）：[docs/verticals/知识系列课程生产总纲.md](docs/verticals/知识系列课程生产总纲.md)、[docs/verticals/README.md](docs/verticals/README.md)；各领域方案在本机 `docs/verticals/<domain>/`，不入库。
 
@@ -45,16 +54,12 @@
 - 本地图像生成（FLUX.3 只出静帧，不能生成视频）：[docs/本地图像生成-FLUX3.md](docs/本地图像生成-FLUX3.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
-- Primer 式模拟视频 POC：[docs/evaluations/评估-Primer模拟视频POC.md](docs/evaluations/评估-Primer模拟视频POC.md)
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)
 - 内容类型与音频策略：[docs/内容类型与音频策略.md](docs/内容类型与音频策略.md)
-- 项目差距清单：[docs/项目差距清单.md](docs/项目差距清单.md)
-- 课程质量防线差距审查：[docs/课程质量保障体系-差距审查.md](docs/课程质量保障体系-差距审查.md)
 - 跨学科能力边界：[docs/product/跨学科生产能力矩阵与能力边界规范.md](docs/product/跨学科生产能力矩阵与能力边界规范.md)
 - 叙事与留存方法：[docs/creative/叙事设计与观众留存规范.md](docs/creative/叙事设计与观众留存规范.md)
 - 独立代码审核（只读第二意见）：[ReviewRunner/README.md](ReviewRunner/README.md)、[scripts/review.ps1](scripts/review.ps1)
 - Attention 两分钟样片与 3B1B 差距：[docs/evaluations/样片-注意力-3B1B差距与路线.md](docs/evaluations/样片-注意力-3B1B差距与路线.md)
-- 动画/音频/口播整合：[docs/evaluations/评估-动画音频口播-整合.md](docs/evaluations/评估-动画音频口播-整合.md)
 - V1 收敛与问题台账：[docs/stabilization/MASTER_REMEDIATION.md](docs/stabilization/MASTER_REMEDIATION.md)、[docs/stabilization/FINAL_ACCEPTANCE_REPORT.md](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)
 - 收敛标准（配置/任务/质量/视觉/资产/文档）：[docs/stabilization/](docs/stabilization/)
 - 缺失证据处置：[docs/audit/evidence-decisions.yaml](docs/audit/evidence-decisions.yaml)
@@ -108,4 +113,5 @@ uv run --project ContentQA content-qa review --lesson <slug>
 - Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - 本机配置：`config/tools.yaml`、`config/local-paths.yaml`（含 `docling_root`、`source_libraries`、TTS）、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
 - 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 VoxCPM2 TTS。8082 不存在。
+- 课程内容在**内容根**下：`<content_root>/lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/`。默认等于工作区，取值见 `config/local-paths.yaml` 的 `content_root`；`course-control content-root` 可查询。
 - `build/<slug>/` 是临时区，可删除重建；`deliver/<slug>/` 是最终交付区，不随 `build/` 清理。两者都不入库。

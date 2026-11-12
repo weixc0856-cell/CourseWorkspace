@@ -99,20 +99,49 @@ build/<slug>/animation/<scene-stem>.mp4
 
 ## 目录结构
 
-```text
-ManimSandbox/
-├── .venv/                        # 本地虚拟环境（不入库）
-├── .python-version               # 固定 3.12
-├── pyproject.toml                # 依赖来源
-├── uv.lock                       # 可复现解析结果
-├── requirements.txt              # uv export 生成的只读快照
-├── 01-transformer-demo/          # Transformer 课程镜头（QKV/row_trace/位置编码/多头/残差/cross-attention/loss）
-├── 06-attention-3b1b/            # 2 分钟 Attention 样片 + 旁白/合成脚本
-├── common/                       # design_system.py（配色/字号/安全区）、formula.py
-│   ├── test_demo.py              # 环境自检：橙白配色
-│   └── dot_product.py            # 点积与投影
-└── media/                        # 手动试渲染缓存（不入库；课程构建用 build/<slug>/tmp/manim-media）
-```
+目录名是历史累积的，不是统一编号：`00-` 为冒烟/预览，`02–04` 为早期技术基线，`05/06` 为集号，`a01-` / `ai-` / `b01-` 为真实课程 slug。
+
+### 真实课程场景（本机内容，不入库）
+
+| 目录 | 用途 |
+| --- | --- |
+| `a01-why-cars-need-aerodynamics/` | A01 汽车空气动力学：speed_cube、energy_split 等 6 个场景 |
+| `02-car-aerodynamics/` | 02 课：reynolds、bernoulli、separation、ground_effect |
+| `ai-era-01-shell/` | AI 时代基础 E01：terminal_layers |
+| `ai-economics-e01/` | AI 经济 E01：6 个场景 |
+| `b01-b02-bluff-body/` | 汽车系列 B01+B02 钝体绕流样板 |
+
+### 被课程 storyboard 引用（入库）
+
+| 目录 | 用途 |
+| --- | --- |
+| `01-transformer-demo/` | 01 课镜头：QKV、row_trace、head_split、position_add、residual、cross_attention、loss |
+| `05-transformer-5min/` | 5 分钟校准课，27 个镜头，切点读实测旁白 |
+| `06-attention-sample/` | P1–P4 中文 62 秒样片 |
+
+### 早期基线与样片（入库，作为验收证据）
+
+| 目录 | 用途 | 证据 |
+| --- | --- | --- |
+| `00-r1-smoke/` | R1 引擎验证 | `docs/archive/R1/`、`scripts/benchmark_render.py` |
+| `00-formula-smoke/` | 公式渲染冒烟 | `docs/公式排版规范.md`、`TRACEABILITY.md` |
+| `00-palette-system/` | 配色预览 | `docs/evaluations/配色方案-学科适配.md` |
+| `02-fft-baseline/` | FFT 技术基线 | `ACCEPTANCE.md`、`PROJECT_STATUS.md` |
+| `03-transformer-baseline/` | Attention 产品基线 | 同上 |
+| `03-vector-intro/` | 向量加法动画 | `DECISIONS.md`、`动画视觉导演规范.md` |
+| `04-transformer-explainer/` | 三幕讲解（tokens → attention → context） | E6 前身 |
+| `05-multi-head/` | E6.5 多头 | `e65.py` 仍引用 `multi_head.py` |
+| `06-attention-3b1b/` | 2 分钟 Attention 对标样片 | `docs/evaluations/样片-注意力-3B1B差距与路线.md` |
+
+### 基础设施
+
+| 目录 | 用途 |
+| --- | --- |
+| `common/` | `design_system.py`（配色/字号/安全区）、`formula.py`、`palettes.py`、`scene_checks.py` |
+| `lesson-authoring/` | 夹具场景 |
+| `tests/` | 本工程单测 |
+
+`media/` 只作手动试渲染缓存，不入库；课程构建写到 `build/<slug>/tmp/manim-media/`，旧缓存已归入 `build/_engine-cache/manim-media/`。
 
 ## 约定
 

@@ -66,7 +66,7 @@
 | 真实中文样片（06-attention-sample） | `lessons/06-attention-sample`（本地）、production 契约、Manim + CodeVideo | 62.187 s 成片；7 镜头 / 5 语法 / 2 渲染器；ASR small/zh 覆盖率 0.935 PASS；quality-gate hard/grammar pass；Q1/Q2/Q5 未完成 | VERIFIED（本地） |
 | 180 s 分块捕获 | `capture.mjs --chunk-seconds` | 3 段 × 60 s；5400 帧 / 180.000 s；完整解码；281.9 s | VERIFIED |
 
-边界：逐词字幕未目检；`Annotation` 仍只有 `text`/`legend`；`match_cut` 回退硬切；180 s 分块捕获未重跑。详见 [实施记录](architecture/实施记录-P1-P4.md)。
+边界：逐词字幕未目检；`Annotation` 仍只有 `text`/`legend`；`match_cut` 回退硬切；180 s 分块捕获未重跑。详见归档 `docs/archive/records-2026-11/architecture/实施记录-P1-P4.md`。
 
 ## 0.00 2026-11-09 增量：品牌层与教材知识库
 
