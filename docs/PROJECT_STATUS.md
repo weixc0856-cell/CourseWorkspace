@@ -9,7 +9,7 @@
 
 ## 0.0000C 2026-11-11 交付与临时分区
 
-- 课程内容在**内容根**下（默认等于工作区；取值见 `config/local-paths.yaml` 的 `content_root`，可用 `course-control content-root` 查询）：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 都相对内容根。2026-11-12 已把本机内容根移到工作区外，仓库只剩程序。
+- 课程内容在**内容根**下（默认等于工作区；取值见 `config/local-paths.yaml` 的 `content_root`，可用 `course-control content-root` 查询）：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 以及 `engines/`（Manim / Blender / CodeVideo 的课程场景）都相对内容根。2026-11-12 已把本机内容根移到工作区外，仓库只剩程序、共用模块与夹具。
 - `build/<slug>/` 只作临时区，可删除重建；`deliver/<slug>/` 是唯一最终交付区，不随 `build/` 清理。
 - `course-control package` 默认输出 `deliver/<slug>/`；`producer` 清单在 `build/<slug>/producer/`。
 - 引擎缓存归入 `build/_engine-cache/`；迁移脚本 `scripts/organize-build.ps1`（`-Apply` 才移动，`-EngineCaches` 含引擎缓存）。
