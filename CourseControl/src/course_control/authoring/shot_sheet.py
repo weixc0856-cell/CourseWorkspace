@@ -23,8 +23,8 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..contracts import ShotSpec, Storyboard
-from ..paths import LessonPaths, path_problem
+from course_control.content.contracts import ShotSpec, Storyboard
+from course_control.content.paths import LessonPaths, path_problem
 
 EVIDENCE_ID = r"^[A-Za-z0-9][^\s]{0,127}$"
 

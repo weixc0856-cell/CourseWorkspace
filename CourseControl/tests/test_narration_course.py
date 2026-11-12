@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from course_control.authoring.models import NarrationScript, ScriptPage, ScriptSegment
-from course_control.narration_course import (
+from course_control.voice.narration_course import (
     check_script_against_notes,
     dry_run,
     extract_page_texts,

@@ -8,12 +8,12 @@ from pathlib import Path
 
 import yaml
 
-from course_control.audio import AudioAssetError, resolve_assets
-from course_control.audio import lexicon as lexicon_module
-from course_control.audio import voice_bible as voice_bible_module
-from course_control.contracts import Narration
-from course_control.narrate import segment_cache_key
-from course_control.session import normalize_stream, sha256_text
+from course_control.voice.audio import AudioAssetError, resolve_assets
+from course_control.voice.audio import lexicon as lexicon_module
+from course_control.voice.audio import voice_bible as voice_bible_module
+from course_control.content.contracts import Narration
+from course_control.voice.narrate import segment_cache_key
+from course_control.platform.session import normalize_stream, sha256_text
 
 LEXICON = {
     "schema_version": 1,

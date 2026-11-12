@@ -8,6 +8,7 @@
 
 - [PRD.md](PRD.md)：唯一产品基线
 - [ARCHITECTURE.md](ARCHITECTURE.md)：系统结构与数据契约
+- [架构-DDD上下文与边界.md](架构-DDD上下文与边界.md)：八个上下文的职责、聚合、依赖方向与改造结果
 - [课程生产统一契约V1.md](课程生产统一契约V1.md)：Lesson / Shot / Narration / Timeline / Evidence / Render
 - [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射

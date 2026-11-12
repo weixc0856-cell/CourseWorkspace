@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.layout import (
+from course_control.rendering.layout import (
     DESIGN,
     TEMPLATES,
     LayoutTemplate,
@@ -14,7 +14,7 @@ from course_control.layout import (
     validate_content,
     validate_template,
 )
-from course_control.layout.schema import Region as R
+from course_control.rendering.layout.schema import Region as R
 
 
 class LayoutLibraryTest(unittest.TestCase):

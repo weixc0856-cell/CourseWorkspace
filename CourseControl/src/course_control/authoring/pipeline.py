@@ -10,11 +10,11 @@ from pathlib import Path
 
 import yaml
 
-from ..duration import resolve
-from ..engine_router import VisualRequirement, route_engine
-from ..paths import LessonPaths
-from .llm import AuthoringClient, AuthoringError
-from .models import (
+from course_control.content.duration import resolve
+from course_control.rendering.engine_router import VisualRequirement, route_engine
+from course_control.content.paths import LessonPaths
+from course_control.authoring.llm import AuthoringClient, AuthoringError
+from course_control.authoring.models import (
     ApprovalEntry,
     ApprovalFile,
     Brief,

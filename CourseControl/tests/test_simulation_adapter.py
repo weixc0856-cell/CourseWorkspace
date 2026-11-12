@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.adapters.code_video import materialize_simulation
-from course_control.simulation import HexGrid, RPSRules, SimulationSpec, Species
+from course_control.rendering.adapters.code_video import materialize_simulation
+from course_control.rendering.simulation import HexGrid, RPSRules, SimulationSpec, Species
 
 SPECIES = [
     Species(id="rock", name="Rock", hex="#C75B55"),

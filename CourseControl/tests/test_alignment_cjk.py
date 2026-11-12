@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.alignment import _tokens
+from course_control.voice.alignment import _tokens
 
 
 class CjkTokensTest(unittest.TestCase):

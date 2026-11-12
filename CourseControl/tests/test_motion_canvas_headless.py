@@ -6,11 +6,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from course_control import adapters
-from course_control.adapters import base as adapter_base
-from course_control.contracts import Status
-from course_control.paths import LessonPaths
-from course_control.utils import MediaInfo
+from course_control.rendering import adapters
+from course_control.rendering.adapters import base as adapter_base
+from course_control.content.contracts import Status
+from course_control.content.paths import LessonPaths
+from course_control.platform.utils import MediaInfo
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-manual"

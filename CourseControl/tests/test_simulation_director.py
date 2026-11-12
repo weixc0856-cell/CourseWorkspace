@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.director import build
-from course_control.director.inputs import load_inputs
-from course_control.director.planners import plan_visual
+from course_control.direction import build
+from course_control.direction.inputs import load_inputs
+from course_control.direction.planners import plan_visual
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-simulation"

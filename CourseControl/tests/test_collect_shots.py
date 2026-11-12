@@ -8,9 +8,9 @@ from pathlib import Path
 
 import yaml
 
-from course_control.collect import collect
-from course_control.paths import LessonPaths
-from course_control.validators import validate
+from course_control.content.collect import collect
+from course_control.content.paths import LessonPaths
+from course_control.content.validators import validate
 
 ROOT = Path(__file__).resolve().parents[2]
 CLIP = ROOT / "CodeVideoStudio" / "shots" / "attention-flow" / "out" / "final.mp4"

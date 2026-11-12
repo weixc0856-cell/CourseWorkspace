@@ -5,14 +5,14 @@ import json
 import unittest
 from pathlib import Path
 
-from course_control.blender_scene import (
+from course_control.rendering.blender_scene import (
     BlenderSceneTask,
     SceneContractError,
     task_summary,
     validate_scene_task,
 )
-from course_control.paths import ContractError
-from course_control.scene_presets import expand_task
+from course_control.content.paths import ContractError
+from course_control.rendering.scene_presets import expand_task
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 TASKS = WORKSPACE / "BlenderStudio" / "tasks" / "scene-system"

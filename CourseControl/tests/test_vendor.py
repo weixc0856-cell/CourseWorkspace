@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.vendor import audit, sync, vendor_path
+from course_control.platform.vendor import audit, sync, vendor_path
 
 
 class VendorTest(unittest.TestCase):

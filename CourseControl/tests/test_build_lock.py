@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.build_lock import BuildLock, BuildLockError
+from course_control.platform.build_lock import BuildLock, BuildLockError
 
 
 class BuildLockTest(unittest.TestCase):

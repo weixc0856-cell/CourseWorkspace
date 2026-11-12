@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from course_control.authoring import shot_sheet
-from course_control.paths import ContractError, LessonPaths
+from course_control.content.paths import ContractError, LessonPaths
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "CourseControl" / "tests" / "fixtures" / "lesson-smoke"

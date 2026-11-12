@@ -6,11 +6,11 @@ import typer
 
 from pathlib import Path
 
-from ..paths import ContractError, LessonPaths
+from course_control.content.paths import ContractError, LessonPaths
 
 from . import app
-from ._common import _paths, _authoring_client, _lesson_path
-from ..workspace_layout import build_root_for, runtime_root
+from course_control.cli._common import _paths, _authoring_client, _lesson_path
+from course_control.platform.workspace_layout import build_root_for, runtime_root
 
 
 @app.command("tts-status")
@@ -21,7 +21,7 @@ def tts_status_command(
     """Show VoxCPM health, port owner and lock holder."""
     from ai_runtime.locks import FileLock
 
-    from ..narrate import health, load_local_paths, port_owner
+    from course_control.voice.narrate import health, load_local_paths, port_owner
 
     workspace = workspace.resolve()
     config = load_local_paths(workspace)
@@ -69,7 +69,7 @@ def narrate_command(
     wait_timeout_s: int = typer.Option(1800, "--wait-timeout-s"),
 ) -> None:
     """Synthesize one narration segment with VoxCPM2 (V1)."""
-    from ..narrate import (
+    from course_control.voice.narrate import (
         TtsError,
         TtsService,
         load_local_paths,
@@ -192,8 +192,8 @@ def narration_assets_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Show the Voice Bible and Lexicon a lesson resolves to, and check them."""
-    from ..audio import AudioAssetError, resolve_assets
-    from ..authoring.models import NarrationScript
+    from course_control.voice.audio import AudioAssetError, resolve_assets
+    from course_control.authoring.models import NarrationScript
 
     workspace = workspace.resolve()
     try:
@@ -263,9 +263,9 @@ def subtitles_build_command(
     remote: bool = typer.Option(False, "--remote"),
 ) -> None:
     """Build a bilingual subtitle draft from measured narration."""
-    from ..authoring.models import NarrationScript
-    from ..authoring.pipeline import assert_approved
-    from ..subtitles import SubtitleBlocked, SubtitleError, build_subtitles
+    from course_control.authoring.models import NarrationScript
+    from course_control.authoring.pipeline import assert_approved
+    from course_control.voice.subtitles import SubtitleBlocked, SubtitleError, build_subtitles
 
     workspace = workspace.resolve()
     root = _lesson_path(workspace, lesson_dir, lesson)
@@ -289,7 +289,7 @@ def subtitles_build_command(
     )
     meta = None if planned else json.loads(meta_path.read_text(encoding="utf-8"))
     if meta is not None:
-        from ..media import sha256_file
+        from course_control.platform.media import sha256_file
 
         recorded = (meta.get("source") or {}).get("script_sha256")
         current = sha256_file(script_path)
@@ -329,7 +329,7 @@ def subtitles_rewrap_command(
     draft: bool = typer.Option(False, "--draft", help="rewrap build/subtitles/bilingual.draft.json"),
 ) -> None:
     """Rewrap subtitle lines at word/punctuation boundaries without changing text."""
-    from ..subtitles import (
+    from course_control.voice.subtitles import (
         BilingualDraft,
         CuePolicy,
         rewrap_draft,
@@ -409,7 +409,7 @@ def subtitles_accept_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Human gate: promote the bilingual draft into lessons/<slug>/subtitles.srt."""
-    from ..subtitles import SubtitleError, accept_subtitles
+    from course_control.voice.subtitles import SubtitleError, accept_subtitles
 
     workspace = workspace.resolve()
     root = _lesson_path(workspace, lesson_dir, lesson)
@@ -430,7 +430,7 @@ def burn_subs_command(
     encoder: str = typer.Option("auto", "--encoder"),
 ) -> None:
     """Burn the generated ASS subtitles onto the clean master."""
-    from ..adapters.burn import burn_subtitles
+    from course_control.rendering.adapters.burn import burn_subtitles
 
     workspace = workspace.resolve()
     root = _lesson_path(workspace, lesson_dir, lesson)
@@ -462,7 +462,7 @@ def subtitles_qc_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Audit subtitle timing, language, line breaks and glossary terms."""
-    from ..subtitles_qc import check_srt
+    from course_control.voice.subtitles_qc import check_srt
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -500,7 +500,7 @@ def audio_plan_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Validate the content-kind/BGM policy and write audio_plan.json."""
-    from ..audio_plan import write_audio_plan
+    from course_control.voice.audio_plan import write_audio_plan
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -526,7 +526,7 @@ def audio_mix_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Mix the planned BGM bed into the finished video with ducking."""
-    from ..audio_mix import mix_lesson
+    from course_control.voice.audio_mix import mix_lesson
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -552,7 +552,7 @@ def media_qc_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Run full-file audio/video/subtitle checks on the finished video."""
-    from ..media_qc import BLOCKED, INCOMPLETE, run_media_qc
+    from course_control.quality.media_qc import BLOCKED, INCOMPLETE, run_media_qc
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -578,7 +578,7 @@ def quality_report_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Aggregate the five quality dimensions from existing artifacts."""
-    from ..quality import BLOCKED, INCOMPLETE, build_quality_report
+    from course_control.quality.quality import BLOCKED, INCOMPLETE, build_quality_report
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -619,7 +619,7 @@ def asr_align_command(
     compute_type: str = typer.Option("int8", "--compute-type"),
 ) -> None:
     """Transcribe narration with ASR and check subtitle/speech agreement."""
-    from ..alignment import BLOCKED, INCOMPLETE, run_alignment
+    from course_control.voice.alignment import BLOCKED, INCOMPLETE, run_alignment
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)

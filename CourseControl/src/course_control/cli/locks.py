@@ -5,9 +5,9 @@ from pathlib import Path
 
 import typer
 
-from ..paths import ContractError, LessonPaths
+from course_control.content.paths import ContractError, LessonPaths
 from . import app
-from ._common import _lesson_path
+from course_control.cli._common import _lesson_path
 
 
 @app.command("lock")
@@ -22,7 +22,7 @@ def lock_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Snapshot the picture and/or the narration, and record who approved it."""
-    from ..locks import LockError, dialogue as dialogue_lock, picture as picture_lock
+    from course_control.locks import LockError, dialogue as dialogue_lock, picture as picture_lock
 
     targets = []
     if picture:
@@ -81,7 +81,7 @@ def lock_status_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Compare current picture and narration against their locks."""
-    from ..locks import LockError, affected, dialogue as dialogue_lock, diff, picture as picture_lock
+    from course_control.locks import LockError, affected, dialogue as dialogue_lock, diff, picture as picture_lock
 
     paths = _load(workspace, lesson_dir, lesson)
     report: dict[str, dict] = {}

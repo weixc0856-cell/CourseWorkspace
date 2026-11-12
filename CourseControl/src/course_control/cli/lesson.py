@@ -6,16 +6,16 @@ import typer
 
 from pathlib import Path
 
-from ..contracts import Status
-from ..paths import ContractError
-from ..pipeline import BuildOptions, run_build
-from ..report import check_report_payload, toolchain_versions
-from ..validators import validate
-from ..verify import verify
-from ..workspace_layout import content_root as resolve_content_root
+from course_control.content.contracts import Status
+from course_control.content.paths import ContractError
+from course_control.pipeline import BuildOptions, run_build
+from course_control.delivery.report import check_report_payload, toolchain_versions
+from course_control.content.validators import validate
+from course_control.quality.verify import verify
+from course_control.platform.workspace_layout import content_root as resolve_content_root
 
 from . import app
-from ._common import _paths, _print_issues, _lesson_path
+from course_control.cli._common import _paths, _print_issues, _lesson_path
 
 
 @app.command()
@@ -49,7 +49,7 @@ def separation_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Report course files that leaked into the program workspace."""
-    from ..separation import audit as separation_audit
+    from course_control.platform.separation import audit as separation_audit
 
     report = separation_audit(workspace)
     if as_json:
@@ -154,7 +154,7 @@ def verify_command(
     if not shots_path.is_file():
         typer.echo(f"shots.json missing: {shots_path}", err=True)
         raise typer.Exit(1)
-    from ..contracts import ShotsFile
+    from course_control.content.contracts import ShotsFile
 
     shots_file = ShotsFile.model_validate(json.loads(shots_path.read_text(encoding="utf-8")))
     checks = verify(paths, shots_file)
@@ -172,20 +172,20 @@ def schemas_command(
     output: Path = typer.Option(Path("shared/schemas"), "--output"),
 ) -> None:
     """Export JSON Schema files for all contracts."""
-    from ..blender_scene import BlenderSceneTask
-    from ..contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
-    from ..animation_direction import AnimationDirection
-    from ..audio_plan import AudioPlan
-    from ..beats import BeatSheet
-    from ..narrative import NarrativePlan
-    from ..director.schema import DirectorPlan
-    from ..layout.schema import LayoutTemplate
-    from ..simulation import SimulationSpec
-    from ..audio.voice_bible import VoiceBible
-    from ..audio.lexicon import Lexicon
-    from ..producer.schema import DeliveryManifest, ProductionOrder, ProductionState
-    from ..formulas import FormulaSpec
-    from ..session import EvidenceManifest, SessionSpec
+    from course_control.rendering.blender_scene import BlenderSceneTask
+    from course_control.content.contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
+    from course_control.direction.animation_direction import AnimationDirection
+    from course_control.voice.audio_plan import AudioPlan
+    from course_control.direction.beats import BeatSheet
+    from course_control.direction.narrative import NarrativePlan
+    from course_control.direction.schema import DirectorPlan
+    from course_control.rendering.layout.schema import LayoutTemplate
+    from course_control.rendering.simulation import SimulationSpec
+    from course_control.voice.audio.voice_bible import VoiceBible
+    from course_control.voice.audio.lexicon import Lexicon
+    from course_control.delivery.schema import DeliveryManifest, ProductionOrder, ProductionState
+    from course_control.rendering.formulas import FormulaSpec
+    from course_control.platform.session import EvidenceManifest, SessionSpec
 
     output.mkdir(parents=True, exist_ok=True)
     models = {
@@ -222,7 +222,7 @@ def schemas_v1_command(
     output: Path = typer.Option(Path("shared/schemas"), "--output"),
 ) -> None:
     """Export JSON Schema files for normalized contracts V1."""
-    from ..contracts_v1 import V1_MODELS
+    from course_control.content.contracts_v1 import V1_MODELS
 
     output.mkdir(parents=True, exist_ok=True)
     for name, model in V1_MODELS.items():
@@ -247,8 +247,8 @@ def contract_v1_validate_command(
     """Validate one normalized contract V1 file and print field-level errors."""
     from pydantic import ValidationError
 
-    from ..contracts_v1 import V1_MODELS
-    from ..paths import format_validation_error
+    from course_control.content.contracts_v1 import V1_MODELS
+    from course_control.content.paths import format_validation_error
 
     model = V1_MODELS.get(kind)
     if model is None:

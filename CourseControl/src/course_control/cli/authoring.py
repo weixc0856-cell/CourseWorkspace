@@ -6,10 +6,10 @@ import typer
 
 from pathlib import Path
 
-from ..paths import ContractError, LessonPaths
+from course_control.content.paths import ContractError, LessonPaths
 
 from . import app
-from ._common import _authoring_client, _load_authoring, _run_authoring, _lesson_path
+from course_control.cli._common import _authoring_client, _load_authoring, _run_authoring, _lesson_path
 
 
 @app.command("ingest")
@@ -22,7 +22,7 @@ def ingest_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Fetch/copy one source into lessons/<slug>/authoring/sources/."""
-    from ..authoring.ingest import IngestError, ingest
+    from course_control.authoring.ingest import IngestError, ingest
 
     try:
         entry = ingest(
@@ -46,7 +46,7 @@ def digest_command(
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
 ) -> None:
     """Build a deterministic source digest with stable citation refs."""
-    from ..authoring.digest import build_digest
+    from course_control.authoring.digest import build_digest
 
     try:
         digest = build_digest(_lesson_path(workspace, lesson_dir, lesson))
@@ -67,8 +67,8 @@ def brief_command(
     remote: bool = typer.Option(False, "--remote"),
 ) -> None:
     """Generate a course brief candidate from the approved source digest."""
-    from ..authoring.digest import load_digest
-    from ..authoring.pipeline import generate_brief
+    from course_control.authoring.digest import load_digest
+    from course_control.authoring.pipeline import generate_brief
 
     def action() -> None:
         root = _lesson_path(workspace, lesson_dir, lesson)
@@ -89,9 +89,9 @@ def outline_command(
     remote: bool = typer.Option(False, "--remote"),
 ) -> None:
     """Generate an outline candidate from the approved brief."""
-    from ..authoring.digest import load_digest
-    from ..authoring.models import Brief
-    from ..authoring.pipeline import generate_outline
+    from course_control.authoring.digest import load_digest
+    from course_control.authoring.models import Brief
+    from course_control.authoring.pipeline import generate_outline
 
     def action() -> None:
         root = _lesson_path(workspace, lesson_dir, lesson)
@@ -113,9 +113,9 @@ def script_command(
     remote: bool = typer.Option(False, "--remote"),
 ) -> None:
     """Generate the English emotional narration script candidate."""
-    from ..authoring.digest import load_digest
-    from ..authoring.models import Outline
-    from ..authoring.pipeline import generate_script
+    from course_control.authoring.digest import load_digest
+    from course_control.authoring.models import Outline
+    from course_control.authoring.pipeline import generate_script
 
     def action() -> None:
         root = _lesson_path(workspace, lesson_dir, lesson)
@@ -137,9 +137,9 @@ def content_draft_command(
     remote: bool = typer.Option(False, "--remote"),
 ) -> None:
     """Generate candidate slides, notes and storyboard from approved outline/script."""
-    from ..authoring.digest import load_digest
-    from ..authoring.models import NarrationScript, Outline
-    from ..authoring.pipeline import generate_content
+    from course_control.authoring.digest import load_digest
+    from course_control.authoring.models import NarrationScript, Outline
+    from course_control.authoring.pipeline import generate_content
 
     def action() -> None:
         root = _lesson_path(workspace, lesson_dir, lesson)
@@ -164,7 +164,7 @@ def author_accept_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Human gate: promote a candidate artifact and record its sha256."""
-    from ..authoring.pipeline import accept_artifact, accept_content
+    from course_control.authoring.pipeline import accept_artifact, accept_content
 
     root = _lesson_path(workspace, lesson_dir, lesson)
     try:
@@ -193,14 +193,14 @@ def narration_build_command(
     wait_timeout_s: int = typer.Option(1800, "--wait-timeout-s"),
 ) -> None:
     """Synthesize the whole course narration and write measured page spans."""
-    from ..authoring.models import NarrationScript
-    from ..narration_course import (
+    from course_control.authoring.models import NarrationScript
+    from course_control.voice.narration_course import (
         NarrationCourseBlocked,
         NarrationCourseError,
         dry_run as estimate,
         synthesize_course,
     )
-    from ..authoring.pipeline import assert_approved
+    from course_control.authoring.pipeline import assert_approved
 
     workspace = workspace.resolve()
     root = _lesson_path(workspace, lesson_dir, lesson)
@@ -267,7 +267,7 @@ def shot_sheet_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Compile storyboard.yaml as a shot sheet: resolved refs, fingerprints, review."""
-    from ..authoring import shot_sheet
+    from course_control.authoring import shot_sheet
 
     workspace = workspace.resolve()
     try:

@@ -6,12 +6,12 @@ import typer
 
 from pathlib import Path
 
-from ..paths import ContractError
-from ..validators import validate
-from ..verify import verify
+from course_control.content.paths import ContractError
+from course_control.content.validators import validate
+from course_control.quality.verify import verify
 
 from . import app
-from ._common import _paths
+from course_control.cli._common import _paths
 
 
 @app.command("scene-validate")
@@ -20,7 +20,7 @@ def scene_validate_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Validate a Blender task IR v2 file before execution."""
-    from ..blender_scene import SceneContractError, task_summary, validate_scene_task
+    from course_control.rendering.blender_scene import SceneContractError, task_summary, validate_scene_task
 
     if not task.is_file():
         typer.echo(f"task not found: {task}", err=True)
@@ -30,7 +30,7 @@ def scene_validate_command(
     except json.JSONDecodeError as exc:
         typer.echo(f"invalid JSON in {task}: {exc}", err=True)
         raise typer.Exit(1)
-    from ..scene_presets import expand_task
+    from course_control.rendering.scene_presets import expand_task
 
     try:
         data, _presets = expand_task(data, workspace.resolve())
@@ -54,7 +54,7 @@ def scene_schema_command(
     ),
 ) -> None:
     """Export the Blender task IR v2 JSON Schema."""
-    from ..blender_scene import BlenderSceneTask
+    from course_control.rendering.blender_scene import BlenderSceneTask
 
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(BlenderSceneTask.model_json_schema(), ensure_ascii=False, indent=2)
@@ -69,8 +69,8 @@ def scene_run_command(
     verify: bool = typer.Option(True, "--verify/--no-verify"),
 ) -> None:
     """Validate, execute, and verify a Blender task IR v2 file."""
-    from ..blender_runner import SceneRunError, run_scene_task
-    from ..blender_scene import SceneContractError
+    from course_control.rendering.blender_runner import SceneRunError, run_scene_task
+    from course_control.rendering.blender_scene import SceneContractError
 
     try:
         result = run_scene_task(workspace.resolve(), task, verify=verify)
@@ -92,7 +92,7 @@ def blender_task_validate_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Validate a Blender task against the v1 course or v2 scene contract."""
-    from ..blender_task import BlenderTaskError, load_blender_task
+    from course_control.rendering.blender_task import BlenderTaskError, load_blender_task
 
     try:
         ref = load_blender_task(task, workspace.resolve())
@@ -109,7 +109,7 @@ def simulation_validate_command(
     spec: Path = typer.Option(..., "--spec"),
 ) -> None:
     """Validate a SimulationSpec JSON file."""
-    from ..simulation import load_spec
+    from course_control.rendering.simulation import load_spec
 
     try:
         parsed = load_spec(spec)
@@ -128,7 +128,7 @@ def simulation_run_command(
     out: Path = typer.Option(..., "--out"),
 ) -> None:
     """Run a SimulationSpec and write SimulationData JSON."""
-    from ..simulation import load_spec, run_simulation, write_data
+    from course_control.rendering.simulation import load_spec, run_simulation, write_data
 
     try:
         parsed = load_spec(spec)
@@ -149,7 +149,7 @@ def simulation_run_command(
 @app.command("layout-templates")
 def layout_templates_command() -> None:
     """List the validated layout templates."""
-    from ..layout import TEMPLATES
+    from course_control.rendering.layout import TEMPLATES
 
     for template in TEMPLATES.values():
         visual = template.region("main_visual")
@@ -165,7 +165,7 @@ def layout_validate_command(
     bullets: int = typer.Option(0, "--bullets", min=0),
 ) -> None:
     """Validate one layout template, optionally against content sizes."""
-    from ..layout import get_template, ok, validate_content, validate_template
+    from course_control.rendering.layout import get_template, ok, validate_content, validate_template
 
     try:
         layout = get_template(template)
@@ -188,10 +188,10 @@ def formula_validate_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Validate one FormulaSpec without rendering."""
-    from ..animation_direction import AnimationDirection
-    from ..audio_plan import AudioPlan
-    from ..narrative import NarrativePlan
-    from ..formulas import FormulaSpec, load_spec, source_problems
+    from course_control.direction.animation_direction import AnimationDirection
+    from course_control.voice.audio_plan import AudioPlan
+    from course_control.direction.narrative import NarrativePlan
+    from course_control.rendering.formulas import FormulaSpec, load_spec, source_problems
 
     try:
         formula = load_spec(spec)
@@ -214,7 +214,7 @@ def formula_render_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Render one FormulaSpec with KaTeX (HTML/PNG) or MathJax (SVG/PNG)."""
-    from ..formulas import load_spec, render_formula
+    from course_control.rendering.formulas import load_spec, render_formula
 
     try:
         formula = load_spec(spec)
@@ -237,8 +237,8 @@ def formula_video_qc_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Check a formula region in the final encoded video by edge similarity."""
-    from ..formula_video_qc import check_formula_video, load_bbox
-    from ..formulas import load_spec
+    from course_control.rendering.formula_video_qc import check_formula_video, load_bbox
+    from course_control.rendering.formulas import load_spec
 
     try:
         formula = load_spec(spec)
@@ -266,7 +266,7 @@ def formula_audit_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Run source, KaTeX compile, optional symbolic and visual checks."""
-    from ..formulas import audit_formula, load_spec
+    from course_control.rendering.formulas import audit_formula, load_spec
 
     try:
         formula = load_spec(spec)
@@ -290,7 +290,7 @@ def brand_plan_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Resolve the brand segments for a lesson without rendering anything."""
-    from ..branding import build_plan, write_plan
+    from course_control.rendering.branding import build_plan, write_plan
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -324,7 +324,7 @@ def brand_render_command(
     ),
 ) -> None:
     """Render the brand segments (and optionally stitch the delivery master)."""
-    from ..branding import (
+    from course_control.rendering.branding import (
         build_plan,
         delivery_path,
         render_segments,

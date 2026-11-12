@@ -22,7 +22,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..paths import LessonPaths
+from course_control.content.paths import LessonPaths
 
 FPS = 30
 DEFAULT_SIZE = (854, 480)

@@ -23,6 +23,7 @@
 - 许可：[LICENSE](LICENSE) · [NOTICE](NOTICE) · [CONTRIBUTING.md](CONTRIBUTING.md)
 - 唯一产品基线：[docs/PRD.md](docs/PRD.md)
 - 系统结构与数据契约：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- DDD 上下文与模块边界：[docs/架构-DDD上下文与边界.md](docs/架构-DDD上下文与边界.md)
 - 验收与命令：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
 - 决策记录：[docs/DECISIONS.md](docs/DECISIONS.md)
 - 当前状态与 PRD 盘点：[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)

@@ -7,7 +7,7 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from course_control.narrate import (
+from course_control.voice.narrate import (
     TtsService,
     segment_cache_key,
     synthesize,

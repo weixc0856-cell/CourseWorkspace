@@ -10,8 +10,8 @@ from types import SimpleNamespace
 
 import yaml
 
-from course_control.adapters import brand as brand_stage
-from course_control.branding import (
+from course_control.rendering.adapters import brand as brand_stage
+from course_control.rendering.branding import (
     BrandError,
     first_sound_s,
     video_timing_from_pts,
@@ -22,8 +22,8 @@ from course_control.branding import (
     resolve_preset_id,
     segment_key,
 )
-from course_control.contracts import Branding, BrandSegment, LessonConfig
-from course_control.utils import NO_CONSOLE
+from course_control.content.contracts import Branding, BrandSegment, LessonConfig
+from course_control.platform.utils import NO_CONSOLE
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-smoke" / "lesson.yaml"

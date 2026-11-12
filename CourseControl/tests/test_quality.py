@@ -5,12 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.audio_mix import bgm_source, mix_lesson
-from course_control.contracts import Status
-from course_control.media_qc import INCOMPLETE, _parse_srt, run_media_qc
-from course_control.paths import LessonPaths
-from course_control.quality import BLOCKED, INCOMPLETE as Q_INCOMPLETE, PASS, build_quality_report
-from course_control.teaching_qa import run_teaching_qa
+from course_control.voice.audio_mix import bgm_source, mix_lesson
+from course_control.content.contracts import Status
+from course_control.quality.media_qc import INCOMPLETE, _parse_srt, run_media_qc
+from course_control.content.paths import LessonPaths
+from course_control.quality.quality import BLOCKED, INCOMPLETE as Q_INCOMPLETE, PASS, build_quality_report
+from course_control.direction.teaching_qa import run_teaching_qa
 
 
 LESSON_YAML = """schema_version: 1
@@ -99,7 +99,7 @@ shots:
         import shutil
         import subprocess
 
-        from course_control.utils import NO_CONSOLE
+        from course_control.platform.utils import NO_CONSOLE
 
         if not shutil.which("ffmpeg"):
             self.skipTest("ffmpeg is not available")

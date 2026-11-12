@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.beats import Beat, BeatSheet, BeatShot, validate_sheet
-from course_control.grammar import default_registry, load_registry
+from course_control.direction.beats import Beat, BeatSheet, BeatShot, validate_sheet
+from course_control.rendering.grammar import default_registry, load_registry
 
 SEGMENTS = [(0.0, 6.0), (6.0, 6.0)]
 
@@ -85,7 +85,7 @@ class GrammarAwareBeatsTest(unittest.TestCase):
 
 
 def default_registry_for_test():
-    from course_control.grammar import GrammarConstraints, GrammarRegistry, GrammarSpec, ShotWindow
+    from course_control.rendering.grammar import GrammarConstraints, GrammarRegistry, GrammarSpec, ShotWindow
 
     return GrammarRegistry(
         grammars={

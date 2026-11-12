@@ -6,19 +6,19 @@ import typer
 
 from pathlib import Path
 
-from ..paths import ContractError, LessonPaths
-from ..validators import validate
+from course_control.content.paths import ContractError, LessonPaths
+from course_control.content.validators import validate
 
 from . import app
-from ._common import _paths, _lesson_path
+from course_control.cli._common import _paths, _lesson_path
 
 
 @app.command("direction-validate")
 def direction_validate_command(spec: Path = typer.Option(..., "--spec")) -> None:
     """Validate an AnimationDirection shot list before writing renderer code."""
-    from ..animation_direction import AnimationDirection
-    from ..audio_plan import AudioPlan
-    from ..narrative import NarrativePlan
+    from course_control.direction.animation_direction import AnimationDirection
+    from course_control.voice.audio_plan import AudioPlan
+    from course_control.direction.narrative import NarrativePlan
 
     try:
         direction = AnimationDirection.model_validate_json(spec.read_text(encoding="utf-8"))
@@ -42,7 +42,7 @@ def director_plan_command(
     strict: bool = typer.Option(False, "--strict"),
 ) -> None:
     """Build and validate the director plan for one lesson."""
-    from ..director import build
+    from course_control.direction import build
 
     try:
         plan, paths = build(
@@ -79,7 +79,7 @@ def director_validate_command(
     plan: Path = typer.Option(..., "--plan"),
 ) -> None:
     """Re-run the structural gates on an existing director_plan.json."""
-    from ..director import validate_file
+    from course_control.direction import validate_file
 
     if not plan.is_file():
         typer.echo(f"plan not found: {plan}", err=True)
@@ -106,8 +106,8 @@ def beats_validate_command(
     sheet: Path | None = typer.Option(None, "--sheet"),
 ) -> None:
     """Validate the director beat sheet against the measured narration."""
-    from . import palette_gate
-    from ..beats import load_segments, load_sheet, validate_sheet_report
+    from course_control.rendering import palette_gate
+    from course_control.direction.beats import load_segments, load_sheet, validate_sheet_report
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -157,10 +157,10 @@ def animation_score_command(
     profile: str | None = typer.Option(None, "--profile"),
 ) -> None:
     """Report motion metrics. This is a metric tool, not a release gate."""
-    from . import palette_gate
-    from ..animation_score import score
-    from ..beats import load_segments, load_sheet
-    from ..grammar import try_load_registry
+    from course_control.rendering import palette_gate
+    from course_control.direction.animation_score import score
+    from course_control.direction.beats import load_segments, load_sheet
+    from course_control.rendering.grammar import try_load_registry
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -216,7 +216,7 @@ def narrative_validate_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Validate the Director narrative plan against the content methodology."""
-    from ..narrative import validate_lesson
+    from course_control.direction.narrative import validate_lesson
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -238,7 +238,7 @@ def teaching_qa_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Run structural teaching checks; never claims learner understanding."""
-    from ..teaching_qa import run_teaching_qa
+    from course_control.direction.teaching_qa import run_teaching_qa
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -260,7 +260,7 @@ def grammar_list_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """List the visual grammars available to production contracts."""
-    from ..grammar import try_load_registry
+    from course_control.rendering.grammar import try_load_registry
 
     registry = try_load_registry(workspace.resolve())
     if as_json:
@@ -282,7 +282,7 @@ def plan_audit_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Report the count of every production representation and the authority."""
-    from ..plan_audit import audit_plan
+    from course_control.direction.plan_audit import audit_plan
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -314,10 +314,10 @@ def production_validate_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Validate a shot-driven production contract before any render."""
-    from ..grammar import try_load_registry
-    from ..paths import ContractError, LessonPaths
-    from ..production import load_production, validate_plan
-    from ..workspace_layout import engine_roots
+    from course_control.rendering.grammar import try_load_registry
+    from course_control.content.paths import ContractError, LessonPaths
+    from course_control.content.production import load_production, validate_plan
+    from course_control.platform.workspace_layout import engine_roots
 
     workspace = workspace.resolve()
     registry = try_load_registry(workspace)
@@ -378,8 +378,8 @@ def quality_gate_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Evaluate hard constraints, grammar constraints and metrics separately."""
-    from ..paths import ContractError, LessonPaths
-    from ..quality_gates import evaluate
+    from course_control.content.paths import ContractError, LessonPaths
+    from course_control.quality.quality_gates import evaluate
 
     workspace = workspace.resolve()
     try:
@@ -421,11 +421,11 @@ def reference_compare_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Compare measured motion metrics with a named reference record."""
-    from ..animation_score import score
-    from ..beats import load_segments, load_sheet
-    from ..grammar import try_load_registry
-    from ..paths import ContractError, LessonPaths
-    from ..reference import compare, load_reference, resolve_reference
+    from course_control.direction.animation_score import score
+    from course_control.direction.beats import load_segments, load_sheet
+    from course_control.rendering.grammar import try_load_registry
+    from course_control.content.paths import ContractError, LessonPaths
+    from course_control.quality.reference import compare, load_reference, resolve_reference
 
     workspace = workspace.resolve()
     try:
@@ -477,7 +477,7 @@ def shot_taxonomy_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Validate the shot capability taxonomy and its sample coverage."""
-    from ..shot_taxonomy import coverage, load_taxonomy, validate
+    from course_control.direction.shot_taxonomy import coverage, load_taxonomy, validate
 
     try:
         data = load_taxonomy(path.resolve())

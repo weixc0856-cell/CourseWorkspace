@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 
 from course_control.locks import LockError, dialogue, diff, affected, picture
-from course_control.media import sha256_file
-from course_control.paths import LessonPaths
+from course_control.platform.media import sha256_file
+from course_control.content.paths import LessonPaths
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "CourseControl" / "tests" / "fixtures" / "lesson-smoke"

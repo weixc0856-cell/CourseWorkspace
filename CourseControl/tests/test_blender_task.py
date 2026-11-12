@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.blender_task import BlenderTaskError, load_blender_task
+from course_control.rendering.blender_task import BlenderTaskError, load_blender_task
 
 
 def write_task(workspace: Path, relative: str, payload: dict) -> Path:

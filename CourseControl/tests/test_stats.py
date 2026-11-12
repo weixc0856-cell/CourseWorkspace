@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.paths import LessonPaths
-from course_control.stats import lesson_stats
+from course_control.content.paths import LessonPaths
+from course_control.quality.stats import lesson_stats
 
 LESSON = """schema_version: 1
 lesson_id: demo

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from course_control.contracts_v1 import (
+from course_control.content.contracts_v1 import (
     AssetRef,
     EvidenceManifestV1,
     LessonSpec,

@@ -15,10 +15,10 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..media import sha256_file
-from ..paths import LessonPaths
-from ..srt import parse_srt_strict
-from .dependencies import LockError
+from course_control.platform.media import sha256_file
+from course_control.content.paths import LessonPaths
+from course_control.voice.srt import parse_srt_strict
+from course_control.locks.dependencies import LockError
 
 LOCK_NAME = "dialogue.lock.json"
 

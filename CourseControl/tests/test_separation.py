@@ -8,8 +8,8 @@ from pathlib import Path
 
 from unittest.mock import patch
 
-from course_control import separation, workspace_layout
-from course_control.separation import audit
+from course_control.platform import separation, workspace_layout
+from course_control.platform.separation import audit
 
 ENV = workspace_layout.ENV_VAR
 

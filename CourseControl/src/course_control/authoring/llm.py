@@ -36,7 +36,7 @@ from ai_runtime import (
     is_healthy,
     route_model,
 )
-from ..workspace_layout import build_root_for
+from course_control.platform.workspace_layout import build_root_for
 
 
 class AuthoringError(RuntimeError):

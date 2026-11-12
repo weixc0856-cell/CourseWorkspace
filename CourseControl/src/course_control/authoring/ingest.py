@@ -19,7 +19,7 @@ from urllib.parse import urlparse
 
 import yaml
 
-from .models import SourceEntry, SourcesFile
+from course_control.authoring.models import SourceEntry, SourcesFile
 
 MAX_BYTES = 5 * 1024 * 1024
 USER_AGENT = (

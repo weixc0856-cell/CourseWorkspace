@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.adapters.base import verify_media
-from course_control.utils import NO_CONSOLE
+from course_control.rendering.adapters.base import verify_media
+from course_control.platform.utils import NO_CONSOLE
 
 
 class MediaContractTest(unittest.TestCase):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.engine_router import VisualRequirement, route_engine
+from course_control.rendering.engine_router import VisualRequirement, route_engine
 
 
 class RouteTest(unittest.TestCase):

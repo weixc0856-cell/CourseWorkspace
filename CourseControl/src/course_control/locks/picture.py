@@ -19,12 +19,12 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..animatic import AnimaticError
-from ..animatic import resolve as resolve_units
-from ..authoring import shot_sheet
-from ..media import sha256_file
-from ..paths import LessonPaths
-from .dependencies import LockError
+from course_control.animatic import AnimaticError
+from course_control.animatic import resolve as resolve_units
+from course_control.authoring import shot_sheet
+from course_control.platform.media import sha256_file
+from course_control.content.paths import LessonPaths
+from course_control.locks.dependencies import LockError
 
 LOCK_NAME = "picture.lock.json"
 

@@ -61,14 +61,17 @@ CourseWorkspace/
 
 | 模块 | 职责 | 不做什么 |
 | --- | --- | --- |
-| `CourseControl` | 解析契约、调度阶段、收集时间线、合成调用、报告 | 不改课程正文；不判定内容正确性 |
-| `CourseControl/director` | 把已批准内容收敛为章节/镜头/引擎/旁白计划并做硬校验 | 不写场景代码、不调用渲染引擎 |
-| `CourseControl/producer` | 生产订单、资源授权、用量、交付清单、增量指纹 | 不读密钥、不渲染、不自动发布 |
-| `CourseControl/animatic` | 把时间线变成 480p 可看预览：单元解析、分段编码、拼接混音、预览报告 | 不改课程正文；不写 `deliver/`；不做正式合成 |
-| `CourseControl/audio` | Voice Bible / Lexicon 的契约、解析与改写 | 不调用 TTS、不合成；不改讲稿 |
-| `CourseControl/authoring/shot_sheet` | 解析镜头表的引用、计算设计指纹、编译复核报告 | 不改课程正文；不重写导演计划 |
-| `CourseControl/locks` | 画面与旁白的锁定快照、哈希比对与失效映射 | 不阻止修改、不自动重建、不产出交付物 |
-| `course_control/separation.py` | 检查仓库里是否混入课程文件 | 不移动文件；只报告 |
+| `CourseControl` | 命令层与组合根：参数解析、阶段编排（`pipeline.py`） | 不改课程正文；不判定内容正确性 |
+| `CourseControl/content` | 课程契约、校验、路径、计时、shots 契约、时间线 | 不渲染、不判断质量 |
+| `CourseControl/direction` | 导演计划、节拍、叙事、镜头表编译与设计指纹 | 不写场景代码、不调用引擎 |
+| `CourseControl/rendering` | 适配器、引擎路由、Blender/Manim/CodeVideo、版式、公式、主题、品牌 | 不改课程内容、不判定合格 |
+| `CourseControl/voice` | 旁白合成、Voice Bible / Lexicon、字幕、混音 | 不写画面、不签核 |
+| `CourseControl/quality` | 验收、媒体 QC、质量报告、对标、仓库分离检查 | 不改产物、不自动放行 |
+| `CourseControl/delivery` | 订单、授权、交付清单、增量重建 | 不渲染、不读密钥、不自动发布 |
+| `CourseControl/platform` | 路径解析、原子写、锁、检查点、媒体探测、配置 | 不含业务规则 |
+| `CourseControl/authoring` | 摄取、摘要、brief / outline / script、镜头表编译 | 不改课程正文 |
+| `CourseControl/animatic` | 480p 预览：单元解析、分段编码、拼接混音、预览报告 | 不写 `deliver/`；不做正式合成 |
+| `CourseControl/locks` | Picture / Dialogue 锁定快照、哈希比对与失效映射 | 不阻止修改、不自动重建、不产出交付物 |
 | `CourseSlides` | 加载指定课程为 Reveal 页面 | 不写 `build/` |
 | `MotionStudio` | 动画场景源码 | 不做最终合成；无头导出由 `render-headless.mjs` 完成（D-054） |
 | `ManimSandbox` | 数学动画备选 | 不进入主流程 |
@@ -80,7 +83,7 @@ CourseWorkspace/
 | `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 
-`CourseControl/director` 与 `CourseControl/producer` 是 CourseControl 内部的设计层与制片层：前者把批准的 brief/outline/script 收敛成章节、镜头、引擎与旁白计划；后者管订单、授权、用量、交付清单和增量指纹。两者都不新增独立进程，也不写课程正文。
+`CourseControl/direction` 与 `CourseControl/delivery` 是 CourseControl 内部的设计层与制片层：前者把批准的 brief/outline/script 收敛成章节、镜头、引擎与旁白计划；后者管订单、授权、用量、交付清单和增量指纹。两者都不新增独立进程，也不写课程正文。上下文的划分、聚合与依赖方向见 [架构-DDD上下文与边界.md](架构-DDD上下文与边界.md)。
 
 ---
 
@@ -337,13 +340,13 @@ budget.check(messages, images=[...])   # 超限抛 ContextOverflow，附拆分�
 | 来源摘要 | `authoring/digest.py` | 稳定引用 `S1-3.2`、行号、sha、摘录 |
 | 课程草稿 | `authoring/pipeline.py`、`CourseControl/prompts/` | brief/outline/script/content 候选；Claude Code 默认，本地/远程显式回退 |
 | 人工批准门 | `authoring/pipeline.py`、`authoring/approval.json` | sha256 批准；`author-narration/subtitles-build` 验证 |
-| 时长契约 | `duration.py`、`validators.py`、`collect.py`、`verify.py` | `lesson.yaml.duration`；planned/measured 单向权威；V-26/V-27 |
-| 整课旁白 | `narration_course.py`、`narrate.py` | 单服务、逐段缓存、48 kHz mono、页跨度回写；V-30 |
-| 双语字幕 | `subtitles.py` | 英上中下、SRT/ASS/VTT、逐 cue 翻译；V-31 |
+| 时长契约 | `content/duration.py`、`content/validators.py`、`content/collect.py`、`quality/verify.py` | `lesson.yaml.duration`；planned/measured 单向权威；V-26/V-27 |
+| 整课旁白 | `voice/narration_course.py`、`voice/narrate.py` | 单服务、逐段缓存、48 kHz mono、页跨度回写；V-30 |
+| 双语字幕 | `voice/subtitles.py` | 英上中下、SRT/ASS/VTT、逐 cue 翻译；V-31 |
 | 双版本成片 | `adapters/burn.py`、`pipeline.py` | 干净母版 + ASS 烧录版；QSV → libx264；V-28 |
 | TimelineSpec 合成 | `RemotionStudio/src/compositions/CourseTimeline.tsx`、`ScenePage.tsx`、`adapters/remotion.py` | `timeline.spec.json` 驱动；`compose.mode=scene` 用全屏 ScenePage 作为 base；`renderer: legacy` 回退 |
 | 场景叠加层 | `course_control/overlays.py`、`RemotionStudio/src/overlays/AgingHud.tsx` | 课程声明 `compose.overlay: <kind>`；`collect` 把叠加数据写进 timeline `metadata.overlay`，由 Remotion 在底片之上绘制（HUD/图表不再烧进世界片） |
-| 引擎路由 | `engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
+| 引擎路由 | `rendering/engine_router.py` | 数学/二维 → Manim；三维/工程 → Blender；排版/合成 → Remotion；motion graphics/SVG/Canvas/Three.js → code_video；Motion 兼容 |
 | Code2Video 镜头 | `adapters/code_video.py`、`CodeVideoStudio/` | 镜头级 `SPEC.md` + `frame(t)` + `VERIFY.md`；本地 Playwright/ffmpeg；不部署 27B；Agent 用 Claude Code + DeepSeek |
 | HTML 渲染/lint 备选 | `CodeVideoStudio/backends/hyperframes/` | HyperFrames POC：HTML/GSAP → MP4，`check` 提供首帧/字号/对比度检查；不替换 Remotion |
 | Motion Canvas 自动导出 | `MotionStudio/scripts/render-headless.mjs` | core `Renderer` + 自定义 exporter + Vite + Playwright/Chrome + Node 帧接收器 + ffmpeg；端口 4173/4174 |

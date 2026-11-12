@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.audio_plan import build_audio_plan, write_audio_plan
-from course_control.contracts import AudioPolicy, BgmCue
-from course_control.paths import LessonPaths
+from course_control.voice.audio_plan import build_audio_plan, write_audio_plan
+from course_control.content.contracts import AudioPolicy, BgmCue
+from course_control.content.paths import LessonPaths
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-authoring"

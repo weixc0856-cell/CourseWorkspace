@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.paths import ContractError
+from course_control.content.paths import ContractError
 from course_control.pipeline import BuildOptions, _validate_resume_from, storyboard_override
 
 

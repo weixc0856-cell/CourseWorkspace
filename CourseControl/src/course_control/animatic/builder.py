@@ -17,10 +17,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from ..paths import LessonPaths
-from ..media import probe_media
-from ..utils import run_command, which_command
-from .timeline import AnimaticError, Timeline, Unit
+from course_control.content.paths import LessonPaths
+from course_control.platform.media import probe_media
+from course_control.platform.utils import run_command, which_command
+from course_control.animatic.timeline import AnimaticError, Timeline, Unit
 
 LABEL_FONT = Path("assets") / "fonts" / "Manrope-SemiBold.ttf"
 PAD = 14

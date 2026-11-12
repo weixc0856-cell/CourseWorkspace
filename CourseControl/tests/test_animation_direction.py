@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.animation_direction import AnimationDirection, ShotDirection
+from course_control.direction.animation_direction import AnimationDirection, ShotDirection
 
 
 def shot(sid: str, start: float, end: float) -> ShotDirection:

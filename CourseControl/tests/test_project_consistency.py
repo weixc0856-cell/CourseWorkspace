@@ -6,16 +6,16 @@ import unittest
 from pathlib import Path
 from urllib.parse import unquote
 
-from course_control.animation_direction import AnimationDirection
-from course_control.blender_scene import BlenderSceneTask
-from course_control.contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
-from course_control.contracts_v1 import V1_MODELS
-from course_control.director.schema import DirectorPlan
-from course_control.formulas import FormulaSpec
-from course_control.layout.schema import LayoutTemplate
-from course_control.producer.schema import DeliveryManifest, ProductionOrder, ProductionState
-from course_control.session import EvidenceManifest, SessionSpec
-from course_control.simulation import SimulationSpec
+from course_control.direction.animation_direction import AnimationDirection
+from course_control.rendering.blender_scene import BlenderSceneTask
+from course_control.content.contracts import BuildReport, LessonConfig, ShotsFile, Storyboard
+from course_control.content.contracts_v1 import V1_MODELS
+from course_control.direction.schema import DirectorPlan
+from course_control.rendering.formulas import FormulaSpec
+from course_control.rendering.layout.schema import LayoutTemplate
+from course_control.delivery.schema import DeliveryManifest, ProductionOrder, ProductionState
+from course_control.platform.session import EvidenceManifest, SessionSpec
+from course_control.rendering.simulation import SimulationSpec
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 

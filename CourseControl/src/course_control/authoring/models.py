@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from ..contracts import StrictModel
+from course_control.content.contracts import StrictModel
 
 SLUG_RE = r"^[a-z0-9][a-z0-9-]{1,63}$"
 

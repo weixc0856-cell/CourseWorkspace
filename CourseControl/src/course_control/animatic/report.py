@@ -11,10 +11,10 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..code_video_qc import contact_sheet
-from ..paths import LessonPaths
-from ..media import probe_media
-from .timeline import Timeline
+from course_control.quality.code_video_qc import contact_sheet
+from course_control.content.paths import LessonPaths
+from course_control.platform.media import probe_media
+from course_control.animatic.timeline import Timeline
 
 # Picture and audio may disagree by less than a frame and still be in sync.
 # Long lessons are allowed the same slack as a fraction of their runtime: a

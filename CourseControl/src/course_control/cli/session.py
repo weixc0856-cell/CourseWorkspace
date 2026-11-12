@@ -6,11 +6,11 @@ import typer
 
 from pathlib import Path
 
-from ..validators import validate
-from ..verify import verify
+from course_control.content.validators import validate
+from course_control.quality.verify import verify
 
 from . import app
-from ._common import _lesson_root
+from course_control.cli._common import _lesson_root
 
 
 @app.command("session-validate")
@@ -19,7 +19,7 @@ def session_validate_command(
     lesson_dir: Path = typer.Option(..., "--lesson-dir"),
 ) -> None:
     """Validate a session spec without executing it."""
-    from ..session import SessionContractError, load_session_spec
+    from course_control.platform.session import SessionContractError, load_session_spec
 
     try:
         session = load_session_spec(spec)
@@ -61,8 +61,8 @@ def session_run_command(
     record: bool = typer.Option(False, "--record/--no-record"),
 ) -> None:
     """Execute and verify a code/terminal session (E1)."""
-    from ..session import SessionContractError
-    from ..session_runner import SessionRunError, run_session
+    from course_control.platform.session import SessionContractError
+    from course_control.platform.session_runner import SessionRunError, run_session
 
     if not spec.is_file():
         typer.echo(f"session spec not found: {spec}", err=True)
@@ -107,8 +107,8 @@ def session_evidence_v1_command(
     run_id: str | None = typer.Option(None, "--run-id"),
 ) -> None:
     """Upgrade an existing session evidence.json to V1 EvidenceManifest."""
-    from ..session import SessionContractError, load_session_spec
-    from ..session_evidence_v1 import V1EvidenceError, adapt_session_evidence
+    from course_control.platform.session import SessionContractError, load_session_spec
+    from course_control.platform.session_evidence_v1 import V1EvidenceError, adapt_session_evidence
 
     workspace = workspace.resolve()
     try:

@@ -6,8 +6,8 @@ import typer
 
 from pathlib import Path
 
-from ..paths import LessonPaths
-from ..workspace_layout import lessons_root
+from course_control.content.paths import LessonPaths
+from course_control.platform.workspace_layout import lessons_root
 
 
 def _lesson_root(workspace: Path, lesson_dir: Path | None) -> Path:
@@ -34,7 +34,7 @@ def _print_issues(result) -> None:
 
 
 def _authoring_client(workspace: Path, start_service: bool, remote_only: bool = False):
-    from ..authoring.llm import AuthoringClient, AuthoringConfig
+    from course_control.authoring.llm import AuthoringClient, AuthoringConfig
 
     return AuthoringClient(
         AuthoringConfig.load(workspace.resolve()),
@@ -52,7 +52,7 @@ def _load_authoring(lesson_dir: Path, name: str, model_type):
 
 
 def _run_authoring(action) -> None:
-    from ..authoring.llm import AuthoringBlocked, AuthoringError
+    from course_control.authoring.llm import AuthoringBlocked, AuthoringError
 
     try:
         action()

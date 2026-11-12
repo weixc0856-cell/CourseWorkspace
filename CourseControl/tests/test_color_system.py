@@ -4,8 +4,8 @@ import re
 import unittest
 from pathlib import Path
 
-from course_control.director.planners import default_style
-from course_control.layout import DESIGN
+from course_control.direction.planners import default_style
+from course_control.rendering.layout import DESIGN
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 MANIM_TOKENS = WORKSPACE / "ManimSandbox" / "common" / "design_system.py"

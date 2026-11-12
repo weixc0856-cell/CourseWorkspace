@@ -6,9 +6,9 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
-from course_control.adapters import remotion
-from course_control.paths import LessonPaths
-from course_control.utils import CommandResult, MediaInfo
+from course_control.rendering.adapters import remotion
+from course_control.content.paths import LessonPaths
+from course_control.platform.utils import CommandResult, MediaInfo
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-smoke"

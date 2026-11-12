@@ -4,9 +4,9 @@ from pathlib import Path
 
 import typer
 
-from ..paths import ContractError, LessonPaths
+from course_control.content.paths import ContractError, LessonPaths
 from . import app
-from ._common import _lesson_path
+from course_control.cli._common import _lesson_path
 
 
 @app.command("animatic")
@@ -25,7 +25,7 @@ def animatic_command(
     force: bool = typer.Option(False, "--force", help="Ignore the segment cache"),
 ) -> None:
     """Build a watchable 480p animatic of one lesson on its real timeline."""
-    from ..animatic import AnimaticError, build, resolve, write_artifacts
+    from course_control.animatic import AnimaticError, build, resolve, write_artifacts
 
     parsed = _size(size)
     try:

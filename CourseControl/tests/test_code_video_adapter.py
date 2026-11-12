@@ -8,8 +8,8 @@ import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control.adapters import code_video
-from course_control.utils import CommandResult
+from course_control.rendering.adapters import code_video
+from course_control.platform.utils import CommandResult
 
 
 def result(code: int) -> CommandResult:

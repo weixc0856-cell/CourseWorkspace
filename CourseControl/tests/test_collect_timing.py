@@ -6,8 +6,8 @@ import types
 import unittest
 from pathlib import Path
 
-from course_control.collect import _page_timing, _write_page_plan
-from course_control.contracts import LessonConfig
+from course_control.content.collect import _page_timing, _write_page_plan
+from course_control.content.contracts import LessonConfig
 
 
 def lesson(timing: str = "planned", duration: dict | None = None) -> LessonConfig:
