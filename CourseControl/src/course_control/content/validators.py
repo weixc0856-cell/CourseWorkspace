@@ -387,14 +387,19 @@ def validate(paths: LessonPaths) -> ValidationResult:
                 result.add("V-08", "error", f"blend task not found: {shot.blend_task}")
 
     if "motion_canvas" in lesson.engines:
-        project_file = paths.engine_root("motion_canvas") / "src" / "project.ts"
+        project_file = paths.engine_home("motion_canvas") / "src" / "project.ts"
         project_text = project_file.read_text(encoding="utf-8") if project_file.is_file() else ""
+        # The project may register scenes statically or import the generated
+        # registry (scripts/sync-scenes.mjs); in the latter case a scene is
+        # registered by existing under src/scenes/.
+        uses_generated = "scenes.generated" in project_text
         for shot in paths.storyboard.shots:
             if shot.engine != "motion_canvas":
                 continue
             scene_path, _ = paths.scene_path(shot)
             stem = scene_path.stem
-            if stem not in project_text:
+            registered = scene_path.is_file() if uses_generated else stem in project_text
+            if not registered:
                 result.add(
                     "V-09",
                     "error",
