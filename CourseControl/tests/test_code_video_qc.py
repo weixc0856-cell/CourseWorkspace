@@ -5,8 +5,8 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
-from course_control.code_video_qc import check_video
-from course_control.utils import MediaInfo
+from course_control.quality.code_video_qc import check_video
+from course_control.platform.utils import MediaInfo
 
 
 class CodeVideoQCTest(unittest.TestCase):
@@ -21,9 +21,9 @@ class CodeVideoQCTest(unittest.TestCase):
 
     def _check(self, media, black=None, freeze=None):
         with unittest.mock.patch(
-            "course_control.code_video_qc.probe_media", return_value=media
+            "course_control.quality.code_video_qc.probe_media", return_value=media
         ), unittest.mock.patch(
-            "course_control.code_video_qc.detect_black_freeze",
+            "course_control.quality.code_video_qc.detect_black_freeze",
             return_value=(black or [], freeze or []),
         ):
             return check_video(

@@ -7,6 +7,7 @@
 ## 边界
 
 - 读取：`BlenderStudio/tasks/`、`BlenderStudio/scenes/`、`BlenderStudio/assets/`、`config/tools.yaml`。
+- 课程场景在内容根 `<内容根>/engines/blender/scenes/`；`scenes/` 里只保留夹具与样板（`lesson-*`、`primer-poc`）。
 - 写入：只写 `build/<lesson>/blender/` 与 `build/<lesson>/logs/`。
 - 不写入 `CourseSlides/`、`MotionStudio/`、`ManimSandbox/`、`RemotionStudio/`。
 - 不在 Blender 内置 Python 中安装第三方包。

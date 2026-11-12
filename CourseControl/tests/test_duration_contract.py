@@ -4,8 +4,8 @@ import unittest
 
 from pydantic import ValidationError
 
-from course_control.contracts import LessonConfig
-from course_control.duration import (
+from course_control.content.contracts import LessonConfig
+from course_control.content.duration import (
     PROFILES,
     duplicate_authority_problem,
     frame_tolerance,

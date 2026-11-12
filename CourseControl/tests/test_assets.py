@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.assets import collect_external_assets, describe_asset, safe_bundle_name
+from course_control.rendering.assets import collect_external_assets, describe_asset, safe_bundle_name
 
 
 class AssetAddressingTest(unittest.TestCase):

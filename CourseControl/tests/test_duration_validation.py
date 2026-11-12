@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.paths import LessonPaths
-from course_control.validators import validate
+from course_control.content.paths import LessonPaths
+from course_control.content.validators import validate
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-authoring"

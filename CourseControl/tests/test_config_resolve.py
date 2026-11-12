@@ -5,12 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.config_resolve import (
+from course_control.platform.config_resolve import (
     blocking_conflicts,
     resolve_config,
     write_snapshot,
 )
-from course_control.paths import LessonPaths
+from course_control.content.paths import LessonPaths
 
 LESSON = """schema_version: 1
 lesson_id: demo

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.utils import run_command
+from course_control.platform.utils import run_command
 
 
 class RunCommandTest(unittest.TestCase):

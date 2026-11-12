@@ -7,8 +7,8 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from course_control.contracts import Shot, ShotSpec
-from course_control.theme import (
+from course_control.content.contracts import Shot, ShotSpec
+from course_control.rendering.theme import (
     DEFAULT_THEME,
     SCENE_THEMES,
     load_theme,

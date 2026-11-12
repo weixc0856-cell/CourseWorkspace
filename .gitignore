@@ -20,10 +20,6 @@ RemotionStudio/public/staging/
 # ---------------------------------------------------------------------------
 # 领域方案（课程开发内容，仅本机）
 # ---------------------------------------------------------------------------
-/docs/verticals/economics/
-/docs/verticals/history/
-/docs/verticals/ai-era-fundamentals/
-/docs/verticals/automotive-aerodynamics/
 
 # ---------------------------------------------------------------------------
 # 大文件与媒体（远程仓库不接收）
@@ -102,9 +98,6 @@ ScientificFigures/output/
 /ManimSandbox/b01-b02-bluff-body/
 /BlenderStudio/scenes/b01-b02-bluff-body/
 
-# Local archive: finished project reports stay out of the remote
-/docs/archive/*
-!/docs/archive/README.md
 
 # BrandIntro: reference captures and render tests are media, not workflow
 BrandIntro/art_direction/frames/
@@ -120,3 +113,8 @@ CodeVideoStudio/shots/brand-intro/env-*.png
 CodeVideoStudio/shots/brand-intro/character-*.png
 CodeVideoStudio/shots/brand-*/*.blend1
 CodeVideoStudio/shots/brand-intro/film.before-*.js
+
+# 课程场景目录（junction 指向内容根；仓库不保存课程内容）
+MotionStudio/src/scenes/01-shell-for-ai-era/
+MotionStudio/src/scenes/01-transformer-demo/
+/build/

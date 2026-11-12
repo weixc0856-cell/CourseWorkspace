@@ -4,10 +4,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.adapters.base import StageOutcome
-from course_control.checkpoint import CheckpointStore, run_stage, stage_inputs
-from course_control.paths import LessonPaths
-from course_control.contracts import Status
+from course_control.rendering.adapters.base import StageOutcome
+from course_control.platform.checkpoint import CheckpointStore, run_stage, stage_inputs
+from course_control.content.paths import LessonPaths
+from course_control.content.contracts import Status
 
 
 def outcome(name: str, output: Path, status: Status = Status.PASS) -> StageOutcome:

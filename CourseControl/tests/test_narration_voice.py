@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
-from course_control.narration_course import _voice_config
+from course_control.voice.narration_course import _voice_config
 
 
 class VoiceConfigTest(unittest.TestCase):

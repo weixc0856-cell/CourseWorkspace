@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.timecode import (
+from course_control.content.timecode import (
     AudioAlignment,
     TimecodeError,
     align_audio_segment,

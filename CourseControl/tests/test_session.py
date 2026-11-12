@@ -9,14 +9,14 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from course_control.session import (
+from course_control.platform.session import (
     SessionContractError,
     cache_key,
     load_session_spec,
     normalize_stream,
     sha256_text,
 )
-from course_control.session_runner import SessionRunError, run_session
+from course_control.platform.session_runner import SessionRunError, run_session
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 LESSON_DIR = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-smoke"
@@ -58,7 +58,7 @@ class SessionContractTest(unittest.TestCase):
         data = json.loads(SPEC.read_text(encoding="utf-8"))
         data["commands"].append(dict(data["commands"][0]))
         with self.assertRaises(ValidationError):
-            from course_control.session import SessionSpec
+            from course_control.platform.session import SessionSpec
 
             SessionSpec.model_validate(data)
 
@@ -66,7 +66,7 @@ class SessionContractTest(unittest.TestCase):
         data = json.loads(SPEC.read_text(encoding="utf-8"))
         data["commands"][0]["trim"] = {"command": "missing"}
         with self.assertRaises(ValidationError):
-            from course_control.session import SessionSpec
+            from course_control.platform.session import SessionSpec
 
             SessionSpec.model_validate(data)
 
@@ -74,7 +74,7 @@ class SessionContractTest(unittest.TestCase):
         data = json.loads(SPEC.read_text(encoding="utf-8"))
         data["files"][0]["path"] = "/abs/hello.sh"
         with self.assertRaises(ValidationError):
-            from course_control.session import SessionSpec
+            from course_control.platform.session import SessionSpec
 
             SessionSpec.model_validate(data)
 

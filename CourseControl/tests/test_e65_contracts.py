@@ -5,8 +5,8 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from course_control.contracts_v1 import NarrationSpec, RenderManifest, TimelineSpec
-from course_control.e65 import E65Error, adapt_e65
+from course_control.content.contracts_v1 import NarrationSpec, RenderManifest, TimelineSpec
+from course_control.content.e65 import E65Error, adapt_e65
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 E65 = WORKSPACE / "build" / "manim-multi-head" / "e6.5"

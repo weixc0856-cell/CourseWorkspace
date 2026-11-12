@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.review_decisions import (
+from course_control.quality.review_decisions import (
     DecisionError,
     load_decisions,
     record_decision,

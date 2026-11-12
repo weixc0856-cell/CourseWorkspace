@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.animation_score import WEIGHTS, score
-from course_control.beats import Beat, BeatSheet, BeatShot, CameraMove
+from course_control.direction.animation_score import WEIGHTS, score
+from course_control.direction.beats import Beat, BeatSheet, BeatShot, CameraMove
 
 SEGMENTS = [(0.0, 16.0), (16.0, 12.0)]
 

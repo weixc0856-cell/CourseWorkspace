@@ -4,7 +4,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from course_control.beats import Beat, BeatSheet, BeatShot, CameraMove, validate_sheet
+from course_control.direction.beats import Beat, BeatSheet, BeatShot, CameraMove, validate_sheet
 
 SEGMENTS = [(0.0, 10.0), (10.0, 12.0)]
 

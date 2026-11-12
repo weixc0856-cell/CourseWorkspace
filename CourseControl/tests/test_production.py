@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from course_control.production import (
+from course_control.content.production import (
     ProductionPlan,
     load_production,
     normalize_source,
@@ -102,7 +102,7 @@ class ProductionContractTest(unittest.TestCase):
         self.assertEqual(len(storyboard.shots), 2)
 
     def test_validate_plan_reports_window_and_capability(self) -> None:
-        from course_control.grammar import load_registry
+        from course_control.rendering.grammar import load_registry
 
         plan = ProductionPlan.model_validate(PLAN)
         registry = load_registry(ROOT)
@@ -112,7 +112,7 @@ class ProductionContractTest(unittest.TestCase):
         self.assertFalse(any("shot-002" in issue and "window" in issue for issue in issues))
 
     def test_validate_plan_flags_unknown_grammar(self) -> None:
-        from course_control.grammar import load_registry
+        from course_control.rendering.grammar import load_registry
 
         data = yaml.safe_load(yaml.safe_dump(PLAN))
         data["sequences"][0]["shots"][0]["grammar"] = "does_not_exist"

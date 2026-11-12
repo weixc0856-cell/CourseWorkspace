@@ -4,10 +4,10 @@ import typer
 
 from pathlib import Path
 
-from ..paths import ContractError
+from course_control.content.paths import ContractError
 
 from . import app
-from ._common import _paths
+from course_control.cli._common import _paths
 
 
 @app.command("e6-adapt")
@@ -26,7 +26,7 @@ def e6_adapt_command(
     V0 and its media are never modified.  Failed automatic checks are written
     into the manifest and make the command exit 1.
     """
-    from ..legacy_e6 import LegacyE6Error, adapt_e6_manifest
+    from course_control.content.legacy_e6 import LegacyE6Error, adapt_e6_manifest
 
     if not manifest.is_file():
         typer.echo(f"manifest not found: {manifest}", err=True)
@@ -61,7 +61,7 @@ def e65_adapt_command(
     run_id: str | None = typer.Option(None, "--run-id"),
 ) -> None:
     """Generate V1 NarrationSpec/TimelineSpec/ShotSpec/RenderManifest for E6.5."""
-    from ..e65 import E65Error, adapt_e65
+    from course_control.content.e65 import E65Error, adapt_e65
 
     if not manifest.is_file():
         typer.echo(f"manifest not found: {manifest}", err=True)
@@ -98,8 +98,8 @@ def timeline_v1_command(
     output: Path | None = typer.Option(None, "--output"),
 ) -> None:
     """Write a V1 TimelineSpec from an existing build/<slug>/shots.json."""
-    from ..contracts import ShotsFile
-    from ..v1_timeline import V1TimelineError, write_timeline_contract
+    from course_control.content.contracts import ShotsFile
+    from course_control.content.v1_timeline import V1TimelineError, write_timeline_contract
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)

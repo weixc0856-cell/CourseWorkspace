@@ -6,12 +6,12 @@ import typer
 
 from pathlib import Path
 
-from ..paths import ContractError
-from ..validators import validate
-from ..verify import verify
+from course_control.content.paths import ContractError
+from course_control.content.validators import validate
+from course_control.quality.verify import verify
 
 from . import app
-from ._common import _paths, _lesson_path
+from course_control.cli._common import _paths, _lesson_path
 
 
 @app.command("producer-order")
@@ -34,8 +34,8 @@ def producer_order_command(
     max_local_model_calls: int | None = typer.Option(None, "--max-local-model-calls"),
 ) -> None:
     """Create or load the production order for one lesson."""
-    from ..director.inputs import load_inputs
-    from ..producer.order import OrderOverrides, approve, ensure_order, load_order, order_path, save_order
+    from course_control.direction.inputs import load_inputs
+    from course_control.delivery.order import OrderOverrides, approve, ensure_order, load_order, order_path, save_order
 
     try:
         inputs = load_inputs(workspace.resolve(), _lesson_path(workspace, lesson_dir, lesson))
@@ -78,7 +78,7 @@ def producer_run_command(
     approve: str | None = typer.Option(None, "--approve"),
 ) -> None:
     """Run the automated portion: validate, director plan, delivery package, state."""
-    from ..producer.orchestrator import run
+    from course_control.delivery.orchestrator import run
 
     try:
         result = run(
@@ -111,7 +111,7 @@ def producer_status_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Show the production order, state and delivery status."""
-    from ..producer.orchestrator import status
+    from course_control.delivery.orchestrator import status
 
     try:
         data = status(workspace.resolve(), _lesson_path(workspace, lesson_dir, lesson))
@@ -138,7 +138,7 @@ def producer_affected_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """List shots whose inputs changed since the last producer run."""
-    from ..producer.orchestrator import affected
+    from course_control.delivery.orchestrator import affected
 
     try:
         deltas = affected(workspace.resolve(), _lesson_path(workspace, lesson_dir, lesson))
@@ -163,7 +163,7 @@ def producer_rebuild_command(
     build_root: Path | None = typer.Option(None, "--build-root"),
 ) -> None:
     """Plan (and optionally run) a local rebuild of affected shots."""
-    from ..producer.orchestrator import execute_rebuild, plan_rebuild
+    from course_control.delivery.orchestrator import execute_rebuild, plan_rebuild
 
     try:
         rebuild = plan_rebuild(
@@ -215,7 +215,7 @@ def package_command(
     out: Path | None = typer.Option(None, "--out"),
 ) -> None:
     """Collect a standard delivery package with SHA-256 for every file."""
-    from ..package import PackageError, build_package
+    from course_control.delivery.package import PackageError, build_package
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -239,7 +239,7 @@ def package_verify_command(
     package: Path = typer.Option(..., "--package"),
 ) -> None:
     """Re-hash a delivery package and report missing or changed files."""
-    from ..package import verify_package
+    from course_control.delivery.package import verify_package
 
     problems = verify_package(package)
     if problems:
@@ -268,7 +268,7 @@ def release_approve_command(
     import hashlib
     from datetime import datetime, timezone
 
-    from ..quality import build_quality_report
+    from course_control.quality.quality import build_quality_report
 
     if stage not in {"review", "release"}:
         typer.echo("stage must be review or release", err=True)
@@ -338,7 +338,7 @@ def review_status_command(
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Show the adjudication queue for content findings."""
-    from ..review_decisions import summarize
+    from course_control.quality.review_decisions import summarize
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -378,7 +378,7 @@ def review_decide_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Record one adjudication decision for a content finding."""
-    from ..review_decisions import DecisionError, record_decision
+    from course_control.quality.review_decisions import DecisionError, record_decision
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -398,7 +398,7 @@ def vendor_check_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Check every shot's copied three.js against the canonical vendor file."""
-    from ..vendor import audit
+    from course_control.platform.vendor import audit
 
     problems = audit(workspace.resolve())
     for item in problems:
@@ -414,9 +414,10 @@ def vendor_sync_command(
     shot: str | None = typer.Option(None, "--shot", help="sync only this shot"),
 ) -> None:
     """Copy the canonical three.js into shot directories."""
-    from ..vendor import sync, uses_three
+    from course_control.platform.vendor import sync, uses_three
+    from course_control.platform.workspace_layout import engine_root
 
-    shots_root = workspace.resolve() / "CodeVideoStudio" / "shots"
+    shots_root = engine_root(workspace, "code_video") / "shots"
 
     projects = (
         [shots_root / shot]
@@ -440,7 +441,7 @@ def stats_command(
     write: bool = typer.Option(False, "--write", help="write build/<slug>/quality/stats.json"),
 ) -> None:
     """Count pages, shots, audio assets, cues and delivery files from artifacts."""
-    from ..stats import lesson_stats, write_stats
+    from course_control.quality.stats import lesson_stats, write_stats
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)
@@ -469,7 +470,7 @@ def config_resolve_command(
     write: bool = typer.Option(False, "--write", help="write build/<slug>/logs/config-resolution.json"),
 ) -> None:
     """Resolve every configuration value and report its source and conflicts."""
-    from ..config_resolve import blocking_conflicts, resolve_config, write_snapshot
+    from course_control.platform.config_resolve import blocking_conflicts, resolve_config, write_snapshot
 
     try:
         paths = _paths(workspace, lesson, lesson_dir)

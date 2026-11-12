@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control.adapters.remotion import _render_props
+from course_control.rendering.adapters.remotion import _render_props
 
 
 def lesson(render: str = "remotion") -> SimpleNamespace:

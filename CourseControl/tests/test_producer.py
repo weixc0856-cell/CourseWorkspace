@@ -8,16 +8,16 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from course_control.director.inputs import load_inputs
-from course_control.producer import affected, run, status
-from course_control.producer.order import OrderOverrides, default_order, load_order, order_path, save_order
-from course_control.producer.orchestrator import execute_rebuild, plan_rebuild
-from course_control.contracts import Status
-from course_control.paths import ContractError
-from course_control.producer.state import load_state, save_state, state_path
-from course_control.producer.rebuild import diff_fingerprints
-from course_control.producer.schema import DeliveryItem, DeliveryManifest, ShotFingerprint
-from course_control.workspace_layout import lessons_root
+from course_control.direction.inputs import load_inputs
+from course_control.delivery.orchestrator import affected, run, status
+from course_control.delivery.order import OrderOverrides, default_order, load_order, order_path, save_order
+from course_control.delivery.orchestrator import execute_rebuild, plan_rebuild
+from course_control.content.contracts import Status
+from course_control.content.paths import ContractError
+from course_control.delivery.state import load_state, save_state, state_path
+from course_control.delivery.rebuild import diff_fingerprints
+from course_control.delivery.schema import DeliveryItem, DeliveryManifest, ShotFingerprint
+from course_control.platform.workspace_layout import lessons_root
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
@@ -216,7 +216,7 @@ class RebuildPlanTest(unittest.TestCase):
             stages=[SimpleNamespace(name="render:manim", status=Status.PASS)],
         )
         with patch(
-            "course_control.producer.orchestrator.run_build",
+            "course_control.delivery.orchestrator.run_build",
             return_value=(report, Path("unused.json")),
         ):
             result = execute_rebuild(plan, WORKSPACE, LESSON, build_root=self.root)

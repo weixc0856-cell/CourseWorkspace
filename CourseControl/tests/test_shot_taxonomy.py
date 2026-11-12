@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.shot_taxonomy import coverage, validate
+from course_control.direction.shot_taxonomy import coverage, validate
 
 
 def taxonomy(status: str = "verified", sample: str | None = "shots/demo") -> dict:

@@ -588,6 +588,30 @@
           "maximum": 2.0,
           "title": "Speed",
           "type": "number"
+        },
+        "voice_bible": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Voice Bible"
+        },
+        "lexicon": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lexicon"
         }
       },
       "title": "Narration",
@@ -809,7 +833,9 @@
         "mode": "reference_only",
         "style_enabled": true,
         "text_frontend": true,
-        "speed": 1.0
+        "speed": 1.0,
+        "voice_bible": null,
+        "lexicon": null
       }
     },
     "subtitles": {

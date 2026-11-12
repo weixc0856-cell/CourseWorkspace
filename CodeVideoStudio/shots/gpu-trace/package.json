@@ -1,9 +1,0 @@
-{
-  "name": "codevideo-nvda-gpu-trace",
-  "private": true,
-  "type": "module",
-  "license": "AGPL-3.0-or-later",
-  "dependencies": {
-    "playwright": "1.64.1"
-  }
-}

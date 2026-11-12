@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.package import PackageError, build_package, verify_package
-from course_control.paths import LessonPaths
-from course_control.utils import NO_CONSOLE
+from course_control.delivery.package import PackageError, build_package, verify_package
+from course_control.content.paths import LessonPaths
+from course_control.platform.utils import NO_CONSOLE
 
 LESSON = """schema_version: 1
 lesson_id: demo

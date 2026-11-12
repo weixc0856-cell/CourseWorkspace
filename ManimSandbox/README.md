@@ -101,7 +101,7 @@ build/<slug>/animation/<scene-stem>.mp4
 
 目录名是历史累积的，不是统一编号：`00-` 为冒烟/预览，`02–04` 为早期技术基线，`05/06` 为集号，`a01-` / `ai-` / `b01-` 为真实课程 slug。
 
-### 真实课程场景（本机内容，不入库）
+### 真实课程场景（内容根 `engines/manim/<slug>/`，不在本模块内）
 
 | 目录 | 用途 |
 | --- | --- |
@@ -111,7 +111,7 @@ build/<slug>/animation/<scene-stem>.mp4
 | `ai-economics-e01/` | AI 经济 E01：6 个场景 |
 | `b01-b02-bluff-body/` | 汽车系列 B01+B02 钝体绕流样板 |
 
-### 被课程 storyboard 引用（入库）
+### 被课程 storyboard 引用（部分已移到内容根，见下）
 
 | 目录 | 用途 |
 | --- | --- |

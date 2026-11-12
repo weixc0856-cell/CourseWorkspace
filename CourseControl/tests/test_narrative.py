@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.contracts import LessonConfig
-from course_control.narrative import NarrativePlan, validate_plan
+from course_control.content.contracts import LessonConfig
+from course_control.direction.narrative import NarrativePlan, validate_plan
 
 
 def beat(beat_id: str, start: float, end: float) -> dict:

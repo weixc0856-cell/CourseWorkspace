@@ -8,8 +8,8 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from course_control.collect import resolve_annotations
-from course_control.contracts import (
+from course_control.content.collect import resolve_annotations
+from course_control.content.contracts import (
     AnnotationSpec,
     LegendAnnotationSpec,
     Shot,
@@ -19,9 +19,9 @@ from course_control.contracts import (
     TextAnnotationSpec,
     Timeline,
 )
-from course_control.paths import ContractError, LessonPaths, path_problem
-from course_control.utils import page_budgets
-from course_control.validators import validate
+from course_control.content.paths import ContractError, LessonPaths, path_problem
+from course_control.platform.utils import page_budgets
+from course_control.content.validators import validate
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-smoke"

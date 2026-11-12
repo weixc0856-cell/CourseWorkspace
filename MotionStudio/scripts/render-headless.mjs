@@ -24,9 +24,16 @@ const width = Number(args.width || 1920);
 const height = Number(args.height || 1080);
 const failAt = Number(args['fail-at'] || 0);
 const keepFrames = args['keep-frames'] === 'true';
-const out = path.resolve(args.out || path.join(workspaceRoot, 'build', 'motion-canvas', `${scene}.mp4`));
+// Run artefacts are build output: keep them under the content root when one is
+// configured, so a direct `node scripts/render-headless.mjs` run does not drop
+// them into the program repository.
+const contentRoot = process.env.COURSEWORKSPACE_CONTENT_ROOT;
+const runRoot = path.resolve(
+  args['run-root'] || path.join(contentRoot || workspaceRoot, 'build', 'motion-canvas'),
+);
+const out = path.resolve(args.out || path.join(runRoot, `${scene}.mp4`));
 const runId = `${scene}-${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}`;
-const runDir = path.join(workspaceRoot, 'build', 'motion-canvas', runId);
+const runDir = path.join(runRoot, runId);
 const frameDir = path.join(runDir, 'frames');
 const metaPath = path.join(runDir, 'meta.json');
 const logPath = path.join(runDir, 'render.log');
@@ -140,7 +147,14 @@ await waitFor(`http://localhost:${vitePort}/headless.html`);
 
 const playwrightEntry = path.join(workspaceRoot, 'RemotionStudio', 'node_modules', 'playwright', 'index.mjs');
 const {chromium} = await import(pathToFileURL(playwrightEntry).href);
-const browser = await chromium.launch({channel: 'chrome', headless: true});
+const browser = await chromium.launch({
+  channel: 'chrome',
+  headless: true,
+  // Headless Chrome's renderer died with "Target crashed" while the canvas
+  // scene was compositing; disabling the GPU path and the /dev/shm-backed
+  // allocator is what keeps long canvas renders alive on Windows.
+  args: ['--disable-gpu', '--disable-dev-shm-usage'],
+});
 let pageResult = null;
 const pageErrors = [];
 try {

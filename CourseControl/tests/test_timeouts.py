@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.paths import LessonPaths
-from course_control.timeouts import resolve_timeout
+from course_control.content.paths import LessonPaths
+from course_control.platform.timeouts import resolve_timeout
 
 LESSON = """schema_version: 1
 lesson_id: demo

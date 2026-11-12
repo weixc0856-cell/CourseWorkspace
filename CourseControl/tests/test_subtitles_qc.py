@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.subtitles_qc import check_cues, parse_srt
+from course_control.voice.subtitles_qc import check_cues, parse_srt
 
 
 def cue(index: int, start: int, end: int, *lines: str) -> dict:

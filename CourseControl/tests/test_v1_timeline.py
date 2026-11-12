@@ -5,15 +5,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.contracts import (
+from course_control.content.contracts import (
     LegendAnnotation,
     Shot,
     ShotsFile,
     TextAnnotation,
     Timeline,
 )
-from course_control.contracts_v1 import TimelineSpec
-from course_control.v1_timeline import (
+from course_control.content.contracts_v1 import TimelineSpec
+from course_control.content.v1_timeline import (
     V1TimelineError,
     shots_from_timeline,
     timeline_from_shots,

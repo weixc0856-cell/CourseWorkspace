@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from course_control.contracts import LessonConfig, Storyboard
+from course_control.content.contracts import LessonConfig, Storyboard
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 

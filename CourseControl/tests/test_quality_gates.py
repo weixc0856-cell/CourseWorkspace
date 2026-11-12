@@ -3,10 +3,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from course_control.animation_score import score
-from course_control.beats import Beat, BeatSheet, BeatShot, CameraMove
-from course_control.grammar import load_registry
-from course_control.quality_gates import decide
+from course_control.direction.animation_score import score
+from course_control.direction.beats import Beat, BeatSheet, BeatShot, CameraMove
+from course_control.rendering.grammar import load_registry
+from course_control.quality.quality_gates import decide
 
 ROOT = Path(__file__).resolve().parents[2]
 SEGMENTS = [(0.0, 6.0), (6.0, 6.0)]

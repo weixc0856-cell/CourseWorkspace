@@ -9,13 +9,13 @@
 | 层级 | 文档 | 规则 |
 | --- | --- | --- |
 | 产品基线 | `docs/PRD.md` | 需求编号与范围；其它文档不得改写需求 |
-| 架构 | `docs/ARCHITECTURE.md`、`docs/stabilization/ARCHITECTURE_FINAL.md` | 模块职责与数据流 |
+| 架构 | `docs/ARCHITECTURE.md`、`<内容根>/archive/docs-2026-11/stabilization/ARCHITECTURE_FINAL.md` | 模块职责与数据流 |
 | 契约 | `docs/课程生产统一契约V1.md`、`docs/contracts/`、`shared/schemas/` | 字段级权威 |
 | 决策 | `docs/DECISIONS.md` | 编号唯一、时间顺序；过期决定标记被取代 |
-| 问题台账 | `docs/stabilization/MASTER_REMEDIATION.md` | 唯一状态来源 |
+| 问题台账 | `<内容根>/archive/docs-2026-11/stabilization/MASTER_REMEDIATION.md` | 唯一状态来源 |
 | 规范 | `docs/stabilization/*_STANDARD.md` | 当前生效标准 |
 | 审计与评估 | `docs/audit/`、`docs/evaluations/` | 记录当时证据，不随代码更新 |
-| 归档 | `docs/archive/` | 只读；引用缺失证据按历史处置 |
+| 归档 | `<内容根>/archive/` | 只读；引用缺失证据按历史处置 |
 
 ## 2. 状态标记
 
@@ -25,7 +25,7 @@
 - 状态（已实现 / 部分实现 / 草案 / 已废弃）；
 - 关联问题编号与决策编号。
 
-失效规范不删除，移入 `docs/archive/` 并在首行写 `> 已废弃：由 <新文档/决策> 取代（日期）`。仍然有效的旧规范必须在索引中标注"现行"。
+失效规范不删除，移入 `<内容根>/archive/` 并在首行写 `> 已废弃：由 <新文档/决策> 取代（日期）`。仍然有效的旧规范必须在索引中标注"现行"。
 
 ## 3. 数字不手写
 

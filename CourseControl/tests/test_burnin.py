@@ -6,8 +6,8 @@ import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control.adapters import burn
-from course_control.utils import CommandResult, MediaInfo
+from course_control.rendering.adapters import burn
+from course_control.platform.utils import CommandResult, MediaInfo
 
 
 def result(code: int) -> CommandResult:

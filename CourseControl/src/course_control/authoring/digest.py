@@ -8,8 +8,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from .ingest import sha256_text
-from .models import DigestSection, SourceDigest, SourceEntry, SourcesFile
+from course_control.authoring.ingest import sha256_text
+from course_control.authoring.models import DigestSection, SourceDigest, SourceEntry, SourcesFile
 
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
 

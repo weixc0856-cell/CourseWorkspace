@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from course_control.reference import (
+from course_control.quality.reference import (
     ReferenceRecord,
     compare,
     load_reference,

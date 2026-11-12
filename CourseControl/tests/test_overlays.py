@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control import overlays
+from course_control.rendering import overlays
 
 
 def write_json(path: Path, payload: dict) -> None:

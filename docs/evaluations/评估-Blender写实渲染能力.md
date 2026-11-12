@@ -57,7 +57,7 @@
 
 ## 8. 证据
 
-本地归档（不入库）：`docs/archive/blender-probe/images/`
+本地归档（不入库）：`<内容根>/archive/blender-probe/images/`
 
 - `tree_close.png`：程序化精细树近景；
 - `tree_aerial.png`：520 棵实例树的航拍冠层；

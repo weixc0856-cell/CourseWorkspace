@@ -4,7 +4,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from course_control.simulation import (
+from course_control.rendering.simulation import (
     HexGrid,
     RPSRules,
     SimulationSpec,

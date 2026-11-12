@@ -6,8 +6,8 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from course_control.session import EvidenceManifest, SessionSpec
-from course_control.session_evidence_v1 import V1EvidenceError, adapt_session_evidence
+from course_control.platform.session import EvidenceManifest, SessionSpec
+from course_control.platform.session_evidence_v1 import V1EvidenceError, adapt_session_evidence
 
 
 class SessionEvidenceV1Test(unittest.TestCase):

@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control.alignment import Word, _load_cues, align_cues
+from course_control.voice.alignment import Word, _load_cues, align_cues
 
 
 def word(start: int, end: int, text: str) -> Word:

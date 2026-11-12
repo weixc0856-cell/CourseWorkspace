@@ -2,7 +2,7 @@
 
 > 归档日期：2026-11-03
 > 状态：已落地（阶段 1–5 实测通过，阶段 6 输出建议、人工确认后再重建）
-> 关联：[PRD](PRD.md) · [架构](ARCHITECTURE.md) · [Blender 场景任务 IR v2](Blender场景任务IR-v2.md) · 历史技术方案（本地归档：`docs/archive/legacy/AI-Blender自动化三维内容生产技术方案.md`，不入库）
+> 关联：[PRD](PRD.md) · [架构](ARCHITECTURE.md) · [Blender 场景任务 IR v2](Blender场景任务IR-v2.md) · 历史技术方案（本地归档：`<内容根>/archive/legacy/AI-Blender自动化三维内容生产技术方案.md`，不入库）
 
 ## 0. 定位
 

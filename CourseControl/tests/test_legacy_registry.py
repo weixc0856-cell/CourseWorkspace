@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from course_control.legacy_registry import LEGACY_FIELDS, audit, problems
+from course_control.content.legacy_registry import LEGACY_FIELDS, audit, problems
 
 
 class LegacyRegistryTest(unittest.TestCase):

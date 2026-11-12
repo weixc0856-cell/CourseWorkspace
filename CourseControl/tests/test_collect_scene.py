@@ -6,8 +6,8 @@ import types
 import unittest
 from pathlib import Path
 
-from course_control.collect import collect
-from course_control.contracts import LessonConfig, ShotSpec
+from course_control.content.collect import collect
+from course_control.content.contracts import LessonConfig, ShotSpec
 
 NOTES = """### Slide 1: One
 

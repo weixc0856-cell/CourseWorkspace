@@ -79,7 +79,7 @@ try {
     else {
         Invoke-Checked "blender task 01-transformer-demo" -Quiet {
             uv run --project CourseControl course-control blender-task-validate `
-                --task BlenderStudio/tasks/01-transformer-demo/stack_explode.json --workspace . 2>&1 | Out-Null
+                --task (Join-Path $content "engines/blender/tasks/01-transformer-demo/stack_explode.json") --workspace . 2>&1 | Out-Null
         }
     }
 

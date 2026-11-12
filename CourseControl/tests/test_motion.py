@@ -3,10 +3,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from course_control.contracts import MotionPolicy
-from course_control.motion import slide_motion
-from course_control.paths import LessonPaths
-from course_control.workspace_layout import lessons_root
+from course_control.content.contracts import MotionPolicy
+from course_control.rendering.motion import slide_motion
+from course_control.content.paths import LessonPaths
+from course_control.platform.workspace_layout import lessons_root
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"

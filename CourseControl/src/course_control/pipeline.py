@@ -6,24 +6,24 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import adapters
-from .adapters.base import StageOutcome
-from .atomic import write_json_atomic
-from .build_lock import BuildLock
-from .checkpoint import (
+from course_control.rendering import adapters
+from course_control.rendering.adapters.base import StageOutcome
+from course_control.platform.atomic import write_json_atomic
+from course_control.platform.build_lock import BuildLock
+from course_control.platform.checkpoint import (
     STAGE_ORDER,
     CheckpointStore,
     run_stage,
     stage_inputs,
 )
-from .collect import collect
-from .config_resolve import blocking_conflicts, resolve_config, write_snapshot
-from .contracts import ShotsFile, Status
-from .paths import ContractError, LessonPaths
-from .report import ReportBuilder
-from .validators import validate
-from .verify import verify
-from .workspace_layout import build_root_for
+from course_control.content.collect import collect
+from course_control.platform.config_resolve import blocking_conflicts, resolve_config, write_snapshot
+from course_control.content.contracts import ShotsFile, Status
+from course_control.content.paths import ContractError, LessonPaths
+from course_control.delivery.report import ReportBuilder
+from course_control.content.validators import validate
+from course_control.quality.verify import verify
+from course_control.platform.workspace_layout import build_root_for
 
 
 @dataclass

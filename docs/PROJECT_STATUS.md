@@ -9,7 +9,7 @@
 
 ## 0.0000C 2026-11-11 交付与临时分区
 
-- 课程内容在**内容根**下（默认等于工作区；取值见 `config/local-paths.yaml` 的 `content_root`，可用 `course-control content-root` 查询）：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 都相对内容根。2026-11-12 已把本机内容根移到工作区外，仓库只剩程序。
+- 课程内容在**内容根**下（默认等于工作区；取值见 `config/local-paths.yaml` 的 `content_root`，可用 `course-control content-root` 查询）：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 以及 `engines/`（Manim / Blender / CodeVideo 的课程场景）都相对内容根。2026-11-12 已把本机内容根移到工作区外，仓库只剩程序、共用模块与夹具。
 - `build/<slug>/` 只作临时区，可删除重建；`deliver/<slug>/` 是唯一最终交付区，不随 `build/` 清理。
 - `course-control package` 默认输出 `deliver/<slug>/`；`producer` 清单在 `build/<slug>/producer/`。
 - 引擎缓存归入 `build/_engine-cache/`；迁移脚本 `scripts/organize-build.ps1`（`-Apply` 才移动，`-EngineCaches` 含引擎缓存）。
@@ -43,7 +43,7 @@
 
 ## 0.0000A 2026-11-10 V1 全量修复与收敛
 
-- 问题台账：`docs/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16 片头暂缓）；C-31、C-32 已验证）
+- 问题台账：`<内容根>/archive/docs-2026-11/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16 片头暂缓）；C-31、C-32 已验证）
 - 新增命令：`config-resolve`、`stats`、`subtitles-qc`、`review-status`、`review-decide`、`blender-task-validate`、`vendor-check`、`vendor-sync`、`shot-taxonomy`
 - build 新增：`--resume` / `--resume-from`；每次写 `logs/config-resolution.json`、`runtime/last-run.json`、`runtime/checkpoints/`
 - 质量新增：WARN 分类（`human_review` / `blocking`）、`NEEDS_HUMAN_REVIEW`、`BLOCKED_WARNINGS`、V-42/V-43/V-44
@@ -63,11 +63,11 @@
 | 镜头级转场 | `contracts.Transition`、`v1_timeline` metadata、`CourseTimeline.tsx` | `tsc --noEmit`；未逐帧目检 | COMPLETED（组件） |
 | 逐词字幕 | `Subtitles.mode=word`、`collect._word_captions`、`WordCaptions.tsx`、V-16 | shots-demo 30 s 成片抽帧可见逐词高亮；未用真实中文 ASR 验证精度 | PARTIAL |
 | 长片分块捕获 | `capture.mjs --chunk-seconds`、`adapters/code_video.py` | 12 s / 360 帧，PSNR ≈ 57.7 dB；180 s 未重跑 | PARTIAL |
-| 参考库与六维差距 | `reference.py`、`docs/architecture/references/`、`golden/`、`reference-compare` | 3 份参考记录；`3b1b-attention` 实跑 | COMPLETED |
+| 参考库与六维差距 | `reference.py`、`<内容根>/references/`、`reference-compare` | 3 份参考记录；`3b1b-attention` 实跑 | COMPLETED |
 | 真实中文样片（06-attention-sample） | `lessons/06-attention-sample`（本地）、production 契约、Manim + CodeVideo | 62.187 s 成片；7 镜头 / 5 语法 / 2 渲染器；ASR small/zh 覆盖率 0.935 PASS；quality-gate hard/grammar pass；Q1/Q2/Q5 未完成 | VERIFIED（本地） |
 | 180 s 分块捕获 | `capture.mjs --chunk-seconds` | 3 段 × 60 s；5400 帧 / 180.000 s；完整解码；281.9 s | VERIFIED |
 
-边界：逐词字幕未目检；`Annotation` 仍只有 `text`/`legend`；`match_cut` 回退硬切；180 s 分块捕获未重跑。详见归档 `docs/archive/records-2026-11/architecture/实施记录-P1-P4.md`。
+边界：逐词字幕未目检；`Annotation` 仍只有 `text`/`legend`；`match_cut` 回退硬切；180 s 分块捕获未重跑。详见归档 `<内容根>/archive/records-2026-11/architecture/实施记录-P1-P4.md`。
 
 ## 0.00 2026-11-09 增量：品牌层与教材知识库
 
@@ -170,7 +170,7 @@ ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shor
 | Python 工具链（E3） | `offline_commands`、本地 HTTP 索引、`trim`、`check-python-session.ps1`、`check-python-network.ps1` | `python_001` / `python_network_001`：安装 + 离线验证；V-23/V-25 |
 | Manim FFT 基线（E5） | `ManimSandbox/02-fft-baseline/fft_baseline.py` | `build/manim-fft/fft_baseline.mp4`：1920×1080 / 30fps / 7.8s |
 | Rust 镜头（E4） | `rust-001` fixture、`check-rust-session.ps1` | host VS Code + Git Bash，`cargo run`；V-23/V-24 |
-| Transformer 基线（E6） | `ManimSandbox/03-transformer-baseline/attention_baseline.py`、`04-transformer-explainer/`、`docs/archive/E6/E6-Transformer制作方案.md`（本地归档） | 四幕成片 33.1s（旁白 + 字幕 + manifest）；E6.1–E6.4 完成 |
+| Transformer 基线（E6） | `ManimSandbox/03-transformer-baseline/attention_baseline.py`、`04-transformer-explainer/`、`<内容根>/archive/E6/E6-Transformer制作方案.md`（本地归档） | 四幕成片 33.1s（旁白 + 字幕 + manifest）；E6.1–E6.4 完成 |
 
 当前计数：CourseControl 66 个单测；全套 127 个；场景契约仍为 9 合法 + 11 非法；8080 未被触碰。
 
@@ -178,10 +178,10 @@ ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shor
 
 | 文档 | 内容 | 状态 |
 | --- | --- | --- |
-| `docs/archive/reviews/架构审查-课程生产统一契约.md`（本地归档） | 现有课程/模块边界、重复实现、接口缺失、耦合、保留/调整建议 | 已完成审查，未改代码 |
+| `<内容根>/archive/reviews/架构审查-课程生产统一契约.md`（本地归档） | 现有课程/模块边界、重复实现、接口缺失、耦合、保留/调整建议 | 已完成审查，未改代码 |
 | [课程生产统一契约V1.md](课程生产统一契约V1.md) | LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest；整数帧时间线；E6 manifest 兼容 | 已评审；V1-B 已实现 |
 | [contracts/examples/](contracts/examples/) | Lesson / Shot / Narration / Timeline / Evidence / Render 示例 + E6 V0 迁移示例 | 示例 JSON，已做语法校验 |
-| `docs/archive/E6.5/E6.5-MultiHead设计.md`（本地归档） | 两头算例、五 beat 分镜、旁白/字幕、维度清单、自动验收 | 已完成（见 §0.8） |
+| `<内容根>/archive/E6.5/E6.5-MultiHead设计.md`（本地归档） | 两头算例、五 beat 分镜、旁白/字幕、维度清单、自动验收 | 已完成（见 §0.8） |
 
 本轮只写文档与示例，未修改任何代码；CourseControl 66 个单测通过（2 个集成测试跳过）；E6.1–E6.4 未改动；8080 未触碰。决策记录见 [DECISIONS.md](DECISIONS.md) D-026。
 
@@ -193,7 +193,7 @@ ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shor
 | V1 契约模型 | `CourseControl/src/course_control/contracts_v1.py` | 已实现；40 个测试 |
 | V1 JSON Schema | `shared/schemas/*-v1.schema.json` | 7 份；与模型逐份比对 |
 | V1 CLI | `schemas-v1`、`contract-v1-validate` | 已实现 |
-| 实施报告 | `docs/archive/V1/V1-B-实施报告.md`（本地归档） | 测试与兼容性说明 |
+| 实施报告 | `<内容根>/archive/V1/V1-B-实施报告.md`（本地归档） | 测试与兼容性说明 |
 
 CourseControl 现为 **116 个用例（114 通过 + 2 跳过）**；全项目合计 177 个用例（175 通过 + 2 跳过）。跳过的 2 个不计为通过。未迁移 E6 manifest，未改 E6.1–E6.4，未触碰 8080。
 
@@ -205,7 +205,7 @@ CourseControl 现为 **116 个用例（114 通过 + 2 跳过）**；全项目合
 | `e6-adapt` CLI | `CourseControl/src/course_control/cli.py` | 已实现；失败检查 exit 1 |
 | 自动检查 | ffprobe + sha256 + SRT 解析 | 本地 36 条：35 pass + 1 not_applicable |
 | 适配器测试 | `CourseControl/tests/test_legacy_e6.py` | 12 个；本地集成测试执行，干净克隆显式 skip |
-| 实施报告 | `docs/archive/V1/V1-C-实施报告.md`（本地归档） | 测试与兼容性说明 |
+| 实施报告 | `<内容根>/archive/V1/V1-C-实施报告.md`（本地归档） | 测试与兼容性说明 |
 
 CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合计 190 个用例（188 通过 + 2 跳过）。E6 V0 `manifest.json` 仍为 `43037d39…` 未被修改；E6.1–E6.4 未改；8080 未触碰。V0 人工 `checks` 只进入 `legacy.manual_checks`，`manual_checks_trusted=false`。
 
@@ -216,7 +216,7 @@ CourseControl 现为 **129 个用例（127 通过 + 2 跳过）**；全项目合
 | 两头算例唯一数据源 | `ManimSandbox/05-multi-head/multi_head_math.py` | 纯标准库；无 numpy/Manim |
 | 独立计算脚本 | `ManimSandbox/05-multi-head/verify_math.py` | exit 0；30 条检查全 pass |
 | 单元测试 | `ManimSandbox/tests/test_multi_head_math.py` | 8 个用例 |
-| 验证报告 | `docs/archive/E6.5/E6.5-数学验证报告.md`（本地归档） | 形状、alpha 行和、头差异、concat、W_O |
+| 验证报告 | `<内容根>/archive/E6.5/E6.5-数学验证报告.md`（本地归档） | 形状、alpha 行和、头差异、concat、W_O |
 
 E6.5 当时全项目为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数学算例已验证，可进入 `MultiHeadScene` 视觉编码；尚未生成旁白/字幕/成片。
 
@@ -226,7 +226,7 @@ E6.5 当时全项目为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数�
 | --- | --- | --- |
 | MultiHeadScene | `ManimSandbox/05-multi-head/multi_head.py` | 已创建并真实渲染 |
 | 视觉成片 | `build/manim-multi-head/e6.5/media/videos/multi_head/1080p30/MultiHeadScene.mp4` | 1920×1080 / 30fps / 1504 帧 / 50.129s；仅视频 |
-| 渲染报告 | `docs/archive/E6.5/E6.5-视觉渲染报告.md`（本地归档） | 五 beat、抽帧核对、未做旁白/字幕 |
+| 渲染报告 | `<内容根>/archive/E6.5/E6.5-视觉渲染报告.md`（本地归档） | 五 beat、抽帧核对、未做旁白/字幕 |
 
 场景从 `multi_head_math.py` 读取全部矩阵，未另写算例。E6.1–E6.4 未改；8080 未触碰。
 
@@ -239,7 +239,7 @@ E6.5 当时全项目为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数�
 | SRT | `build/manim-multi-head/e6.5/subtitles.srt` | 10 条；均在 beat 内 |
 | 最终成片 | `build/manim-multi-head/e6.5/final.mp4` | 1920×1080 / 30fps / 2608 帧 / 86.929s；视频+音频+字幕 |
 | 自动检查 | `build/manim-multi-head/e6.5/manifest.json` | 14 条全 pass；`all_ok: true` |
-| 成片报告 | `docs/archive/E6.5/E6.5-成片报告.md`（本地归档） | 旁白/字幕/mux/检查 |
+| 成片报告 | `<内容根>/archive/E6.5/E6.5-成片报告.md`（本地归档） | 旁白/字幕/mux/检查 |
 
 全项目现为 **201 个用例（199 通过 + 2 跳过）**。TTS 50000 调用前已 ready，本次复用，未启动/停止他人服务；未触碰 8080。
 
@@ -251,7 +251,7 @@ E6.5 当时全项目为 **198 个用例（196 通过 + 2 跳过）**。E6.5 数�
 | CLI | `course-control e65-adapt` | 已实现；14 条成片检查全 pass |
 | 生成契约 | `build/manim-multi-head/e6.5/contracts/` | `source.lesson_spec=null`；timeline/narration 非空 |
 | 适配测试 | `CourseControl/tests/test_e65_contracts.py` | 2 个；本地集成测试执行 |
-| 成片报告 | `docs/archive/E6.5/E6.5-成片报告.md`（本地归档） | V1 契约与复现命令 |
+| 成片报告 | `<内容根>/archive/E6.5/E6.5-成片报告.md`（本地归档） | V1 契约与复现命令 |
 
 全项目现为 **203 个用例（201 通过 + 2 跳过）**。E6.5 未并入 `pipeline.py` / `lessons/`；未做逐字强制对齐；未改 E6.1–E6.4；未触碰 8080。
 
@@ -278,9 +278,9 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 
 | 内容 | 文件 | 状态 |
 | --- | --- | --- |
-| R1-0 基线 | `docs/archive/R1/R1-基线报告.md`（本地归档） | 已完成；`check ok`；240 用例基线 |
-| R1-1 引擎验证 | `ManimSandbox/00-r1-smoke/`、`RemotionStudio/src/compositions/R1Smoke.tsx`、`docs/archive/R1/R1-1-引擎验证报告.md`（本地归档） | Manim 3.8s / Blender Eevee 5s / Remotion 5s 真实出片；Motion Canvas 无 headless CLI |
-| R1-2 性能基准 | `scripts/benchmark_render.py`、`docs/archive/R1/R1-性能基准报告.md`（本地归档）、`build/r1/benchmark/` | Eevee 20.92s / Cycles CPU 346.56s / Cycles oneAPI 291.78s（2s 片段）；Manim final 5.38s；Remotion 19.66s；QSV 5.34s vs libx264 2.91s |
+| R1-0 基线 | `<内容根>/archive/R1/R1-基线报告.md`（本地归档） | 已完成；`check ok`；240 用例基线 |
+| R1-1 引擎验证 | `ManimSandbox/00-r1-smoke/`、`RemotionStudio/src/compositions/R1Smoke.tsx`、`<内容根>/archive/R1/R1-1-引擎验证报告.md`（本地归档） | Manim 3.8s / Blender Eevee 5s / Remotion 5s 真实出片；Motion Canvas 无 headless CLI |
+| R1-2 性能基准 | `scripts/benchmark_render.py`、`<内容根>/archive/R1/R1-性能基准报告.md`（本地归档）、`build/r1/benchmark/` | Eevee 20.92s / Cycles CPU 346.56s / Cycles oneAPI 291.78s（2s 片段）；Manim final 5.38s；Remotion 19.66s；QSV 5.34s vs libx264 2.91s |
 | 时长契约 | `duration.py`、V-26/V-27 | 已实现；`lesson-authoring` 夹具 |
 | 引擎路由 | `engine_router.py` | 已实现；内容决定引擎 |
 | TimelineSpec 合成 | `CourseTimeline.tsx`、`stage-assets.mjs --timeline`、`adapters/remotion.py` | 已实现；`build/r1/timeline-smoke.mp4` 6.016s 真实合成 |
@@ -325,7 +325,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 远程状态 | feature 分支已推送至 `d97d0af`；尚未合并 `main` |
 | `d53ebd1` | 干净的初始工作流快照（无父提交）；仍是最早基线 |
 | `converge/v1` | `dd1d7f2`，完整收敛历史（含早期课程内容），**仅本地** |
-| `archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |
+| `<内容根>/archive/full-history-2026-11-03` | `adef52f`，改造前 main，**仅本地** |
 | 远程内容 | `origin/main` 375 个文件；`lessons/` 仅 `README.md`；无 `build/`、`runtime/`、`.venv`、`node_modules` |
 | 本地 HEAD 内容 | 387 个文件；相对 `origin/main` 新增 12 个（远程回退、V1-D/E、路径检查与配置示例） |
 
@@ -448,7 +448,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | `ModelingStudio/workspace/jobs/` | 5 MB | 历史作业与任务记录证据 |
 | `.venv/`、`node_modules/` | ~1.6 GB | 运行依赖，删除后需重装 |
 | `lessons/` | 本地 | 用户课程正文 |
-| `docs/archive/` | 小 | 历史决策与证据 |
+| `<内容根>/archive/` | 小 | 历史决策与证据 |
 | `BlenderStudio/assets/*.blend`、`scenes/*.blend` | ~300 KB | 测试与渲染夹具 |
 | `config/*.yaml`（本机） | 小 | 本机路径与凭据 |
 

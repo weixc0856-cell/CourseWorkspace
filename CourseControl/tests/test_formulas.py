@@ -7,9 +7,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from course_control.formula_video_qc import image_similarity
-from course_control.validators import formula_binding_problems
-from course_control.formulas import (
+from course_control.rendering.formula_video_qc import image_similarity
+from course_control.content.validators import formula_binding_problems
+from course_control.rendering.formulas import (
     FormulaSource,
     FormulaSpec,
     audit_formula,

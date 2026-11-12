@@ -8,8 +8,8 @@ import unittest.mock
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control.adapters import code_video
-from course_control.utils import CommandResult
+from course_control.rendering.adapters import code_video
+from course_control.platform.utils import CommandResult
 
 
 def result(code: int) -> CommandResult:
@@ -43,6 +43,7 @@ class CodeVideoAdapterTest(unittest.TestCase):
             lesson=SimpleNamespace(outputs=SimpleNamespace(fps=30, resolution=(1920, 1080))),
             scene_path=lambda shot: (self.spec, None),
             engine_root=lambda engine: self.root / "CodeVideoStudio",
+            engine_home=lambda engine: self.root / "CodeVideoStudio",
         )
 
     def tearDown(self):

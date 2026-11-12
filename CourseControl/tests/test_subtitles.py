@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from course_control.subtitles import (
+from course_control.voice.subtitles import (
     CuePolicy,
     _wrap,
     _wrap_zh,

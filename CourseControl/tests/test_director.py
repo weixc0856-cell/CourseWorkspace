@@ -7,14 +7,14 @@ from pathlib import Path
 
 import yaml
 
-from course_control.animation_direction import AnimationDirection
-from course_control.contracts import Storyboard
-from course_control.director import build, validate_file
-from course_control.director.inputs import load_inputs
-from course_control.director.planners import plan_all
-from course_control.director.schema import ApprovalState
-from course_control.director.validator import validate
-from course_control.workspace_layout import lessons_root
+from course_control.direction.animation_direction import AnimationDirection
+from course_control.content.contracts import Storyboard
+from course_control.direction import build, validate_file
+from course_control.direction.inputs import load_inputs
+from course_control.direction.planners import plan_all
+from course_control.direction.schema import ApprovalState
+from course_control.direction.validator import validate
+from course_control.platform.workspace_layout import lessons_root
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
@@ -37,7 +37,7 @@ class DirectorPlanTest(unittest.TestCase):
     def reload(self, **updates):
         data = self.plan.model_dump(mode="json")
         data.update(updates)
-        from course_control.director.schema import DirectorPlan
+        from course_control.direction.schema import DirectorPlan
 
         return DirectorPlan.model_validate(data)
 

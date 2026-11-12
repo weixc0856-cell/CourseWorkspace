@@ -3,6 +3,7 @@
 - **版本**：v1.6（2026-11-10）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
+- 路径约定：`lessons/`、`build/`、`deliver/` 均相对**内容根**（`config/local-paths.yaml` 的 `content_root`，默认等于工作区；2026-11-12 起本机在工作区外）。
 
 ---
 
@@ -54,6 +55,65 @@
 
 ---
 
+## 0.4 2026-11-12 动画预览（Animatic）实测
+
+`course-control animatic --lesson <slug>`（FR-40）在三门真实课程上的结果。
+
+| 项 | 实测 | 状态 |
+| --- | --- | --- |
+| `a01-why-cars-need-aerodynamics` | pages 模式，24 个片段单元，画面 1293.43 s，旁白 1292.84 s，`ok: true`；`page-024` 源片段短 0.6 s（`source_length` 警告，末帧冻结补齐） | pass |
+| `01-transformer-demo` | pages 模式，12 个静态单元，1195.60 s，无旁白（`silent animatic` 警告），`ok: true` | pass |
+| `ai-economics-e01` | shots 模式，43 个动画单元，1200.00 s，旁白 1050.72 s，`audio_sync` fail（差 149 s） | fail（真实问题） |
+| 局部重生成 | `--shot page-005`：1 个重编、23 个复用 | pass |
+| 换旁白 | `--audio narration_processed_raw.wav`：音频来源切换并重新混音 | pass |
+| 单元测试 | `test_animatic.py` 11 例；CourseControl 全量 516 例通过 / 7 跳过 | pass |
+
+`ai-economics-e01` 的失败不是工具噪声：`production.yaml` 排了 1200 s，旁白只有 1050.72 s，尾段 149 s 无声；同一门课在 `validate` 里另有 `[V-26] duration 1200.0s exceeds maximum 950.0s`。两项都待课程侧处理。
+
+预览固定 480p，不写 `deliver/`，不作为交付判定；`ok: false` 时命令退出码为 1。
+
+## 0.5 2026-11-12 声音资产（Voice Bible / Lexicon）实测
+
+FR-41。用 `build/_p2-fixture/` 下的 a01 副本验证，未改真实课程。
+
+| 项 | 实测 | 状态 |
+| --- | --- | --- |
+| 资产解析 | bible `wayne-en-v1` sha256 `917d43186a81…`；词典 `automotive-aerodynamics` sha256 `99ce7e544242…`，5 条 | pass |
+| 参考音频相对路径 | `../../lessons/…/my_voice_en_ref_short.wav` 解析到内容根实体；声明哈希与文件一致，`problems` 为空 | pass |
+| 词典改写 | 24 段中 5 段被改写（`Reynolds→Renolds` ×2、`CFD`、`SUV`、`BMW`、`Mercedes-Benz`） | pass |
+| 旧缓存键 | `test_legacy_payload_is_unchanged` 重建旧 payload 比对，未声明资产的课键值不变 | pass |
+| 单元测试 | `test_audio_assets.py` 17 例；CourseControl 全量 533 例通过 / 7 跳过 | pass |
+| 真实 VoxCPM2 合成 | **NOT_RUN**（本轮未启动 50000 TTS 服务） | NOT_RUN |
+
+因此"改词典后音频重新合成、换 bible 后音色一致"只验证到缓存键与文本改写这一层，没有真听。
+
+## 0.6 2026-11-12 镜头表（Shot Sheet）实测
+
+FR-42。用 `build/_p2-fixture/` 与 `build/_p3-broken/` 下的 a01 副本验证，未改真实课程。
+
+| 项 | 实测 | 状态 |
+| --- | --- | --- |
+| v2 表编译 | 3 镜头全部带设计字段；`continuity: 2`、`assets: 3`、`evidence: 2`；无问题 | pass |
+| 连续性追踪 | `car-half-body` → shot_002/003/009；`wake-ribbon` → shot_009；未使用的对象列入 `unused_continuity` | pass |
+| 引用定位 | 故意写坏三处，分别报 `[V-45] ghost-object`、`[V-46] assets/missing.png`、`[V-47] E01 CFD 011`，均带镜头 id | pass |
+| 设计指纹 | 同一表编译两次指纹一致；改 `director_notes` 后只有 shot_009 的指纹变化 | pass |
+| 旧课程 | a01 真实 v1 表：`0 with sheet fields`、无问题、`validate` 与构建路径不变 | pass |
+| 单元测试 | `test_shot_sheet.py` 9 例；CourseControl 全量 542 例通过 / 7 跳过 | pass |
+
+导演计划合并、证据跨文件校验未实现，见 `docs/镜头表-ShotSheet.md` §7。
+
+## 0.7 2026-11-12 锁定与分离实测
+
+| 项 | 实测 | 状态 |
+| --- | --- | --- |
+| 打锁（a01） | `picture.lock.json` + `dialogue.lock.json` 写出；画面 24 个单元全部有文件 | pass |
+| 锁内警告 | 镜头表 v1（无设计指纹）、旁白 meta schema 2（早于声音资产）——真实状态，未掩盖 | warn |
+| 字幕对应 | 全部 cue 落在旁白段落内，`subtitles_mapped` pass | pass |
+| 复查 | `lock-status` 两个锁均 `no drift` | pass |
+| 分离检查 | `course-control separation`：`no lesson-shaped files in the workspace`（白名单为空；两份 Blender 课程任务、两个 Motion Canvas 场景目录、参考库与 golden 均已移出） | pass |
+| 单元测试 | `test_locks.py` 12 例、`test_separation.py` 5 例；CourseControl 全量 559 例通过 / 7 跳过 | pass |
+| Motion Canvas 渲染验证 | 迁移后两个课程场景均出片：`gui-vs-cli-paths` 367 帧 / 12.2 s、`attention-flow` 142 帧，`result pass`，H.264 可解码。根因是场景相对 import 的 `styles/` 未在内容根布局中提供（已加 junction）＋ headless Chrome 需 `--disable-gpu` | pass |
+
 ## 1. 一键回归
 
 ```powershell
@@ -100,7 +160,7 @@ uv run --project CourseControl course-control e65-adapt --workspace . --manifest
 | V-02 | 必需文件、recording 的 base_video | `validators.py` | 通过；历史故障注入见归档 R5 矩阵 |
 | V-03 | 页数 = 讲师手册块数 | `validators.py` | 两门真实课 20/20、8/8 |
 | V-04 | 四要素（时长预算/动画切入/技术核查/逐字口播） | `validators.py` | `test_missing_notes_element_fails` |
-| V-05 | 素材路径 `/lessons/<slug>/assets/` 且存在 | `validators.py` | 两门真实课通过 |
+| V-05 | 素材路径 `<内容根>/lessons/<slug>/assets/` 且存在 | `validators.py` | 两门真实课通过 |
 | V-06 | 禁止 `Notes:`、`$...$`、`<video>`、`[ANIMATION` | `validators.py` | 两门真实课通过 |
 | V-07 | 镜头 id/页码/引擎 | `validators.py` | 5 个夹具通过 |
 | V-08 | 场景与 Blender 任务存在 | `validators.py` | 5 个夹具通过 |
@@ -123,7 +183,7 @@ uv run --project CourseControl course-control e65-adapt --workspace . --manifest
 | V-43 | V1 时间线的 `legacy_*` 字段必须登记 | `legacy_registry.py` / `verify.py` | `test_legacy_registry.py`；未登记字段判 fail |
 | V-44 | 字幕 QC：时间、语言、行宽、行首标点、术语/数字断裂 | `subtitles_qc.py` / `verify.py` | `test_subtitles_qc.py`；06 PASS，05/01 WARN（行首标点、英文悬空介词） |
 
-失败注入证据：`tests/test_staging.py`（合成失败保留 staging、成功清理）；R5 历史故障注入见 `docs/archive/R5-验收矩阵.md`；本轮未重复构造全部故障样本（见 §6）。
+失败注入证据：`tests/test_staging.py`（合成失败保留 staging、成功清理）；R5 历史故障注入见 `<内容根>/archive/R5-验收矩阵.md`；本轮未重复构造全部故障样本（见 §6）。
 
 ---
 
@@ -397,7 +457,7 @@ R1 测试计数：五套合计 **465 个用例（459 通过 + 6 跳过）**：Co
 
 R1 真实产物：
 
-- 本地归档：`docs/archive/R1/R1-基线报告.md`、`R1-1-引擎验证报告.md`、`R1-性能基准报告.md`、`R1-5-候选稿索引.md`（不入库）
+- 本地归档：`<内容根>/archive/R1/R1-基线报告.md`、`R1-1-引擎验证报告.md`、`R1-性能基准报告.md`、`R1-5-候选稿索引.md`（不入库）
 - `build/r1/manim/.../SmokeScene.mp4`、`build/r1-smoke/blender/smoke.mp4`、`build/r1/remotion/smoke.mp4`
 - `build/r1/timeline-smoke.mp4`（TimelineSpec 驱动 Remotion 的 6 秒真实片段）
 - `build/01-transformer-demo/blender/stack_explode.mp4`（1920×1080 / 30 fps / 750 帧 / 25 s）

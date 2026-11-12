@@ -1,6 +1,6 @@
 # 决策记录（ADR）
 
-格式：每条只记录**已生效**的决策、理由与后果。历史细节见 `docs/archive/`。
+格式：每条只记录**已生效**的决策、理由与后果。历史细节见 `<内容根>/archive/`。
 状态：`accepted` / `superseded`。
 
 | 编号 | 决策 | 状态 |
@@ -242,7 +242,7 @@
 
 **决策**：新增规范化契约层 V1（`LessonSpec / ShotSpec / NarrationSpec / TimelineSpec / EvidenceManifest / RenderManifest`），作为 `lesson.yaml`、`storyboard.yaml` 之上的只读规范化视图；时间线以整数帧为唯一事实，毫秒只出现在 WAV/SRT/FFmpeg 边界，秒只保留在旧契约并由适配器一次换算；所有素材用 `AssetRef`（路径 + sha256 + bytes + kind + origin + version）；E6 V0 manifest 只读适配，人工 `checks` 不进入 V1 自动检查。V1 不替换作者文件，不重写 Manim/Session/Blender 核心。
 
-**后果**：现有轨道行为不变；V1-B 已实现模型、Schema、整数时间换算与测试（`contracts_v1.py` / `timecode.py`，CourseControl 116 个用例）；V1-C 再迁移 E6 manifest；任何 `skip` 或人工 `pass` 不得写成自动通过。设计稿与示例见 `docs/课程生产统一契约V1.md`、`docs/contracts/examples/`，实施报告见本地归档 `docs/archive/V1/V1-B-实施报告.md`（不入库）。
+**后果**：现有轨道行为不变；V1-B 已实现模型、Schema、整数时间换算与测试（`contracts_v1.py` / `timecode.py`，CourseControl 116 个用例）；V1-C 再迁移 E6 manifest；任何 `skip` 或人工 `pass` 不得写成自动通过。设计稿与示例见 `docs/课程生产统一契约V1.md`、`docs/contracts/examples/`，实施报告见本地归档 `<内容根>/archive/V1/V1-B-实施报告.md`（不入库）。
 
 ## D-027 E6 V0 只读适配
 
@@ -690,10 +690,10 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **决策**：
 1. **品牌帧不承载内容分类标签。** 片头片尾只有 lockup、单集英文标题、致谢与 CTA；内容归属由标题与封面承担。新闻的动态栏目与真实日期是内容字段，保留。
 2. 删除 `brand.json` 的 `content_kinds.*.label`，`content_kinds` 只保留 intro/outro 路由；`branding.py` 校验、Remotion 品牌组件与快照测试同步修改，label 出现即报错。
-3. 新领域**不新增 `content_kind`**，不 fork 品牌；领域方案只写内容、来源、选题、资产与验收（`docs/verticals/`），不改引擎、语法、门禁与品牌。
+3. 新领域**不新增 `content_kind`**，不 fork 品牌；领域方案只写内容、来源、选题、资产与验收（`<内容根>/projects/`），不改引擎、语法、门禁与品牌。
 4. 实施顺序：先完成标签移除并跑通品牌回归，再开经济学样片；在此之前经济学生产不启用 `branding`。
 
-**实施状态**：决定已记录，**代码未改**。改动点见本机 `docs/verticals/economics/经济学系列-第一季生产方案.md` §1（不入库）。
+**实施状态**：决定已记录，**代码未改**。改动点见本机 `<内容根>/projects/economics/经济学系列-第一季生产方案.md` §1（不入库）。
 
 **后果**：品牌语义不再随内容线扩张；D-067 关于分类标签的约束继续有效并扩展到数据层。
 
@@ -982,3 +982,22 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **后果**：COURSE_MAP、STRUCTURE_AUDIT 与第一季方案同步为 30 集；E 模块恢复独立头盔集，需在正式排集时确认 E04 的素材量。
 
 **实施状态**：**2026-11-11 已记录**。本机 `runtime/course-content/automotive-aerodynamics/` 下 COURSE_MAP v0.3、STRUCTURE_AUDIT v0.3、第一季方案 v0.2 已同步；未改代码、契约或门禁。
+
+## D-089 采纳工业化生产流程 V2.0，按工作包逐步落地
+
+**背景**：所有者 2026-11-12 提出工业化生产流程 V2.0 建议稿（[v2/工业化生产流程V2.0-建议稿.md](v2/工业化生产流程V2.0-建议稿.md)），要求结合本项目实际逐步落实，而不是一次建成。P0 基线审计（[v2/P0-基线审计.md](v2/P0-基线审计.md)）已把建议稿的六个工作包与现有代码逐条核对。
+
+**决策**：
+
+1. **采纳方向与工作包**：WP-0～WP-5 与 P0～P6 的顺序成立，按 P0 → P6 逐步落地，不做一次性大改。核心原则照原稿：交付质量是唯一验收标准，时长、镜头数、动画数不作闸门。
+2. **四处实施细节按现状调整**（理由见审计 §5）：
+   - Shot Sheet 不新增 `shot-sheet.yaml`，改为 `storyboard.schema.json` v2 增量扩展 + `production.yaml` 同步扩展，保持"一模式一权威"（§5.1）。
+   - Animatic v1 的输入用 `shots.json`，不等 Shot Sheet；P1 先做 Animatic（§5.2、§5.7）。
+   - Voice Bible / Lexicon 按 `sha256` 寻址，不按文件路径；放在内容根（§5.3）。
+   - 五个 `*_VERIFIED` 状态做映射表，不改 `quality.py` 的现有状态名（§5.6）。
+3. **先修后建**：P0 审计 §6 的 D1～D3（音色参考死路径、`shots` 模式引擎源不走内容根）必须在 P1 之前修完，否则 Animatic 会读错路径。
+4. **每个工作包落地时更新权威文档**（PRD / ARCHITECTURE / TRACEABILITY / ACCEPTANCE），`docs/v2/` 只留规划与审计，不成长为第二套规范。
+
+**后果**：CourseControl 在现有粒子上新增 `animatic`、声音资产与 lock 三类能力，不引入新的调度系统；旧课程不需要一次性迁移。试点课程定为 `a01-why-cars-need-aerodynamics`（1260 s，`scene` 模式，构建产物齐全）。
+
+**实施状态**：**2026-11-12 已记录**。P0 完成：基线审计、文档不一致修正、§6 的 D1～D3 与 D7 修复并复测。P1 完成：`course-control animatic`（FR-40）已实现并在三门真实课程上跑通，见 `docs/动画预览-Animatic.md`。P2 完成：Voice Bible / Lexicon（FR-41）已实现并接进合成缓存键，见 `docs/声音资产-VoiceBible与Lexicon.md`；CourseControl 533 用例通过 / 7 跳过，真实 TTS 合成本轮未执行。D4/D5 属课程内容，待所有者决定。P3 第一段完成：镜头表已落为 `storyboard.yaml` 的 `schema_version: 2`（FR-42，`docs/镜头表-ShotSheet.md`）；导演计划合并未开始。P4 完成：Picture / Dialogue Lock 与失效映射（FR-43，`docs/锁定与失效.md`）。另按 FR-44 完成仓库与项目分离（`docs/仓库与项目边界.md`）。P5 真实课程全链路验证未开始。
