@@ -69,7 +69,7 @@ Agent 可以组合类型，不得发明未登记的能力。`course-control shot
 
 - 不把 3D 片头写进 `BrandIntro` 生产路径；
 - 不用 3D 图替换 2D 品牌资产；
-- 设计稿、失败记录与当前版本保留在 `BrandIntro/` 与 `docs/品牌片头-3D桌面戏-设计.md`。
+- 设计稿、失败记录与当前版本保留在 `BrandIntro/` 与 `<内容根>/archive/docs-2026-11/品牌片头-3D桌面戏-设计.md`。
 
 ## 5. 新闻片密度
 

@@ -9,10 +9,10 @@
 | 层级 | 文档 | 规则 |
 | --- | --- | --- |
 | 产品基线 | `docs/PRD.md` | 需求编号与范围；其它文档不得改写需求 |
-| 架构 | `docs/ARCHITECTURE.md`、`docs/stabilization/ARCHITECTURE_FINAL.md` | 模块职责与数据流 |
+| 架构 | `docs/ARCHITECTURE.md`、`<内容根>/archive/docs-2026-11/stabilization/ARCHITECTURE_FINAL.md` | 模块职责与数据流 |
 | 契约 | `docs/课程生产统一契约V1.md`、`docs/contracts/`、`shared/schemas/` | 字段级权威 |
 | 决策 | `docs/DECISIONS.md` | 编号唯一、时间顺序；过期决定标记被取代 |
-| 问题台账 | `docs/stabilization/MASTER_REMEDIATION.md` | 唯一状态来源 |
+| 问题台账 | `<内容根>/archive/docs-2026-11/stabilization/MASTER_REMEDIATION.md` | 唯一状态来源 |
 | 规范 | `docs/stabilization/*_STANDARD.md` | 当前生效标准 |
 | 审计与评估 | `docs/audit/`、`docs/evaluations/` | 记录当时证据，不随代码更新 |
 | 归档 | `<内容根>/archive/` | 只读；引用缺失证据按历史处置 |

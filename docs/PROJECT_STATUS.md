@@ -43,7 +43,7 @@
 
 ## 0.0000A 2026-11-10 V1 全量修复与收敛
 
-- 问题台账：`docs/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16 片头暂缓）；C-31、C-32 已验证）
+- 问题台账：`<内容根>/archive/docs-2026-11/stabilization/MASTER_REMEDIATION.md`（C-01～C-30，VERIFIED 25 / FIXED 4 / DEFERRED 1（C-16 片头暂缓）；C-31、C-32 已验证）
 - 新增命令：`config-resolve`、`stats`、`subtitles-qc`、`review-status`、`review-decide`、`blender-task-validate`、`vendor-check`、`vendor-sync`、`shot-taxonomy`
 - build 新增：`--resume` / `--resume-from`；每次写 `logs/config-resolution.json`、`runtime/last-run.json`、`runtime/checkpoints/`
 - 质量新增：WARN 分类（`human_review` / `blocking`）、`NEEDS_HUMAN_REVIEW`、`BLOCKED_WARNINGS`、V-42/V-43/V-44

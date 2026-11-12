@@ -47,7 +47,7 @@
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 主生产路线（Slide-first / Motion-enhanced / Narration-led，路线建议非门禁）：[docs/生产路线.md](docs/生产路线.md)
 - 工业化生产流程 V2.0（已采纳、逐步落地：八阶段 / WP-0～WP-5 / P0～P6）：[docs/v2/工业化生产流程V2.0-建议稿.md](docs/v2/工业化生产流程V2.0-建议稿.md) · [docs/v2/P0-基线审计.md](docs/v2/P0-基线审计.md)
-- 多视觉语法生产系统（架构/审计/样片）：[docs/architecture/多视觉语法生产系统-设计.md](docs/architecture/多视觉语法生产系统-设计.md)、[docs/architecture/多视觉语法生产系统-审计.md](docs/architecture/多视觉语法生产系统-审计.md)、[docs/architecture/多视觉语法生产系统-样片验证.md](docs/architecture/多视觉语法生产系统-样片验证.md)
+- 多视觉语法生产系统（架构/审计/样片）：`<内容根>/archive/docs-2026-11/architecture/多视觉语法生产系统-设计.md`、`<内容根>/archive/docs-2026-11/architecture/多视觉语法生产系统-审计.md`、`<内容根>/archive/docs-2026-11/architecture/多视觉语法生产系统-样片验证.md`
 - 视觉语法注册表与质量契约：[shared/grammars/visual-grammars.yaml](shared/grammars/visual-grammars.yaml)、[docs/contracts/](docs/contracts/)
 - 项目材料（系列方案/分集/研究，本机内容根，不入库）：`<内容根>/projects/<系列>/`，索引 `<内容根>/projects/README.md`；知识系列的通用方法在 `<内容根>/projects/knowledge-series/知识系列课程生产总纲.md`
 
@@ -67,7 +67,7 @@
 - 叙事与留存方法：[docs/creative/叙事设计与观众留存规范.md](docs/creative/叙事设计与观众留存规范.md)
 - 独立代码审核（只读第二意见）：[ReviewRunner/README.md](ReviewRunner/README.md)、[scripts/review.ps1](scripts/review.ps1)
 - Attention 两分钟样片与 3B1B 差距：[docs/evaluations/样片-注意力-3B1B差距与路线.md](docs/evaluations/样片-注意力-3B1B差距与路线.md)
-- V1 收敛与问题台账：[docs/stabilization/MASTER_REMEDIATION.md](docs/stabilization/MASTER_REMEDIATION.md)、[docs/stabilization/FINAL_ACCEPTANCE_REPORT.md](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)
+- V1 收敛与问题台账：`<内容根>/archive/docs-2026-11/stabilization/MASTER_REMEDIATION.md`、`<内容根>/archive/docs-2026-11/stabilization/FINAL_ACCEPTANCE_REPORT.md`
 - 收敛标准（配置/任务/质量/视觉/资产/文档）：[docs/stabilization/](docs/stabilization/)
 - 缺失证据处置：[docs/audit/evidence-decisions.yaml](docs/audit/evidence-decisions.yaml)
 - 交付物/QC/归档：[docs/课程生产交付物规范.md](docs/课程生产交付物规范.md)
