@@ -19,8 +19,11 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from course_control.workspace_layout import build_root
+
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "build" / "r1" / "benchmark"
+BUILD = build_root(ROOT)
+OUT = BUILD / "r1" / "benchmark"
 GPU_COUNTER = r"\GPU Adapter Memory(*)\Dedicated Usage"
 
 
@@ -197,7 +200,7 @@ def main() -> int:
             "blender-eevee",
             [str(exe), "-b", "--factory-startup", "--python-exit-code", "1",
              "--python", str(ROOT / "BlenderStudio/scripts/render_smoke.py"), "--",
-             "--lesson", "r1-smoke", "--out", str(ROOT / "build/r1-smoke/blender/bench-eevee.mp4"),
+             "--lesson", "r1-smoke", "--out", str(BUILD / "r1-smoke/blender/bench-eevee.mp4"),
              "--engine", "BLENDER_EEVEE", "--samples", "8", "--seconds", "2"],
             ROOT,
         ),
@@ -205,7 +208,7 @@ def main() -> int:
             "blender-cycles-cpu",
             [str(exe), "-b", "--factory-startup", "--python-exit-code", "1",
              "--python", str(ROOT / "BlenderStudio/scripts/render_smoke.py"), "--",
-             "--lesson", "r1-smoke", "--out", str(ROOT / "build/r1-smoke/blender/bench-cycles-cpu.mp4"),
+             "--lesson", "r1-smoke", "--out", str(BUILD / "r1-smoke/blender/bench-cycles-cpu.mp4"),
              "--engine", "CYCLES", "--device", "CPU", "--samples", "8", "--seconds", "2"],
             ROOT,
         ),
@@ -213,34 +216,34 @@ def main() -> int:
             "blender-cycles-gpu",
             [str(exe), "-b", "--factory-startup", "--python-exit-code", "1",
              "--python", str(ROOT / "BlenderStudio/scripts/render_smoke.py"), "--",
-             "--lesson", "r1-smoke", "--out", str(ROOT / "build/r1-smoke/blender/bench-cycles-gpu.mp4"),
+             "--lesson", "r1-smoke", "--out", str(BUILD / "r1-smoke/blender/bench-cycles-gpu.mp4"),
              "--engine", "CYCLES", "--device", "GPU", "--samples", "8", "--seconds", "2"],
             ROOT,
         ),
         (
             "manim-draft",
             ["uv", "run", "--project", "ManimSandbox", "manim", "render", "-ql", "--fps", "15",
-             "--media_dir", str(ROOT / "build/r1/benchmark/manim-draft"),
+             "--media_dir", str(BUILD / "r1/benchmark/manim-draft"),
              "ManimSandbox/00-r1-smoke/smoke_scene.py", "SmokeScene"],
             ROOT,
         ),
         (
             "manim-final",
             ["uv", "run", "--project", "ManimSandbox", "manim", "render", "-r", "1920,1080",
-             "--fps", "30", "--media_dir", str(ROOT / "build/r1/benchmark/manim-final"),
+             "--fps", "30", "--media_dir", str(BUILD / "r1/benchmark/manim-final"),
              "ManimSandbox/00-r1-smoke/smoke_scene.py", "SmokeScene"],
             ROOT,
         ),
         (
             "remotion-c1",
             ["npx.cmd", "remotion", "render", "src/probes/index.ts", "R1Smoke",
-             str(ROOT / "build/r1/benchmark/remotion-c1.mp4"), "--concurrency=1", "--log=error"],
+             str(BUILD / "r1/benchmark/remotion-c1.mp4"), "--concurrency=1", "--log=error"],
             ROOT / "RemotionStudio",
         ),
         (
             "remotion-c4",
             ["npx.cmd", "remotion", "render", "src/probes/index.ts", "R1Smoke",
-             str(ROOT / "build/r1/benchmark/remotion-c4.mp4"), "--concurrency=4", "--log=error"],
+             str(BUILD / "r1/benchmark/remotion-c4.mp4"), "--concurrency=4", "--log=error"],
             ROOT / "RemotionStudio",
         ),
     ]
@@ -249,14 +252,14 @@ def main() -> int:
     for case, command, cwd in cases:
         try:
             result = run(case, command, cwd)
-            output = ROOT / "build/r1-smoke/blender" / f"bench-{case.split('-', 1)[1]}.mp4" \
+            output = BUILD / "r1-smoke/blender" / f"bench-{case.split('-', 1)[1]}.mp4" \
                 if case.startswith("blender-") else None
             if case.startswith("manim-"):
-                media = ROOT / "build/r1/benchmark" / case / "videos/smoke_scene"
+                media = BUILD / "r1/benchmark" / case / "videos/smoke_scene"
                 matches = sorted(media.glob("*/SmokeScene.mp4"))
                 output = matches[-1] if matches else None
             elif case.startswith("remotion-"):
-                output = ROOT / "build/r1/benchmark" / f"{case}.mp4"
+                output = BUILD / "r1/benchmark" / f"{case}.mp4"
             result["output"] = str(output) if output else None
             result["media"] = probe(output) if output and output.exists() else None
             summary.append(result)
@@ -266,7 +269,7 @@ def main() -> int:
         write_case(result)
 
     # FFmpeg burn-in comparison on the 5 s Remotion smoke.
-    smoke = ROOT / "build/r1/remotion/smoke.mp4"
+    smoke = BUILD / "r1/remotion/smoke.mp4"
     ass = OUT / "bench.ass"
     write_ass(ass)
     for encoder, args in (

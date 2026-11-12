@@ -17,9 +17,10 @@ from course_control.paths import ContractError
 from course_control.producer.state import load_state, save_state, state_path
 from course_control.producer.rebuild import diff_fingerprints
 from course_control.producer.schema import DeliveryItem, DeliveryManifest, ShotFingerprint
+from course_control.workspace_layout import lessons_root
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-LESSON = WORKSPACE / "lessons" / "01-transformer-demo"
+LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
 
 
 @unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")

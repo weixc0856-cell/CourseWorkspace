@@ -4,6 +4,8 @@
 - **上游**：[PRD.md](PRD.md)、[ARCHITECTURE.md](ARCHITECTURE.md)
 - 图例：`[自动]` 程序执行；`[人工]` 必须有人参与；`[可选]` 按课程或需要启用
 
+> 课程内容（`lessons`、`build`、`deliver`、`runtime`、`knowledge`）位于**内容根**，默认等于工作区；可用 `config/local-paths.yaml` 的 `content_root` 或环境变量 `COURSEWORKSPACE_CONTENT_ROOT` 指向其他目录。下文路径均相对内容根。
+
 ```text
 [人工] 编写 lessons/<slug>/{lesson.yaml, storyboard.yaml, slides.md, lecture_notes.md, assets/}
    │

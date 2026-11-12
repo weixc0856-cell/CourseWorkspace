@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from .workspace_layout import runtime_root
 
 
 class BuildLockError(RuntimeError):
@@ -29,7 +30,7 @@ def _pid_alive(pid: int) -> bool:
 
 class BuildLock:
     def __init__(self, workspace: Path, slug: str):
-        self.path = workspace.resolve() / "runtime" / "locks" / f"build-{slug}.lock"
+        self.path = runtime_root(workspace) / "locks" / f"build-{slug}.lock"
         self.slug = slug
         self._owned = False
 

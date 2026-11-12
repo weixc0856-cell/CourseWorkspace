@@ -9,6 +9,12 @@ from pydantic import ValidationError
 
 from .contracts import LessonConfig, SLUG_RE, ShotSpec, Storyboard
 from .production import ProductionPlan, load_production, synthetic_storyboard
+from .workspace_layout import (
+    build_root_for,
+    content_root,
+    delivery_root_for,
+    lessons_root,
+)
 
 DRIVE_RE = re.compile(r"^[A-Za-z]:")
 
@@ -73,17 +79,20 @@ class LessonPaths:
     build_root_override: Path | None = None
     production: ProductionPlan | None = None
     production_source: Path | None = None
+    content_base: Path | None = None
 
     @classmethod
     def load(
         cls,
         workspace: Path,
-        lesson_dir: Path,
+        lesson_dir: Path | None = None,
         storyboard_override: Path | None = None,
         build_root_override: Path | None = None,
     ) -> "LessonPaths":
         workspace = workspace.resolve()
-        lesson_dir = lesson_dir.resolve()
+        if lesson_dir is None:
+            lesson_dir = lessons_root(workspace)
+        lesson_dir = Path(lesson_dir).resolve()
         lesson_file = lesson_dir / "lesson.yaml"
         raw = load_yaml(lesson_file)
         try:
@@ -137,6 +146,7 @@ class LessonPaths:
             build_root_override=build_root_override,
             production=production,
             production_source=production_file,
+            content_base=content_root(workspace),
         )
 
     def selects(self, shot_id: str) -> bool:
@@ -150,12 +160,12 @@ class LessonPaths:
     def build_root(self) -> Path:
         if self.build_root_override is not None:
             return self.build_root_override.resolve()
-        return self.workspace / "build" / self.slug
+        return build_root_for(self.workspace, self.slug)
 
     @property
     def delivery_root(self) -> Path:
         """Final, self-contained delivery package; never the temporary build area."""
-        return (self.workspace / "deliver" / self.slug).resolve()
+        return delivery_root_for(self.workspace, self.slug)
 
     def content_path(self, relative: str) -> Path:
         return (self.lesson_dir / relative).resolve()

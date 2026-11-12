@@ -10,7 +10,6 @@
 
 ```text
 CourseWorkspace/
-├── lessons/            内容层：唯一的课程输入
 ├── CourseControl/      控制层：校验、调度、收集、报告（Python 3.12 + uv）
 ├── CourseSlides/       展示层：Reveal.js 外壳（Node）
 ├── MotionStudio/       动画层：Motion Canvas（Node，无头自动导出）
@@ -27,20 +26,25 @@ CourseWorkspace/
 │   └── design-tokens/  设计令牌
 ├── config/             本机配置（*.yaml 本地文件不入库）
 ├── scripts/            PowerShell 工作区入口
-├── build/              全部生成物（不入库）
-├── runtime/            锁与模型任务记录（不入库）
 └── docs/               权威文档 + docs/archive/
+
+<内容根>/                 课程内容；默认等于工作区，取值见 config/local-paths.yaml 的 content_root
+├── lessons/            内容层：唯一的课程输入
+├── build/              全部生成物（不入库）
+├── deliver/            最终交付包（不入库）
+├── runtime/            锁与模型任务记录（不入库）
+└── knowledge/          教材区（不入库）
 ```
 
 ### 1.1 写入归属
 
 | 位置 | 写入方 | 内容 |
 | --- | --- | --- |
-| `lessons/` | 人工 | 课程正文与契约 |
-| `build/<slug>/` | CourseControl 及其适配器 | 截图、动画、三维、时间线、日志、报告 |
+| `<内容根>/lessons/` | 人工 | 课程正文与契约 |
+| `<内容根>/build/<slug>/` | CourseControl 及其适配器 | 截图、动画、三维、时间线、日志、报告 |
 | `RemotionStudio/public/staging/<slug>/` | Remotion staging | 合成期临时素材（成功后清理） |
-| `runtime/locks/` | `shared/ai_runtime` | 跨进程锁 |
-| `runtime/tasks/` | `shared/ai_runtime` | 模型任务记录 |
+| `<内容根>/runtime/locks/` | `shared/ai_runtime` | 跨进程锁 |
+| `<内容根>/runtime/tasks/` | `shared/ai_runtime` | 模型任务记录 |
 | `ModelingStudio/workspace/jobs/` | ModelingStudio | 建模作业 |
 | `BlenderStudio/scenes/`、`assets/` | 人工 | `.blend` 与 GN 资产 |
 | `<AI_ROOT>` | **任何人都不写** | 模型与运行时 |

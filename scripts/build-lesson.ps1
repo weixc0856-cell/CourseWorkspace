@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Lesson,
-    [string]$LessonDir = "lessons",
+    [string]$LessonDir = "",
     [switch]$SkipRender,
     [switch]$SkipCompose,
     [switch]$Resume,
@@ -15,9 +15,9 @@ $args = @(
     "--project", (Join-Path $root "CourseControl"),
     "course-control", "build",
     "--lesson", $Lesson,
-    "--lesson-dir", $LessonDir,
     "--workspace", $root
 )
+if ($LessonDir) { $args += @("--lesson-dir", $LessonDir) }
 if ($SkipRender) { $args += "--skip-render" }
 if ($SkipCompose) { $args += "--skip-compose" }
 if ($Resume) { $args += "--resume" }

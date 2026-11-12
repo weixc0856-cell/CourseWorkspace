@@ -14,8 +14,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .contracts_v1 import EvidenceEnvironment, EvidenceManifestV1
-from .legacy_e6 import asset_ref
+from .media import asset_ref
 from .session import EvidenceManifest, load_session_spec
+from .workspace_layout import build_root_for
 
 
 class V1EvidenceError(RuntimeError):
@@ -51,7 +52,7 @@ def adapt_session_evidence(
     build_root = (
         Path(build_root).resolve()
         if build_root is not None
-        else workspace / "build" / spec.lesson / "code" / spec.shot_id
+        else build_root_for(workspace, spec.lesson) / "code" / spec.shot_id
     )
     evidence_path = build_root / "evidence.json"
     if not evidence_path.is_file():

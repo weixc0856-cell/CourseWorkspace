@@ -15,6 +15,7 @@ from pathlib import Path
 import yaml
 
 from .session import normalize_stream, sha256_text
+from .workspace_layout import runtime_root
 
 DEFAULT_PORT = 50000
 DEFAULT_TIMEOUT_S = 900
@@ -227,7 +228,7 @@ class TtsService:
         self.wait_timeout_s = wait_timeout_s
         self.port = port
         self.base_url = f"http://127.0.0.1:{port}"
-        self.lock_path = workspace / "runtime" / "locks" / f"tts-{port}.lock"
+        self.lock_path = runtime_root(workspace) / "locks" / f"tts-{port}.lock"
         self._lock = None
         self._process: subprocess.Popen | None = None
         self._started = False

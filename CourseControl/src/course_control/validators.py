@@ -13,7 +13,7 @@ from .duration import (
     resolve,
     window_problem,
 )
-from .paths import LessonPaths, path_problem
+from .paths import LessonPaths, is_under, path_problem
 from .utils import ContractError, notes_blocks, page_budgets
 
 FOUR_ELEMENTS = ("时长预算", "动画切入", "技术核查", "逐字口播")
@@ -347,8 +347,8 @@ def validate(paths: LessonPaths) -> ValidationResult:
         if not ref.startswith(prefix):
             result.add("V-05", "error", f"asset path must start with {prefix}: {ref}")
             continue
-        target = paths.workspace / ref.lstrip("/")
-        if not target.is_file():
+        target = (paths.lesson_dir / ref[len(f"/lessons/{paths.slug}/"):]).resolve()
+        if not is_under(paths.lesson_dir, target) or not target.is_file():
             result.add("V-05", "error", f"asset not found: {ref}")
 
     clean = _strip_code(slides_text)

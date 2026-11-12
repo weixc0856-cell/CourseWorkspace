@@ -30,6 +30,7 @@ from .session import (
     now,
     sha256_text,
 )
+from .workspace_layout import build_root_for
 
 CREATE_NEW_CONSOLE = 0x00000010
 
@@ -95,7 +96,7 @@ def _hash_file(path: Path) -> str:
 
 
 def _prepare(workspace: Path, lesson_dir: Path, spec: SessionSpec) -> tuple[Path, dict[str, str]]:
-    build_root = workspace / "build" / spec.lesson / "code" / spec.shot_id
+    build_root = build_root_for(workspace, spec.lesson) / "code" / spec.shot_id
     workdir = build_root / "work"
     if workdir.exists():
         _remove_tree(workdir)

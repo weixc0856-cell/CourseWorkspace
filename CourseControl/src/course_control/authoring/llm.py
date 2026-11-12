@@ -36,6 +36,7 @@ from ai_runtime import (
     is_healthy,
     route_model,
 )
+from ..workspace_layout import build_root_for
 
 
 class AuthoringError(RuntimeError):
@@ -277,7 +278,7 @@ class AuthoringClient:
             timeout_s=self.config.lock_timeout_s,
             stale_after_s=self.config.stale_after_s,
         )
-        log_path = self.config.workspace / "build" / "authoring" / "llama-server.log"
+        log_path = build_root_for(self.config.workspace, "authoring") / "llama-server.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             self.route = self._stack.enter_context(

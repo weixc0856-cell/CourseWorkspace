@@ -24,6 +24,8 @@ from pathlib import Path
 
 import yaml
 
+from course_control.workspace_layout import content_root
+
 PATH_RE = re.compile(r"build/[A-Za-z0-9_.\-/]+")
 SKIP = ("<", ">", "{", "}", "*", "...", "slug", "lesson", "xxx", "…")
 DISPOSITIONS = {
@@ -74,8 +76,15 @@ def main() -> int:
     )
     args = parser.parse_args()
     root = args.workspace.resolve()
+    content = content_root(root)
     found = referenced_paths(root)
-    missing = {path: docs for path, docs in found.items() if not (root / path).exists()}
+
+    def exists(path: str) -> bool:
+        # build/ output lives under the content root, the rest stays in the workspace
+        base = content if path.startswith("build/") else root
+        return (base / path).exists()
+
+    missing = {path: docs for path, docs in found.items() if not exists(path)}
     rules = load_rules((root / args.decisions) if not args.decisions.is_absolute() else args.decisions)
 
     classified: dict[str, dict] = {}
@@ -92,7 +101,7 @@ def main() -> int:
             "referenced_by": sorted(set(missing[path])),
         }
 
-    report = root / "build" / ".audit" / "missing-evidence.txt"
+    report = content / "build" / ".audit" / "missing-evidence.txt"
     report.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         f"referenced build paths: {len(found)}",
@@ -111,7 +120,7 @@ def main() -> int:
         lines.append(f"{path}\tUNCLASSIFIED\t\t{', '.join(sorted(set(missing[path]))[:3])}")
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    json_report = root / "build" / ".audit" / "evidence-classification.json"
+    json_report = content / "build" / ".audit" / "evidence-classification.json"
     json_report.write_text(
         json.dumps(
             {

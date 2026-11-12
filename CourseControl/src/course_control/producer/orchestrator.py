@@ -30,6 +30,7 @@ from .state import (
     sha256_file,
     state_path,
 )
+from ..workspace_layout import build_root_for
 
 
 @dataclass
@@ -367,7 +368,7 @@ def execute_rebuild(
         raise ContractError("order.authorizations.allow_render is false; rebuild refused")
     if not rebuild.shot_ids:
         raise ContractError("nothing to rebuild")
-    root = (build_root or (workspace / "build" / rebuild.order.lesson_id)).resolve()
+    root = (build_root or build_root_for(workspace, rebuild.order.lesson_id)).resolve()
     report, report_path = run_build(
         workspace.resolve(),
         lesson_dir.resolve(),
