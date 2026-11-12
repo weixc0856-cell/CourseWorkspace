@@ -28,7 +28,7 @@ uv run --project KnowledgeStudio knowledge-studio extract-report `
 
 # 6. 按主题取页（默认最多 18 页），可直接写成 lesson 的 sources 片段
 uv run --project KnowledgeStudio knowledge-studio retrieve --root knowledge/hucho `
-    --query "drag mechanisms" --max-pages 18 --into-lesson lessons/02-car-aerodynamics
+    --query "drag mechanisms" --max-pages 18 --into-lesson lessons/<slug>
 
 # 7. claim → 页 的证据
 uv run --project KnowledgeStudio knowledge-studio evidence --root knowledge/hucho `

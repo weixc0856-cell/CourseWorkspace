@@ -149,7 +149,7 @@ course-control narration-assets --lesson <slug> --json
 
 ## 9. 实测（2026-11-12）
 
-用 `build/_p2-fixture/` 下的一份 a01 副本（不改真实课程），声明 `wayne-en-v1` + `automotive-aerodynamics`：
+用试点课程的一份临时副本（不改真实课程；副本已随课程归档清理），声明 `wayne-en-v1` + `automotive-aerodynamics`：
 
 | 项 | 结果 |
 | --- | --- |

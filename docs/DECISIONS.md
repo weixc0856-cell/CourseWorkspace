@@ -490,10 +490,10 @@
 
 ## D-056 五条质量防线 P0 落地；5 分钟校准课与 Shorts 分开
 
-**背景**：差距审查确认五条质量防线中 Q1 只有单模型候选审查、Q2 基本没有、Q3 缺全片音视频检查、Q5 只按文件存在性判定；真实课程 `01-transformer-demo` 的交付仍为 `blocked`。规范要求先打通一门真实课程闭环，再扩展模块。
+**背景**：差距审查确认五条质量防线中 Q1 只有单模型候选审查、Q2 基本没有、Q3 缺全片音视频检查、Q5 只按文件存在性判定；真实课程 `<slug>` 的交付仍为 `blocked`。规范要求先打通一门真实课程闭环，再扩展模块。
 
 **决策**：
-1. 新建本地校准课 `05-transformer-5min`，从已批准的 `01-transformer-demo` 第 1、3、5 页逐字取用，只做分页与编号调整；旁白复用同参数缓存，12 段全部命中；审批记录写 `user-instruction` 与 subset 来源，不冒充新的语义审查。该课程属于**短课/校准片**，不是 YouTube Shorts。
+1. 新建本地校准课 `<slug>`，从已批准的另一门课第 1、3、5 页逐字取用，只做分页与编号调整；旁白复用同参数缓存，12 段全部命中；审批记录写 `user-instruction` 与 subset 来源，不冒充新的语义审查。该课程属于**短课/校准片**，不是 YouTube Shorts。
 2. 在 `CourseControl` 内新增 `narrative.py`、`audio_mix.py`、`media_qc.py`、`quality.py` 与四个 CLI 命令：`narrative-validate`、`audio-mix`、`media-qc`、`quality-report`；不新建 TeachingQA/MediaQA 顶层工程。
 3. 长视频必须提供 `authoring/narrative-plan.json`（六段骨架）；Shorts 使用 `video_form: short`、30–90 秒、9:16、独立脚本。方法论文档为 `docs/creative/叙事设计与观众留存规范.md`。
 4. BGM 只消费本地授权库：曲目缺失、许可未知、CC BY 缺署名一律 blocked；混音固定 sidechain ducking + `loudnorm I=-16:TP=-1.5`。
@@ -506,7 +506,7 @@
 **背景**：5 分钟校准课首版使用 `compose.mode: deck`，3 页幻灯片占 94% 时长，只有两段 8–10 秒的 Manim cutaway。实测音轨与 `narration.wav` 零偏移、字幕与 ASR 覆盖 0.992，说明时间轴没有漂移；问题在视觉契约：静态 PPT 无法承担机制解释，动画内容与旁白段落也没有语义对齐。
 
 **决策**：
-1. 新增 292 秒连续 Manim 动画 `ManimSandbox/05-transformer-5min/attention_5min.py`，按 12 段旁白实测时间编排 12 个 beat；每个 beat 的动画、停顿与转场相加等于该段旁白时长。
+1. 新增 292 秒连续 Manim 动画 `engines/manim/<slug>/attention_5min.py`，按 12 段旁白实测时间编排 12 个 beat；每个 beat 的动画、停顿与转场相加等于该段旁白时长。
 2. 校准课切到 `compose.mode: scene`，`scenes/manifest.json` 的 `base_file` 指向 `animation/attention_5min.mp4`；`collect` 在 scene + base_file 模式下不再把 storyboard 镜头当覆盖层叠加。
 3. Manim 适配器增加缓存：目标 MP4 比源场景新时直接复用，避免重建时重复渲染 5 分钟动画。
 4. 机制解释类课程默认用 scene/动画作为底；deck 模式只用于以静态图文为主、允许逐页阅读的内容。
@@ -540,7 +540,7 @@
 
 **决策**：
 1. 删除 `Scene.play` 的相机漂移覆写与 `zoom_fill`；全片相机固定在 14.22 画幅。需要镜头运动时再按“全景 → 推近 → 拉远”的动机单独设计，不以填满时间为目的。
-2. 删除 21 条底部 `caption()`（与旁白/字幕重复）；每个镜头改为“指认式”视觉动作（逐行扫亮、逐层高亮、轮流压暗/恢复、分开再合并），并写入 `ManimSandbox/05-transformer-5min/beats.md` 作为导演节拍表。
+2. 删除 21 条底部 `caption()`（与旁白/字幕重复）；每个镜头改为“指认式”视觉动作（逐行扫亮、逐层高亮、轮流压暗/恢复、分开再合并），并写入 `engines/manim/<slug>/beats.md` 作为导演节拍表。
 3. `Subtitles.bottom_margin` 可配置（默认 190 px，本课 60 px）：ASS 锚点从 `height-190` 改为 `height-bottom_margin`，双语字幕块整体下沉，图形主体回到字幕带之上。
 4. 冻结指标只作为技术检查，不再用运镜凑数；接受镜头末尾 ≤1.5 s 的停顿。
 
@@ -775,7 +775,7 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 4. 未知版本直接失败并列出支持版本；不提供"猜格式"回退。
 5. v2 不进入课程默认链路，除非课程显式引用。
 
-**后果**：`BlenderStudio/tasks/01-transformer-demo/stack_explode.json` 等 v1 任务在渲染前完成输入验证。
+**后果**：`BlenderStudio/tasks/<lesson>/<task>.json` 等 v1 任务在渲染前完成输入验证。
 
 **实施状态**：**2026-11-10 已实施**。`blender_task.py`、`blender-task-validate`、`test_blender_task.py`。
 
@@ -998,6 +998,6 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 3. **先修后建**：P0 审计 §6 的 D1～D3（音色参考死路径、`shots` 模式引擎源不走内容根）必须在 P1 之前修完，否则 Animatic 会读错路径。
 4. **每个工作包落地时更新权威文档**（PRD / ARCHITECTURE / TRACEABILITY / ACCEPTANCE），`docs/v2/` 只留规划与审计，不成长为第二套规范。
 
-**后果**：CourseControl 在现有粒子上新增 `animatic`、声音资产与 lock 三类能力，不引入新的调度系统；旧课程不需要一次性迁移。试点课程定为 `a01-why-cars-need-aerodynamics`（1260 s，`scene` 模式，构建产物齐全）。
+**后果**：CourseControl 在现有粒子上新增 `animatic`、声音资产与 lock 三类能力，不引入新的调度系统；旧课程不需要一次性迁移。试点课程定为 `<slug>`（1260 s，`scene` 模式，构建产物齐全）。
 
 **实施状态**：**2026-11-12 已记录**。P0 完成：基线审计、文档不一致修正、§6 的 D1～D3 与 D7 修复并复测。P1 完成：`course-control animatic`（FR-40）已实现并在三门真实课程上跑通，见 `docs/动画预览-Animatic.md`。P2 完成：Voice Bible / Lexicon（FR-41）已实现并接进合成缓存键，见 `docs/声音资产-VoiceBible与Lexicon.md`；CourseControl 533 用例通过 / 7 跳过，真实 TTS 合成本轮未执行。D4/D5 属课程内容，待所有者决定。P3 第一段完成：镜头表已落为 `storyboard.yaml` 的 `schema_version: 2`（FR-42，`docs/镜头表-ShotSheet.md`）；导演计划合并未开始。P4 完成：Picture / Dialogue Lock 与失效映射（FR-43，`docs/锁定与失效.md`）。另按 FR-44 完成仓库与项目分离（`docs/仓库与项目边界.md`）。P5 真实课程全链路验证未开始。

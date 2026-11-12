@@ -45,7 +45,7 @@ PLAN = {
                     "visual_type": "geometric_transform",
                     "grammar": "long_take",
                     "renderer": "manim",
-                    "source": "ManimSandbox/05-transformer-5min/attention_5min.py::Attention",
+                    "source": "ManimSandbox/lesson/manim_scene.py::Attention",
                     "camera": {"movement": "push_in", "motive": "follow the angle opening"},
                 },
             ],

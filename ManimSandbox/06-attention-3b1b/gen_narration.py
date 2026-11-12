@@ -17,12 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 NARR = Path(__file__).resolve().parent / "narration"
 OUT = ROOT / "build" / "attention-3b1b"
 AUDIO = OUT / "audio"
-VOICE = Path(
-    os.environ.get(
-        "VOICE_REF_WAV",
-        str(ROOT / "lessons" / "02-car-aerodynamics" / "assets" / "voice" / "my_voice_en_ref_norm.wav"),
-    )
-)
+_voice_ref = os.environ.get("VOICE_REF_WAV")
+if not _voice_ref:
+    raise SystemExit("set VOICE_REF_WAV to a voice reference wav")
+VOICE = Path(_voice_ref)
 PROMPT_TEXT = "Welcome to this lesson. Today, we will look at how the model works."
 API = "http://127.0.0.1:50000/tts"
 GAP = 0.55

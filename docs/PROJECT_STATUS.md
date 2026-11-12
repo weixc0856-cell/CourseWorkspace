@@ -31,11 +31,11 @@
 | --- | --- |
 | 单测 | 六套 647 个用例，641 通过、6 跳过（CourseControl 494 / ModelingStudio 33 / ai_runtime 50 / ContentQA 25 / Manim 18 / KnowledgeStudio 27） |
 | 回归 | `scripts/check.ps1` exit 0；新增非阻断 `evidence paths` 报告 |
-| 01-transformer-demo | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；成片 1195.605 s / 1080p30，build-report pass |
-| 02-car-aerodynamics | 正文、4 个 Manim 镜头、已批准 SRT 存在；build 目录与 22 分钟成片不在本机 |
-| 05-transformer-5min | 292.37 s 成片；`QUALITY_PASS=True` 仅表示"没有 INCOMPLETE"，不是"质量已验证" |
-| 06-attention-sample | 62.17 s 成片；已显式声明 `subtitles.bilingual: false`，SRT 已按标点/词边界重排，V-31 现在覆盖 Remotion 字幕 |
-| nvda-gpu-control | 354.30 s 成片；ASR 未跑，`verify` 为 `incomplete`，发布门禁不再放行 |
+| `<lesson-1>` | 12 页截图、7 个已渲染 Manim 文件（storyboard 使用 4 个）、1195.61 s 旁白、359 cue 已重排并接受、Blender `stack_explode` 已渲染；成片 1195.605 s / 1080p30，build-report pass |
+| `<lesson-2>` | 正文、4 个 Manim 镜头、已批准 SRT 存在；build 目录与 22 分钟成片不在本机 |
+| `<lesson-3>` | 292.37 s 成片；`QUALITY_PASS=True` 仅表示"没有 INCOMPLETE"，不是"质量已验证" |
+| `<lesson-4>` | 62.17 s 成片；已显式声明 `subtitles.bilingual: false`，SRT 已按标点/词边界重排，V-31 现在覆盖 Remotion 字幕 |
+| `<lesson-5>` | 354.30 s 成片；ASR 未跑，`verify` 为 `incomplete`，发布门禁不再放行 |
 | 交付 | 新增 `course-control package` / `package-verify` / `release-approve` / `plan-audit` / `subtitles-rewrap` |
 | 审计 | `docs/audit/` 七份报告；`docs/stabilization/` 记录迁移方案 |
 
@@ -58,13 +58,13 @@
 | Production Contract（Lesson/Sequence/Shot） | `production.py`、`contracts.py`、`paths.py`、`collect._collect_shots`、`pipeline.py` | `test_production.py`、`test_collect_shots.py`、shots-demo 30 s 完整构建 verdict pass | COMPLETED |
 | 视觉语法注册表 | `shared/grammars/visual-grammars.yaml`、`grammar.py`、`course-control grammar-list` | 7 个 grammar；`test_grammar.py` | COMPLETED |
 | 按语法的节拍校验 | `beats.py`（per-shot grammar）、`validators.py` V-35 | `test_grammar.py`：3 s 切在 kinetic 通过、在 long_take 失败 | COMPLETED |
-| 质量分层 | `quality_gates.py`、`course-control quality-gate`、`animation_score.py`（metric_only） | 05-transformer-5min：hard pass / grammar pass / score 100 metric_only | COMPLETED |
+| 质量分层 | `quality_gates.py`、`course-control quality-gate`、`animation_score.py`（metric_only） | `<lesson>`：hard pass / grammar pass / score 100 metric_only | COMPLETED |
 | 废止统一 85 分线 | `docs/工业化动画工作流.md`、D-065/D-066 | 文档与 CLI 一致 | COMPLETED |
 | 镜头级转场 | `contracts.Transition`、`v1_timeline` metadata、`CourseTimeline.tsx` | `tsc --noEmit`；未逐帧目检 | COMPLETED（组件） |
 | 逐词字幕 | `Subtitles.mode=word`、`collect._word_captions`、`WordCaptions.tsx`、V-16 | shots-demo 30 s 成片抽帧可见逐词高亮；未用真实中文 ASR 验证精度 | PARTIAL |
 | 长片分块捕获 | `capture.mjs --chunk-seconds`、`adapters/code_video.py` | 12 s / 360 帧，PSNR ≈ 57.7 dB；180 s 未重跑 | PARTIAL |
 | 参考库与六维差距 | `reference.py`、`<内容根>/references/`、`reference-compare` | 3 份参考记录；`3b1b-attention` 实跑 | COMPLETED |
-| 真实中文样片（06-attention-sample） | `lessons/06-attention-sample`（本地）、production 契约、Manim + CodeVideo | 62.187 s 成片；7 镜头 / 5 语法 / 2 渲染器；ASR small/zh 覆盖率 0.935 PASS；quality-gate hard/grammar pass；Q1/Q2/Q5 未完成 | VERIFIED（本地） |
+| 真实中文样片 | `lessons/<slug>`（本地）、production 契约、Manim + CodeVideo | 62.187 s 成片；7 镜头 / 5 语法 / 2 渲染器；ASR small/zh 覆盖率 0.935 PASS；quality-gate hard/grammar pass；Q1/Q2/Q5 未完成 | VERIFIED（本地） |
 | 180 s 分块捕获 | `capture.mjs --chunk-seconds` | 3 段 × 60 s；5400 帧 / 180.000 s；完整解码；281.9 s | VERIFIED |
 
 边界：逐词字幕未目检；`Annotation` 仍只有 `text`/`legend`；`match_cut` 回退硬切；180 s 分块捕获未重跑。详见归档 `<内容根>/archive/records-2026-11/architecture/实施记录-P1-P4.md`。
@@ -84,18 +84,18 @@
 
 | 能力 | 代码 / 契约 | 证据 | 状态 |
 | --- | --- | --- | --- |
-| 叙事契约 | `CourseControl/src/course_control/narrative.py`、`narrative-validate` | 5 分钟课六段骨架 `pass`；`build/05-transformer-5min/quality/narrative.json` | COMPLETED（P0） |
+| 叙事契约 | `CourseControl/src/course_control/narrative.py`、`narrative-validate` | 5 分钟课六段骨架 `pass`；`build/<slug>/quality/narrative.json` | COMPLETED（P0） |
 | BGM 混音 | `audio_mix.py`、`audio-mix` | Schubert D.664（PD）；−15.9 LUFS / −1.4 dBTP；`audio/mix.json` | COMPLETED（P0） |
 | 全片 QC | `media_qc.py`、`media-qc` | 8,771 帧；解码/格式/响度/静音/黑帧/字幕 PASS；冻结 59 段（WARN，稀疏线段/慢淡入） | COMPLETED（P0） |
 | 五维质量报告 | `quality.py`、`quality-report` | `BUILD_PASS=True`、`QUALITY_PASS=True`、`RELEASE_APPROVED=False`（待人工批准） | COMPLETED（P0） |
-| 5 分钟校准课 | 本地 `lessons/05-transformer-5min`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（节拍表 27 个镜头条目，非独立渲染单元）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
+| 5 分钟校准课 | 本地 `lessons/<slug>`（不入库） | 12/12 旁白缓存；292.4 s；1 个 Manim 场景（节拍表 27 个镜头条目，非独立渲染单元）；80 cue；Producer `awaiting_approval` | VERIFIED（本地） |
 | 创作方法论 | `docs/creative/叙事设计与观众留存规范.md` | 长视频六段骨架、Shorts 独立脚本、A/B 视觉与证据标注 | COMPLETED |
 | ASR/语音对齐 | `CourseControl/src/course_control/alignment.py`、`asr-align` | faster-whisper `small.en`；80 cue，覆盖 0.992，0 不一致/0 未覆盖 | COMPLETED（P1） |
 | Teaching QA | `teaching_qa.py`、`teaching-qa` | 结构 WARN；`learner_evidence=missing` | COMPLETED（结构层） |
 | Claim Registry / 双审 | `ContentQA/src/content_qa/claims.py`、`cross_review.py` | A 23 / B 24；43 claim：3 supported、38 需人工、2 冲突、26 有来源缺口 | COMPLETED（P1 契约） |
-| 视觉契约修正 | `compose.mode: scene`、`ManimSandbox/05-transformer-5min/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个节拍条目对齐 12 段实测旁白（build 仍是 1 个 scene_base）；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
+| 视觉契约修正 | `compose.mode: scene`、`engines/manim/<slug>/attention_5min.py`、`beats.md` | 292.4 秒连续动画；27 个节拍条目对齐 12 段实测旁白（build 仍是 1 个 scene_base）；0 版式问题/0 溢出；删除无动机运镜与底部灰字，字幕下移 | COMPLETED（D-057/D-058/D-059/D-060） |
 | 工业化动画工作流 | `docs/工业化动画工作流.md`、`CourseControl/.../beats.py`、`animation_score.py`、`ManimSandbox/common/palettes.py` | 节拍表校验 0 问题；对齐评分 94.7/100（按参考样片校准冻结线）；8 组配色全部通过对比度门禁 | COMPLETED（v1） |
-| Primer 衰老模拟复刻（POC） | `CodeVideoStudio/shots/primer-aging/`、本地 `lessons/aging-evolution` | 145.4 s / 4,361 帧；32 cue；ASR 0.935；冻结 0、静音 0；BGM 混音 pass；`animation-score` 100；`QUALITY_PASS=True`、`RELEASE_APPROVED=False` | POC（本地） |
+| Primer 衰老模拟复刻（POC） | `CodeVideoStudio/shots/primer-aging/`、本地 `lessons/<slug>` | 145.4 s / 4,361 帧；32 cue；ASR 0.935；冻结 0、静音 0；BGM 混音 pass；`animation-score` 100；`QUALITY_PASS=True`、`RELEASE_APPROVED=False` | POC（本地） |
 | Primer P1 后处理 | `CodeVideoStudio/shots/primer-aging/main.js`、`vendor/three/addons/`（官方 r160，未改动）、D-061 | 景深/泛光/调色/颗粒/暗角/FXAA 全部走官方 addons；`capture.json` 开启 GPU+JPEG 后 36 ms/帧，渲染阶段 152 s（原 12 min 级）；两次捕获 sha256 一致；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | Primer P1 生物资产与动作 | `simulate.py`（schema 2，稳定 `id`）、`main.js` 生物组件 | 胶囊身体 + 头部（口鼻/耳朵/眼睛）+ 锥形尾 + 两段式关节腿；步态由实测速度驱动、近静止低头、新生缩放；修复按数组下标插值造成的跨个体跳变；`media-qc` 十项 PASS；`animation-score` 100 | COMPLETED（POC） |
 | Primer P1 生态（水面/植被） | `main.js`（湖盆、水面、草丛、灌木）、官方 `Water` addon | 湖盆 + 按地形采样确定水线的水面（`Water` addon，水纹随 `t`）；6,000 实例草叶 + 70 灌木；`media-qc` 十项 PASS；`animation-score` 100；两次捕获 sha256 一致 | COMPLETED（POC） |
@@ -103,7 +103,7 @@
 | 第三方依赖准入 | `docs/第三方依赖准入规范.md`、D-062、`CLAUDE.md` 第 12 条 | 检查表 + 依赖登记表（star/fork/推送日/许可/版本一致性）；three.js 117,923 star / 36,921 fork / 2026-11-09 仍在推送；本地 r160 落后上游 0.187.0，已登记为升级待办 | COMPLETED |
 | Blender 写实能力评估 | `docs/evaluations/评估-Blender写实渲染能力.md` | 森林+列车（2 万棵实例树）720p/32 采样 4.53 s/帧；程序化精细树 3 s/帧；陆家嘴夜景体块 6 s/帧；结论：算力非瓶颈，资产与美术是；1:1 复刻不在能力内，3D 讲解是甜区 | COMPLETED（评估） |
 
-边界：`01-transformer-demo` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
+边界：`<lesson>` 的 20 分钟真实课程仍为 `blocked`；5 分钟校准课不能替代它。
 ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shorts 生产仍未实现。
 
 状态词：`COMPLETED`（实现且有真实证据）/ `PARTIAL`（有缺口）/ `NOT_IMPLEMENTED` / `BLOCKED`（外部条件限制）/ `NOT_RUN` / `DEFERRED` / `OUT_OF_SCOPE`。
@@ -114,7 +114,7 @@ ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shor
 
 | 能力 | 契约 / 代码 | 证据 | 状态 |
 | --- | --- | --- | --- |
-| FR-28 导演层 | `CourseControl/src/course_control/director/`、`docs/导演层.md` | 01-transformer-demo：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 5 warning；5 个真实渲染镜头 | COMPLETED（POC） |
+| FR-28 导演层 | `CourseControl/src/course_control/direction/`、`docs/导演层.md` | `<lesson>`：12 镜头 / 5 章 / 1200 s / 12 ready；0 error / 5 warning；5 个真实渲染镜头 | COMPLETED（POC） |
 | FR-33 模拟契约 | `simulation.py`、`primer-poc/`、POC 文档 | SimulationSpec + 30s POC；Three.js 900 帧 45.7 s；adapter + 导演计划 PASS | COMPLETED（POC） |
 | FR-32 静帧运镜 | `motion.py`、`MotionImage.tsx`、`docs/运镜与剪辑.md` | ken_burns 元数据 + Remotion 组件；tsc 通过 | COMPLETED（POC） |
 | FR-31 配色系统 | `layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | 浅色主题 + 语义色；palette-review 合辑 | COMPLETED（POC） |
@@ -127,15 +127,15 @@ ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shor
 
 | 内容 | 文件 | 证据 |
 | --- | --- | --- |
-| 旧 Manim 镜头统一 | `ManimSandbox/01-transformer-demo/qkv_fanout.py`、`row_trace.py`、`head_split_merge.py`、`position_add.py` | 纸白底 + `design_system` 语义色；修复字面量颜色、标题/底注重叠、context 越界、标签对比度；末帧渲染核对 |
+| 旧 Manim 镜头统一 | `engines/manim/<slug>/qkv_fanout.py`、`row_trace.py`、`head_split_merge.py`、`position_add.py` | 纸白底 + `design_system` 语义色；修复字面量颜色、标题/底注重叠、context 越界、标签对比度；末帧渲染核对 |
 | 残差镜头核对 | `residual_bypass.py` | 垂直栈、旁路、括号与标签在安全区内；末帧渲染核对 |
 | 导演层回归 | `test_director.py` | Golden plan 不再期望 `style.background_mismatch` |
-| Ken Burns 真实核对 | `build/01-transformer-demo/slides/`、`build/01-transformer-demo/final/motion-test.mp4` | 12 页真实截图；150 帧 CourseTimeline；首末帧可见推近与 1.2% 平移 |
+| Ken Burns 真实核对 | `build/<slug>/slides/`、`build/<slug>/final/motion-test.mp4` | 12 页真实截图；150 帧 CourseTimeline；首末帧可见推近与 1.2% 平移 |
 | 运行时版式检查 | `ManimSandbox/common/scene_checks.py` | 文本安全区/重叠检查；`STRICT_LAYOUT=1` 下 5 个旧镜头全部 clean |
-| 4K60 渲染基准 | `build/01-transformer-demo/final/motion-4k60.mp4` | 3840×2160 / 60fps / 60 帧；slides capture 已按课程分辨率参数化 |
+| 4K60 渲染基准 | `build/<slug>/final/motion-4k60.mp4` | 3840×2160 / 60fps / 60 帧；slides capture 已按课程分辨率参数化 |
 | AudioPlan | `CourseControl/src/course_control/audio_plan.py`、`audio-plan` CLI | 内容类型/许可/署名/电平闸门；6 个单测；输出 `build/<slug>/audio/audio_plan.json` |
 | 章节卡 | `RemotionStudio/src/compositions/ChapterCard.tsx` | 真实 still 渲染；尚未自动插入时间线 |
-| 全量 Manim 镜头 | `build/01-transformer-demo/animation/*.mp4` | 7 个镜头 1080p30 全部渲染并通过 adapter |
+| 全量 Manim 镜头 | `build/<slug>/animation/*.mp4` | 7 个镜头 1080p30 全部渲染并通过 adapter |
 | Motion Canvas 无头导出 | `MotionStudio/scripts/render-headless.mjs`、`src/headless.js` | attention-flow 1920×1080/30fps/142 帧；3 次 SHA256 一致；注入第 30 帧失败不产 MP4 |
 | 长序列基准（失败） | `CodeVideoStudio/shots/primer-rps` | 180 s / 5400 帧 capture 未产出可播放 MP4；30 s 基线仍有效 |
 | ContentQA 默认后端 | `ContentQA/src/content_qa/config.py`、README | 默认 `claude_code`；API 测试显式固定 `backend: api` |
@@ -285,15 +285,15 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | 引擎路由 | `engine_router.py` | 已实现；内容决定引擎 |
 | TimelineSpec 合成 | `CourseTimeline.tsx`、`stage-assets.mjs --timeline`、`adapters/remotion.py` | 已实现；`build/r1/timeline-smoke.mp4` 6.016s 真实合成 |
 | 输入/草稿/批准 | `authoring/`、`CourseControl/prompts/` | 已实现；Transformer 候选已批准并提升 |
-| Transformer 内容 | `lessons/01-transformer-demo/` | 12 页 / 1200s；英文口播 2964 词；5 个动画镜头 |
-| 动画 | `ManimSandbox/01-transformer-demo/`、`BlenderStudio/scenes|tasks/01-transformer-demo/` | 4 个 Manim 已测试渲染；Blender shot 25s 已真实渲染 |
-| 整课旁白 | `narration_course.py`、`scripts/generate_voice_ref.py` | 已实现；英文参考音已生成；01-transformer-demo 第 1 页样片 43.92 s（计划 45 s，style_applied），整课未跑 |
+| Transformer 内容 | `lessons/<slug>/` | 12 页 / 1200s；英文口播 2964 词；5 个动画镜头 |
+| 动画 | `engines/manim/<slug>/`、`engines/blender/{scenes,tasks}/<slug>/` | 4 个 Manim 已测试渲染；Blender shot 25s 已真实渲染 |
+| 整课旁白 | `narration_course.py`、`scripts/generate_voice_ref.py` | 已实现；英文参考音已生成；`<lesson>` 第 1 页样片 43.92 s（计划 45 s，style_applied），整课未跑 |
 | 双语字幕 | `subtitles.py`、`authoring/glossary.yaml` | 已实现；计划版 357 cue 全部翻译，2 条临界警告（cue 273 时长 0.94 s、cue 317 中文 3 行）；实测旁白后严格重排 |
 | 双版本成片 | `adapters/burn.py`、V-28 | 已实现；真实 5s ASS 烧录 pass |
 | Code2Video | `CodeVideoStudio/`、`adapters/code_video.py`、`code_video_qc.py` | 生产化目录；30s Canvas 镜头，check_video OK，900/900 帧哈希一致；adapter 真实跑通；QC 门输出 `*.qc.json` + `*.contact.jpg`（`build/code-video-qc2/`） |
 | HyperFrames POC | `CodeVideoStudio/backends/hyperframes/hf-poc/` | 10s HTML/GSAP，check 0 error/0 warning，27.1s 渲染；仅作为可选 HTML 后端 |
 | VideoZero POC | `build/videozero-poc/`（临时） | agent 连接/seek/screenshot 成功；image sequence 自动导出 3007 PNG → ffmpeg 100.2s MP4；FFmpeg exporter 直接导出挂起 |
-| 汽车空气动力学课 | `lessons/02-car-aerodynamics/`（本地，不入库） | 12 页 / 2,835 词 / 4 个 Manim 镜头；13 条来源；22:00 成片；clean + captioned；V-26..V-31 pass |
+| 汽车空气动力学课 | `lessons/<slug>/`（本地，不入库） | 12 页 / 2,835 词 / 4 个 Manim 镜头；13 条来源；22:00 成片；clean + captioned；V-26..V-31 pass |
 | Claude Code 后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`config/claude-code.example.yaml` | 课程文本/字幕/ContentQA/ModelingStudio 文本规划/Code2Video 默认走 Claude Code；文本阶段 `--tools=`；任务记录 `provider=claude_code`；真实 smoke 通过 |
 | 动画视觉导演 | `AnimationDirection`、`direction-validate`、`ManimSandbox/03-vector-intro/` | 90 秒竖切片 1920×1080/30fps；分镜字段与视觉门 |
 | 导演层 | `director/`、`director-plan`、`director-validate` | 12 镜头 / 1200 s / 0 error / 5 warning；storyboard、directions、shot_specs、review |
@@ -338,7 +338,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 1. 当前 feature 分支已推送、尚未合并到 `main`；需要 PR 或直接合并。
 2. V1-D 的 Session runner 原生写 V1、`ShotSpec` 扩展 `session/graphics` 未做；`simulation` 已加入。
 3. Remotion adapter 已按 `compose.renderer=timeline` 选择 `CourseTimeline`；真实课程尚未跑完整构建。
-4. 真实课程仍缺 8 段 Motion 导出；`01-transformer-demo` 未构建。
+4. 真实课程仍缺 8 段 Motion 导出；`<lesson>` 未构建。
 
 ---
 
@@ -348,7 +348,7 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 | --- | --- | --- | --- | --- | --- |
 | FR-01 | 课程内容契约 | `lessons/` + `paths.py` / `contracts.py` | 5 个课程/夹具 validate 通过（本地） | COMPLETED | — |
 | FR-02 | V-01~V-09 校验 | `validators.py` | `check.ps1`；V-04 失败单测 | COMPLETED | — |
-| FR-03 | 预览与截图 | `adapters/slides.py` + `capture-slides.mjs` | 真实课程 20/20（`build/01-shell-for-ai-era/slides`） | COMPLETED | — |
+| FR-03 | 预览与截图 | `adapters/slides.py` + `capture-slides.mjs` | 真实课程 20/20（`build/<slug>/slides`） | COMPLETED | — |
 | FR-04 | 动画渲染 | Motion 无头自动导出；Manim / Blender v1 适配器 | attention-flow 3 次哈希一致；注入失败不产 MP4；`lesson-manual` fixture PASS | COMPLETED（真实课程待重跑） | 重跑 01-shell 全课 |
 | FR-05 | IR v2 场景任务 | `blender_scene.py`、`blender_runner.py`、`scene_system/`、`scene_presets.py`、`shared/scene_expr` | `check-scene-system.ps1 -Render` 8 次真实渲染；CourseControl 测试覆盖见 ACCEPTANCE（2026-11-04 新增 TEXT/CURVE/ORTHO、材质预设、科学着色、参数化曲面与语义验收） | COMPLETED | — |
 | FR-06 | 本地自动建模 | `ModelingStudio/` | 28 个测试；历史作业 `sample-001` 六阶段 completed | PARTIAL | 真实全链路本轮未重跑（需独占 8080） |
@@ -456,9 +456,9 @@ V1-D/E 仍未完成的部分：Session/SessionSpec 原生写 V1、`ShotSpec` 扩
 
 | 路径 | 建议 |
 | --- | --- |
-| `build/lesson-*` 与 `build/01-shell-for-ai-era` | 归档或重新验收前可清空；命令：`Remove-Item -Recurse -Force build` |
+| `build/lesson-*` 与 `build/<slug>` | 归档或重新验收前可清空；命令：`Remove-Item -Recurse -Force build` |
 | `ModelingStudio/workspace/jobs/{sample-001,sample-002,fallback-test}` | 如需保留作业证据先复制到仓库外 |
-| `BlenderStudio/tasks/01-shell-for-ai-era/`（v1 历史夹具） | 文档仍引用，保留；若确定不再维护可归档 |
+| `<内容根>/engines/blender/tasks/` 下的 v1 历史任务 | 已迁到内容根，仓库不再保留 |
 
 ---
 

@@ -13,7 +13,7 @@ npm run dev
 
 打开 `http://localhost:8081/?lesson=<slug>`。
 
-不传 `lesson` 参数时，默认加载 `01-transformer-demo`。服务器只监听本地 `8081` 端口，`8080` 固定留给本地模型服务，依赖安装在本项目的 `node_modules/` 中，不使用全局安装。
+不传 `lesson` 参数时页面只提示选择课程，不再有默认课名。服务器只监听本地 `8081` 端口，`8080` 固定留给本地模型服务，依赖安装在本项目的 `node_modules/` 中，不使用全局安装。
 
 > **端口约定**：本机本地模型服务（`<AI_ROOT>\start_server.bat`，OpenAI 兼容接口）固定占用 `8080`；课件预览默认使用 `8081`，两者可以同时运行。若 `8081` 已被占用，`live-server` 会自动顺延到下一个可用端口；需要固定端口时用 `npx live-server .. --port=<port> --entry-file=index.html --watch=lessons,CourseSlides/template,CourseSlides/css`。
 

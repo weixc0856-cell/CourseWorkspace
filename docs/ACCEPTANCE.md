@@ -61,20 +61,20 @@
 
 | 项 | 实测 | 状态 |
 | --- | --- | --- |
-| `a01-why-cars-need-aerodynamics` | pages 模式，24 个片段单元，画面 1293.43 s，旁白 1292.84 s，`ok: true`；`page-024` 源片段短 0.6 s（`source_length` 警告，末帧冻结补齐） | pass |
-| `01-transformer-demo` | pages 模式，12 个静态单元，1195.60 s，无旁白（`silent animatic` 警告），`ok: true` | pass |
-| `ai-economics-e01` | shots 模式，43 个动画单元，1200.00 s，旁白 1050.72 s，`audio_sync` fail（差 149 s） | fail（真实问题） |
+| `<lesson-1>` | pages 模式，24 个片段单元，画面 1293.43 s，旁白 1292.84 s，`ok: true`；`page-024` 源片段短 0.6 s（`source_length` 警告，末帧冻结补齐） | pass |
+| `<lesson-2>` | pages 模式，12 个静态单元，1195.60 s，无旁白（`silent animatic` 警告），`ok: true` | pass |
+| `<lesson-3>` | shots 模式，43 个动画单元，1200.00 s，旁白 1050.72 s，`audio_sync` fail（差 149 s） | fail（真实问题） |
 | 局部重生成 | `--shot page-005`：1 个重编、23 个复用 | pass |
 | 换旁白 | `--audio narration_processed_raw.wav`：音频来源切换并重新混音 | pass |
 | 单元测试 | `test_animatic.py` 11 例；CourseControl 全量 516 例通过 / 7 跳过 | pass |
 
-`ai-economics-e01` 的失败不是工具噪声：`production.yaml` 排了 1200 s，旁白只有 1050.72 s，尾段 149 s 无声；同一门课在 `validate` 里另有 `[V-26] duration 1200.0s exceeds maximum 950.0s`。两项都待课程侧处理。
+`<lesson-3>` 的失败不是工具噪声：`production.yaml` 排了 1200 s，旁白只有 1050.72 s，尾段 149 s 无声；同一门课在 `validate` 里另有 `[V-26] duration 1200.0s exceeds maximum 950.0s`。两项都待课程侧处理。
 
 预览固定 480p，不写 `deliver/`，不作为交付判定；`ok: false` 时命令退出码为 1。
 
 ## 0.5 2026-11-12 声音资产（Voice Bible / Lexicon）实测
 
-FR-41。用 `build/_p2-fixture/` 下的 a01 副本验证，未改真实课程。
+FR-41。用试点课程的一份临时副本验证，未改真实课程；副本已随课程归档清理。
 
 | 项 | 实测 | 状态 |
 | --- | --- | --- |
@@ -89,7 +89,7 @@ FR-41。用 `build/_p2-fixture/` 下的 a01 副本验证，未改真实课程。
 
 ## 0.6 2026-11-12 镜头表（Shot Sheet）实测
 
-FR-42。用 `build/_p2-fixture/` 与 `build/_p3-broken/` 下的 a01 副本验证，未改真实课程。
+FR-42。用试点课程的两份临时副本（正常 / 故意写坏）验证，未改真实课程；副本已随课程归档清理。
 
 | 项 | 实测 | 状态 |
 | --- | --- | --- |
@@ -329,8 +329,8 @@ python ManimSandbox/05-multi-head/assemble.py
 | --- | --- | --- | --- |
 | `lesson-smoke` | recording + Blender + 旁白 + 字幕 | **pass** | 全链路真实执行（Blender → collect → Remotion → verify） |
 | `lesson-blender-only` | recording + Blender | **pass** | 同上，无旁白/字幕 |
-| `01-shell-for-ai-era` | deck + Motion | NOT_RUN（本轮） | Motion 自动导出已实现，但本轮未重跑整课 |
-| `01-transformer-demo` | deck + Motion | NOT_RUN（本轮） | 同上 |
+| `<lesson>` | deck + Motion | NOT_RUN（本轮） | Motion 自动导出已实现，但本轮未重跑整课 |
+| `<lesson>` | deck + Motion | NOT_RUN（本轮） | 同上 |
 | `lesson-manual` | recording + Motion | **pass** | adapter 真实无头渲染 `gui_vs_cli_paths`，ffprobe 通过；含 1 条时长差异 warning |
 
 Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重跑，因此不能把历史 `incomplete` 直接改写成 pass。
@@ -364,7 +364,7 @@ Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重
 | 环境变量优先 | `test_env.py`、`test_remote.py::EnvironmentOverrideTest`、`test_env_overrides.py` | `.env` 自动加载；shell env 优先；通用 `REMOTE_*` 与 DeepSeek `DEEPSEEK_*` 覆盖本地 YAML；env 设 pro 仍被拒绝 |
 | 密钥隔离 | 系统环境变量 `DeepSeek-API` | key 不写入 `.env`/YAML/日志/跟踪文件；跟踪文件只含不含 key 的 `.env.example` |
 | 路径卫生 | `scripts/check-paths.ps1` | `path check ok`；跟踪文件中无本机盘符/用户目录绝对路径 |
-| 真实课程无配置 | `content-qa review --lesson 01-shell-for-ai-era` | **blocked，exit 3**；报告写入 `build/01-shell-for-ai-era/review/review.json` |
+| 真实课程无配置 | `content-qa review --lesson <slug>` | **blocked，exit 3**；报告写入 `build/<slug>/review/review.json` |
 
 本地模型的真实作业证据（历史记录，本轮未重跑）：`ModelingStudio/workspace/jobs/sample-001` 六阶段 completed；`sample-002` 停在 generate；`fallback-test` build+validate 通过。
 
@@ -390,12 +390,12 @@ Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重
 
 | 检查 | 命令 | 预期 |
 | --- | --- | --- |
-| 导演计划 | `course-control director-plan --lesson 01-transformer-demo --workspace .` | `status: ready`；12 镜头 / 5 章 / 1200 s；0 error，5 warning |
-| 结构校验 | `course-control director-validate --plan build/01-transformer-demo/director/director_plan.json` | `no issues` |
-| 交付清单 | `course-control producer-run --lesson 01-transformer-demo --workspace .` | exit 1；`blocked`；4 项缺失（成片、旁白、字幕、build-report） |
-| 增量检测 | `course-control producer-affected --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots` |
-| 增量命令 | `course-control producer-rebuild --lesson 01-transformer-demo --workspace .` | 无修改时 `no affected shots`；有修改时打印 `--shots` 命令与 `allow_render` 授权 |
-| 旁白样片 | `course-control narration-build --lesson 01-transformer-demo --workspace . --sample-pages 1` | 第 1 页 43.92 s（计划 45 s，drift -1.08 s），`style_applied=true`，服务自动停止 |
+| 导演计划 | `course-control director-plan --lesson <slug> --workspace .` | `status: ready`；12 镜头 / 5 章 / 1200 s；0 error，5 warning |
+| 结构校验 | `course-control director-validate --plan build/<slug>/director/director_plan.json` | `no issues` |
+| 交付清单 | `course-control producer-run --lesson <slug> --workspace .` | exit 1；`blocked`；4 项缺失（成片、旁白、字幕、build-report） |
+| 增量检测 | `course-control producer-affected --lesson <slug> --workspace .` | 无修改时 `no affected shots` |
+| 增量命令 | `course-control producer-rebuild --lesson <slug> --workspace .` | 无修改时 `no affected shots`；有修改时打印 `--shots` 命令与 `allow_render` 授权 |
+| 旁白样片 | `course-control narration-build --lesson <slug> --workspace . --sample-pages 1` | 第 1 页 43.92 s（计划 45 s，drift -1.08 s），`style_applied=true`，服务自动停止 |
 
 边界：这两层是设计与制片校验，不是成片验收；不设抽帧关卡（D-047），渲染与 TTS 仍需显式命令。`build --storyboard` / `--shots` 已接入，可在已有构建上手动局部重渲染。
 
@@ -435,8 +435,8 @@ Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重
 1. `.\scripts\check.ps1`
 2. `.\scripts\check-scene-system.ps1 -Render`
 3. `.\scripts\build-lesson.ps1 -Lesson lesson-smoke -LessonDir CourseControl/tests/fixtures`
-4. `.\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era`（预期 `incomplete`）
-5. `uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era`（预期 `blocked`，exit 3）
+4. `.\scripts\build-lesson.ps1 -Lesson <slug>`（预期 `incomplete`）
+5. `uv run --project ContentQA content-qa review --lesson <slug>`（预期 `blocked`，exit 3）
 
 ---
 
@@ -460,11 +460,11 @@ R1 真实产物：
 - 本地归档：`<内容根>/archive/R1/R1-基线报告.md`、`R1-1-引擎验证报告.md`、`R1-性能基准报告.md`、`R1-5-候选稿索引.md`（不入库）
 - `build/r1/manim/.../SmokeScene.mp4`、`build/r1-smoke/blender/smoke.mp4`、`build/r1/remotion/smoke.mp4`
 - `build/r1/timeline-smoke.mp4`（TimelineSpec 驱动 Remotion 的 6 秒真实片段）
-- `build/01-transformer-demo/blender/stack_explode.mp4`（1920×1080 / 30 fps / 750 帧 / 25 s）
+- `build/<slug>/blender/stack_explode.mp4`（1920×1080 / 30 fps / 750 帧 / 25 s）
 - `CodeVideoStudio/shots/attention-flow/out/final.mp4`（30s / 900 帧 / 两次渲染 900/900 帧哈希一致）
 - `CodeVideoStudio/backends/hyperframes/hf-poc/out/hf-poc.mp4`（10s / 300 帧 / check 0 error 0 warning / 27.1s）
 - `build/videozero-poc/output/attention-flow.mp4`（Motion Canvas image sequence → ffmpeg，1920×1080 / 30fps / 3007 帧 / 100.2s）
-- `build/01-transformer-demo/narration/audition/s001-p1.wav`、`s001-p2.wav`（VoxCPM2 真实合成）
+- `build/<slug>/narration/audition/s001-p1.wav`、`s001-p2.wav`（VoxCPM2 真实合成）
 
 ## 6.11 多视觉语法生产（2026-11-10）
 

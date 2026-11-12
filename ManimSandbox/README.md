@@ -47,10 +47,10 @@ uv run manim render -r 1920,1080 --fps 30 `
   --media_dir ../build\manim-transformer\explainer\media 04-transformer-explainer/transformer_explainer.py OutputScene
 
 # 低清预览，-p 渲染完自动播放
-uv run manim -pql 01-transformer-demo/dot_product.py DotProduct
+uv run manim -pql <lesson>/dot_product.py DotProduct
 
 # 确认画面后出 1080p
-uv run manim -qh 01-transformer-demo/dot_product.py DotProduct
+uv run manim -qh <lesson>/dot_product.py DotProduct
 
 # Attention 2 分钟样片（60fps；旁白由 gen_narration.py 生成）
 uv run manim render -r 1920,1080 --fps 60 `
@@ -58,13 +58,13 @@ uv run manim render -r 1920,1080 --fps 60 `
 
 # 5 分钟 Transformer 校准课（27 个镜头；镜头边界读实测旁白）
 uv run manim render -r 1920,1080 --fps 30 `
-  --media_dir ../build/05-transformer-5min/media 05-transformer-5min/attention_5min.py AttentionFiveMinuteScene
+  --media_dir ../build/<slug>/media <slug>/attention_5min.py AttentionFiveMinuteScene
 ```
 
-`05-transformer-5min/attention_5min.py` 是搬迁到 06 样片架构的 5 分钟片：
+`<slug>/attention_5min.py` 是搬迁到 06 样片架构的长片：
 
 - `MovingCameraScene`：镜头是叙事手段；每个镜头在旁白空档用缓慢推拉覆盖，不出现 `wait` 定格。
-- 时间轴来自实测旁白 `build/05-transformer-5min/narration/narration.meta.json`（段落起点/时长/页面终点），
+- 时间轴来自实测旁白 `build/<slug>/narration/narration.meta.json`（段落起点/时长/页面终点），
   段落内部的镜头切点是场景里写死的比例（`SUBDIVISIONS`）；找不到旁白时回退到内置的 292.38 s 时间轴。
 - 每个镜头结束、画面最满时调用 `check_now`；`STRICT_LAYOUT=1`（构建默认）下任何文字越界/重叠直接让渲染失败。
 - 纸白底 + Arial 正文沿用课程视觉规范；Computer Modern（`MathTex`）只用于公式。
@@ -103,21 +103,7 @@ build/<slug>/animation/<scene-stem>.mp4
 
 ### 真实课程场景（内容根 `engines/manim/<slug>/`，不在本模块内）
 
-| 目录 | 用途 |
-| --- | --- |
-| `a01-why-cars-need-aerodynamics/` | A01 汽车空气动力学：speed_cube、energy_split 等 6 个场景 |
-| `02-car-aerodynamics/` | 02 课：reynolds、bernoulli、separation、ground_effect |
-| `ai-era-01-shell/` | AI 时代基础 E01：terminal_layers |
-| `ai-economics-e01/` | AI 经济 E01：6 个场景 |
-| `b01-b02-bluff-body/` | 汽车系列 B01+B02 钝体绕流样板 |
-
-### 被课程 storyboard 引用（部分已移到内容根，见下）
-
-| 目录 | 用途 |
-| --- | --- |
-| `01-transformer-demo/` | 01 课镜头：QKV、row_trace、head_split、position_add、residual、cross_attention、loss |
-| `05-transformer-5min/` | 5 分钟校准课，27 个镜头，切点读实测旁白 |
-| `06-attention-sample/` | P1–P4 中文 62 秒样片 |
+课程场景按 slug 放在内容根的 `engines/manim/` 下，这里不再列清单；`course-control content-root` 可查内容根位置。
 
 ### 早期基线与样片（入库，作为验收证据）
 

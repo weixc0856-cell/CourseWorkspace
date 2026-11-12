@@ -24,7 +24,7 @@ from pathlib import Path
 
 import yaml
 
-from course_control.workspace_layout import content_root
+from course_control.platform.workspace_layout import content_root
 
 PATH_RE = re.compile(r"build/[A-Za-z0-9_.\-/]+")
 SKIP = ("<", ">", "{", "}", "*", "...", "slug", "lesson", "xxx", "…")

@@ -5,6 +5,6 @@ shots:
   - id: shot_001
     slide: 1
     engine: motion_canvas
-    scene: src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx
+    scene: src/scenes/lesson-manual/demo_scene.tsx
     cue_seconds: 0
     expected_duration_s: 12.3

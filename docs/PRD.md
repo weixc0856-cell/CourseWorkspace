@@ -111,7 +111,7 @@
 - 产物：`build/<slug>/slides/slide-###.png` + `capture-manifest.json`。
 - 页数必须与讲师手册块数一致，否则 `collect` 失败。
 
-**验收**：真实课程 `01-shell-for-ai-era` 采集 20/20；夹具课程走 recording 模式时该阶段为 `not_applicable`。
+**验收**：真实课程 `<slug>` 采集 20/20；夹具课程走 recording 模式时该阶段为 `not_applicable`。
 
 ### FR-04 动画渲染
 
@@ -427,7 +427,7 @@ validate（程序，任意失败即中止）
 2. 全部单测真实通过，数量与 `docs/ACCEPTANCE.md` 一致。
 3. 6 个课程/夹具 validate 通过；11 个 IR v2 夹具结论正确。
 4. 夹具 `lesson-smoke` 全链路 `verdict=pass`（真实 Blender + Remotion）。
-5. 真实课程 `01-shell-for-ai-era` 至少完成截图与全部可自动阶段，并如实输出 `incomplete` 及原因（Motion 未导出）。
+5. 真实课程 `<slug>` 至少完成截图与全部可自动阶段，并如实输出 `incomplete` 及原因（Motion 未导出）。
 6. 本地模型串行有真实多进程测试证据。
 7. 内容审查在 mock 服务下通过；Claude Code 不可用或 API 无凭据时 `blocked`。
 8. 维度预算测试通过，所有模型调用记录预算。
@@ -515,7 +515,7 @@ R1 增量完成条件：
 - `build --storyboard` / `--shots` 可显式加载 handoff 并按镜头过滤渲染；不自动替换课程 storyboard。
 - 视觉验收仍为看完成片，不设抽帧关卡（D-047）。
 
-**验收**：`docs/导演层.md`、`test_director.py`、`01-transformer-demo` 真实计划（12 镜头 / 1200 s / 12 ready）与 5 个真实渲染镜头。
+**验收**：`docs/导演层.md`、`test_director.py`、`<slug>` 真实计划（12 镜头 / 1200 s / 12 ready）与 5 个真实渲染镜头。
 
 ### FR-29 制片层
 
@@ -528,7 +528,7 @@ R1 增量完成条件：
 - 每个镜头保存内容/旁白/场景/方向指纹，`producer-affected` 给出 redesign / re-render / re-narrate / recompose。
 - 不读密钥；授权只记录能力布尔值与模型后端。
 
-**验收**：`docs/制片层.md`、`test_producer.py`、`01-transformer-demo` 交付清单（blocked，缺失 4 项）与增量检测实测。
+**验收**：`docs/制片层.md`、`test_producer.py`、`<slug>` 交付清单（blocked，缺失 4 项）与增量检测实测。
 
 ### FR-30 版式系统
 
@@ -540,7 +540,7 @@ R1 增量完成条件：
 - 导演计划的每个镜头写 `layout_template` 与 `layout_regions`；direction 文件带 `style.layout`。
 - `layout-templates` / `layout-validate` 可独立检查模板与内容容量。
 
-**验收**：`docs/版式系统.md`、`test_layout.py`、`01-transformer-demo` 全镜头模板分配、CrossAttention/Loss 前后对比合辑。
+**验收**：`docs/版式系统.md`、`test_layout.py`、`<slug>` 全镜头模板分配、CrossAttention/Loss 前后对比合辑。
 
 ### FR-31 配色系统
 
@@ -564,7 +564,7 @@ R1 增量完成条件：
 - Remotion `MotionImage` 按镜头时长做平移/缩放；`static` 时回到原状。
 - 不引入音乐/生图；章节卡与 dissolve 留待后续。
 
-**验收**：`docs/运镜与剪辑.md`、`test_motion.py`、Remotion `tsc --noEmit`、01-transformer-demo 时间线元数据。
+**验收**：`docs/运镜与剪辑.md`、`test_motion.py`、Remotion `tsc --noEmit`、`<slug>` 时间线元数据。
 
 ### FR-33 模拟数据契约与引擎分工
 
@@ -590,7 +590,7 @@ R1 增量完成条件：
 - 报告四项检查：`pictures`、`picture_duration`、`audio_sync`、`source_length`；`ok` 只看是否存在 `fail`，`warn` 不阻断。
 - 480p 是预览规格，不是质量上限；不写 `deliver/`，不参与交付判定。
 
-**验收**：`docs/动画预览-Animatic.md`、`test_animatic.py`；`a01-why-cars-need-aerodynamics`（24 单元 / 1293 s / 有旁白）、`01-transformer-demo`、`ai-economics-e01` 三门真实课程实测。
+**验收**：`docs/动画预览-Animatic.md`、`test_animatic.py`；三门真实课程实测（其一 24 单元 / 1293 s / 有旁白）。
 
 ### FR-41 声音资产（Voice Bible / Lexicon）
 

@@ -65,12 +65,12 @@ node scripts/render-headless.mjs --scene attention-flow --fps 30 --width 1920 --
 
 CourseControl 的 `render:motion_canvas` 自动调用上面的脚本：
 
-1. 场景必须注册在 `src/project.ts`；
+1. 场景放进 `src/scenes/<lesson>/<scene>.tsx` 就会被发现：`scripts/sync-scenes.mjs` 生成 `src/scenes.generated.js`，`render-headless.mjs` 在启动前自动跑一次；生成物不入库；
 2. 输出固定为 `build/<lesson-slug>/animation/<scene-stem>.mp4`；
 3. adapter 最多重试 2 次，ffprobe 通过后才 `pass`；
 4. 仍失败 → `fail`，不写 `skipped` / `incomplete`；合法的旧人工导出可复用，但不是默认路径。
 
-例：`src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/<slug>/animation/gui_vs_cli_paths.mp4`。
+例：`<内容根>/engines/motion_canvas/scenes/<lesson>/<scene>.tsx` → `build/<slug>/animation/<scene>.mp4`。
 
 不会用截图拼帧或伪造文件冒充导出结果。见 [DECISIONS.md](../docs/DECISIONS.md) D-054。
 
@@ -81,13 +81,16 @@ MotionStudio/
 ├── headless.html                        # 无头渲染页
 ├── src/
 │   ├── headless.js                      # core Renderer + 自定义帧接收 exporter
-│   ├── project.ts                        # 注册场景，决定时间轴顺序
+│   ├── project.ts                        # 从 scenes.generated 注册场景，决定时间轴顺序
+│   ├── scenes.generated.js               # 由 sync-scenes.mjs 生成，不入库
 │   ├── motion-canvas.d.ts                # 类型引用，缺了 tsc 会报 Callback 未定义
 │   ├── styles/
 │   │   └── mckinsey.ts                   # 麦肯锡橙白令牌，与课件 CSS 变量一一对应
 │   └── scenes/
-│       └── 01-transformer-demo/          # 目录名 = 课件 lesson slug
-│           └── attention-flow.tsx        # 一个文件一个场景
+│       ├── <lesson>/                     # 课程场景目录（指向内容根的 junction）
+│       │   └── <scene>.tsx               # 一个文件一个场景
+│       └── lesson-manual/                # 仓库夹具场景（adapter 测试用）
+├── scripts/sync-scenes.mjs               # 扫描场景目录，生成场景注册表
 ├── scripts/render-headless.mjs           # Vite + Playwright + 帧接收器 + ffmpeg
 ├── vite.config.ts                        # motionCanvas + ffmpeg 插件
 ├── tsconfig.json

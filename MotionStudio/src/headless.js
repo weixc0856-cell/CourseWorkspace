@@ -8,30 +8,10 @@ import {
   makePlugin,
 } from '@motion-canvas/core';
 
-import attentionFlow from './scenes/01-transformer-demo/attention-flow?scene';
-import guiVsCliPaths from './scenes/01-shell-for-ai-era/gui_vs_cli_paths?scene';
-import terminalShellLayers from './scenes/01-shell-for-ai-era/terminal_shell_layers?scene';
-import argumentTokenization from './scenes/01-shell-for-ai-era/argument_tokenization?scene';
-import pathLookupFlow from './scenes/01-shell-for-ai-era/path_lookup_flow?scene';
-import unixPipelineStream from './scenes/01-shell-for-ai-era/unix_pipeline_stream?scene';
-import redirectionMechanics from './scenes/01-shell-for-ai-era/redirection_mechanics?scene';
-import permissionShebang from './scenes/01-shell-for-ai-era/permission_shebang?scene';
-import pipelineCaseDemo from './scenes/01-shell-for-ai-era/pipeline_case_demo?scene';
-
-const scenes = {
-  'attention-flow': attentionFlow,
-  'gui-vs-cli-paths': guiVsCliPaths,
-  'terminal-shell-layers': terminalShellLayers,
-  'argument-tokenization': argumentTokenization,
-  'path-lookup-flow': pathLookupFlow,
-  'unix-pipeline-stream': unixPipelineStream,
-  'redirection-mechanics': redirectionMechanics,
-  'permission-shebang': permissionShebang,
-  'pipeline-case-demo': pipelineCaseDemo,
-};
+import {scenes} from './scenes.generated';
 
 const params = new URLSearchParams(window.location.search);
-const sceneName = params.get('scene') || 'attention-flow';
+const sceneName = params.get('scene') || Object.keys(scenes)[0];
 const scene = scenes[sceneName];
 const sink = params.get('sink') || 'http://127.0.0.1:4174';
 const fps = Number(params.get('fps') || 30);

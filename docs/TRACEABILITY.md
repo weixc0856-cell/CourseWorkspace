@@ -33,8 +33,8 @@
 | FR-25 公式质量模块 | `CourseControl/src/course_control/rendering/formulas.py`、`RemotionStudio/src/components/Formula.tsx`、`scripts/formula-render.mjs`、`ManimSandbox/00-formula-smoke/` | `test_formulas.py`、KaTeX PNG、Remotion FormulaProbe、Manim FormulaSmoke |
 | FR-26 科学图形资产 | `ScientificFigures/figures/continuity_figure.py`、`ScientificFigures/pyproject.toml` | 真实 SymPy LaTeX + Matplotlib/SciencePlots SVG/PDF/PNG |
 | FR-27 动画视觉导演层 | `CourseControl/src/course_control/direction/animation_direction.py`、`ManimSandbox/03-vector-intro/direction-addition-v2.json`、`vector_addition.py`、`vector_direction.py` | `test_animation_direction.py`、81.6 秒技术竖切片、90 秒五概念切片 |
-| FR-28 导演层 | `CourseControl/src/course_control/direction/`、`docs/导演层.md` | `test_director.py`、01-transformer-demo `director_plan.json`（12 镜头/1200 s/12 ready）、5 个真实渲染镜头 |
-| FR-29 制片层 | `CourseControl/src/course_control/delivery/`、`docs/制片层.md` | `test_producer.py`、01-transformer-demo delivery manifest（blocked，4 项缺失）、affected 实测 |
+| FR-28 导演层 | `CourseControl/src/course_control/direction/`、`docs/导演层.md` | `test_director.py`、`<slug>` `director_plan.json`（12 镜头/1200 s/12 ready）、5 个真实渲染镜头 |
+| FR-29 制片层 | `CourseControl/src/course_control/delivery/`、`docs/制片层.md` | `test_producer.py`、`<slug>` delivery manifest（blocked，4 项缺失）、affected 实测 |
 | FR-30 版式系统 | `CourseControl/src/course_control/rendering/layout/`、`ManimSandbox/common/design_system.py`、`docs/版式系统.md` | `test_layout.py`、12 镜头模板分配、CrossAttention/Loss 前后对比 |
 | FR-31 配色系统 | `CourseControl/src/course_control/rendering/layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | `test_color_system.py`、palette-review 合辑 |
 | FR-32 静帧运镜 | `CourseControl/src/course_control/rendering/motion.py`、`RemotionStudio/src/components/MotionImage.tsx`、`docs/运镜与剪辑.md` | `test_motion.py`、`tsc --noEmit`、timeline metadata |
@@ -43,7 +43,7 @@
 | FR-44 仓库与项目分离 | `CourseControl/src/course_control/platform/separation.py`、`cli/lesson.py`（`separation`）、`workspace_layout.engine_roots` | `test_separation.py`（5 例）；2026-11-12 迁移后仅剩三处夹具 |
 | FR-42 镜头表 | `content/contracts.py`（`ShotSpec` v2 字段、`ContinuityObject`、`Storyboard` 版本守卫）、`authoring/shot_sheet.py`、`content/validators.py`（V-45～V-47）、`cli/authoring.py` | `test_shot_sheet.py`（9 例）；a01 副本 v2 编译、三处错误定位、指纹稳定；13 门 v1 课程不受影响 |
 | FR-41 声音资产 | `CourseControl/src/course_control/voice/audio/`（`voice_bible.py`、`lexicon.py`）、`narrate.segment_cache_key`、`voice/narration_course.py`、`cli/render.py`（`narration-assets`）；`shared/schemas/voice-bible.schema.json`、`lexicon.schema.json` | `test_audio_assets.py`（17 例）；a01 副本上 5/24 段被词典改写，旧缓存键不变 |
-| FR-40 动画预览 | `CourseControl/src/course_control/animatic/`（`timeline.py`、`builder.py`、`delivery/report.py`）、`cli/animatic.py` | `test_animatic.py`（11 例）；a01、01-transformer-demo、ai-economics-e01 三门真实课程 animatic |
+| FR-40 动画预览 | `CourseControl/src/course_control/animatic/`（`timeline.py`、`builder.py`、`delivery/report.py`）、`cli/animatic.py` | `test_animatic.py`（11 例）；三门真实课程 animatic |
 | 音频策略（内容类型/BGM） | `CourseControl/src/course_control/voice/audio_plan.py`；`content/contracts.py`（`AudioPolicy`）；`audio-plan` CLI；`producer/delivery.py` | `test_audio_plan.py`；交付包在配置 BGM 时要求 `audio_plan.json` |
 | V1-E 时间线兼容层 | `CourseControl/src/course_control/content/v1_timeline.py`；`collect` 写 `contracts/timeline.spec.json`；CLI `timeline-v1` | `CourseControl/tests/test_v1_timeline.py`；lesson-smoke 实跑 |
 | V1-D Session 证据适配 | `CourseControl/src/course_control/platform/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |
@@ -52,7 +52,7 @@
 | FR-34 品牌与片头片尾 | `RemotionStudio/src/brand/`、`shared/design-tokens/brand.json`、`CourseControl/src/course_control/rendering/branding.py`、`adapters/brand.py`、`quality/verify.py` V-36 | `test_branding.py`、`tsc --noEmit`、真实 3.0 s/12 s 渲染与 292.367 s 母版拼接（307.367 s，mode=copy，TS 重封装，video_timing/audio_alignment pass） |
 | FR-35 教材知识库 | `KnowledgeStudio/src/knowledge_studio/`、`docs/KnowledgeStudio.md` | `KnowledgeStudio/tests/test_knowledge_studio.py`、`test_spancheck_and_map.py`、12 页冒烟教材 CLI 全链路；一本 352 页英文教材真实入库（18 单元，KS-01…KS-08 pass，span-check 5/5） |
 | FR-36 多视觉语法生产契约 | `content/production.py`、`rendering/renderers.py`、`collect._collect_shots`、`content/paths.py`、`course-control production-validate` | `test_production.py`、`test_collect_shots.py`、`test_grammar.py` |
-| FR-37 分层质量门禁 | `quality/quality_gates.py`、`direction/animation_score.py`（profile/metric_only）、`course-control quality-gate` | `test_quality_gates.py`、05-transformer-5min 实跑 |
+| FR-37 分层质量门禁 | `quality/quality_gates.py`、`direction/animation_score.py`（profile/metric_only）、`course-control quality-gate` | `test_quality_gates.py`、`<slug>` 实跑 |
 | FR-38 逐词字幕与镜头转场 | `contracts.Subtitles.mode/position`、`collect._word_captions`、`v1_timeline` word_captions、`CourseTimeline.tsx`、`capture.mjs --chunk-seconds` | `tsc --noEmit`、分块捕获 PSNR 实测；逐词渲染未目检 |
 | FR-39 参考驱动比较 | `quality/reference.py`、`<内容根>/references/`、`course-control reference-compare` | `test_reference.py`、3b1b-attention 实跑 |
 | 配置解析与快照（C-24/C-29） | `platform/config_resolve.py`；`config-resolve`；build 写 `logs/config-resolution.json` | `test_config_resolve.py`；05/06/01/nvda 实跑 |

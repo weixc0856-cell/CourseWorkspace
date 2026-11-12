@@ -39,7 +39,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
         self.target = (
             Path(self.tmp.name)
             / "animation"
-            / "gui_vs_cli_paths.mp4"
+            / "demo_scene.mp4"
         )
 
     def fake_success(self, command, cwd, timeout, log_path):
@@ -57,7 +57,7 @@ class MotionCanvasHeadlessTest(unittest.TestCase):
         self.assertEqual(len(outcome.outputs), 1)
         args = command.call_args.args[0]
         self.assertIn("scripts/render-headless.mjs", args)
-        self.assertIn("gui-vs-cli-paths", args)
+        self.assertIn("demo-scene", args)
 
     def test_failure_retries_then_fails(self):
         with patch.object(adapters.motion_canvas, "which_command", return_value=["node"]), \

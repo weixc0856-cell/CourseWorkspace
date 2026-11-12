@@ -19,7 +19,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from course_control.workspace_layout import build_root
+from course_control.platform.workspace_layout import build_root
 
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = build_root(ROOT)

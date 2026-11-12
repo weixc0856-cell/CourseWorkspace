@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
 import {mkdir, readFile, readdir, rm, writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
+import {execFileSync, spawn} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -39,17 +39,20 @@ const metaPath = path.join(runDir, 'meta.json');
 const logPath = path.join(runDir, 'render.log');
 const sinkPort = Number(args['sink-port'] || 4174);
 const vitePort = Number(args['vite-port'] || 4173);
-const knownScenes = [
-  'attention-flow',
-  'gui-vs-cli-paths',
-  'terminal-shell-layers',
-  'argument-tokenization',
-  'path-lookup-flow',
-  'unix-pipeline-stream',
-  'redirection-mechanics',
-  'permission-shebang',
-  'pipeline-case-demo',
-];
+const scenesRoot = path.join(projectRoot, 'src', 'scenes');
+const knownScenes = [];
+for (const dir of await readdir(scenesRoot, {withFileTypes: true})) {
+  let files = [];
+  try {
+    files = await readdir(path.join(scenesRoot, dir.name));
+  } catch {
+    continue;
+  }
+  for (const file of files.sort()) {
+    if (file.endsWith('.tsx')) knownScenes.push(file.replace(/\.tsx$/, '').replace(/_/g, '-'));
+  }
+}
+knownScenes.sort();
 
 if (!knownScenes.includes(scene)) {
   console.error(`unknown scene: ${scene}`);
@@ -118,6 +121,8 @@ const sink = createServer((req, res) => {
 });
 await new Promise((resolve) => sink.listen(sinkPort, '127.0.0.1', resolve));
 log(`frame sink on ${sinkPort}`);
+
+execFileSync(process.execPath, [path.join(projectRoot, 'scripts', 'sync-scenes.mjs')], {stdio: 'inherit'});
 
 const viteBin = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
 const vite = spawn(process.execPath, [viteBin, '--port', String(vitePort), '--strictPort'], {

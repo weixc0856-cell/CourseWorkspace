@@ -16,14 +16,14 @@
       <!--
         This is the only reveal.js shell in the project.
         Choose a lesson with ?lesson=<folder-name>, for example:
-        http://localhost:8081/?lesson=01-transformer-demo
+        http://localhost:8081/?lesson=<slug>
 
         The Markdown file is loaded by reveal.js after this page boots.
         Use root-relative asset paths in slides.md, for example:
-        /lessons/01-transformer-demo/assets/diagram.svg
+        /lessons/<slug>/assets/<figure>.svg
       -->
       <section
-        data-markdown="../../lessons/01-transformer-demo/slides.md"
+        data-markdown=""
         data-separator="^\r?\n---\r?\n$"
         data-separator-vertical="^\r?\n--\r?\n$"
         data-separator-notes="^\s*notes?:"
@@ -40,12 +40,23 @@
     (() => {
       "use strict";
 
-      const DEFAULT_LESSON = "01-transformer-demo";
+      const DEFAULT_LESSON = "";
       const LESSON_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
       const requestedLesson = new URLSearchParams(window.location.search).get("lesson");
       const lesson = requestedLesson && LESSON_PATTERN.test(requestedLesson)
         ? requestedLesson
         : DEFAULT_LESSON;
+
+      if (!lesson) {
+        document.title = "Technical Courseware";
+        document.body.insertAdjacentHTML(
+          "afterbegin",
+          '<p style="font-family:system-ui,sans-serif;padding:24px">' +
+            "选择课程：在地址后加 <code>?lesson=&lt;slug&gt;</code>。" +
+            "</p>",
+        );
+        return;
+      }
 
       if (requestedLesson && requestedLesson !== lesson) {
         console.warn(
