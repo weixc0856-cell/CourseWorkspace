@@ -15,16 +15,9 @@
 - **质量基准**：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - **资料采集**：[docs/资料采集与预处理.md](docs/资料采集与预处理.md)
 
-## 知识板块
+## 课程与项目材料
 
-领域方案属于实际课程开发内容，只在本机，不入库：
-
-- 历史：`<内容根>/projects/history/历史系列-生产方向.md`
-- AI 时代基础知识：`<内容根>/projects/ai-era-fundamentals/AI时代基础知识-生产方向.md`
-- 汽车空气动力学：`<内容根>/projects/automotive-aerodynamics/汽车空气动力学-生产方向.md`
-- 经济学：`<内容根>/projects/economics/经济学系列-第一季生产方案.md`
-
-具体课程方案、教材页映射、图片账本、讲稿与素材也留在本机 `runtime/`；远程仓库只保留生产系统、总纲与索引。
+课程正文、系列方案、教材映射、讲稿与素材都在**内容根**（`<内容根>/lessons/`、`<内容根>/projects/`），不进仓库；结构、命名与备份约定见内容根自己的 README。远程仓库只保留生产系统、契约、夹具与规范。
 
 ## 仓库范围（远程 vs 本地）
 
@@ -116,11 +109,11 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 .\scripts\check.ps1                       # 全量回归，必须打印 check ok（干净克隆会跳过真实课程校验）
 
 # 只校验课程契约
-uv run --project CourseControl course-control validate --lesson 01-shell-for-ai-era
-uv run --project CourseControl course-control director-plan --lesson 01-transformer-demo
-uv run --project CourseControl course-control producer-run --lesson 01-transformer-demo
-uv run --project CourseControl course-control producer-rebuild --lesson 01-transformer-demo
-uv run --project CourseControl course-control audio-plan --lesson 01-transformer-demo
+uv run --project CourseControl course-control validate --lesson <slug>
+uv run --project CourseControl course-control director-plan --lesson <slug>
+uv run --project CourseControl course-control producer-run --lesson <slug>
+uv run --project CourseControl course-control producer-rebuild --lesson <slug>
+uv run --project CourseControl course-control audio-plan --lesson <slug>
 uv run --project CourseControl course-control layout-templates
 uv run --project CourseControl course-control layout-validate --template process_flow
 uv run --project CourseControl course-control simulation-run `
@@ -128,15 +121,15 @@ uv run --project CourseControl course-control simulation-run `
   --out build/primer-poc/simulation.json
 
 # 配置解析 / 恢复 / 统计 / 字幕 QC / 交付包
-uv run --project CourseControl course-control config-resolve --lesson 01-shell-for-ai-era
-uv run --project CourseControl course-control build --lesson 01-shell-for-ai-era --resume
-uv run --project CourseControl course-control stats --lesson 01-shell-for-ai-era
-uv run --project CourseControl course-control subtitles-qc --lesson 01-shell-for-ai-era
-uv run --project CourseControl course-control package --lesson 01-shell-for-ai-era
-uv run --project CourseControl course-control package-verify --package deliver/01-shell-for-ai-era
+uv run --project CourseControl course-control config-resolve --lesson <slug>
+uv run --project CourseControl course-control build --lesson <slug> --resume
+uv run --project CourseControl course-control stats --lesson <slug>
+uv run --project CourseControl course-control subtitles-qc --lesson <slug>
+uv run --project CourseControl course-control package --lesson <slug>
+uv run --project CourseControl course-control package-verify --package deliver/<slug>
 
 # 完整构建
-.\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era
+.\scripts\build-lesson.ps1 -Lesson <slug>
 
 # 代码/终端会话（E1；需要 Docker）
 .\scripts\check-session.ps1
@@ -172,7 +165,7 @@ uv run --project ModelingStudio modeling-studio run --image tests/fixtures/sampl
 uv run --project ScientificFigures python ScientificFigures/figures/continuity_figure.py
 
 # 内容审查（默认 Claude Code；不可用或 API 无凭据时 blocked，退出码 3）
-uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
+uv run --project ContentQA content-qa review --lesson <slug>
 ```
 
 ## 端口
@@ -194,7 +187,7 @@ uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
 - 本地 8080 仍由 `shared/ai_runtime` 持有跨进程锁，同一时刻只允许一个本地任务；它现在是显式回退/视觉阶段后端，不再是默认文本生成路径。
 - 8080 被占用或本地启动失败时，可按 `config/model-routing.yaml` 回退到远程 OpenAI 兼容 API。`provider` 可为 `deepseek`、`openai-compatible` 或其他兼容实现；参考文件：`config/model-routing.example.yaml`。
 - 当前本机用 DeepSeek：`deepseek-flash` 支持图像理解，视觉阶段也可回退（2026-11-07 实测）。**所有 DeepSeek 调用固定 `deepseek-flash`，`deepseek-v4-pro` 已禁用，配置层会拒绝。**
-- API key 只从系统环境变量读取（本机已有 `DeepSeek-API`），**不要写进 `.env`、YAML、日志或任何文件**。
+- API key 只从系统环境变量读取（变量名由 `config/model-routing.yaml` 的 `api_key_env` 指定），**不要写进 `.env`、YAML、日志或任何文件**。
 - **`.env` 是本地实际配置（git 忽略）；`.env.example` 进远程，只含占位符与配置说明。** 通用变量为 `REMOTE_PROVIDER` / `REMOTE_BASE_URL` / `REMOTE_MODEL` / `REMOTE_VISION_MODEL` / `REMOTE_API_KEY_ENV`；DeepSeek 也可用 `DEEPSEEK_*` 别名。任何文件都不得出现明文 API key。
 - 任务记录新增 `provider`（`local` / `remote` / `claude_code`）与实际模型名；任何后端都不会冒充另一个后端。视觉阶段只有在配置 `vision_model` 时才回退。
 - 本机路径只允许出现在被忽略的 `config/*.yaml`、`.env`、`ModelingStudio/config/workflow.yaml`；跟踪文件由 `scripts/check-paths.ps1` 检查。
