@@ -59,8 +59,8 @@ run 状态：`completed` / `blocked` / `failed`。退出码：0 / 3 / 1。
 
 ```powershell
 uv sync --project ContentQA
-uv run --project ContentQA content-qa review --lesson 01-shell-for-ai-era
-uv run --project ContentQA content-qa status --lesson 01-shell-for-ai-era
+uv run --project ContentQA content-qa review --lesson <slug>
+uv run --project ContentQA content-qa status --lesson <slug>
 uv run --project ContentQA content-qa schema
 .\.venv\Scripts\python -m unittest discover -s tests -t .   # 在 ContentQA/ 内
 ```

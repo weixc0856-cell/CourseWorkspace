@@ -10,13 +10,13 @@ from course_control.content.contracts import Storyboard
 from course_control.direction import build as build_director
 from course_control.content.paths import ContractError, LessonPaths
 from course_control.pipeline import BuildOptions, run_build
-from course_control.platform.workspace_layout import lessons_root
+from ._local_lesson import LOCAL, REASON
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
+LESSON = LOCAL.path if LOCAL is not None else None
 
 
-@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
+@unittest.skipUnless(LOCAL is not None, REASON)
 class StoryboardOverrideTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -24,6 +24,10 @@ class StoryboardOverrideTest(unittest.TestCase):
         root = Path(cls.tmp.name)
         _, cls.paths = build_director(WORKSPACE, LESSON, root / "director")
         cls.override = cls.paths["storyboard"]
+        cls.shot_ids = [
+            shot.id
+            for shot in LessonPaths.load(WORKSPACE, LESSON, cls.override).storyboard.shots
+        ]
 
     @classmethod
     def tearDownClass(cls):
@@ -31,12 +35,13 @@ class StoryboardOverrideTest(unittest.TestCase):
 
     def test_override_loads_director_storyboard(self):
         paths = LessonPaths.load(WORKSPACE, LESSON, self.override)
-        self.assertEqual(len(paths.storyboard.shots), 8)
+        self.assertGreater(len(paths.storyboard.shots), 0)
         self.assertEqual(paths.storyboard_source, self.override.resolve())
-        self.assertTrue(paths.selects("shot_003"))
-        paths.selected_shot_ids = {"shot_003"}
-        self.assertTrue(paths.selects("shot_003"))
-        self.assertFalse(paths.selects("shot_004"))
+        first, other = self.shot_ids[0], self.shot_ids[1]
+        self.assertTrue(paths.selects(first))
+        paths.selected_shot_ids = {first}
+        self.assertTrue(paths.selects(first))
+        self.assertFalse(paths.selects(other))
 
     def test_override_must_match_lesson_id(self):
         payload = yaml.safe_load(self.override.read_text(encoding="utf-8"))
@@ -55,7 +60,7 @@ class StoryboardOverrideTest(unittest.TestCase):
                 skip_render=True,
                 skip_compose=True,
                 storyboard=self.override,
-                shots=["shot_003"],
+                shots=[self.shot_ids[0]],
                 build_root=Path(self.tmp.name) / "artifacts",
             ),
         )

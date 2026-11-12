@@ -73,16 +73,6 @@ try {
         uv run --project CourseControl course-control shot-taxonomy --workspace . 2>&1 | Out-Null
     }
 
-    if ($CleanClone -and -not (Test-Path "BlenderStudio/scenes/01-transformer-demo")) {
-        Write-Host "skip blender task 01-transformer-demo (local scene not present)"
-    }
-    else {
-        Invoke-Checked "blender task 01-transformer-demo" -Quiet {
-            uv run --project CourseControl course-control blender-task-validate `
-                --task (Join-Path $content "engines/blender/tasks/01-transformer-demo/stack_explode.json") --workspace . 2>&1 | Out-Null
-        }
-    }
-
     if ($SkipUnitTests) {
         Write-Host "skip unit tests (run separately)"
     }
@@ -118,8 +108,6 @@ try {
     }
 
     $lessons = @(
-        @{Lesson = "01-shell-for-ai-era"; Dir = (Join-Path $content "lessons")},
-        @{Lesson = "01-transformer-demo"; Dir = (Join-Path $content "lessons")},
         @{Lesson = "lesson-smoke"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-blender-only"; Dir = "CourseControl/tests/fixtures"},
         @{Lesson = "lesson-manual"; Dir = "CourseControl/tests/fixtures"}
@@ -137,11 +125,27 @@ try {
         }
     }
 
-    if (Test-Path (Join-Path $content "lessons/01-transformer-demo")) {
-        Invoke-Checked "director plan 01-transformer-demo" {
-            uv run --project CourseControl course-control director-plan `
-                --lesson 01-transformer-demo --workspace . `
-                --out (Join-Path $content "build/01-transformer-demo/director") 2>&1 | Out-Null
+    # Local content is surveyed, not gated: a course issue must not fail the
+    # program regression, and the tracked script must not name a course.
+    $localLessons = @()
+    if (Test-Path (Join-Path $content "lessons")) {
+        $localLessons = @(Get-ChildItem (Join-Path $content "lessons") -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName "lesson.yaml") })
+    }
+    if ($localLessons.Count -eq 0) {
+        Write-Host "skip local lesson survey (no lessons in the content root)"
+    }
+    else {
+        Write-Host "local lesson survey (content is reported, not gated):"
+        foreach ($lesson in $localLessons) {
+            $survey = & uv run --project CourseControl course-control validate --lesson $lesson.Name --workspace . 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  pass $($lesson.Name)"
+            }
+            else {
+                Write-Host "  issues $($lesson.Name)"
+                $survey | Select-Object -Last 3 | ForEach-Object { Write-Host "    $_" }
+            }
         }
     }
 

@@ -41,13 +41,13 @@ v2 场景仍用于 POC 与场景验证，不进入课程默认链路，除非课
 
 ```powershell
 # 5 秒冒烟视频：build/<lesson>/blender/smoke.mp4
-.\scripts\blender-render.ps1 -Lesson 01-shell-for-ai-era -Smoke
+.\scripts\blender-render.ps1 -Lesson <slug> -Smoke
 
 # JSON 任务
-.\scripts\blender-render.ps1 -Lesson 01-shell-for-ai-era -Task BlenderStudio/tasks/01-shell-for-ai-era/still.json
+.\scripts\blender-render.ps1 -Lesson <slug> -Task BlenderStudio/tasks/lesson-blender-only/overlay.json
 
 # 显式覆盖引擎
-.\scripts\blender-render.ps1 -Lesson 01-shell-for-ai-era -Task BlenderStudio/tasks/01-shell-for-ai-era/still.json -Engine CYCLES
+.\scripts\blender-render.ps1 -Lesson <slug> -Task BlenderStudio/tasks/lesson-blender-only/overlay.json -Engine CYCLES
 ```
 
 PowerShell 入口负责：
@@ -148,7 +148,7 @@ course-control scene-run
 ```json
 {
   "schema_version": 1,
-  "lesson": "01-shell-for-ai-era",
+  "lesson": "<slug>",
   "scene": "procedural_cube",
   "engine": "BLENDER_EEVEE",
   "resolution": [1920, 1080],
@@ -156,7 +156,7 @@ course-control scene-run
   "frames": 1,
   "samples": 16,
   "format": "png",
-  "output": "build/01-shell-for-ai-era/blender/still.png",
+  "output": "build/<slug>/blender/still.png",
   "blend": null
 }
 ```
@@ -181,13 +181,7 @@ course-control scene-run
 
 ## 测试任务
 
-`tasks/01-shell-for-ai-era/` 下的样本：
-
-| 任务 | 预期结果 |
-| --- | --- |
-| `still.json` | 退出码 0，PNG 1920×1080 |
-| `cycles-still.json` | 退出码 0，PNG 1920×1080（Cycles） |
-| `中文 任务.json` | 退出码 0，中文 + 空格路径 |
+仓库内保留的 v1 夹具只有 `tasks/lesson-smoke/overlay.json` 与 `tasks/lesson-blender-only/overlay.json`，它们是课程夹具的最小任务。真实课程的任务在内容根：`<内容根>/engines/blender/tasks/<slug>/`，由 `course-control build` 的 `render:blender` 阶段读取。
 | `invalid-missing-output.json` | 退出码 4（PowerShell 预检） |
 | `invalid-resolution.json` | 退出码 1（Blender 内校验，日志含 `TASK_ERROR`） |
 | `invalid-outside.json` | 退出码 5（PowerShell）/ 1（Blender 直调），不生成文件 |

@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-打开 `http://localhost:8081/?lesson=01-transformer-demo`。
+打开 `http://localhost:8081/?lesson=<slug>`。
 
 不传 `lesson` 参数时，默认加载 `01-transformer-demo`。服务器只监听本地 `8081` 端口，`8080` 固定留给本地模型服务，依赖安装在本项目的 `node_modules/` 中，不使用全局安装。
 
@@ -55,7 +55,7 @@ npm run dev
 构建时由 `CourseControl` 的 `capture_slides` 阶段调用 Playwright 打开本工程，逐页截图：
 
 ```powershell
-.\scripts\build-lesson.ps1 -Lesson 01-shell-for-ai-era
+.\scripts\build-lesson.ps1 -Lesson <slug>
 ```
 
 - 视口固定 1920×1080。
@@ -72,7 +72,7 @@ npm run dev
 Markdown 是在浏览器里异步加载进外壳的，因此图片请使用以服务器根目录开头的路径：
 
 ```markdown
-![diagram](/lessons/01-transformer-demo/assets/attention-flow.svg)
+![diagram](/lessons/&lt;slug&gt;/assets/&lt;figure&gt;.svg)
 ```
 
 不要写成 `assets/attention-flow.svg`，它会相对 `template/` 或站点根目录解析，而不是相对 `slides.md`。

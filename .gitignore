@@ -61,6 +61,8 @@ node_modules/
 __pycache__/
 *.pyc
 debug.log
+# Local integration-test target (names a course; never committed)
+CourseControl/tests/local-lesson.yaml
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -82,21 +84,10 @@ CodeVideoStudio/shots/*/package-lock.json
 CodeVideoStudio/backends/hyperframes/*/out/
 CodeVideoStudio/backends/hyperframes/hf-poc/.hyperframes/
 
-# Course-specific pilot sources (real course content stays local)
-/BlenderStudio/scenes/01-transformer-demo/
-/BlenderStudio/tasks/01-transformer-demo/
-/ManimSandbox/01-transformer-demo/
-/ManimSandbox/02-car-aerodynamics/
 ScientificFigures/output/
 
-# Course-specific shot and scene sources (real course content stays local)
-/CodeVideoStudio/shots/e01-*/
-/CodeVideoStudio/shots/vibe-*/
-/CodeVideoStudio/shots/_e01-template/
-/ManimSandbox/ai-economics-e01/
-/ManimSandbox/ai-era-01-shell/
-/ManimSandbox/b01-b02-bluff-body/
-/BlenderStudio/scenes/b01-b02-bluff-body/
+# Course scenes and tasks live in the content root; `course-control separation`
+# reports any lesson-shaped directory that appears in this repository.
 
 
 # BrandIntro: reference captures and render tests are media, not workflow

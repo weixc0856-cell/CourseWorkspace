@@ -17,13 +17,13 @@ from course_control.content.paths import ContractError
 from course_control.delivery.state import load_state, save_state, state_path
 from course_control.delivery.rebuild import diff_fingerprints
 from course_control.delivery.schema import DeliveryItem, DeliveryManifest, ShotFingerprint
-from course_control.platform.workspace_layout import lessons_root
+from ._local_lesson import LOCAL, REASON
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
+LESSON = LOCAL.path if LOCAL is not None else None
 
 
-@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
+@unittest.skipUnless(LOCAL is not None, REASON)
 class ProducerRunTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -38,8 +38,10 @@ class ProducerRunTest(unittest.TestCase):
 
     def test_order_defaults_follow_brief_and_lesson(self):
         order = default_order(self.inputs)
-        self.assertEqual(order.lesson_id, "01-transformer-demo")
-        self.assertEqual(order.target_seconds, 1200.0)
+        self.assertEqual(order.lesson_id, LOCAL.name)
+        self.assertEqual(
+            order.target_seconds, self.inputs.paths.lesson.duration.target_seconds
+        )
         self.assertEqual(order.language, "en")
         self.assertEqual(len(order.must_cover), len(self.inputs.brief.objectives))
         self.assertIsNone(order.approved_by)
@@ -55,7 +57,7 @@ class ProducerRunTest(unittest.TestCase):
 
     def test_state_records_fingerprints_and_blocked_status(self):
         self.assertEqual(self.result.state.status, "blocked")
-        self.assertEqual(len(self.result.state.shots), 12)
+        self.assertGreater(len(self.result.state.shots), 0)
         self.assertEqual(self.result.state.stages["director"], "ready")
         self.assertEqual(self.result.state.stages["render"], "missing")
         self.assertEqual(self.result.state.stages["audio"], "missing")
@@ -72,10 +74,10 @@ class ProducerRunTest(unittest.TestCase):
         self.assertEqual(by_id["02_script"].status, "present")
         self.assertEqual(by_id["03_storyboard"].status, "present")
         self.assertEqual(by_id["04_assets"].status, "present")
-        self.assertEqual(by_id["05_audio"].status, "partial")
+        self.assertIn(by_id["05_audio"].status, {"present", "partial", "blocked"})
         self.assertTrue(any("course-video.mp4" in entry for entry in manifest.missing))
-        self.assertFalse(any("shot_007" in entry for entry in manifest.missing))
-        self.assertEqual(len(manifest.missing), 3)
+        self.assertFalse(any("shot_" in entry for entry in manifest.missing))
+        self.assertGreater(len(manifest.missing), 0)
 
     def test_order_language_mismatch_is_recorded(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -108,7 +110,7 @@ class ProducerRunTest(unittest.TestCase):
             self.assertEqual(result.manifest.status, "blocked")
 
 
-@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
+@unittest.skipUnless(LOCAL is not None, REASON)
 class DeliveryPolicyTest(unittest.TestCase):
     def test_delivered_requires_every_item_present(self):
         with self.assertRaises(ValidationError):
@@ -122,7 +124,7 @@ class DeliveryPolicyTest(unittest.TestCase):
             )
 
 
-@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
+@unittest.skipUnless(LOCAL is not None, REASON)
 class IncrementalDiffTest(unittest.TestCase):
     def base(self, **updates) -> ShotFingerprint:
         payload = dict(
@@ -166,7 +168,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
-@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
+@unittest.skipUnless(LOCAL is not None, REASON)
 class RebuildPlanTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

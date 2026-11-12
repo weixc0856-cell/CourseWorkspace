@@ -13,14 +13,7 @@
 v1 没有独立场景系统，只配置渲染参数；`render_common.py` 会构建一个固定的程序化场景或打开指定 `.blend`。
 保留 v1 是为了课程夹具 `lesson-smoke` / `lesson-blender-only` 的稳定接口。
 
-`01-shell-for-ai-era/` 下的 v1 任务属于历史夹具：
-
-- `still.json`、`cycles-still.json`：渲染入口冒烟；
-- `invalid-*.json`：负例（缺输出、越界、非法分辨率）；
-- `timeout-test.json`：超时行为；
-- `中文 任务.json`：非 ASCII 文件名编码检查。
-
-该课程现在只使用 Motion Canvas，这些任务不参与课程构建。
+真实课程的任务在内容根（`<内容根>/engines/blender/tasks/<slug>/`），不在这里。仓库只保留测试夹具：`lesson-smoke/`、`lesson-blender-only/`、`scene-system/`。
 
 ## v2 说明
 

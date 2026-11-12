@@ -28,18 +28,18 @@ cd RemotionStudio
 npm run studio
 
 # 截图：需要 8081 预览服务在运行
-node scripts/capture-slides.mjs --lesson 01-shell-for-ai-era
+node scripts/capture-slides.mjs --lesson <slug>
 
 # 只截前两页（冒烟）
-node scripts/capture-slides.mjs --lesson 01-shell-for-ai-era --max 2
+node scripts/capture-slides.mjs --lesson <slug> --max 2
 
 # 按 shots.json 复制素材到 public/staging/<lesson>/
-node scripts/stage-assets.mjs --lesson 01-shell-for-ai-era
+node scripts/stage-assets.mjs --lesson <slug>
 
 # 渲染 legacy shots.json
 npx remotion render src/index.ts CourseVideo `
-  ../build/01-shell-for-ai-era/final/preview-remotion.mp4 `
-  --props=../build/01-shell-for-ai-era/shots.json
+  ../build/<slug>/final/preview-remotion.mp4 `
+  --props=../build/<slug>/shots.json
 
 # 章节卡（探针入口，非生产；不进入课程构建）
 npx remotion render src/probes/index.ts ChapterCard ../build/<lesson>/final/chapter-01.mp4 `
@@ -47,8 +47,8 @@ npx remotion render src/probes/index.ts ChapterCard ../build/<lesson>/final/chap
 
 # 渲染 V1 时间线（含 Ken Burns / TimelineSpec）
 npx remotion render src/index.ts CourseTimeline `
-  ../build/01-shell-for-ai-era/final/preview-timeline.mp4 `
-  --props=../build/01-shell-for-ai-era/contracts/timeline.spec.json
+  ../build/<slug>/final/preview-timeline.mp4 `
+  --props=../build/<slug>/contracts/timeline.spec.json
 ```
 
 ## 素材访问（S-R3-1 结论）

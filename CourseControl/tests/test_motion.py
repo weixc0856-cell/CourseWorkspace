@@ -6,13 +6,13 @@ from pathlib import Path
 from course_control.content.contracts import MotionPolicy
 from course_control.rendering.motion import slide_motion
 from course_control.content.paths import LessonPaths
-from course_control.platform.workspace_layout import lessons_root
+from ._local_lesson import LOCAL, REASON
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-LESSON = lessons_root(WORKSPACE) / "01-transformer-demo"
+LESSON = LOCAL.path if LOCAL is not None else None
 
 
-@unittest.skipUnless(LESSON.is_dir(), "local lesson 01-transformer-demo not present")
+@unittest.skipUnless(LOCAL is not None, REASON)
 class SlideMotionTest(unittest.TestCase):
     def test_static_policy_returns_none(self):
         self.assertIsNone(slide_motion(1, MotionPolicy(slides="static")))
@@ -34,10 +34,14 @@ class SlideMotionTest(unittest.TestCase):
         self.assertGreaterEqual(len({spec["scale_from"] for spec in specs}), 2)
         self.assertEqual(len({tuple(spec.items()) for spec in specs}), 4)
 
-    def test_lesson_opts_into_ken_burns(self):
+    def test_lesson_motion_policy_is_within_bounds(self):
         paths = LessonPaths.load(WORKSPACE, LESSON)
-        self.assertEqual(paths.lesson.motion.slides, "ken_burns")
-        self.assertEqual(paths.lesson.motion.scale, 1.06)
+        policy = paths.lesson.motion
+        if policy.slides != "ken_burns":
+            self.skipTest("local lesson does not opt into ken burns")
+        self.assertGreaterEqual(policy.scale, 1.0)
+        self.assertLessEqual(policy.scale, 1.12)
+        self.assertLessEqual(policy.pan_percent, 1.2)
 
 
 if __name__ == "__main__":

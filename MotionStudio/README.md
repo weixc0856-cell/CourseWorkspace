@@ -70,7 +70,7 @@ CourseControl 的 `render:motion_canvas` 自动调用上面的脚本：
 3. adapter 最多重试 2 次，ffprobe 通过后才 `pass`；
 4. 仍失败 → `fail`，不写 `skipped` / `incomplete`；合法的旧人工导出可复用，但不是默认路径。
 
-例：`src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/01-shell-for-ai-era/animation/gui_vs_cli_paths.mp4`。
+例：`src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/<slug>/animation/gui_vs_cli_paths.mp4`。
 
 不会用截图拼帧或伪造文件冒充导出结果。见 [DECISIONS.md](../docs/DECISIONS.md) D-054。
 

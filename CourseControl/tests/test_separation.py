@@ -52,21 +52,21 @@ class SeparationTest(unittest.TestCase):
         self.assertEqual(report["problems"], ["ManimSandbox/lesson-x"])
 
     def test_declared_fixture_is_allowed_with_its_reason(self) -> None:
-        self._lesson("01-transformer-demo")
-        fixture = self.workspace / "BlenderStudio" / "tasks" / "01-transformer-demo"
+        self._lesson("demo-lesson")
+        fixture = self.workspace / "BlenderStudio" / "tasks" / "demo-lesson"
         fixture.mkdir(parents=True)
-        allowed = {"BlenderStudio/tasks/01-transformer-demo": "check.ps1 fixture"}
+        allowed = {"BlenderStudio/tasks/demo-lesson": "a fixture with a lesson-shaped name"}
         with patch.dict(separation.ALLOWED, allowed, clear=True):
             report = audit(self.workspace)
         self.assertEqual(report["problems"], [])
         entry = report["entries"][0]
         self.assertTrue(entry["allowed"])
-        self.assertEqual(entry["reason"], "check.ps1 fixture")
+        self.assertEqual(entry["reason"], "a fixture with a lesson-shaped name")
 
     def test_an_empty_allowlist_makes_every_lesson_directory_a_problem(self) -> None:
-        self._lesson("01-transformer-demo")
-        (self.workspace / "BlenderStudio" / "tasks" / "01-transformer-demo").mkdir(parents=True)
-        self.assertEqual(audit(self.workspace)["problems"], ["BlenderStudio/tasks/01-transformer-demo"])
+        self._lesson("demo-lesson")
+        (self.workspace / "BlenderStudio" / "tasks" / "demo-lesson").mkdir(parents=True)
+        self.assertEqual(audit(self.workspace)["problems"], ["BlenderStudio/tasks/demo-lesson"])
 
     def test_lessons_in_the_content_root_are_not_reported(self) -> None:
         self._lesson("lesson-x")

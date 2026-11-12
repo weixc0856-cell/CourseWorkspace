@@ -33,22 +33,22 @@ uv sync
 uv run course-control audit --workspace ..
 
 # 只校验契约
-uv run course-control validate --lesson 01-shell-for-ai-era --workspace ..
+uv run course-control validate --lesson <slug> --workspace ..
 
 # 导演计划 / 结构校验 / 局部重渲染
-uv run course-control director-plan --lesson 01-transformer-demo --workspace ..
-uv run course-control director-validate --plan ../build/01-transformer-demo/director/director_plan.json
-uv run course-control producer-run --lesson 01-transformer-demo --workspace ..
-uv run course-control producer-rebuild --lesson 01-transformer-demo --workspace ..
+uv run course-control director-plan --lesson <slug> --workspace ..
+uv run course-control director-validate --plan ../build/<slug>/director/director_plan.json
+uv run course-control producer-run --lesson <slug> --workspace ..
+uv run course-control producer-rebuild --lesson <slug> --workspace ..
 
 # 旁白 / 字幕
-uv run course-control narration-build --lesson 01-transformer-demo --workspace ..
-uv run course-control subtitles-build --lesson 01-transformer-demo --workspace ..
-uv run course-control subtitles-accept --lesson 01-transformer-demo --workspace ..
-uv run course-control burn-subs --lesson 01-transformer-demo --workspace ..
+uv run course-control narration-build --lesson <slug> --workspace ..
+uv run course-control subtitles-build --lesson <slug> --workspace ..
+uv run course-control subtitles-accept --lesson <slug> --workspace ..
+uv run course-control burn-subs --lesson <slug> --workspace ..
 
 # 音频策略
-uv run course-control audio-plan --lesson 01-transformer-demo --workspace ..
+uv run course-control audio-plan --lesson <slug> --workspace ..
 
 # 版式 / 模拟
 uv run course-control layout-templates
@@ -153,7 +153,7 @@ Motion Canvas 3.17.2 没有官方 CLI，但 core `Renderer` 可编程调用。`M
 build/<slug>/animation/<scene-stem>.mp4
 ```
 
-例如 `MotionStudio/src/scenes/01-shell-for-ai-era/gui_vs_cli_paths.tsx` → `build/01-shell-for-ai-era/animation/gui_vs_cli_paths.mp4`。
+例如 `<内容根>/engines/motion_canvas/scenes/<lesson>/<scene>.tsx` → `build/<slug>/animation/<scene>.mp4`。
 
 导出后重新运行 `build`，`render:motion_canvas` 会从 `skipped` 变为 `pass`。详见 [DECISIONS.md](../docs/DECISIONS.md) D-004。
 
