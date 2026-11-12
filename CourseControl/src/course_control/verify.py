@@ -399,8 +399,10 @@ def verify(paths: LessonPaths, shots_file: ShotsFile) -> list[CheckRecord]:
             except Exception as exc:  # noqa: BLE001
                 problems.append(f"cannot read meta: {exc}")
                 meta = {}
-            if meta.get("schema_version") != 2:
-                problems.append("meta schema_version is not 2")
+            # v2 predates voice assets; v3 adds them.  Never pin the exact
+            # number, or the next narration build fails verification.
+            if int(meta.get("schema_version") or 0) < 2:
+                problems.append("meta schema_version is older than 2")
             assembly = meta.get("assembly") or {}
             assembly_path = build_root / str(assembly.get("file") or "")
             if not assembly_path.is_file():
