@@ -40,7 +40,9 @@ ALLOWED: dict[str, str] = {}
 
 # Prose and contracts belong in docs/; anything else there is project material or a
 # stray artefact.  Reported as a warning: a deliberate diagram is fine, a video is not.
-DOC_PROSE_SUFFIXES = {".md", ".yaml", ".yml"}
+# Logs are runtime noise (a stray browser can drop one anywhere), never a
+# document; they are gitignored anyway.
+DOC_PROSE_SUFFIXES = {".md", ".yaml", ".yml", ".log"}
 DOC_PROGRAM_PATHS = ("docs/contracts/",)
 
 
