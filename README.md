@@ -1,7 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-12 状态**：CourseControl 按八个上下文重组（见 `docs/架构-DDD上下文与边界.md`）；仓库只保留工具、测试夹具与规范，课程与项目材料在内容根（`course-control separation` 可查）。V2 生产线的动画预览、声音资产、镜头表与锁定已落地，P5 试点停在字幕 QC（`docs/v2/P5-全链路验证.md`）。CourseControl 回归 561 例通过 / 7 跳过。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
