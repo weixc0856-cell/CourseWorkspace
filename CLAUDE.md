@@ -43,6 +43,10 @@
 - 镜头表 Shot Sheet（storyboard v2 / 连续性 / 设计指纹）：[docs/镜头表-ShotSheet.md](docs/镜头表-ShotSheet.md)
 - 锁定与失效（Picture / Dialogue Lock / 依赖映射）：[docs/锁定与失效.md](docs/锁定与失效.md)
 - 导演层（章节/镜头/引擎/旁白/校验）：[docs/导演层.md](docs/导演层.md)
+- 视觉设计层（艺术方向/构图/关键帧/连续性）：[docs/视觉设计层.md](docs/视觉设计层.md)
+- 声音导演层（旁白/音乐/音效/环境声/混音）：[docs/声音导演层.md](docs/声音导演层.md)
+- 课程质量模型（八维单集验收标准）：[docs/课程质量模型.md](docs/课程质量模型.md)
+- 生产复杂度审计（模块/调用链/四象限/停止条件）：[docs/生产复杂度审计.md](docs/生产复杂度审计.md)
 - 工业化动画工作流（节拍表/配色/评分门禁）：[docs/工业化动画工作流.md](docs/工业化动画工作流.md)
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 主生产路线（Slide-first / Motion-enhanced / Narration-led，路线建议非门禁）：[docs/生产路线.md](docs/生产路线.md)
@@ -104,6 +108,8 @@ uv run --project CourseControl course-control validate --lesson <slug>
 .\scripts\build-lesson.ps1 -Lesson <slug>                  # 完整课程构建
 uv run --project ModelingStudio modeling-studio run --image <png>
 uv run --project CourseControl course-control director-plan --lesson <slug>   # 导演计划 + 校验
+uv run --project CourseControl course-control visual-design --lesson <slug>    # 视觉设计 + 关键帧看板
+uv run --project CourseControl course-control sound-design --lesson <slug>     # 声音设计与 cue sheet
 uv run --project CourseControl course-control producer-run --lesson <slug>     # 订单 → 计划 → 交付清单
 uv run --project CourseControl course-control producer-rebuild --lesson <slug> # 受影响镜头局部重渲染
 uv run --project CourseControl course-control project-validate --project <path>/project.yaml

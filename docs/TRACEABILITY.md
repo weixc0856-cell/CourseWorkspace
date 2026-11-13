@@ -81,6 +81,9 @@
 | FR-49 知识概念层与课程规划 | `KnowledgeStudio/src/knowledge_studio/knowledge_ir.py`、`cli.py`；`shared/schemas/knowledge-ir.schema.json`、`curriculum.schema.json` | `KnowledgeStudio/tests/test_knowledge_ir.py`（11 例） |
 | FR-50 自动化等级与停机条件 | `delivery/project.py`（`ExecutionSpec`）、`docs/v2/m0/PRODUCT_SPEC_V2.md`、`QUALITY_SPEC_V2.md`；`platform/run_record.py` | 契约与文档；A3 实跑未开始 |
 | FR-51 主题视频模式（PLANNED） | `delivery/project.py`（`topic_video` 契约） | 仅契约校验；流程未实现 |
+| FR-52 视觉设计层 | `CourseControl/src/course_control/design/`（schema/planner/checks/board/report）、`cli/design.py`；`authoring/visual-design.yaml` 覆盖 | `test_visual_design.py`（17 例）；`<slug>` 12 镜头关键帧看板 + beat 条实跑 |
+| FR-53 声音导演层 | `CourseControl/src/course_control/sound/`（schema/planner/checks/report）、`cli/sound.py` | `test_sound_design.py`（20 例）；`<slug>` 54 段旁白 cue sheet 实跑 |
+| FR-54 课程质量模型 | `docs/课程质量模型.md` | 文档标准；单集验收表待第一集实跑 |
 
 ## 人工依赖
 

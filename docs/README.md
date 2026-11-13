@@ -16,12 +16,14 @@
 - [五态映射表.md](五态映射表.md)：建议稿名称与代码状态的对应
 - 项目/运行/质量/知识契约（2026-11-13 增量）：`shared/schemas/project-spec.schema.json`、`knowledge-ir.schema.json`、`curriculum.schema.json`；实现见 `delivery/project.py`、`platform/artifacts.py`、`platform/run_record.py`、`quality/defect.py`、`KnowledgeStudio/knowledge_ir.py`
 - [仓库与项目边界.md](仓库与项目边界.md)：工具、项目、产物三层；什么进仓库、什么只在内容根
+- [生产复杂度审计.md](生产复杂度审计.md)：模块清单、生产调用链、四象限分类与停止条件（2026-11-13 只读）
 
 ## 2. 生产指导文集
 
 ### 2.1 怎么做课
 
 - [知识视频质量基准.md](知识视频质量基准.md)：什么算好（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）；不新增门禁
+- [课程质量模型.md](课程质量模型.md)：八个维度（知识/教学/叙事/视觉/声音/配套/体验/交付）的单集验收标准；是标准，不是门禁
 - [生产路线.md](生产路线.md)：Slide-first / Motion-enhanced / Narration-led；两条产品线、四类画面、M0–M3。路线建议，不是门禁
 - [课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)
 - [工业化动画工作流.md](工业化动画工作流.md)、[动画视觉导演规范.md](动画视觉导演规范.md)
@@ -33,6 +35,7 @@
 ### 2.2 生产线
 
 - [导演层.md](导演层.md)：章节、镜头、引擎与旁白计划
+- [视觉设计层.md](视觉设计层.md)：艺术方向、blocking、三关键帧、运动与连续性；`course-control visual-design`
 - [镜头表-ShotSheet.md](镜头表-ShotSheet.md)：storyboard v2 设计字段、连续性与资产引用、编译复核与设计指纹
 - [动画预览-Animatic.md](动画预览-Animatic.md)：正式渲染前的 480p 时间线预览、四条检查与片段缓存
 - [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
@@ -45,6 +48,7 @@
 - [声音资产-VoiceBible与Lexicon.md](声音资产-VoiceBible与Lexicon.md)：声线身份、读法词典、按片段失效的缓存键
 - [本地模型与配音工作流.md](本地模型与配音工作流.md)：VoxCPM2、串行锁与实时率
 - [内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)
+- [声音导演层.md](声音导演层.md)：旁白/音乐/音效/环境声/混音五轨设计；`course-control sound-design`
 
 ### 2.4 视觉与资产
 
