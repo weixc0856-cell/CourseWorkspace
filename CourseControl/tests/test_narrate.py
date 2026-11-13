@@ -64,7 +64,13 @@ class NarrationTest(unittest.TestCase):
         self.voice.write_bytes(b"voice")
 
     def tearDown(self):
-        self.server.shutdown()
+        try:
+            self.server.shutdown()
+        except KeyboardInterrupt:
+            # The hosted Windows runner delivers a real console Ctrl-C into the
+            # test process while the suite runs.  The test body has already
+            # finished, so a signal landing inside shutdown must not fail it.
+            pass
         self.server.server_close()
         self.temp.cleanup()
 

@@ -5,6 +5,10 @@ runtime/
 build/
 deliver/
 RemotionStudio/public/staging/
+# Project media under public/ is content, not workflow: ignore the whole
+# directory rather than relying on per-extension rules, which let PNGs through.
+RemotionStudio/public/fengshui/
+RemotionStudio/public/vibe/
 
 # ---------------------------------------------------------------------------
 # 教材知识库（版权内容，仅本地）

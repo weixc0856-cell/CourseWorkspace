@@ -204,7 +204,13 @@ def install_console_event_log(pid: int) -> Path | None:
             )
         _trace("CONSOLE_EVENT " + line)
         print("console event: " + line, file=sys.stderr, flush=True)
-        return False  # not handled: the default behaviour still applies
+        # The hosted Windows runner sends a real Ctrl-C into this process while
+        # the suite runs, which surfaces as KeyboardInterrupt inside whatever
+        # test happens to be executing (usually a server shutdown).  Record it
+        # and stay alive: the signal is the runner's, not the tests'.
+        if event in (0, 1):  # CTRL_C_EVENT, CTRL_BREAK_EVENT
+            return True
+        return False  # close/logoff/shutdown still mean the process must go
 
     prototype = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_uint32)
     _console_handler = prototype(on_console_event)
