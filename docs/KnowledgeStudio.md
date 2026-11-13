@@ -209,8 +209,9 @@ uv run --project KnowledgeStudio knowledge-studio extract-report `
 
 ## 12. 已验证
 
-- `KnowledgeStudio` 单测 38 个（新增 11 个概念层与课程规划用例；`extract-report` 8 个、`span-check` 5 个、`map` 1 个；其余为页切分/目录/单元/检索/证据）：页切分、标记校验、pypdf 真实解析、目录解析与偏移校准（-4 页）、单元范围、英文/中文检索、页预算、检索落盘与 QA、claim 只能引用已检索页、导出片段、篡改页哈希后 QA blocked、无目录时回退章节标题。
+- `KnowledgeStudio` 单测 40 个（新增 11 个概念层与课程规划用例、2 个证据文件选择用例；`extract-report` 8 个、`span-check` 5 个、`map` 1 个；其余为页切分/目录/单元/检索/证据）：页切分、标记校验、pypdf 真实解析、目录解析与偏移校准（-4 页）、单元范围、英文/中文检索、页预算、检索落盘与 QA、claim 只能引用已检索页、导出片段、篡改页哈希后 QA blocked、无目录时回退章节标题。
 - CLI 真实运行（`build/knowledge-smoke/`）：PDF 导入 2 页（`pypdf==6.9.2`）、文本教材 12 页 → 目录 4 条、偏移 -4 → 3 个单元 → 检索 `drag coefficient` 4/12 页、`风洞 实验` 3/12 页 → 两条 claim 证据 → `verify` KS-01…KS-08 全 pass。
 - `extract-report` 真实运行（`build/knowledge-smoke/pdf-book`）：2/2 页，status pass，短页 2 条为 cosmetic，TOC 缺失如实记入报告。
 - 真实教材试点（2026-11-10）：一本 352 页英文教材经 Docling 转成 352 页资料包，`to-knowledge` 用 PDF 书签建 18 个单元，`verify` KS-01…KS-08 pass；`map` 输出 18 章；5 条教材 claim 经 `evidence` + `span-check` 5/5 pass。
 - `scripts/check.ps1` 已包含 KnowledgeStudio 单测。
+- 2026-11-13 修复：`verify` 只读取 `evidence/*.evidence.json`，不再把 `*.spancheck.json` 当作证据文件解析；`information-rules` 资料包 KS-01～KS-08 全 pass。
