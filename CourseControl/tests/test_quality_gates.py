@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import os
+import tempfile
+import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from course_control.direction.animation_score import score
 from course_control.direction.beats import Beat, BeatSheet, BeatShot, CameraMove
 from course_control.rendering.grammar import load_registry
-from course_control.quality.quality_gates import decide
+from course_control.quality.quality_gates import (
+    decide,
+    freshness_problems,
+    subtitles_qc_result,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 SEGMENTS = [(0.0, 6.0), (6.0, 6.0)]
@@ -158,3 +168,93 @@ class QualityGateTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReportFreshnessTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def _write(self, relative: str, payload: dict) -> Path:
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    def test_build_report_is_stale_when_a_delivered_file_changed(self) -> None:
+        video = self.root / "final" / "final.mp4"
+        video.parent.mkdir(parents=True, exist_ok=True)
+        video.write_bytes(b"one")
+        digest = hashlib.sha256(b"one").hexdigest()
+        self._write(
+            "final/build-report.json",
+            {"artifacts": [{"path": "final/final.mp4", "sha256": digest}]},
+        )
+        self.assertEqual(freshness_problems(self.root), [])
+
+        video.write_bytes(b"two")
+        problems = freshness_problems(self.root)
+        self.assertTrue(any(item["id"] == "freshness.build" for item in problems))
+
+    def test_missing_subtitles_qc_blocks_only_when_enabled(self) -> None:
+        enabled = SimpleNamespace(
+            build_root=self.root,
+            lesson=SimpleNamespace(subtitles=SimpleNamespace(enabled=True)),
+        )
+        hard, incomplete = subtitles_qc_result(enabled)
+        self.assertEqual(hard, [])
+        self.assertTrue(any(item["id"] == "subtitles.qc" for item in incomplete))
+
+        disabled = SimpleNamespace(
+            build_root=self.root,
+            lesson=SimpleNamespace(subtitles=SimpleNamespace(enabled=False)),
+        )
+        self.assertEqual(subtitles_qc_result(disabled), ([], []))
+
+    def test_failed_subtitles_qc_is_a_hard_failure(self) -> None:
+        self._write(
+            "quality/subtitles-qc.json",
+            {"status": "FAIL", "errors": ["cue 5 overlaps the previous cue"]},
+        )
+        paths = SimpleNamespace(
+            build_root=self.root,
+            lesson=SimpleNamespace(subtitles=SimpleNamespace(enabled=True)),
+        )
+        hard, incomplete = subtitles_qc_result(paths)
+        self.assertTrue(any(item["id"] == "subtitles.qc" for item in hard))
+        self.assertEqual(incomplete, [])
+
+    def test_passing_subtitles_qc_with_matching_source_is_clean(self) -> None:
+        srt = self.root / "subtitles.srt"
+        srt.write_text("1\n00:00:00,000 --> 00:00:02,000\nhello\n", encoding="utf-8")
+        digest = hashlib.sha256(srt.read_bytes()).hexdigest()
+        self._write(
+            "quality/subtitles-qc.json",
+            {"status": "PASS", "source": {"path": str(srt), "sha256": digest}},
+        )
+        paths = SimpleNamespace(
+            build_root=self.root,
+            lesson=SimpleNamespace(subtitles=SimpleNamespace(enabled=True)),
+        )
+        self.assertEqual(subtitles_qc_result(paths), ([], []))
+        self.assertEqual(freshness_problems(self.root), [])
+
+        srt.write_text("1\n00:00:00,000 --> 00:00:01,000\nchanged\n", encoding="utf-8")
+        problems = freshness_problems(self.root)
+        self.assertTrue(any(item["id"] == "freshness.subtitles" for item in problems))
+
+    def test_new_subtitle_report_does_not_stale_the_quality_report(self) -> None:
+        self._write("quality/quality-report.json", {"dimensions": []})
+        self._write("quality/subtitles-qc.json", {"status": "PASS"})
+        self.assertEqual(freshness_problems(self.root), [])
+
+    def test_new_build_report_does_stale_the_quality_report(self) -> None:
+        self._write("quality/quality-report.json", {"dimensions": []})
+        build_report = self._write("final/build-report.json", {"verdict": "pass"})
+        future = time.time() + 5
+        os.utime(build_report, (future, future))
+        problems = freshness_problems(self.root)
+        self.assertTrue(any(item["id"] == "freshness.quality" for item in problems))

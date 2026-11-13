@@ -184,6 +184,7 @@ def schemas_command(
     from course_control.voice.audio.voice_bible import VoiceBible
     from course_control.voice.audio.lexicon import Lexicon
     from course_control.delivery.schema import DeliveryManifest, ProductionOrder, ProductionState
+    from course_control.delivery.project import ProjectSpec
     from course_control.rendering.formulas import FormulaSpec
     from course_control.platform.session import EvidenceManifest, SessionSpec
 
@@ -204,6 +205,7 @@ def schemas_command(
         "director-plan": DirectorPlan,
         "production-order": ProductionOrder,
         "production-state": ProductionState,
+        "project-spec": ProjectSpec,
         "delivery-manifest": DeliveryManifest,
         "layout-template": LayoutTemplate,
         "simulation-spec": SimulationSpec,

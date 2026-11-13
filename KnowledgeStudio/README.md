@@ -1,7 +1,7 @@
 # KnowledgeStudio
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 教材与知识资产管理：把一本专业教材拆成**按页可引用**的知识单元，让一节课只读它需要的十几页。
 
 教材、论文与视频来源统一进入本机 Docling 资料区；采集与预处理见 [docs/资料采集与预处理.md](../docs/资料采集与预处理.md)。PDF 的 `document.md` / `pages/` 与 YouTube 的 `transcript.clean.md` 都从该区读取。
@@ -44,6 +44,20 @@ uv run --project KnowledgeStudio knowledge-studio map --root knowledge/hucho
 # 10. 完整性检查
 uv run --project KnowledgeStudio knowledge-studio verify --root knowledge/hucho
 ```
+# 11. 概念层与课程规划（2026-11-13）
+
+```powershell
+uv run --project KnowledgeStudio knowledge-studio knowledge-ir-validate `
+    --file knowledge-ir.yaml
+uv run --project KnowledgeStudio knowledge-studio curriculum-validate `
+    --plan curriculum.yaml --knowledge knowledge-ir.yaml --min-lessons 30 --max-lessons 50
+uv run --project KnowledgeStudio knowledge-studio schemas --output shared/schemas
+```
+
+- `knowledge-ir`：概念/先修/claim/证据/冲突；`supported` 需两个独立页或一条 derivation，`contested_resolved` 需写采用理由。
+- `curriculum`：覆盖、先修顺序、集数窗口；豁免必须写明理由。
+- 这些检查判断"证据是否足够携带主张"，不判断主张真伪；工具不会自动把 claim 升级为 `supported`。
+
 
 - `knowledge/` 只在本机：教材通常受版权保护，原件与拆页不进仓库。
 - 规则：只读检索到的页；引用到页并带页哈希；claim 的 `verification` 由人工确认，工具从不自动标 `verified`。

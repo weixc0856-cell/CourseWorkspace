@@ -129,9 +129,9 @@ build/<slug>/shot-sheet/
 
 ## 8. 代码与测试
 
-- `CourseControl/src/course_control/contracts.py` — `ShotSpec` 的八项字段、`ContinuityObject`、`Storyboard` v2 与版本守卫
+- `CourseControl/src/course_control/content/contracts.py` — `ShotSpec` 的八项字段、`ContinuityObject`、`Storyboard` v2 与版本守卫
 - `CourseControl/src/course_control/authoring/shot_sheet.py` — 资产解析、指纹、问题定位、编译、复核报告
-- `CourseControl/src/course_control/validators.py` — V-45～V-47
+- `CourseControl/src/course_control/content/validators.py` — V-45～V-47
 - `CourseControl/src/course_control/cli/authoring.py` — `shot-sheet`
 - Schema：`shared/schemas/storyboard.schema.json`
 - 测试：`CourseControl/tests/test_shot_sheet.py`（9 例）

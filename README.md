@@ -1,7 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
 
-> **2026-11-12 状态**：CourseControl 按八个上下文重组（见 `docs/架构-DDD上下文与边界.md`）；仓库只保留工具、测试夹具与规范，课程与项目材料在内容根（`course-control separation` 可查）。V2 生产线的动画预览、声音资产、镜头表与锁定已落地，P5 试点停在字幕 QC（`docs/v2/P5-全链路验证.md`）。CourseControl 回归 561 例通过 / 7 跳过。
+> **2026-11-13 状态**：CourseControl 605 用例通过 / 7 跳过，KnowledgeStudio 38 通过，`check.ps1` = `check ok`。仓库只保留工具、测试夹具与规范，课程与项目材料在内容根。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补、项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层已落地；M2 真实 P5 暂缓（见 `docs/v2/m0/EXECUTION_PLAN.md`）。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
@@ -65,6 +65,22 @@ package                                → deliver/<slug>/（唯一最终交付�
 ```
 
 Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` 通过 core `Renderer`、帧接收器和 ffmpeg 直接产出 `build/<slug>/animation/<scene-stem>.mp4`；adapter 重试并 ffprobe，失败即 `fail`，不写 `skipped`。
+
+
+## V2 契约与质量闭环（2026-11-13）
+
+在不改变 `build` 默认路径的前提下，新增了一组增量契约与命令：
+
+| 能力 | 命令 | 产物 |
+| --- | --- | --- |
+| 项目定义 | `project-validate` / `project-show` | `projects/<id>/project.yaml`；存量课由 `lesson.yaml` 合成 |
+| 制品索引 | `artifact-index` | `<内容根>/runtime/artifacts/<id>/registry.json` |
+| 运行记录 | `run-start` / `run-status` | `<内容根>/runtime/runs/<run-id>/run.json` |
+| 缺陷与修复计划 | `quality-diagnose` / `quality-repair-plan` | `build/<slug>/quality/defects.json`、`repair-plan.json` |
+| 回归与证书 | `quality-regression` / `quality-certificate` | `regression.json`、`certificate.json` |
+| 知识概念层 | `knowledge-studio knowledge-ir-validate` / `curriculum-validate` | `knowledge-ir`、`curriculum` 契约 |
+
+这些命令当前不被构建流水线读取；契约见 `docs/v2/m0/DATA_CONTRACTS_V2.md`，执行状态见 `docs/v2/m0/EXECUTION_PLAN.md`。
 
 ## 内容形态与音频
 

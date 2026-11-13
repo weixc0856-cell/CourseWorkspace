@@ -422,3 +422,72 @@ def status_command(
     typer.echo(f"source: {source.source_id}  {source.title}")
     typer.echo(f"pages: {len(pages)}/{source.pdf_pages}  units: {len(units)}  retrievals: {len(retrievals)}")
     typer.echo(f"index: {'present' if index_mod.db_path(root).is_file() else 'missing'}")
+
+@app.command("knowledge-ir-validate")
+def knowledge_ir_validate_command(
+    file: Path = typer.Option(..., "--file", help="knowledge-ir JSON/YAML"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Validate concepts, prerequisites and claim evidence sufficiency."""
+    from .knowledge_ir import load_knowledge, validate_knowledge
+
+    try:
+        ir = load_knowledge(file)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+    issues = validate_knowledge(ir)
+    if as_json:
+        typer.echo(json.dumps([item.model_dump() for item in issues], ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"concepts: {len(ir.concepts)}  claims: {len(ir.claims)}")
+        for issue in issues:
+            typer.echo(f"  [{issue.level}] {issue.code}: {issue.message}")
+        typer.echo("errors: %d" % sum(1 for item in issues if item.level == "error"))
+    raise typer.Exit(1 if any(item.level == "error" for item in issues) else 0)
+
+
+@app.command("curriculum-validate")
+def curriculum_validate_command(
+    plan: Path = typer.Option(..., "--plan", help="curriculum YAML"),
+    knowledge: Path = typer.Option(..., "--knowledge", help="knowledge-ir JSON/YAML"),
+    min_lessons: int | None = typer.Option(None, "--min-lessons"),
+    max_lessons: int | None = typer.Option(None, "--max-lessons"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Check coverage, prerequisite order and lesson count of a curriculum."""
+    from .knowledge_ir import load_curriculum, load_knowledge, validate_curriculum
+
+    try:
+        ir = load_knowledge(knowledge)
+        curriculum = load_curriculum(plan)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+    issues = validate_curriculum(
+        curriculum, ir, min_lessons=min_lessons, max_lessons=max_lessons
+    )
+    if as_json:
+        typer.echo(json.dumps([item.model_dump() for item in issues], ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"lessons: {len(curriculum.lessons)}  concepts: {len(ir.concepts)}")
+        for issue in issues:
+            typer.echo(f"  [{issue.level}] {issue.code}: {issue.message}")
+        typer.echo("errors: %d" % sum(1 for item in issues if item.level == "error"))
+    raise typer.Exit(1 if any(item.level == "error" for item in issues) else 0)
+
+@app.command("schemas")
+def schemas_command(
+    output: Path = typer.Option(Path("shared/schemas"), "--output"),
+) -> None:
+    """Export JSON Schema for the knowledge and curriculum contracts."""
+    from .knowledge_ir import CurriculumPlan, KnowledgeIR
+
+    output.mkdir(parents=True, exist_ok=True)
+    for name, model in {"knowledge-ir": KnowledgeIR, "curriculum": CurriculumPlan}.items():
+        target = output / f"{name}.schema.json"
+        target.write_text(
+            json.dumps(model.model_json_schema(), ensure_ascii=False, indent=2) + chr(10),
+            encoding="utf-8",
+        )
+        typer.echo(f"wrote {target}")

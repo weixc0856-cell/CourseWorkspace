@@ -126,3 +126,55 @@ class CheckpointStoreTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StageDagTest(unittest.TestCase):
+    def test_dependencies_are_declared_in_topological_order(self) -> None:
+        from course_control.platform.checkpoint import STAGE_DEPS, STAGE_ORDER
+
+        self.assertEqual(set(STAGE_DEPS), set(STAGE_ORDER))
+        for name, deps in STAGE_DEPS.items():
+            for dependency in deps:
+                self.assertIn(dependency, STAGE_ORDER)
+                self.assertLess(STAGE_ORDER.index(dependency), STAGE_ORDER.index(name))
+
+    def test_a_render_change_does_not_touch_its_siblings(self) -> None:
+        from course_control.platform.checkpoint import affected_by, downstream
+
+        affected = downstream("render:manim")
+        self.assertIn("collect", affected)
+        self.assertIn("verify", affected)
+        self.assertNotIn("render:blender", affected)
+        self.assertNotIn("render:code_video", affected)
+        self.assertNotIn("capture_slides", affected)
+        self.assertEqual(affected_by("verify"), {"verify"})
+        self.assertEqual(affected_by("capture_slides"), set(STAGE_ORDER_ALL))
+
+    def test_invalidate_from_keeps_sibling_checkpoints(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CheckpointStore(Path(tmp), "fingerprint")
+            store.root.mkdir(parents=True)
+            for stage in STAGE_ORDER_ALL:
+                (store.root / (stage.replace(":", "-") + ".json")).write_text("{}", encoding="utf-8")
+            store.invalidate_from("render:manim")
+            remaining = {path.stem for path in store.root.glob("*.json")}
+            self.assertIn("render-blender", remaining)
+            self.assertIn("render-code_video", remaining)
+            self.assertIn("capture_slides", remaining)
+            self.assertNotIn("render-manim", remaining)
+            self.assertNotIn("collect", remaining)
+            self.assertNotIn("verify", remaining)
+
+
+STAGE_ORDER_ALL = [
+    "capture_slides",
+    "render:motion_canvas",
+    "render:manim",
+    "render:blender",
+    "render:code_video",
+    "collect",
+    "compose",
+    "burn_subtitles",
+    "brand",
+    "verify",
+]

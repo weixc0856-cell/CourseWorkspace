@@ -22,6 +22,10 @@ from course_control.animatic.timeline import Timeline
 AUDIO_TOLERANCE_S = 0.10
 AUDIO_TOLERANCE_RATIO = 0.001
 PICTURE_TOLERANCE_S = 0.10
+# Acceptance rejects a drift above roughly 2.5 frames at 30 fps.  The preview
+# keeps its wider tolerance so a long cut is not failed over rounding, but a
+# drift that acceptance would reject must never disappear silently (P5 lesson 3).
+ACCEPTANCE_AUDIO_DRIFT_S = 0.083
 
 
 def write_artifacts(
@@ -170,6 +174,20 @@ def _checks(timeline: Timeline, segments: list, picture: dict, audio: dict | Non
                 "expected": f"narration within {tolerance:.2f}s of the picture",
                 "actual": "unknown" if audio_duration is None else f"{audio_duration:.2f}s",
                 "detail": None if drift is None else f"delta {drift:+.2f}s",
+            }
+        )
+        acceptance_ok = drift is not None and abs(drift) <= ACCEPTANCE_AUDIO_DRIFT_S
+        checks.append(
+            {
+                "id": "audio_sync_acceptance",
+                "status": "pass" if acceptance_ok else "warn",
+                "expected": f"|delta| <= {ACCEPTANCE_AUDIO_DRIFT_S:.3f}s (verify threshold)",
+                "actual": "unknown" if drift is None else f"delta {drift:+.3f}s",
+                "detail": (
+                    None
+                    if acceptance_ok
+                    else "preview tolerance is wider; verify rejects this drift"
+                ),
             }
         )
 

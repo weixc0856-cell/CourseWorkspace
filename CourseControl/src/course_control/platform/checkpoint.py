@@ -37,6 +37,51 @@ STAGE_ORDER = [
     "verify",
 ]
 
+# The build is a DAG, not a line: every render reads the captured slides, and
+# collect fans them back in.  STAGE_ORDER is the topological default path; this
+# table is what decides which stages a change actually reaches.
+STAGE_DEPS: dict[str, tuple[str, ...]] = {
+    "capture_slides": (),
+    "render:motion_canvas": ("capture_slides",),
+    "render:manim": ("capture_slides",),
+    "render:blender": ("capture_slides",),
+    "render:code_video": ("capture_slides",),
+    "collect": (
+        "render:motion_canvas",
+        "render:manim",
+        "render:blender",
+        "render:code_video",
+    ),
+    "compose": ("collect",),
+    "burn_subtitles": ("compose",),
+    "brand": ("burn_subtitles",),
+    "verify": ("brand",),
+}
+
+
+def downstream(stage: str) -> set[str]:
+    """Every stage that transitively depends on ``stage`` (not including it)."""
+    if stage not in STAGE_DEPS:
+        return set()
+    result: set[str] = set()
+    frontier = [stage]
+    while frontier:
+        current = frontier.pop()
+        for name, deps in STAGE_DEPS.items():
+            if current in deps and name not in result:
+                result.add(name)
+                frontier.append(name)
+    return result
+
+
+def affected_by(stage: str) -> set[str]:
+    """``stage`` plus every stage downstream of it."""
+    return {stage} | downstream(stage)
+
+
+def is_affected(stage: str, origin: str) -> bool:
+    return stage in affected_by(origin)
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
@@ -303,10 +348,11 @@ class CheckpointStore:
         self._path(stage).unlink(missing_ok=True)
 
     def invalidate_from(self, stage: str) -> None:
-        if stage not in STAGE_ORDER:
+        if stage not in STAGE_DEPS:
             return
-        for name in STAGE_ORDER[STAGE_ORDER.index(stage) :]:
-            self.invalidate(name)
+        for name in STAGE_ORDER:
+            if name in affected_by(stage):
+                self.invalidate(name)
 
 
 def resumed_outcome(checkpoint: Checkpoint) -> StageOutcome:

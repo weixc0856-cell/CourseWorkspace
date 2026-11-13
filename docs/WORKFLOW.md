@@ -337,3 +337,32 @@ uv run --project CourseControl course-control reference-compare --lesson <slug> 
 ```
 
 6. 旧模式 `deck` / `scene` / `recording` 不变；不写 `production` 的课程完全不受影响。
+
+## 15. V2 契约与质量闭环（2026-11-13，增量）
+
+这些命令读写 `projects/`、`runtime/` 与 `build/<slug>/quality/`，不改变 `build` 的默认路径。契约暂不被构建流水线读取。
+
+```powershell
+# 项目契约（没有 project.yaml 的存量课由 lesson.yaml 合成，标记 synthesized）
+uv run --project CourseControl course-control project-validate --project <path>/project.yaml
+uv run --project CourseControl course-control project-show --lesson <slug>
+uv run --project CourseControl course-control artifact-index --lesson <slug>
+uv run --project CourseControl course-control run-start --lesson <slug>
+uv run --project CourseControl course-control run-status --run <run-id>
+
+# 质量闭环
+uv run --project CourseControl course-control quality-diagnose --lesson <slug>
+uv run --project CourseControl course-control quality-repair-plan --lesson <slug> --attempt 1
+uv run --project CourseControl course-control quality-regression --lesson <slug> --before <defects.json>
+uv run --project CourseControl course-control quality-certificate --lesson <slug>
+
+# 知识概念层与课程规划
+uv run --project KnowledgeStudio knowledge-studio knowledge-ir-validate --file <knowledge-ir.yaml>
+uv run --project KnowledgeStudio knowledge-studio curriculum-validate --plan <curriculum.yaml> --knowledge <knowledge-ir.yaml>
+```
+
+约定：
+
+- `quality-diagnose` 写 `build/<slug>/quality/defects.json`；`quality-repair-plan` 写 `repair-plan.json`；证书写 `certificate.json`。
+- 修复计划只描述范围，不自动改产物；`attempt > 3` 直接 blocked。
+- `curriculum-validate` 检查覆盖与先修顺序，不判断主张真伪。

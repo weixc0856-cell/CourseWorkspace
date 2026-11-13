@@ -1,13 +1,13 @@
 # CourseControl
 
 
-> **2026-11-11 状态**：V1 收敛完成；`check.ps1` exit 0，六套 647 用例（641 通过、6 跳过）。新增历史 / AI 时代基础 / 汽车空气动力学三个知识板块（本机开发，不入库）；统一英文成片与英上中下字幕；`build/` 为临时区、`deliver/` 为最终交付区。C-16 片头 DEFERRED。生产契约与验收见 [最终验收报告](../docs/stabilization/FINAL_ACCEPTANCE_REPORT.md)。
+> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`；`package` 把最终资产复制到 `deliver/<slug>/`。
 
 在上游还包含三个设计/管理层：
 
 - `director/`：已批准的 brief / outline / script / storyboard → 导演计划、引擎路由、硬闸门；
-- `producer/`：订单、授权、交付清单、状态与 `producer-rebuild` 增量；
+- `delivery/`：订单、授权、交付清单、状态与 `producer-rebuild` 增量；
 - `layout/` + `simulation.py`：版式模板/配色 token，以及模拟数据的输入输出契约。
 
 ## 边界
@@ -245,3 +245,24 @@ uv run --project CourseControl --extra asr course-control asr-align --lesson <sl
   缺 ASR 时 Media QC 的 `media.speech_match` 为 INCOMPLETE。首次需
   `uv sync --project CourseControl --extra asr`，模型缓存到 `runtime/asr/models/`。
 - 发布批准必须有人工 `quality/release-approval.json`，系统不代签。
+
+### 项目、运行与质量（2026-11-13，增量）
+
+```powershell
+# 项目契约（没有 project.yaml 的课由 lesson.yaml 合成，标记 synthesized）
+uv run course-control project-validate --project ..\projects\<id>\project.yaml --workspace ..
+uv run course-control project-show --lesson <slug> --workspace ..
+
+# 制品索引与运行记录
+uv run course-control artifact-index --lesson <slug> --workspace ..
+uv run course-control run-start --lesson <slug> --workspace ..
+uv run course-control run-status --run <run-id> --workspace ..
+
+# 缺陷诊断、修复计划、回归与证书
+uv run course-control quality-diagnose --lesson <slug> --workspace ..
+uv run course-control quality-repair-plan --lesson <slug> --attempt 1 --workspace ..
+uv run course-control quality-regression --lesson <slug> --before <defects.json> --workspace ..
+uv run course-control quality-certificate --lesson <slug> --workspace ..
+```
+
+约定：这些契约不改 `build` 默认行为；修复计划只给范围，不自动改产物；`attempt > 3` 直接 blocked。

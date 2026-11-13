@@ -6,6 +6,7 @@ Metrics are reported, never used as a silent pass/fail.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Iterable
@@ -27,6 +28,157 @@ def _read_json(path: Path) -> dict | None:
 
 def _status(record: dict) -> str:
     return str(record.get("status") or record.get("verdict") or "").lower()
+
+
+def _sha256(path: Path) -> str | None:
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except OSError:
+        return None
+
+
+def _newer(report: Path, artifact: Path, slack: float = 1.0) -> bool:
+    """True when the artifact was written after the report that describes it."""
+    try:
+        return report.stat().st_mtime + slack < artifact.stat().st_mtime
+    except OSError:
+        return False
+
+
+def freshness_problems(build_root: Path) -> list[dict]:
+    """Reports that no longer describe the current artifacts are not evidence.
+
+    The build report records the hash of every delivered artifact; a changed
+    final file makes it stale.  The other reports do not carry input hashes
+    yet, so they fall back to a modification-time comparison.  A stale report
+    becomes an ``incomplete`` check, never a silent pass (P5 lesson 2).
+    """
+    problems: list[dict] = []
+    build_path = build_root / "final" / "build-report.json"
+    build = _read_json(build_path)
+    if build:
+        for artifact in build.get("artifacts") or []:
+            if not isinstance(artifact, dict):
+                continue
+            relative = str(artifact.get("path") or "")
+            digest = artifact.get("sha256")
+            if not relative or not digest or not relative.startswith("final/"):
+                continue
+            target = build_root / relative
+            if not target.is_file():
+                problems.append(
+                    {
+                        "source": "build-report",
+                        "id": "freshness.build",
+                        "detail": f"artifact missing: {relative}",
+                    }
+                )
+                break
+            if _sha256(target) != digest:
+                problems.append(
+                    {
+                        "source": "build-report",
+                        "id": "freshness.build",
+                        "detail": f"artifact changed since build-report: {relative}",
+                    }
+                )
+                break
+
+    media_report = build_root / "quality" / "media-qc.json"
+    media = _read_json(media_report)
+    if media and media.get("video"):
+        video = Path(str(media["video"]))
+        if video.is_file() and _newer(media_report, video):
+            problems.append(
+                {
+                    "source": "media-qc",
+                    "id": "freshness.media",
+                    "detail": "final video is newer than media-qc.json",
+                }
+            )
+
+    subtitles_report = build_root / "quality" / "subtitles-qc.json"
+    subtitles = _read_json(subtitles_report)
+    if subtitles:
+        source = subtitles.get("source") or {}
+        target = source.get("path")
+        if target:
+            path = Path(str(target))
+            if not path.is_file():
+                problems.append(
+                    {
+                        "source": "subtitles-qc",
+                        "id": "freshness.subtitles",
+                        "detail": "audited subtitle file is missing",
+                    }
+                )
+            elif source.get("sha256"):
+                if _sha256(path) != source.get("sha256"):
+                    problems.append(
+                        {
+                            "source": "subtitles-qc",
+                            "id": "freshness.subtitles",
+                            "detail": "subtitle file changed since subtitles-qc",
+                        }
+                    )
+            elif _newer(subtitles_report, path):
+                problems.append(
+                    {
+                        "source": "subtitles-qc",
+                        "id": "freshness.subtitles",
+                        "detail": "subtitle file is newer than subtitles-qc.json",
+                    }
+                )
+
+    quality_report = build_root / "quality" / "quality-report.json"
+    if _read_json(quality_report):
+        # The quality report reads the build and media reports; subtitle QC is
+        # gated separately, so a newer subtitle report does not stale it.
+        for dependency in (build_path, media_report):
+            if dependency.is_file() and _newer(quality_report, dependency):
+                problems.append(
+                    {
+                        "source": "quality-report",
+                        "id": "freshness.quality",
+                        "detail": f"{dependency.name} is newer than quality-report.json",
+                    }
+                )
+                break
+    return problems
+
+
+def subtitles_qc_result(paths) -> tuple[list[dict], list[dict]]:
+    """Subtitle QC is a delivery gate, not a postscript (P5 lesson 1)."""
+    lesson = getattr(paths, "lesson", None)
+    subtitles = getattr(lesson, "subtitles", None)
+    if subtitles is not None and not getattr(subtitles, "enabled", False):
+        return [], []
+    report = _read_json(paths.build_root / "quality" / "subtitles-qc.json")
+    if report is None:
+        return [], [
+            {
+                "source": "subtitles-qc",
+                "id": "subtitles.qc",
+                "detail": "no subtitle QC report; run subtitles-qc after subtitles-build",
+            }
+        ]
+    status = str(report.get("status") or "").upper()
+    if status == "FAIL":
+        detail = "; ".join((report.get("errors") or [])[:3]) or "subtitle QC failed"
+        return [{"source": "subtitles-qc", "id": "subtitles.qc", "detail": detail}], []
+    if status not in {"PASS", "WARN"}:
+        return [], [
+            {
+                "source": "subtitles-qc",
+                "id": "subtitles.qc",
+                "detail": f"subtitle QC status is {status or 'unknown'}",
+            }
+        ]
+    return [], []
 
 
 def hard_checks(paths) -> list[dict]:
@@ -176,6 +328,11 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
     registry = try_load_registry(paths.workspace)
     hard = hard_checks(paths)
     incomplete = incomplete_checks(paths)
+    subtitle_fail, subtitle_incomplete = subtitles_qc_result(paths)
+    hard.extend(subtitle_fail)
+    incomplete.extend(subtitle_incomplete)
+    freshness = freshness_problems(paths.build_root)
+    incomplete.extend(freshness)
     grammar = grammar_report(paths, registry, profile)
     quality = _read_json(paths.build_root / "quality" / "quality-report.json") or {}
     quality_warnings: list[str] = []
@@ -221,6 +378,7 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
         "quality_warnings": quality_warnings,
         "blocking_warnings": blocking_warnings,
         "human_review_items": human_review_items,
+        "freshness": freshness,
         "metrics": metrics(paths, registry, profile),
         **decide(
             hard,

@@ -4,9 +4,11 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from course_control.animatic import AnimaticError, resolve_build
 from course_control.animatic.builder import _segment_key
+from course_control.animatic.report import _checks
 from course_control.animatic.timeline import Timeline, Unit
 
 
@@ -225,3 +227,20 @@ class AnimaticCacheKeyTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnimaticAcceptanceTest(unittest.TestCase):
+    def _checks_for(self, duration: float, audio_duration: float) -> dict:
+        timeline = SimpleNamespace(duration_s=duration)
+        checks = _checks(timeline, [], {"duration": duration}, {"duration_s": audio_duration})
+        return {item["id"]: item for item in checks}
+
+    def test_drift_beyond_acceptance_is_flagged_while_preview_passes(self) -> None:
+        checks = self._checks_for(1260.0, 1260.5)
+        self.assertEqual(checks["audio_sync"]["status"], "pass")
+        self.assertEqual(checks["audio_sync_acceptance"]["status"], "warn")
+
+    def test_small_drift_passes_both(self) -> None:
+        checks = self._checks_for(1260.0, 1260.05)
+        self.assertEqual(checks["audio_sync"]["status"], "pass")
+        self.assertEqual(checks["audio_sync_acceptance"]["status"], "pass")

@@ -43,7 +43,7 @@
 | FR-44 仓库与项目分离 | `CourseControl/src/course_control/platform/separation.py`、`cli/lesson.py`（`separation`）、`workspace_layout.engine_roots` | `test_separation.py`（5 例）；2026-11-12 迁移后仅剩三处夹具 |
 | FR-42 镜头表 | `content/contracts.py`（`ShotSpec` v2 字段、`ContinuityObject`、`Storyboard` 版本守卫）、`authoring/shot_sheet.py`、`content/validators.py`（V-45～V-47）、`cli/authoring.py` | `test_shot_sheet.py`（9 例）；a01 副本 v2 编译、三处错误定位、指纹稳定；13 门 v1 课程不受影响 |
 | FR-41 声音资产 | `CourseControl/src/course_control/voice/audio/`（`voice_bible.py`、`lexicon.py`）、`narrate.segment_cache_key`、`voice/narration_course.py`、`cli/render.py`（`narration-assets`）；`shared/schemas/voice-bible.schema.json`、`lexicon.schema.json` | `test_audio_assets.py`（17 例）；a01 副本上 5/24 段被词典改写，旧缓存键不变 |
-| FR-40 动画预览 | `CourseControl/src/course_control/animatic/`（`timeline.py`、`builder.py`、`delivery/report.py`）、`cli/animatic.py` | `test_animatic.py`（11 例）；三门真实课程 animatic |
+| FR-40 动画预览 | `CourseControl/src/course_control/animatic/`（`timeline.py`、`builder.py`、`report.py`）、`cli/animatic.py` | `test_animatic.py`（11 例）；三门真实课程 animatic |
 | 音频策略（内容类型/BGM） | `CourseControl/src/course_control/voice/audio_plan.py`；`content/contracts.py`（`AudioPolicy`）；`audio-plan` CLI；`producer/delivery.py` | `test_audio_plan.py`；交付包在配置 BGM 时要求 `audio_plan.json` |
 | V1-E 时间线兼容层 | `CourseControl/src/course_control/content/v1_timeline.py`；`collect` 写 `contracts/timeline.spec.json`；CLI `timeline-v1` | `CourseControl/tests/test_v1_timeline.py`；lesson-smoke 实跑 |
 | V1-D Session 证据适配 | `CourseControl/src/course_control/platform/session_evidence_v1.py`；CLI `session-evidence-v1` | `CourseControl/tests/test_session_evidence_v1.py`；shell_001 实跑 |
@@ -69,6 +69,17 @@
 | 脚本化计数（C-27） | `quality/stats.py`；`stats` | `test_stats.py` |
 | 探针隔离（C-18） | `RemotionStudio/src/probes/`、`src/index.ts` | `tsc --noEmit` |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
+
+## V2 契约层（2026-11-13，未进 PRD）
+
+这些能力是 `docs/v2/m0/` 的落地前置，不改变 PRD 的产品边界；未经决策前不构成新的需求基线。
+
+| 能力 | 主要代码 | 测试 |
+| --- | --- | --- |
+| ProjectSpec / ArtifactRegistry / RunRecord（M3） | `delivery/project.py`、`platform/artifacts.py`、`platform/run_record.py`、`cli/project.py`；`shared/schemas/project-spec.schema.json` | `test_project_spec.py`、`test_artifacts.py`、`test_run_record.py`；15 门存量课合成实跑 |
+| 阶段 DAG 与受影响范围（M4） | `platform/checkpoint.py`（`STAGE_DEPS`）、`pipeline.py`（`--resume-from`） | `test_checkpoint.py`（依赖顺序、兄弟隔离、失效范围） |
+| 缺陷诊断 / 修复计划 / 回归 / 证书（M5） | `quality/defect.py`、`quality/repair.py`、`quality/regression.py`、`quality/certificate.py`、`cli/quality.py` | `test_defects.py`、`test_certificate.py`；真实课诊断实跑 |
+| 知识概念层与课程规划（M6） | `KnowledgeStudio/src/knowledge_studio/knowledge_ir.py`、`cli.py`；`shared/schemas/knowledge-ir.schema.json`、`curriculum.schema.json` | `KnowledgeStudio/tests/test_knowledge_ir.py` |
 
 ## 人工依赖
 

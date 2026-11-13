@@ -13,6 +13,7 @@ from course_control.platform.build_lock import BuildLock
 from course_control.platform.checkpoint import (
     STAGE_ORDER,
     CheckpointStore,
+    is_affected,
     run_stage,
     stage_inputs,
 )
@@ -127,7 +128,7 @@ class _Run:
     def force(self, stage: str) -> bool:
         if self.options.resume_from is None or stage not in STAGE_ORDER:
             return False
-        return STAGE_ORDER.index(stage) >= STAGE_ORDER.index(self.options.resume_from)
+        return is_affected(stage, self.options.resume_from)
 
     def run(self, stage: str, action) -> StageOutcome:
         if self.store is None:

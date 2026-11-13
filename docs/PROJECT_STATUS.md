@@ -1,11 +1,28 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-11（新增知识视频质量基准与 E01 单集验收标准；2026-11-10 V1 全量修复与生产体系收敛、Docling 真实教材试点）
+- **最近更新**：2026-11-13（M0 架构审计草案、M1 闭环修补：字幕 QC 交付门、报告新鲜度、预览容差告警、五态映射表）
 - **代码基线**：`origin/main` = `b6fb662`（PR #16）；当前分支 `feat/v1-pipeline-remote-fallback`，基线提交 `07bef7b`，工作区含本轮改动（未提交）
 - **基线核实**：2026-11-10 实跑 `check.ps1` = `check ok`；六套 647 个用例（641 通过、6 跳过），Remotion `tsc --noEmit` 通过
 - **需求基准**：[PRD.md](PRD.md)（v1.0）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
+
+## 0.0000D 2026-11-13 M0 架构基线与 M1 闭环修补
+
+- **M0 草案**：新增 `docs/v2/m0/`（产品规格、架构、数据契约、生产工作流、质量标准、迁移计划六份 + 索引）。定位是规划与审计，**不是生效规范**；产品边界变更（无人值守、无人工审批）尚未决策，PRD 未改。
+- **M1 已完成**（对应 `v2/V2-工业化完成度评估.md` §4 的 F-1～F-3、F-8、F-9a/b）：
+  - F-1 字幕 QC 接入交付门：`subtitles-build` 写完草稿立即 QC 并落 `quality/subtitles-qc.json`；`quality-gate` 把缺失或失败的字幕 QC 分别记为 `incomplete` / `fail`。
+  - F-2 质量门校验报告新鲜度：构建报告按 `final/` 产物哈希校验，`media-qc` / `subtitles-qc` / `quality-report` 按时间与来源哈希校验；过期报告记为 `incomplete`。
+  - F-3 预览容差告警：animatic 保留宽容差，新增 `audio_sync_acceptance` 检查，超过 0.083 s 验收阈值时告警。
+  - F-8 五态映射：新增 `docs/五态映射表.md`，并在 `ARCHITECTURE.md` §4.4 链接。
+  - F-9a/b 文档漂移与状态矛盾：声音资产、镜头表、TRACEABILITY、`producer/` 路径已改正；V2.0 建议稿的 P5 状态改为"已终止"。
+- **回归**：CourseControl 单测 569 通过 / 7 跳过；`scripts/check.ps1` 全量回归 `check ok`（2026-11-13 实跑，六套工程）。
+- **真实课验证**：`aging-evolution`（145.367 s）上 `validate` 无问题、`verify` 全过、`subtitles-qc` PASS；首次 `quality-gate` 正确报出缺少字幕 QC，补跑后不再报。`animatic` 因该课 `build/` 没有幻灯片 PNG 而全部 placeholder，属素材缺失，不计入 P5。
+- **M3 前置契约**：`ProjectSpec`（`delivery/project.py` + `shared/schemas/project-spec.schema.json`）、`ArtifactRegistry`（`platform/artifacts.py`）、`RunRecord`（`platform/run_record.py`）与五个 CLI（`project-validate` / `project-show` / `artifact-index` / `run-start` / `run-status`）已落地。内容根 15 门存量课全部可合成，`aging-evolution` 索引 120 个产物。契约暂不被构建流水线读取。
+- **M4 编排 DAG**：`platform/checkpoint.py` 新增 `STAGE_DEPS`；`--resume-from` 与 `invalidate_from` 按下游子图计算，兄弟渲染阶段不再连带重跑。默认构建路径不变，3 条 DAG 测试覆盖依赖顺序、兄弟隔离与失效范围。
+- **M5 质量闭环核心**：`quality/defect.py` 统一缺陷、`quality/repair.py` 归因与修复计划（attempt 上限 3、无法归因即停）、`quality/regression.py` 差分；CLI `quality-diagnose` / `quality-repair-plan` / `quality-regression`。`aging-evolution` 诊断 0 缺陷；`01-transformer-demo` 诊断出 Q1/Q2 两条缺失报告缺陷。修复执行器未做；交付证书已落地（`quality/certificate.py`、`quality-certificate`，`aging-evolution` 当前为 incomplete，原因是发布签核未完成）。
+- **M6 契约层**：`KnowledgeStudio/knowledge_ir.py` 新增概念/先修/claim/证据/冲突契约与课程规划校验；CLI `knowledge-ir-validate`、`curriculum-validate`、`schemas`；新增 `shared/schemas/knowledge-ir.schema.json` 与 `curriculum.schema.json`。自动研究、Mode B 流程与 A3 执行器未做。
+- **未执行**：完整 20 分钟课程的 P5 重开、真实 build/渲染/TTS。这些不能由 smoke 与单测替代（skip ≠ pass）。
 
 ## 0.0000C 2026-11-11 交付与临时分区
 
@@ -119,7 +136,7 @@ ASR/强制对齐、Claim Registry、多模型独立审查、双语旁白与 Shor
 | FR-32 静帧运镜 | `motion.py`、`MotionImage.tsx`、`docs/运镜与剪辑.md` | ken_burns 元数据 + Remotion 组件；tsc 通过 | COMPLETED（POC） |
 | FR-31 配色系统 | `layout/schema.py`、`ManimSandbox/common/design_system.py`、`docs/配色规范.md` | 浅色主题 + 语义色；palette-review 合辑 | COMPLETED（POC） |
 | FR-30 版式系统 | `CourseControl/src/course_control/layout/`、`docs/版式系统.md` | 8 个模板、12 镜头模板分配、CrossAttention/Loss 前后对比 | COMPLETED（POC） |
-| FR-29 制片层 | `CourseControl/src/course_control/producer/`、`docs/制片层.md` | 订单 + 七项交付清单：blocked，4 项缺失；增量检测实测 | COMPLETED（POC，交付未完成） |
+| FR-29 制片层 | `CourseControl/src/course_control/delivery/`、`docs/制片层.md` | 订单 + 七项交付清单：blocked，4 项缺失；增量检测实测 | COMPLETED（POC，交付未完成） |
 
 边界：导演层不写场景代码、不渲染；制片层不读密钥、不触发渲染/TTS/发布；成片未产出，交付清单如实 blocked。
 

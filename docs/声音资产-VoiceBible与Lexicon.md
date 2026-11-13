@@ -166,11 +166,11 @@ Dialogue Lock 还没做。它要记录的是：正式旁白文本哈希、bible 
 
 ## 11. 代码与测试
 
-- `CourseControl/src/course_control/audio/voice_bible.py` — 契约、加载、相对路径、哈希与校验
-- `CourseControl/src/course_control/audio/lexicon.py` — 契约、单次扫描改写、命中记录
-- `CourseControl/src/course_control/audio/__init__.py` — `resolve_assets()`，按课程解析两份资产
-- `CourseControl/src/course_control/narrate.py` — `segment_cache_key()` 新增两个可选维度
-- `CourseControl/src/course_control/narration_course.py` — 合成接入、meta v3
+- `CourseControl/src/course_control/voice/audio/voice_bible.py` — 契约、加载、相对路径、哈希与校验
+- `CourseControl/src/course_control/voice/audio/lexicon.py` — 契约、单次扫描改写、命中记录
+- `CourseControl/src/course_control/voice/audio/__init__.py` — `resolve_assets()`，按课程解析两份资产
+- `CourseControl/src/course_control/voice/narrate.py` — `segment_cache_key()` 新增两个可选维度
+- `CourseControl/src/course_control/voice/narration_course.py` — 合成接入、meta v3
 - `CourseControl/src/course_control/cli/render.py` — `narration-assets`
 - Schema：`shared/schemas/voice-bible.schema.json`、`lexicon.schema.json`；`lesson.schema.json` 增加两个可选字段
 - 测试：`CourseControl/tests/test_audio_assets.py`（17 例）
