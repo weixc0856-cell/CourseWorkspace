@@ -1,8 +1,9 @@
 # CourseWorkspace 产品需求基线（PRD）
 
-- **版本**：v1.0
-- **日期**：2026-11-03
+- **版本**：v2.0
+- **日期**：2026-11-13
 - **地位**：本文件是唯一有效的产品需求基线。任何开发任务必须能对应到本文的 `FR-*` / `NFR-*` 条目。
+- **v2.0 变更**：采纳双生产模式（Course / Topic Video）与无人值守目标（A3，当前实现 A1）；新增 FR-45～FR-51；质量从“检查通过”升级为“缺陷闭环 + 交付证书”。产品边界变更记录见 D-092。`docs/v2/m0/` 是本次升级的规划与审计，不替代本文件。
 - **取代**：`<内容根>/archive/CourseWorkspace-R0-R5改造PRD.md`（改造规格，已执行完毕）、`<内容根>/archive/ContentQA_实施评估.md`（设计稿，仅保留审查内核）、`<内容根>/archive/AI-Blender落地路线图.md`（历史状态快照）。
 - **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；真实工作流见 [WORKFLOW.md](WORKFLOW.md)；当前状态见 [PROJECT_STATUS.md](PROJECT_STATUS.md)。
 
@@ -10,27 +11,34 @@
 
 ## 1. 产品目标
 
-把**人工撰写的课程内容**稳定、可复现地转换成**带动画与三维场景的成片视频**，并在每一步给出可核验的证据。
+把**原始材料**（一本书、一组论文/网页、一个主题、一套已有课程材料）稳定地转换为**精品课程或主题视频**，每一步留下可核验的证据。
 
-产品解决的是“内容已经写好，但排版、动画、三维、合成、验收仍是手工拼接”的问题；R1 起也支持从用户提供的来源生成课程候选稿，但**不替代人工确认与事实裁决**，也不做无来源的知识生产。
+产品有两种原生模式，共用一个生产内核：
+
+- **Course**：一本书或一组材料 → 知识体系 → 课程规划（30–50 集是规划区间，不是硬门禁）→ 逐集生产。
+- **Topic Video**：一个主题、问题或文章 → 研究 → 叙事结构 → 单条或系列视频。
+
+目标自动化等级是 **A3 无人值守**；当前实现等级是 **A1**（自动执行、人工确认）。无人值守不等于降低证据标准：无法用可定位证据验证的内容不交付。
 
 ### 1.1 目标
 
-1. 单一课程契约：一门课只用 `lesson.yaml` + `storyboard.yaml` + 双文件内容描述。
-2. 确定性执行：同一输入重复构建得到同一文件集合与同一验收结论。
-3. 证据可追溯：每个阶段的状态、日志、产物、检查结果都落盘。
-4. 三维与 AI 能力可组合：三维场景由结构化任务驱动；AI 只生成候选，不直接判定完成。
-5. 资源可控：本机只有一台机器、一个 8080 服务，模型调用必须串行且可恢复。
+1. **双模式单内核**：课程与主题视频共用 ProjectSpec、知识层、质量引擎与交付包结构，不建两套流水线。
+2. **单一课程契约**：一门课只用 `lesson.yaml` + `storyboard.yaml` + 双文件内容描述；存量课程不需要迁移即可继续构建。
+3. **确定性执行**：同一输入重复构建得到同一文件集合与同一验收结论。
+4. **证据可追溯**：每个阶段的状态、日志、产物、检查结果都落盘；报告必须能说明它基于哪一版产物。
+5. **质量是唯一交付门槛**：缺陷可诊断、修复范围可计算、修复后必须回归复验；不通过不交付。
+6. **无人值守可停机**：证据不足、修复超限、资源超限时停止并输出缺口报告，不猜着通过。
+7. **资源可控**：本机只有一台机器、一个 8080 服务，模型调用必须串行且可恢复。
 
 ### 1.2 非目标（本版本明确不做）
 
-- 自动语音识别（ASR）、自动发布。
-  - 2026-11-10 备注：`asr-align` 作为可选的质检工具存在（检查字幕与语音覆盖），不改变"ASR 不驱动课程生产"的非目标。
-- 无人工确认的整课内容直接落盘（R1 起 AI 只产出候选稿，人工批准后才进入正式课程）。
-- 不部署 Code2Video 27B 权重；不引入第二套课程编排流水线；外部引擎只做镜头级能力。
-- 云端渲染、ComfyUI 图像生成流水线。
-- 让 LLM 直接判定课程事实正确性或替代人工审稿。
-- 多用户并发、多机器调度、容器化部署。
+- 自动发布到外部平台；发布动作仍由所有者执行。
+- 让 LLM 单独裁决事实。事实结论必须有可定位来源与程序化规则；人工只在成品拒收复核时介入。
+- 自动语音识别驱动生产（ASR 仅作可选质检工具）。
+- 多用户并发、多机器调度、容器化部署、云端渲染、ComfyUI 图像生成流水线。
+- 自研基础模型、自研 3D 渲染引擎、多 Agent 自由讨论系统。
+- 部署 Code2Video 27B 权重；外部引擎只做镜头级能力。
+- 在线编辑器、逐帧人工修改工具、多人协作审稿平台、实时交互教学平台。
 
 ---
 
@@ -38,13 +46,29 @@
 
 | 角色 | 做什么 | 系统提供 |
 | --- | --- | --- |
-| 课程作者 | 撰写 `slides.md` / `lecture_notes.md`，登记 `storyboard.yaml` | 契约校验、截图、时间线推导 |
-| 动画作者 | 在 Motion Canvas 编辑器制作场景 | 无头自动导出、ffprobe 校验与自动接轨 |
-| 三维作者 | 编写 IR v2 场景任务或使用 ModelingStudio | 场景执行、验收、manifest |
-| 构建者 | 一键构建并验收 | `build-lesson.ps1`、`build-report.json` |
-| 审稿人 | 核对内容与来源 | 内容审查报告（候选意见，人工裁决） |
+| 所有者 / 制片人 | 给材料、定选题与标准、看成品、接受或拒收 | ProjectSpec、运行记录、质量证书、缺口报告 |
+| 系统 | 研究、规划、创作、生产、验收、修复 | 八阶段生产内核、缺陷闭环、停机条件 |
+| 课程作者（存量课程） | 维护 `slides.md` / `lecture_notes.md` / `storyboard.yaml` | 契约校验、截图、时间线推导 |
+| 动画 / 三维作者 | 制作场景或编写 IR v2 任务 | 无头导出、场景执行、验收、manifest |
+| 审稿人（异常时） | 处理系统停机时留下的缺口 | 缺口报告与证据位置 |
 
-主流程：
+自动化等级：
+
+| 等级 | 含义 | 人的位置 |
+| --- | --- | --- |
+| A0 | 人工驱动，工具辅助 | 每一步 |
+| A1 | 自动执行，人工逐步确认 | 每个阶段末 |
+| A2 | 自动执行，只在异常时请求确认 | 异常 |
+| A3 | 无人值守，自动诊断、修复、重试；不合格不交付 | 只在最终拒收复核 |
+
+主流程（两种模式共用）：
+
+```text
+ProjectSpec
+  → INGEST → UNDERSTAND → PLAN → AUTHOR → DIRECT → PRODUCE → VERIFY → DELIVER
+```
+
+存量的逐课构建路径保持不变：
 
 ```text
 作者写内容 → validate → 截图 / 动画导出 / 三维渲染 → collect → compose → verify → 交付报告
@@ -64,17 +88,19 @@
 | `BlenderStudio/` | 核心（三维能力） | 是（可选引擎） | IR v2 场景系统 + 课程渲染任务 |
 | `ModelingStudio/` | 内部能力 | 否 | 图片→Blender 模型；产出可转为三维素材 |
 | `ManimSandbox/` | 可选能力 | 否 | 数学动画备选；当前无课程使用，保活但不接入主流程 |
-| `ContentQA/` | 内部能力 | 否 | 内容审查（默认 Claude Code，API 可选）；只读课程，不影响构建判定 |
+| `KnowledgeStudio/` | 核心（知识能力） | 是（研究阶段） | 教材拆页、页级证据、概念/主张层与课程规划校验 |
+| `ContentQA/` | 内部能力 | 否 | 内容审查（默认 Claude Code，API 可选）；产出候选意见，进入缺陷需证据升级 |
 | `shared/` | 共享层 | 是 | Schema、设计令牌、AI 运行时 |
 | `config/`、`scripts/` | 支撑 | 是 | 本机配置与工作区入口 |
 | `docs/` | 指导 | — | 权威文档与归档 |
 
-### 3.1 当前版本边界（v1）
+### 3.1 当前版本边界（v2）
 
-- 课程构建闭环、IR v2、ModelingStudio、本地模型串行调度、在线内容审查内核为**本期交付**。
-- Motion Canvas 使用自建无头 Renderer 自动导出；编辑器仅用于制作与预览，不再是构建闸门。
-- Manim 仅保留现有 demo 与适配器，不新增课程接入。
-- Blender 任务存在两代 Schema，v1/v2 分工见 FR-04 / FR-05。
+- **已实现**：课程构建闭环、IR v2、ModelingStudio、本地模型串行调度、内容审查内核；动画预览、声音资产、镜头表、锁定与失效。
+- **已实现（2026-11-13）**：ProjectSpec / ArtifactRegistry / RunRecord（FR-45、FR-46）；阶段 DAG（FR-47）；质量缺陷闭环与证书（FR-48）；知识概念层与课程规划（FR-49）；自动化等级与停机条件（FR-50）。
+- **未实现**：完整 20 分钟课程的 P5 全链路验证；主题视频 Mode B 流程（FR-51，PLANNED）；自动研究与自动修复执行器；A3 无人值守实跑。
+- **保持兼容**：存量一门课仍由 `lesson.yaml` + `storyboard.yaml` 描述，新增契约不改变 `build` 默认行为。
+- Motion Canvas 使用自建无头 Renderer 自动导出；Manim 保持可选；Blender v1/v2 分工见 FR-04 / FR-05。
 
 ---
 
@@ -362,6 +388,9 @@
 | NFR-07 | 最小依赖：优先标准库与既有依赖，不引入 Agent 框架 |
 | NFR-08 | 文档一致：测试数量、命令、状态以实际运行为准 |
 | NFR-09 | 路径卫生：跟踪文件不出现本机绝对路径；本机路径只允许出现在被忽略的 `config/*.yaml` / `.env`，并提供 `.example` 参考文件 |
+| NFR-10 | 报告新鲜度：质量门只采信描述当前产物的报告；报告与产物哈希或时间不一致时记 `incomplete` |
+| NFR-11 | 缺陷可归因：每条阻断缺陷必须给出维度、阶段与根因提示；无法归因时停机，不猜测修复 |
+| NFR-12 | 修复可回退：同一缺陷最多 3 次修复尝试；超过即 `RECOVERY_EXHAUSTED`，保留现场与缺口报告 |
 
 ---
 
@@ -370,12 +399,12 @@
 | 工作 | Claude Code / 远程 API | 本地模型 | 程序 | 人工 |
 | --- | --- | --- | --- | --- |
 | 课程资料理解、知识体系、复杂分析 | 是 | 否 | 拆分与预算 | 采纳 |
-| 事实/公式/参数/引用核查 | 是（候选） | 否 | 结构与证据定位 | 最终裁决 |
-| 多来源交叉验证 | 是 | 否 | 来源清单与哈希 | 裁决 |
+| 事实/公式/参数/引用核查 | 是（候选） | 否 | 结构与证据定位；claim 证据充分性规则 | 仅在停机时复核 |
+| 多来源交叉验证 | 是（候选） | 否 | 来源清单、哈希与冲突登记 | 仅在停机时复核 |
 | 文档预处理、结构化提取、格式转换 | 否 | 是 | 校验 | 抽查 |
 | 建模规划、脚本生成 | 是（文本规划） | 视觉分析可用 | AST 检查、执行、验收 | 审阅结果 |
 | 常规规则检查 | 否 | 可用 | 是 | — |
-| 最终内容正确性 | 否 | 否 | 否 | 是 |
+| 最终内容正确性 | 否 | 否 | 证据规则与确定性检查；无法验证即停 | 成品拒收复核 |
 
 Claude Code、远程 API 与本地模型不得互相冒充。外部后端不可用时记录 `blocked`；本地模型失败时记录 `failed`。
 
@@ -383,23 +412,32 @@ Claude Code、远程 API 与本地模型不得互相冒充。外部后端不可�
 
 ## 7. 阶段工作流（含人工节点）
 
-> 详细输入、输出、失败恢复与真实证据见 [WORKFLOW.md](WORKFLOW.md)。
+> 详细输入、输出、失败恢复与真实证据见 [WORKFLOW.md](WORKFLOW.md)；两模式统一流程见 `docs/v2/m0/PRODUCTION_WORKFLOW_V2.md`。
+
+八阶段内核（两种模式共用）：
 
 ```text
-[人工] 撰写 slides.md / lecture_notes.md / storyboard.yaml
+INGEST      来源入库：书/论文/网页/材料 → 归一化文本、页图、来源元数据
+UNDERSTAND  知识理解：概念、先修、claim、证据、冲突
+PLAN        课程大纲 / 叙事结构；覆盖与先修检查
+AUTHOR      脚本、页面、claim 引用
+DIRECT      镜头表、视觉语法、引擎路由
+PRODUCE     截图 / 动画 / 三维 / 配音 / 字幕 / 时间线
+VERIFY      五维质量 + 缺陷诊断 + 修复计划 + 回归
+DELIVER     交付包 + 质量证书
+```
+
+存量的逐课构建路径保持不变：
+
+```text
+[人工/系统] slides.md / lecture_notes.md / storyboard.yaml
    ↓
 validate（程序，任意失败即中止）
    ↓
-[自动] capture_slides ─────────────────────┐
-[自动] Motion Canvas 无头渲染 → render:motion_canvas
-[自动] render:manim（可选）                 ├→ collect → compose → verify
-[自动] render:blender（可选，v1）           │
-[独立] scene-run（IR v2）───────────────────┘（产物可被课程引用）
-[独立] modeling-studio（图片→模型）
-[独立] content-qa review（默认 Claude Code，不影响 verdict）
+capture_slides → render:* → collect → compose → verify → package
 ```
 
-人工节点必须出现在交付报告中：未导出 = `skipped` + `incomplete`；未配置凭据 = `blocked`。
+人的位置（A3 目标）：开工前给材料与标准，成品后接受或拒收。中间不设审批节点。存量课程在 A0/A1 下继续保留人工确认。人工节点与停机条件必须出现在交付报告中：未执行 = `skipped` / `incomplete`；缺凭据 = `blocked`。
 
 ---
 
@@ -444,6 +482,18 @@ R1 增量完成条件：
 16. 课程交付包符合 `docs/课程生产交付物规范.md`；干净版与字幕版都存在且可 probe。
 17. Claude Code 默认后端在 authoring / ContentQA / ModelingStudio 文本规划 / Code2Video 各有一条真实调用或等价 smoke；文本阶段未开放工具；`provider=claude_code` 可读回。
 
+V2 增量完成条件（2026-11-13 起）：
+
+18. **已满足**：ProjectSpec 可校验；存量课程可合成，标记 `synthesized`。
+19. **已满足**：ArtifactRegistry 可从 build 目录重建；RunRecord 可记录八阶段。
+20. **已满足**：`--resume-from` 只重跑受影响下游，兄弟渲染阶段不连带重跑。
+21. **已满足**：缺陷可收集、可归因、可出修复计划；同一缺陷 3 次后停机；证书由缺陷与质量门共同决定。
+22. **已满足**：知识概念/主张/证据与课程覆盖、先修顺序可校验。
+23. **未满足**：一门真实 20 分钟课从研究走到 `package-verify`，五维无 `incomplete`。
+24. **未满足**：一本书产出前 3 集课程规划；一个主题产出 1 条视频规划。
+25. **未满足**：无人值守（A3）一次跑通，失败能定位并只重跑受影响部分。
+26. **未满足**：主题视频 Mode B 的完整流程。
+
 ---
 
 ## 10. OPEN 项（不影响本期验收，但必须记录）
@@ -456,6 +506,10 @@ R1 增量完成条件：
 | OPEN-04 | Manim 是否接入课程 | 保持可选，不强行接入 |
 | OPEN-05 | 完整 ContentQA（ASR/TTS/公式验证/证据语料） | 本期只交付审查内核 |
 | OPEN-06 | 多课程并行构建 | 不设计；构建串行即可 |
+| OPEN-07 | 无人值守 A3 实跑 | 契约已备，等待一门完整课程或一本书的试点 |
+| OPEN-08 | 真实书籍 / 主题输入 | 由所有者提供；当前只有存量课程材料 |
+| OPEN-09 | 自动修复执行器 | 已有修复计划，执行器未接；需要真实缺陷样本 |
+| OPEN-10 | 自动研究与 Mode B 流程 | 契约已备；流程未实现 |
 
 ### FR-24 Scene-first 合成模式（R1）
 
@@ -643,4 +697,89 @@ R1 增量完成条件：
 - 引擎根（场景、Blender 任务、Motion Canvas 场景）统一按内容根优先、工作区兜底解析。
 
 **验收**：`docs/仓库与项目边界.md`、`test_separation.py`（5 例）；2026-11-12 迁移后 `course-control separation` 仅剩三处有理由的夹具。
+
+---
+
+## 11. V2 增量功能需求（2026-11-13）
+
+状态标记：`IMPLEMENTED` 已有代码与测试；`PARTIAL` 契约或核心已落地，完整闭环未验证；`PLANNED` 只有契约，没有流程。
+
+### FR-45 项目契约与双模式（ProjectSpec）—— IMPLEMENTED
+
+**目标**：一本书、一个主题或一门存量课，都能用同一个项目定义进入生产。
+
+- `project.yaml` 位于 `<内容根>/projects/<id>/project.yaml`，字段包括 `project`（id / mode / title / language / audience）、`input`（sources / topic）、`production`（quality_profile / course / topic_video）、`media`、`delivery`、`execution`。
+- `mode` 为 `course` 或 `topic_video`；课程模式必须有来源，主题模式必须有 topic 与 topic_video 计划。
+- 没有 `project.yaml` 的存量课由 `lesson.yaml` 合成，标记 `synthesized: true`，执行等级默认 `A0`；课程数默认 1/1/1。
+- 资源限制复用 `ResourceLimits` / `Authorizations`，不另造一套。
+- CLI：`course-control project-validate`、`project-show`。
+
+**验收**：`test_project_spec.py`（10 例）；内容根 15 门存量课全部合成成功；新项目样例通过 `project-validate`。
+
+### FR-46 制品索引与运行记录 —— IMPLEMENTED
+
+**目标**：知道每个产物在哪、由哪个阶段产生、依赖什么；一次运行可被读回。
+
+- `ArtifactRegistry` 写入 `<内容根>/runtime/artifacts/<project>/registry.json`，按 sha256 登记；按 id 幂等登记；可从 build 目录重建；缺失只标记 `missing`，不删除记录。
+- `RunRecord` 写入 `<内容根>/runtime/runs/<run-id>/run.json`，八阶段历史内联，原子写；未知阶段拒绝更新。
+- 索引不替代交付 manifest；manifest 仍是交付包的权威。
+- CLI：`artifact-index`、`run-start`、`run-status`。
+
+**验收**：`test_artifacts.py`（5 例）、`test_run_record.py`（4 例）；`aging-evolution` 索引 120 个产物；运行记录可读回。
+
+### FR-47 阶段 DAG 与受影响范围 —— IMPLEMENTED
+
+**目标**：上游改动只让真正受影响的下游失效，不连带兄弟阶段。
+
+- `platform/checkpoint.py` 的 `STAGE_DEPS` 声明阶段依赖：四个渲染阶段依赖 `capture_slides`，`collect` 汇合后流向下游。
+- `STAGE_ORDER` 保留为拓扑默认路径，默认构建顺序不变。
+- `--resume-from <stage>` 只强制该阶段及其下游；`CheckpointStore.invalidate_from` 按 DAG 失效。
+- 复用判定仍以配置指纹 + 输入输出哈希为准，不信任“阶段说完成”。
+
+**验收**：`test_checkpoint.py` 新增 3 例（依赖顺序、兄弟隔离、失效范围）；现有恢复测试不回归。
+
+### FR-48 质量缺陷闭环 —— PARTIAL
+
+**目标**：质量问题从“检查失败”变成可诊断、可计划、可复验、可发证。
+
+- `quality/defect.py` 从 build-report / media-qc / subtitles-qc / quality-report 收集统一缺陷；id 按症状哈希稳定；维度 K/P/N/V/T/D。
+- `quality/repair.py` 把根因映射到四类策略（`rerun_stage` / `reauthor_segment` / `substitute_source` / `re_render_shot`）或 `stop`；同一缺陷 `attempt > 3` 直接 blocked。
+- `quality/regression.py` 按 id 差分 `fixed` / `still_open` / `introduced`，新增缺陷即回归。
+- `quality/certificate.py` 生成交付证书；verdict 由缺陷、质量门与报告哈希共同决定。
+- CLI：`quality-diagnose`、`quality-repair-plan`、`quality-regression`、`quality-certificate`。
+- 未完成：影响面反查（需要生产者写入 `ArtifactRegistry.inputs`）；修复执行器；真实缺陷样本重放。
+
+**验收**：`test_defects.py`（10 例）、`test_certificate.py`（4 例）；真实课诊断实跑。
+
+### FR-49 知识概念层与课程规划 —— PARTIAL
+
+**目标**：页级证据之上，有概念、先修、主张与课程覆盖的可校验结构。
+
+- `KnowledgeStudio/knowledge_ir.py`：`Concept`、`Claim`、`EvidenceRef`、`Conflict`、`KnowledgeIR`、`CurriculumPlan`。
+- 规则：id 唯一、先修存在且无环；`supported` 需两个独立页或一条 derivation；`contested` 必须记录冲突；`contested_resolved` 必须写采用理由；课程必须覆盖所有概念或写明豁免理由；先修必须更早出现或声明假定已知。
+- CLI：`knowledge-studio knowledge-ir-validate`、`curriculum-validate`、`schemas`；Schema 在 `shared/schemas/`。
+- 未完成：自动研究与概念提取。
+
+**验收**：`KnowledgeStudio/tests/test_knowledge_ir.py`（11 例）；合法样例 `errors: 0`。
+
+### FR-50 自动化等级与停机条件 —— PARTIAL
+
+**目标**：把“无人值守”定义成可判断的等级与可执行的停机条件。
+
+- 等级 A0–A3 定义见 §2；ProjectSpec 的 `execution.autonomy` 记录等级。
+- 停机条件：事实无法用可定位证据验证且补充研究后仍无法验证；同一缺陷修复 3 次仍失败；资源限制触发；出现 `blocked` 且没有允许的回退路径。
+- 停机时输出缺口报告：缺什么、为什么、已尝试什么、下一步需要谁决定。
+- 未完成：A3 执行器（自动重试、自动修复、自动恢复）。
+
+**验收**：契约与文档齐备；尚无 A3 实跑记录。
+
+### FR-51 主题视频模式（Mode B）—— PLANNED
+
+**目标**：主题视频与课程共用内核，但按叙事完整性组织内容。
+
+- 契约已支持：ProjectSpec `mode: topic_video`、`input.topic`、`production.topic_video`。
+- 计划以 `profile: news` 先行，复用 `docs/新闻视频生产流程.md` 的步骤，再扩通用主题视频。
+- 未实现：Mode B 的阶段流程、CLI 与验收模板。
+
+**验收**：当前仅能通过 `project-validate` 校验契约；流程验收未开始。
 

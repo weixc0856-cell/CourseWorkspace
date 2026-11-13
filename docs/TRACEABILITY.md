@@ -70,16 +70,17 @@
 | 探针隔离（C-18） | `RemotionStudio/src/probes/`、`src/index.ts` | `tsc --noEmit` |
 | NFR-01~08 | 见 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [ACCEPTANCE.md](ACCEPTANCE.md) | 见各套单测 |
 
-## V2 契约层（2026-11-13，未进 PRD）
+## V2 增量需求（2026-11-13，PRD v2.0）
 
-这些能力是 `docs/v2/m0/` 的落地前置，不改变 PRD 的产品边界；未经决策前不构成新的需求基线。
-
-| 能力 | 主要代码 | 测试 |
+| 需求 | 主要代码 | 测试 |
 | --- | --- | --- |
-| ProjectSpec / ArtifactRegistry / RunRecord（M3） | `delivery/project.py`、`platform/artifacts.py`、`platform/run_record.py`、`cli/project.py`；`shared/schemas/project-spec.schema.json` | `test_project_spec.py`、`test_artifacts.py`、`test_run_record.py`；15 门存量课合成实跑 |
-| 阶段 DAG 与受影响范围（M4） | `platform/checkpoint.py`（`STAGE_DEPS`）、`pipeline.py`（`--resume-from`） | `test_checkpoint.py`（依赖顺序、兄弟隔离、失效范围） |
-| 缺陷诊断 / 修复计划 / 回归 / 证书（M5） | `quality/defect.py`、`quality/repair.py`、`quality/regression.py`、`quality/certificate.py`、`cli/quality.py` | `test_defects.py`、`test_certificate.py`；真实课诊断实跑 |
-| 知识概念层与课程规划（M6） | `KnowledgeStudio/src/knowledge_studio/knowledge_ir.py`、`cli.py`；`shared/schemas/knowledge-ir.schema.json`、`curriculum.schema.json` | `KnowledgeStudio/tests/test_knowledge_ir.py` |
+| FR-45 项目契约与双模式 | `delivery/project.py`、`cli/project.py`；`shared/schemas/project-spec.schema.json` | `test_project_spec.py`；15 门存量课合成实跑 |
+| FR-46 制品索引与运行记录 | `platform/artifacts.py`、`platform/run_record.py`、`cli/project.py` | `test_artifacts.py`、`test_run_record.py`；真实课索引 120 个产物 |
+| FR-47 阶段 DAG 与受影响范围 | `platform/checkpoint.py`（`STAGE_DEPS`）、`pipeline.py`（`--resume-from`） | `test_checkpoint.py`（依赖顺序、兄弟隔离、失效范围） |
+| FR-48 质量缺陷闭环 | `quality/defect.py`、`repair.py`、`regression.py`、`certificate.py`、`cli/quality.py` | `test_defects.py`、`test_certificate.py`；真实课诊断实跑 |
+| FR-49 知识概念层与课程规划 | `KnowledgeStudio/src/knowledge_studio/knowledge_ir.py`、`cli.py`；`shared/schemas/knowledge-ir.schema.json`、`curriculum.schema.json` | `KnowledgeStudio/tests/test_knowledge_ir.py`（11 例） |
+| FR-50 自动化等级与停机条件 | `delivery/project.py`（`ExecutionSpec`）、`docs/v2/m0/PRODUCT_SPEC_V2.md`、`QUALITY_SPEC_V2.md`；`platform/run_record.py` | 契约与文档；A3 实跑未开始 |
+| FR-51 主题视频模式（PLANNED） | `delivery/project.py`（`topic_video` 契约） | 仅契约校验；流程未实现 |
 
 ## 人工依赖
 
