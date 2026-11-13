@@ -15,7 +15,7 @@
 
 ## 1. 项目是什么
 
-课程生产工作区：把人工撰写的课程内容（幻灯片 + 讲师手册）通过确定性流水线产出成片视频，并提供三维场景与本地 AI 建模作为**内部生产能力**。
+课程生产工作区：把原始材料（书、论文/网页、一个主题、已有课程材料）通过确定性流水线产出精品课程或主题视频；无人值守是目标（当前 A1），质量验收是唯一交付门槛。三维场景与本地 AI 建模是**内部生产能力**。
 
 - 主产品：`lessons/` → 校验 → 截图/动画/三维渲染 → 时间线 → Remotion 合成 → 验收。
 - 三维能力（`BlenderStudio` IR v2、`ModelingStudio`）服务于课程内容，不是与课程并列的第二产品。
@@ -47,7 +47,7 @@
 - 知识视频质量基准（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）：[docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - 主生产路线（Slide-first / Motion-enhanced / Narration-led，路线建议非门禁）：[docs/生产路线.md](docs/生产路线.md)
 - 工业化生产流程 V2.0（已采纳、逐步落地：八阶段 / WP-0～WP-5 / P0～P6）：[docs/v2/工业化生产流程V2.0-建议稿.md](docs/v2/工业化生产流程V2.0-建议稿.md) · [docs/v2/P0-基线审计.md](docs/v2/P0-基线审计.md)
-- 工业化完成度评估（P0–P4 已建、P5 未闭环；缺口与下一步）：[docs/v2/V2-工业化完成度评估.md](docs/v2/V2-工业化完成度评估.md)
+- 工业化完成度评估（已归档）：`<内容根>/archive/docs-2026-11/v2/V2-工业化完成度评估.md`
 - M0 架构审计与执行台账（六份草案，未生效）：[docs/v2/m0/README.md](docs/v2/m0/README.md)
 - 五态映射表（建议稿 VERIFIED 名称 → 代码状态）：[docs/五态映射表.md](docs/五态映射表.md)
 - 多视觉语法生产系统（架构/审计/样片）：`<内容根>/archive/docs-2026-11/architecture/多视觉语法生产系统-设计.md`、`<内容根>/archive/docs-2026-11/architecture/多视觉语法生产系统-审计.md`、`<内容根>/archive/docs-2026-11/architecture/多视觉语法生产系统-样片验证.md`
@@ -79,10 +79,10 @@
 
 ## 2. 不可突破的硬约束
 
-1. **内容归用户所有。** `slides.md`、`lecture_notes.md`、`outline.md`、课程 `assets/` 的正文只允许格式级调整（路径、分页、主题类名）；改语义必须先问。
+1. **内容所有权与生成内容。** 存量课程的 `slides.md`、`lecture_notes.md`、`outline.md`、课程 `assets/` 正文归用户所有，只允许格式级调整（路径、分页、主题类名），改语义必须先问。系统自动生成的课程/视频内容由系统产出，所有者保留接受与拒收权；生成内容必须带来源与证据链，不做无来源生产。
 2. **skip ≠ pass。** 未执行的阶段不得写成通过；人工导出缺失、凭据缺失、模型不可用都必须如实记录。
 3. **本地模型严格串行。** 任何本地模型调用必须经过 `shared/ai_runtime` 的跨进程锁；同一时刻 8080 只允许一个推理任务；谁启动谁停止。
-4. **AI 输出不等于已完成。** LLM 生成的结构化计划、脚本、审查意见都是候选结果，必须经程序校验；最终事实判断由人工与来源证据负责。
+4. **AI 输出不等于已完成。** LLM 生成的结构化计划、脚本、审查意见都是候选结果，必须经程序校验与可定位证据验证；无法验证的内容不得交付。人工只在成品拒收复核时介入，不替代程序做逐条事实判断。
 5. **上下文硬上限 64K。** 默认 8K–16K；复杂任务 16K–32K；禁止把整份课程/历史对话塞进一次请求。
 6. **工程隔离。** 不全局安装依赖、不改系统 PATH、不写入 `<AI_ROOT>`；临时产物只写 `build/<slug>/` 与各工程自己的运行时目录，最终交付只写 `deliver/<slug>/`。
 7. **不伪造验收。** 不能为了通过而修改测试预期、跳过检查或补写内容。
@@ -106,6 +106,8 @@ uv run --project ModelingStudio modeling-studio run --image <png>
 uv run --project CourseControl course-control director-plan --lesson <slug>   # 导演计划 + 校验
 uv run --project CourseControl course-control producer-run --lesson <slug>     # 订单 → 计划 → 交付清单
 uv run --project CourseControl course-control producer-rebuild --lesson <slug> # 受影响镜头局部重渲染
+uv run --project CourseControl course-control project-validate --project <path>/project.yaml
+uv run --project CourseControl course-control quality-certificate --lesson <slug>
 uv run --project ContentQA content-qa review --lesson <slug>
 # Code2Video 镜头（可选）：ShotSpec.engine=code_video，scene 指向 CodeVideoStudio/shots/<shot>/SPEC.md
 .\scripts\check-scene-system.ps1                           # IR v2 契约检查

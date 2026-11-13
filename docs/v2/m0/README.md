@@ -2,8 +2,8 @@
 
 - **日期**：2026-11-13
 - **来源**：外部对仓库的只读审计（2026-11-13）+ 所有者确认的升级方向 + 本机代码复核
-- **地位**：**规划与审计，不是生效规范**。本目录任何结论，只有写进 `docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/TRACEABILITY.md` 并经 `docs/DECISIONS.md` 记录后，才具有约束力。这与 D-089 第 4 条一致：`docs/v2/` 只留规划与审计，不成长为第二套规范。
-- **与 V2.0 的关系**：`工业化生产流程V2.0`（D-089）解决的是**生产流程工业化**，P0–P4 已落地，P5 未闭环。M0 处理的是**产品责任边界升级**（从"人工撰写内容 → 视频"到"原始输入 → 研究 → 创作 → 生产 → 验收"）。两者是叠加关系，M0 不推翻 P0–P5，也不替代 `V2-工业化完成度评估.md` 的 F-1～F-10。
+- **地位**：**规划与审计**。2026-11-13 起，产品方向已由 PRD v2.0 采纳（D-092）；本目录保留为设计与执行台账，具体规则以 PRD / ARCHITECTURE 为准。本目录任何结论，只有写进 `docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/TRACEABILITY.md` 并经 `docs/DECISIONS.md` 记录后，才具有约束力。这与 D-089 第 4 条一致：`docs/v2/` 只留规划与审计，不成长为第二套规范。
+- **与 V2.0 的关系**：`工业化生产流程V2.0`（D-089）解决的是**生产流程工业化**，P0–P4 已落地，P5 未闭环。M0 处理的是**产品责任边界升级**（从"人工撰写内容 → 视频"到"原始输入 → 研究 → 创作 → 生产 → 验收"）。两者是叠加关系，M0 不推翻 P0–P5，也不替代 `<内容根>/archive/docs-2026-11/v2/V2-工业化完成度评估.md` 的 F-1～F-10。
 
 ---
 
@@ -11,7 +11,7 @@
 
 | 文件 | 回答的问题 | 与现有权威文档的关系 |
 | --- | --- | --- |
-| [PRODUCT_SPEC_V2.md](PRODUCT_SPEC_V2.md) | 产品是什么、两种模式、质量与自动化定义 | 与 `docs/PRD.md` v1.0 有直接冲突，冲突点已逐条列出，需决策后才可改写 PRD |
+| [PRODUCT_SPEC_V2.md](PRODUCT_SPEC_V2.md) | 产品是什么、两种模式、质量与自动化定义 | 冲突点已由 D-092 解决；规则以 `docs/PRD.md` v2.0 为准 |
 | [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md) | 目标架构、六个架构域、与现有 8 上下文映射 | 目标形态是 `docs/ARCHITECTURE.md` 的增量，不新建平行架构 |
 | [DATA_CONTRACTS_V2.md](DATA_CONTRACTS_V2.md) | ProjectSpec、三层 IR、Artifact、Quality 契约 | 新契约进 `shared/schemas/`，旧契约保持 `schema_version` 兼容 |
 | [PRODUCTION_WORKFLOW_V2.md](PRODUCTION_WORKFLOW_V2.md) | Course / Topic Video 两种模式的统一工作流 | 扩展现有 `docs/WORKFLOW.md` 与 `docs/生产路线.md` |

@@ -4,13 +4,13 @@
 - **最近更新**：2026-11-13（M0 架构审计草案、M1 闭环修补：字幕 QC 交付门、报告新鲜度、预览容差告警、五态映射表）
 - **代码基线**：`origin/main` = `b6fb662`（PR #16）；当前分支 `feat/v1-pipeline-remote-fallback`，基线提交 `07bef7b`，工作区含本轮改动（未提交）
 - **基线核实**：2026-11-10 实跑 `check.ps1` = `check ok`；六套 647 个用例（641 通过、6 跳过），Remotion `tsc --noEmit` 通过
-- **需求基准**：[PRD.md](PRD.md)（v1.0）
+- **需求基准**：[PRD.md](PRD.md)（v2.0，D-092）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
 
 ## 0.0000D 2026-11-13 M0 架构基线与 M1 闭环修补
 
 - **M0 草案**：新增 `docs/v2/m0/`（产品规格、架构、数据契约、生产工作流、质量标准、迁移计划六份 + 索引）。定位是规划与审计，**不是生效规范**；产品边界变更（无人值守、无人工审批）尚未决策，PRD 未改。
-- **M1 已完成**（对应 `v2/V2-工业化完成度评估.md` §4 的 F-1～F-3、F-8、F-9a/b）：
+- **M1 已完成**（对应 `<内容根>/archive/docs-2026-11/v2/V2-工业化完成度评估.md` §4 的 F-1～F-3、F-8、F-9a/b）：
   - F-1 字幕 QC 接入交付门：`subtitles-build` 写完草稿立即 QC 并落 `quality/subtitles-qc.json`；`quality-gate` 把缺失或失败的字幕 QC 分别记为 `incomplete` / `fail`。
   - F-2 质量门校验报告新鲜度：构建报告按 `final/` 产物哈希校验，`media-qc` / `subtitles-qc` / `quality-report` 按时间与来源哈希校验；过期报告记为 `incomplete`。
   - F-3 预览容差告警：animatic 保留宽容差，新增 `audio_sync_acceptance` 检查，超过 0.083 s 验收阈值时告警。
