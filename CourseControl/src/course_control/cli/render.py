@@ -319,6 +319,26 @@ def subtitles_build_command(
         typer.echo(f"warnings: {draft.counts['problems']} cue policy issues (planned draft)")
     typer.echo(f"draft: {srt_path}")
 
+    # Subtitle QC runs immediately after the draft is written: a subtitle that
+    # cannot pass QC must not reach composition (P5 lesson 1).
+    from course_control.platform.media import sha256_file
+    from course_control.voice.subtitles_qc import check_srt
+
+    qc = check_srt(
+        srt_path,
+        bilingual=paths.lesson.subtitles.bilingual,
+        glossary_path=glossary or root / "authoring" / "glossary.yaml",
+    )
+    qc["source"] = {"path": str(srt_path), "sha256": sha256_file(srt_path)}
+    qc_path = paths.build_root / "quality" / "subtitles-qc.json"
+    qc_path.parent.mkdir(parents=True, exist_ok=True)
+    qc_path.write_text(json.dumps(qc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    typer.echo(f"qc: {qc['status']} ({qc_path})")
+    for item in qc["errors"][:6]:
+        typer.echo(f"  [error] {item}", err=True)
+    if qc["status"] == "FAIL" and not planned:
+        raise typer.Exit(1)
+
 
 @app.command("subtitles-rewrap")
 def subtitles_rewrap_command(
@@ -478,6 +498,9 @@ def subtitles_qc_command(
         bilingual=paths.lesson.subtitles.bilingual,
         glossary_path=paths.lesson_dir / "authoring" / "glossary.yaml",
     )
+    from course_control.platform.media import sha256_file
+
+    report["source"] = {"path": str(target), "sha256": sha256_file(target)}
     out = paths.build_root / "quality" / "subtitles-qc.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

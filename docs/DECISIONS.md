@@ -302,7 +302,7 @@
 
 ## D-034 双语字幕与双版本成片（R1）
 
-**背景**：用户要求字幕版与无字幕版；字幕版按 YouTube-B 的 ASS + ffmpeg 烧录方式。
+**背景**：用户要求字幕版与无字幕版；字幕版按 NewsStudio（原 YouTube-B，仓库外的本地 NewsStudio 仓库）的 ASS + ffmpeg 烧录方式。
 
 **决策**：字幕英文在上、简体中文在下；输出 SRT/ASS/VTT。`subtitles-build` 以实测音频段为边界规划 cue，逐 cue 翻译并校验条数；`subtitles-accept` 写 `lessons/<slug>/subtitles.srt`。Remotion 渲染干净母版 `final/course-video.mp4`，`adapters/burn.py` 用 ffmpeg `ass=` 烧录 `final/course-video-captioned.mp4`（QSV，失败回退 libx264）。Windows 路径必须写成 `ass='D\:/...'`。V-28/V-31 检查字幕版与 cue 契约。
 
@@ -1001,3 +1001,33 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **后果**：CourseControl 在现有粒子上新增 `animatic`、声音资产与 lock 三类能力，不引入新的调度系统；旧课程不需要一次性迁移。试点课程定为 `<slug>`（1260 s，`scene` 模式，构建产物齐全）。
 
 **实施状态**：**2026-11-12 已记录**。P0 完成：基线审计、文档不一致修正、§6 的 D1～D3 与 D7 修复并复测。P1 完成：`course-control animatic`（FR-40）已实现并在三门真实课程上跑通，见 `docs/动画预览-Animatic.md`。P2 完成：Voice Bible / Lexicon（FR-41）已实现并接进合成缓存键，见 `docs/声音资产-VoiceBible与Lexicon.md`；CourseControl 533 用例通过 / 7 跳过，真实 TTS 合成本轮未执行。D4/D5 属课程内容，待所有者决定。P3 第一段完成：镜头表已落为 `storyboard.yaml` 的 `schema_version: 2`（FR-42，`docs/镜头表-ShotSheet.md`）；导演计划合并未开始。P4 完成：Picture / Dialogue Lock 与失效映射（FR-43，`docs/锁定与失效.md`）。另按 FR-44 完成仓库与项目分离（`docs/仓库与项目边界.md`）。P5 真实课程全链路验证未开始。
+
+## D-090 汽车空气动力学样板口径：书为内容权威、真实 CFD 为案例证据、C 版旁白默认、Cp 上限 1
+
+**背景**：B01+B02 样板在重设计中确认了三类事实：书内结论经过多方校核，应作为系列内容的主依据；本机 DrivAer STAR-CCM+ 求解结果目录有可用的真实结果，但其 DrivAer Fastback 案例的尾板 Cp 只有约 −0.05，不能拿来支撑“尾板大低压决定阻力”的普适说法；A01 的 C 版旁白改善了韵律，但字幕必须按处理后的音频重建。另有一批跨 30 集共用的参数、单位、色标与出图规范被反复口头交代。
+
+**决策**：
+
+1. **书为内容权威**：Schuetz (ed.), *Aerodynamics of Road Vehicles*, 5th ed. 作为系列内容主依据；德文第六版用于彩色图源。真实 CFD / 风洞案例作为具体工况证据，不以单案例推翻书的一般结论，也不把书的一般结论写成单案例的实测值。
+2. **30 集预算不因样板合并而减少**：B01+B02 可作为**制作样板**合并验证；正式集仍拆成 B01、B02，保持 30 集。样板通过后按 `STRUCTURE_AUDIT.md` §4 拆分。
+3. **三维模型走 Blender**：能用现成 DrivAer 模型就用；Manim 贴图不可用时，用 Blender 渲染、打光、材质与相机，再由 Remotion/ffmpeg 合成；不因引擎限制退回低质量示意。
+4. **ParaView 出图统一口径**：平行投影；`fill≈0.9`，车铺满画面；对外数值与图例 **2 位有效数字**；Cp 色标上限 **最多到 1**（不可压缩流表面 Cp 一般不超过 1），默认 `−1…1`，不用自动范围；STAR 导出的 `Pressure` 是相对 101325 Pa 的表压，`PressureCoefficient` 已是 Cp，ParaView 不再重复减 p∞。
+5. **C 版旁白默认**：B01 起所有集默认做 C 版（A01 的响度/语速/停顿/局部音高配方），不再先做基线版；字幕必须在 C 版音频之后用 ASR 词级时间戳重建，`subtitles-qc` 不过不进合成。
+6. **时长**：每集至少 **20 分钟**，以最终实测输出为准，不设硬上限。
+7. **共性参数入子项目**：标准大气、Cp/q/Re 定义、STAR/ParaView 压力口径、色标、有效数字、出图规范、书源与真实案例资产统一写入 `<内容根>/projects/automotive-aerodynamics/空气动力学-通用参数与口径.md`，各集引用，不重复交代。
+
+**后果**：B01+B02 样板按真实数据重做压力页；书与案例的分工写进每集知识包；C 版与字幕顺序固定；30 集预算保持不变。**实施状态**：**2026-11-12 已记录**；通用参数文件已建，样板重设计进行中。
+
+## D-091 落地 V2 契约层与质量闭环（M1–M6），产品边界不变
+
+**背景**：2026-11-13 所有者要求按外部架构审计与最新产品方向"全量落实"，随后明确具体课程先跳过。本轮把能独立验证的部分落成代码与契约，避免继续停留在文档层。
+
+**决策**：
+
+1. **M0 六份文件作为规划基线，不是生效规范**：`docs/v2/m0/` 只用于指导迁移；任何结论要写进 PRD / ARCHITECTURE / TRACEABILITY 并经决策记录才生效（与 D-089 第 4 条一致）。
+2. **M1 闭环修补落地**：字幕 QC 成为 `subtitles-build` 后的自动门；`quality-gate` 校验报告新鲜度；animatic 增加 0.083 s 验收阈值告警；新增五态映射表并修正文档漂移。
+3. **M3–M6 以增量契约落地，不改现有构建路径**：ProjectSpec、ArtifactRegistry、RunRecord；阶段 DAG 只影响 `--resume-from` 与失效范围；质量缺陷/修复计划/回归/证书；Knowledge IR 与课程规划校验。现有 80 个命令不改名、不改变默认行为。
+4. **产品边界仍不生效**：PRD §1 目标、§1.2 非目标、硬约束 1 与 4 的改写（无人值守、无人工审批）继续等待所有者决策，本轮不修改。
+5. **M2 真实 P5 暂缓**：所有者明确"具体课程先跳过"，因此不选课、不重跑渲染、不宣称 P5 通过。
+
+**后果**：CourseControl 605 用例通过 / 7 跳过，KnowledgeStudio 38 通过，`scripts/check.ps1` = `check ok`。新增契约暂不被构建流水线读取；M5 修复执行器、M6 自动研究与 Mode B、A3 执行器仍未实现。执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。

@@ -114,6 +114,22 @@ FR-42。用试点课程的两份临时副本（正常 / 故意写坏）验证，
 | 单元测试 | `test_locks.py` 12 例、`test_separation.py` 5 例；CourseControl 全量 559 例通过 / 7 跳过 | pass |
 | Motion Canvas 渲染验证 | 迁移后两个课程场景均出片：`gui-vs-cli-paths` 367 帧 / 12.2 s、`attention-flow` 142 帧，`result pass`，H.264 可解码。根因是场景相对 import 的 `styles/` 未在内容根布局中提供（已加 junction）＋ headless Chrome 需 `--disable-gpu` | pass |
 
+## 0.8 2026-11-13 V2 契约层实测
+
+| 命令 | 结果 |
+| --- | --- |
+| CourseControl 单测 | 605 通过 / 7 跳过 |
+| KnowledgeStudio 单测 | 38 通过（新增 11 条概念层用例） |
+| `scripts/check.ps1` | `check ok` |
+| `project-show --lesson <slug>` | 内容根 15 门存量课全部合成 `synthesized: true` |
+| `artifact-index --lesson aging-evolution` | 索引 120 个产物 |
+| `quality-diagnose --lesson aging-evolution` | 0 缺陷 |
+| `quality-diagnose --lesson 01-transformer-demo` | 2 条缺失报告缺陷（Q1/Q2） |
+| `quality-certificate --lesson aging-evolution` | `incomplete`，原因：发布签核未完成 |
+| `knowledge-ir-validate` / `curriculum-validate` | 合法样例 `errors: 0` |
+
+未执行：完整 20 分钟课程的 P5、真实 build/渲染/TTS（所有者明确先跳过具体课程）。
+
 ## 1. 一键回归
 
 ```powershell

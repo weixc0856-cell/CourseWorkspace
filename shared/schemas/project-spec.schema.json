@@ -1,0 +1,425 @@
+{
+  "$defs": {
+    "CountRange": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "default": 40,
+          "minimum": 1,
+          "title": "Target",
+          "type": "integer"
+        },
+        "min": {
+          "default": 30,
+          "minimum": 1,
+          "title": "Min",
+          "type": "integer"
+        },
+        "max": {
+          "default": 50,
+          "minimum": 1,
+          "title": "Max",
+          "type": "integer"
+        }
+      },
+      "title": "CountRange",
+      "type": "object"
+    },
+    "CoursePlan": {
+      "additionalProperties": false,
+      "properties": {
+        "lesson_count": {
+          "$ref": "#/$defs/CountRange"
+        },
+        "lesson_seconds": {
+          "$ref": "#/$defs/SecondsRange"
+        },
+        "justification": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Justification"
+        }
+      },
+      "title": "CoursePlan",
+      "type": "object"
+    },
+    "DeliverySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "include": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Include",
+          "type": "array"
+        }
+      },
+      "title": "DeliverySpec",
+      "type": "object"
+    },
+    "ExecutionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "autonomy": {
+          "default": "A1",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3"
+          ],
+          "title": "Autonomy",
+          "type": "string"
+        },
+        "retry_policy": {
+          "default": "adaptive",
+          "enum": [
+            "none",
+            "fixed",
+            "adaptive"
+          ],
+          "title": "Retry Policy",
+          "type": "string"
+        },
+        "delivery_policy": {
+          "default": "quality_gated",
+          "enum": [
+            "quality_gated",
+            "manual"
+          ],
+          "title": "Delivery Policy",
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/$defs/ResourceLimits"
+        }
+      },
+      "title": "ExecutionSpec",
+      "type": "object"
+    },
+    "MediaSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "resolution": {
+          "default": "1920x1080",
+          "pattern": "^[0-9]{3,5}x[0-9]{3,5}$",
+          "title": "Resolution",
+          "type": "string"
+        },
+        "frame_rate": {
+          "default": 30,
+          "exclusiveMinimum": 0,
+          "maximum": 120,
+          "title": "Frame Rate",
+          "type": "integer"
+        },
+        "video_format": {
+          "default": "mp4",
+          "enum": [
+            "mp4",
+            "mov",
+            "webm"
+          ],
+          "title": "Video Format",
+          "type": "string"
+        },
+        "audio_format": {
+          "default": "wav",
+          "enum": [
+            "wav",
+            "mp3",
+            "aac"
+          ],
+          "title": "Audio Format",
+          "type": "string"
+        },
+        "subtitles": {
+          "items": {
+            "enum": [
+              "srt",
+              "vtt"
+            ],
+            "type": "string"
+          },
+          "title": "Subtitles",
+          "type": "array"
+        }
+      },
+      "title": "MediaSpec",
+      "type": "object"
+    },
+    "ProductionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "quality_profile": {
+          "default": "premium",
+          "enum": [
+            "premium",
+            "standard"
+          ],
+          "title": "Quality Profile",
+          "type": "string"
+        },
+        "course": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoursePlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "topic_video": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TopicPlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ProductionSpec",
+      "type": "object"
+    },
+    "ProjectInput": {
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "topic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topic"
+        }
+      },
+      "title": "ProjectInput",
+      "type": "object"
+    },
+    "ProjectMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "course",
+            "topic_video"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "language": {
+          "default": "en",
+          "maxLength": 16,
+          "minLength": 2,
+          "title": "Language",
+          "type": "string"
+        },
+        "audience": {
+          "default": "unspecified",
+          "title": "Audience",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "mode",
+        "title"
+      ],
+      "title": "ProjectMeta",
+      "type": "object"
+    },
+    "ResourceLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_wall_seconds": {
+          "default": 14400.0,
+          "exclusiveMinimum": 0,
+          "title": "Max Wall Seconds",
+          "type": "number"
+        },
+        "max_api_cost_usd": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Max Api Cost Usd",
+          "type": "number"
+        },
+        "max_local_model_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Local Model Calls",
+          "type": "integer"
+        },
+        "max_disk_gb": {
+          "default": 20.0,
+          "exclusiveMinimum": 0,
+          "title": "Max Disk Gb",
+          "type": "number"
+        }
+      },
+      "title": "ResourceLimits",
+      "type": "object"
+    },
+    "SecondsRange": {
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "default": 600.0,
+          "exclusiveMinimum": 0,
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "default": 1800.0,
+          "exclusiveMinimum": 0,
+          "title": "Max",
+          "type": "number"
+        }
+      },
+      "title": "SecondsRange",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "book",
+            "paper",
+            "report",
+            "web",
+            "notes",
+            "course_material"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "uri": {
+          "minLength": 1,
+          "title": "Uri",
+          "type": "string"
+        },
+        "authority": {
+          "default": "primary",
+          "enum": [
+            "primary",
+            "secondary",
+            "supporting"
+          ],
+          "title": "Authority",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "uri"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "TopicPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "series": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "single"
+          ],
+          "title": "Series",
+          "type": "string"
+        },
+        "target_seconds": {
+          "default": 900.0,
+          "exclusiveMinimum": 0,
+          "title": "Target Seconds",
+          "type": "number"
+        }
+      },
+      "title": "TopicPlan",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "project": {
+      "$ref": "#/$defs/ProjectMeta"
+    },
+    "input": {
+      "$ref": "#/$defs/ProjectInput"
+    },
+    "production": {
+      "$ref": "#/$defs/ProductionSpec"
+    },
+    "media": {
+      "$ref": "#/$defs/MediaSpec"
+    },
+    "delivery": {
+      "$ref": "#/$defs/DeliverySpec"
+    },
+    "execution": {
+      "$ref": "#/$defs/ExecutionSpec"
+    },
+    "synthesized": {
+      "default": false,
+      "title": "Synthesized",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "project",
+    "input",
+    "production"
+  ],
+  "title": "ProjectSpec",
+  "type": "object"
+}

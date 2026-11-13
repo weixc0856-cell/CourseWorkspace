@@ -1,0 +1,264 @@
+{
+  "$defs": {
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^claim\\.[a-z0-9][a-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "type": {
+          "default": "other",
+          "enum": [
+            "definition",
+            "quantitative",
+            "causal",
+            "comparative",
+            "procedural",
+            "other"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "concept_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Concept Ids",
+          "type": "array"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "verification": {
+          "default": "unsupported",
+          "enum": [
+            "unsupported",
+            "single_source",
+            "supported",
+            "contested",
+            "contested_resolved",
+            "refuted",
+            "unverifiable"
+          ],
+          "title": "Verification",
+          "type": "string"
+        },
+        "conflicts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Conflict"
+          },
+          "title": "Conflicts",
+          "type": "array"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resolution"
+        }
+      },
+      "required": [
+        "id",
+        "statement"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Concept": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^concept\\.[a-z0-9][a-z0-9_.-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "kind": {
+          "default": "other",
+          "enum": [
+            "definition",
+            "mechanism",
+            "quantity",
+            "method",
+            "example",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "prerequisites": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Prerequisites",
+          "type": "array"
+        },
+        "units": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Units",
+          "type": "array"
+        },
+        "citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "title": "Citations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "title": "Concept",
+      "type": "object"
+    },
+    "Conflict": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "pdf_page": {
+          "minimum": 1,
+          "title": "Pdf Page",
+          "type": "integer"
+        },
+        "note": {
+          "minLength": 1,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "pdf_page",
+        "note"
+      ],
+      "title": "Conflict",
+      "type": "object"
+    },
+    "EvidenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "pdf_page": {
+          "minimum": 1,
+          "title": "Pdf Page",
+          "type": "integer"
+        },
+        "printed_page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Printed Page"
+        },
+        "kind": {
+          "default": "statement",
+          "enum": [
+            "statement",
+            "derivation",
+            "data",
+            "figure"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        }
+      },
+      "required": [
+        "source_id",
+        "pdf_page"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Ids",
+      "type": "array"
+    },
+    "concepts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Concept"
+      },
+      "title": "Concepts",
+      "type": "array"
+    },
+    "claims": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Claims",
+      "type": "array"
+    }
+  },
+  "title": "KnowledgeIR",
+  "type": "object"
+}

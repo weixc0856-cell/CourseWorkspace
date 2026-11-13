@@ -128,6 +128,11 @@ def runtime_root(workspace: Path) -> Path:
     return content_root(workspace) / "runtime"
 
 
+def projects_root(workspace: Path) -> Path:
+    """Series and project material: ``<content_root>/projects/<id>/``."""
+    return content_root(workspace) / "projects"
+
+
 def audio_root(workspace: Path) -> Path:
     """Shared voice assets: voice bibles and lexicons."""
     return content_root(workspace) / "audio"

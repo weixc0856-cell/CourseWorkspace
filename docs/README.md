@@ -13,6 +13,8 @@
 - [contracts/](contracts/)：Production Contract / Visual Grammar / Quality Profile 的 JSON Schema 与示例
 - [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射
+- [五态映射表.md](五态映射表.md)：建议稿名称与代码状态的对应
+- 项目/运行/质量/知识契约（2026-11-13 增量）：`shared/schemas/project-spec.schema.json`、`knowledge-ir.schema.json`、`curriculum.schema.json`；实现见 `delivery/project.py`、`platform/artifacts.py`、`platform/run_record.py`、`quality/defect.py`、`KnowledgeStudio/knowledge_ir.py`
 - [仓库与项目边界.md](仓库与项目边界.md)：工具、项目、产物三层；什么进仓库、什么只在内容根
 
 ## 2. 生产指导文集
@@ -81,6 +83,9 @@
 - 生产线路标：[v2/工业化生产流程V2.0-建议稿.md](v2/工业化生产流程V2.0-建议稿.md)（D-089）
 - 基线审计：[v2/P0-基线审计.md](v2/P0-基线审计.md)
 - 全链路试点：[v2/P5-全链路验证.md](v2/P5-全链路验证.md)
+- 工业化完成度评估：[v2/V2-工业化完成度评估.md](v2/V2-工业化完成度评估.md)（2026-11-12；P5 重开前复核）
+- M0 架构审计：[v2/m0/README.md](v2/m0/README.md)（2026-11-13；V2 产品升级六份草案，未生效）
+- 五态映射：[五态映射表.md](五态映射表.md)（建议稿的五个 VERIFIED 名称 → 代码状态）
 
 ## 5. 评估与雷达
 
