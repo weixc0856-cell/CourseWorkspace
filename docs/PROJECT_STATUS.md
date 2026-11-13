@@ -22,7 +22,8 @@
 - **M4 编排 DAG**：`platform/checkpoint.py` 新增 `STAGE_DEPS`；`--resume-from` 与 `invalidate_from` 按下游子图计算，兄弟渲染阶段不再连带重跑。默认构建路径不变，3 条 DAG 测试覆盖依赖顺序、兄弟隔离与失效范围。
 - **M5 质量闭环核心**：`quality/defect.py` 统一缺陷、`quality/repair.py` 归因与修复计划（attempt 上限 3、无法归因即停）、`quality/regression.py` 差分；CLI `quality-diagnose` / `quality-repair-plan` / `quality-regression`。`aging-evolution` 诊断 0 缺陷；`01-transformer-demo` 诊断出 Q1/Q2 两条缺失报告缺陷。修复执行器未做；交付证书已落地（`quality/certificate.py`、`quality-certificate`，`aging-evolution` 当前为 incomplete，原因是发布签核未完成）。
 - **M6 契约层**：`KnowledgeStudio/knowledge_ir.py` 新增概念/先修/claim/证据/冲突契约与课程规划校验；CLI `knowledge-ir-validate`、`curriculum-validate`、`schemas`；新增 `shared/schemas/knowledge-ir.schema.json` 与 `curriculum.schema.json`。自动研究、Mode B 流程与 A3 执行器未做。
-- **未执行**：完整 20 分钟课程的 P5 重开、真实 build/渲染/TTS。这些不能由 smoke 与单测替代（skip ≠ pass）。
+- **汽车空气动力学重排（D-093）**：旧 30 集 × 20–30 分钟方案作废并归档；第一专题改为 9 集 × 8–12 分钟（约 90 分钟），`COURSE_MAP` v1.0、`第一季方案` v0.3、`系列口径统一` v2.0 已重写。
+- **未执行**：第一专题的真实生产与 P5 验证；真实 build/渲染/TTS。这些不能由 smoke 与单测替代（skip ≠ pass）。
 
 ## 0.0000C 2026-11-11 交付与临时分区
 
