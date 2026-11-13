@@ -41,6 +41,30 @@ def _check(check_id: str, ok: bool, detail: str) -> dict:
     return {"id": check_id, "status": "pass" if ok else "blocked", "detail": detail}
 
 
+def _evidence_problems(root: Path) -> list[str]:
+    """Validate claim-evidence files only.
+
+    span-check reports live in the same folder and have a different schema;
+    reading them as EvidenceFile made KS-08 report errors that were never
+    about the evidence.
+    """
+    problems: list[str] = []
+    for path in sorted((root / "evidence").glob("*.evidence.json")):
+        try:
+            evidence = EvidenceFile.model_validate_json(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"{path.name}: {exc}")
+            continue
+        pool = {citation.ref for citation in evidence.citation_pool}
+        for claim in evidence.claims:
+            if not claim.citations:
+                problems.append(f"{claim.claim_id}: no citation")
+            for citation in claim.citations:
+                if citation.ref not in pool:
+                    problems.append(f"{claim.claim_id}: {citation.ref} not in citation pool")
+    return problems
+
+
 def verify(root: Path) -> dict:
     checks: list[dict] = []
     try:
@@ -177,20 +201,7 @@ def verify(root: Path) -> dict:
         )
     )
 
-    evidence_problems: list[str] = []
-    for path in sorted((root / "evidence").glob("*.json")):
-        try:
-            evidence = EvidenceFile.model_validate_json(path.read_text(encoding="utf-8"))
-        except Exception as exc:  # noqa: BLE001
-            evidence_problems.append(f"{path.name}: {exc}")
-            continue
-        pool = {citation.ref for citation in evidence.citation_pool}
-        for claim in evidence.claims:
-            if not claim.citations:
-                evidence_problems.append(f"{claim.claim_id}: no citation")
-            for citation in claim.citations:
-                if citation.ref not in pool:
-                    evidence_problems.append(f"{claim.claim_id}: {citation.ref} not in citation pool")
+    evidence_problems = _evidence_problems(root)
     checks.append(
         _check(
             "KS-08",
