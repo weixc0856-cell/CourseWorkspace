@@ -110,3 +110,8 @@ MotionStudio/src/scenes/*/
 !MotionStudio/src/scenes/lesson-manual/
 /build/
 MotionStudio/src/scenes.generated.js
+
+# Proprietary font: keep the local copy, never publish it.
+assets/fonts/arial.ttf
+# Machine-specific config backups.
+config/*.bak-*
