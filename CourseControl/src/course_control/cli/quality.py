@@ -117,11 +117,33 @@ def quality_certificate_command(
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     as_json: bool = typer.Option(False, "--json"),
+    refresh: bool = typer.Option(
+        False, "--refresh", help="Scan defects and run the quality gate before issuing."
+    ),
 ) -> None:
-    """Issue the quality certificate for a lesson's current reports."""
+    """Issue the quality certificate for a lesson's current reports.
+
+    The certificate reads three artifacts.  ``--refresh`` writes the two that a
+    build does not write by itself, so issuing a verdict is one command instead
+    of the diagnose → gate → certificate sequence.
+    """
     from course_control.quality.certificate import issue, save
 
     paths = _paths(workspace, lesson, lesson_dir)
+    if refresh:
+        from course_control.quality.defect import collect
+        from course_control.quality.quality_gates import evaluate
+
+        report = collect(paths.build_root, paths.slug)
+        defects_path = paths.build_root / "quality" / "defects.json"
+        defects_path.parent.mkdir(parents=True, exist_ok=True)
+        defects_path.write_text(
+            json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        evaluate(paths)
+        typer.echo(f"refreshed: {defects_path}")
+
     certificate = issue(paths.build_root, paths.slug)
     target = save(certificate, paths.build_root / "quality" / "certificate.json")
     if as_json:
