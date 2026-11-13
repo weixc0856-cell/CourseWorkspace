@@ -419,11 +419,20 @@ def vendor_sync_command(
 
     shots_root = engine_root(workspace, "code_video") / "shots"
 
-    projects = (
-        [shots_root / shot]
-        if shot
-        else sorted(path for path in shots_root.iterdir() if path.is_dir() and uses_three(path))
-    )
+    if shot:
+        target = shots_root / shot
+        if not target.is_dir():
+            typer.echo(f"shot not found: {target}", err=True)
+            raise typer.Exit(1)
+        projects = [target]
+    elif shots_root.is_dir():
+        # Shot sources are content and absent from a clean clone; nothing to sync
+        # is a valid answer, not a crash.
+        projects = sorted(
+            path for path in shots_root.iterdir() if path.is_dir() and uses_three(path)
+        )
+    else:
+        projects = []
     result = sync(workspace.resolve(), projects)
     typer.echo(f"copied: {', '.join(result['copied']) or 'none'}")
     typer.echo(f"current: {', '.join(result['current']) or 'none'}")
