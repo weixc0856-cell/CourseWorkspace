@@ -351,3 +351,70 @@ def brand_render_command(
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+
+
+@app.command("asset-scene-validate")
+def asset_scene_validate_command(
+    spec: Path = typer.Option(..., "--spec", help="environment or shot JSON spec"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    library: Path | None = typer.Option(None, "--library"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Validate an asset-based environment/shot spec against the asset library."""
+    from course_control.scene_spec import load_spec, validate_spec
+
+    if not spec.is_file():
+        typer.echo(f"spec not found: {spec}", err=True)
+        raise typer.Exit(2)
+    issues = validate_spec(spec, workspace, library)
+    try:
+        parsed = load_spec(spec)
+        summary = {"kind": parsed.kind, "id": parsed.id, "path": str(spec)}
+    except Exception:  # noqa: BLE001 - issues already explain the failure
+        summary = {"path": str(spec)}
+    if as_json:
+        typer.echo(json.dumps(
+            {"ok": not any(item.level == "error" for item in issues),
+             **summary,
+             "issues": [item.as_dict() for item in issues]},
+            ensure_ascii=False, indent=2,
+        ))
+    else:
+        for item in issues:
+            typer.echo(f"[{item.level}] {item.message}")
+        if not issues:
+            typer.echo(f"ok: {summary.get('kind')} / {summary.get('id')} / {spec}")
+    raise typer.Exit(1 if any(item.level == "error" for item in issues) else 0)
+
+
+@app.command("asset-scene-schema")
+def asset_scene_schema_command(
+    output: Path = typer.Option(Path("shared/scene-specs"), "--output"),
+) -> None:
+    """Export JSON Schemas for environments, shots, cameras, terrain and render."""
+    from course_control.scene_spec.models import CameraSpec, EnvironmentSpec, RenderSpec, ShotSpec, TerrainSpec
+
+    output.mkdir(parents=True, exist_ok=True)
+    models = {
+        "environment": EnvironmentSpec,
+        "shot": ShotSpec,
+        "camera": CameraSpec,
+        "terrain": TerrainSpec,
+        "render": RenderSpec,
+    }
+    for name, model in models.items():
+        payload = json.dumps(model.model_json_schema(), ensure_ascii=False, indent=2)
+        (output / f"{name}.schema.json").write_text(payload + chr(10), encoding="utf-8")
+        typer.echo(f"wrote {output / (name + '.schema.json')}")
+    combined = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Asset scene spec",
+        "oneOf": [
+            {"$ref": "environment.schema.json"},
+            {"$ref": "shot.schema.json"},
+        ],
+    }
+    (output / "scene-spec.schema.json").write_text(
+        json.dumps(combined, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    )
+    typer.echo(f"wrote {output / 'scene-spec.schema.json'}")

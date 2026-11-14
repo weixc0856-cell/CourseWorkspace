@@ -1,0 +1,57 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "heightmap": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Heightmap"
+    },
+    "size_m": {
+      "default": 2400,
+      "title": "Size M",
+      "type": "number"
+    },
+    "subdivisions": {
+      "default": 300,
+      "minimum": 2,
+      "title": "Subdivisions",
+      "type": "integer"
+    },
+    "displacement_m": {
+      "default": 900,
+      "title": "Displacement M",
+      "type": "number"
+    },
+    "material": {
+      "title": "Material",
+      "type": "string"
+    },
+    "uv_scale": {
+      "default": 10,
+      "title": "Uv Scale",
+      "type": "number"
+    },
+    "z": {
+      "default": 0,
+      "title": "Z",
+      "type": "number"
+    },
+    "mid_level": {
+      "default": 0,
+      "title": "Mid Level",
+      "type": "number"
+    }
+  },
+  "required": [
+    "material"
+  ],
+  "title": "TerrainSpec",
+  "type": "object"
+}

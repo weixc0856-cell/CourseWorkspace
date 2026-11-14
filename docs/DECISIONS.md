@@ -1226,3 +1226,22 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 5. **同步**：项目 `CLAUDE.md` 第 12 条、全局 `~/.claude/CLAUDE.md` 新增“复用优先（所有项目）”、`docs/第三方依赖准入规范.md` §1/§5、`docs/本地3D资产库.md`。
 
 **后果**：后续场景优先用资产库 + 场景配方；没有合适资产时先补库，不先写几何表达式或手搓模型。引入资产仍按准入规范校核许可、体积、版本与负面效果。
+
+## D-104 三维场景拆成资产库 / 环境 / 镜头三层
+
+**背景**：2026-11-14 所有者要求按电影/动画标准流程构建 A 方案，并采纳“内容生产 / 3D 资产环境 / 影视交付分离”的建议，先做 vertical slice，不先开发庞大平台。
+
+**决策**：
+
+1. **三层文件，层间只走 id 与 spec**：
+   - Level 1 资产库：`<内容根>/assets/3d/library.json`；唯一知道模型/贴图/HDRI/heightmap 路径的地方。
+   - Level 2 环境：`assets/3d/kits/<series>/environments/<place>.json`；拥有地形、天空、布景、固定灯光；可被多个镜头复用。
+   - Level 3 镜头：`assets/3d/kits/<series>/shots/<shot>.json`；引用一个 environment，拥有相机、帧数、时长、profile 与输出。
+2. **AI 只写 Scene Specification，不逐镜头写任意 Python**：AI Planner → JSON spec → 固定 Builder (`scripts/build_asset_scene.py`) → Validator (`asset-scene-validate`) → Blender Renderer。
+3. **契约与能力注册表**：`shared/scene-specs/` 下的 JSON Schema + `capabilities.json`；相机模板是受控词汇（`static_hold` / `dolly_in` / `dolly_out` / `pan` / `tilt` / `crane` / `orbit` / `tracking` / `parallax`）。
+4. **轻量链接优先**：当前 shot 构建时把 environment 合并进来；规模变大后切 Blender Library Linking + Overrides，不改变 spec 格式。
+5. **资产元数据升级**：`version`、`quality_level`（proxy/standard/hero）、`dependencies`、可选 `preview`；`asset_library.py` 支持 `--quality` 与依赖检查。
+6. **风格 preset**：`shared/grammars/style-presets.yaml` 定义 `cinematic_realism`、`scientific_visualization`、`stylized_diorama`、`technical_cutaway`；是默认值，不是门禁。
+7. **只做 vertical slice**：风水 e01 的 ridge / valley / water 三个环境 + a1/a2/a3 三个镜头，先 blockout/animatic，再只推进两个 hero 镜头；不先建通用平台。
+
+**后果**：环境改一次，所有引用镜头复用；镜头可独立调相机与输出；AI 产物可校验、可复现。旧的单文件 `scenes/*.json` 仍兼容 `--recipe`，但新场景写 environment + shot。发布门禁仍是最终交付质量，Schema 只保证可构建与资产存在。

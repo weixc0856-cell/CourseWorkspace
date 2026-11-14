@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Asset scene spec",
+  "oneOf": [
+    {
+      "$ref": "environment.schema.json"
+    },
+    {
+      "$ref": "shot.schema.json"
+    }
+  ]
+}

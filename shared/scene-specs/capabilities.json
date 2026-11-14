@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "camera_templates": {
+    "static_hold": "one camera position, optional lens breathing",
+    "dolly_in": "move toward the target; hold-move-hold",
+    "dolly_out": "move away from the target; hold-move-hold",
+    "pan": "lateral move with a stable target",
+    "tilt": "vertical target move with a fixed camera",
+    "crane": "vertical camera move with a target",
+    "orbit": "arc around center/radius",
+    "tracking": "move with a target (alias of dolly parameters)",
+    "parallax": "dolly with an offset target for layered depth"
+  },
+  "render_engines": [
+    "BLENDER_EEVEE",
+    "CYCLES"
+  ],
+  "render_profiles": {
+    "blockout": {
+      "engine": "BLENDER_EEVEE",
+      "samples": 16,
+      "resolution": [
+        540,
+        960
+      ]
+    },
+    "preview": {
+      "engine": "BLENDER_EEVEE",
+      "samples": 32,
+      "resolution": [
+        540,
+        960
+      ]
+    },
+    "hero": {}
+  },
+  "render_passes": [
+    "beauty",
+    "ao",
+    "depth",
+    "mist",
+    "normal",
+    "emission",
+    "cryptomatte"
+  ],
+  "asset_kinds": [
+    "model",
+    "texture",
+    "hdri",
+    "heightmap"
+  ],
+  "quality_levels": [
+    "proxy",
+    "standard",
+    "hero"
+  ],
+  "style_presets": [
+    "cinematic_realism",
+    "scientific_visualization",
+    "stylized_diorama",
+    "technical_cutaway"
+  ],
+  "schemas": [
+    "scene-spec",
+    "environment",
+    "shot",
+    "camera",
+    "terrain",
+    "render",
+    "lighting",
+    "animation",
+    "asset_catalog"
+  ]
+}

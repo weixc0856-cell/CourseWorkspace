@@ -10,6 +10,7 @@
 | FR-02 校验 V-01~V-09 | `CourseControl/src/course_control/content/validators.py` | `test_contracts.py`、`check.ps1` |
 | FR-03 截图 | `CourseControl/src/course_control/rendering/adapters/slides.py`；`CourseSlides/template/`；`RemotionStudio/scripts/capture-slides.mjs` | `check.ps1` + 真实课程截图 |
 | FR-04 动画 | `adapters/motion_canvas.py`、`manim.py`、`blender.py`；引擎场景根解析 `platform/workspace_layout.py`（`engine_roots`） | `test_staging.py`、`test_vendor.py`、`lesson-manual` 夹具 |
+| FR-05b 资产环境/镜头三层 | `CourseControl/src/course_control/scene_spec/`（models/validate）、`cli/scene.py`（`asset-scene-validate`/`asset-scene-schema`）、`scripts/build_asset_scene.py`（environment/shot 合并、相机模板、water、passes）、`scripts/asset_library.py`（quality/dependencies）；`shared/scene-specs/` | `CourseControl/tests/test_scene_spec.py`（8 例）；fengshui `ridge/valley/water` + `a1/a2/a3` spec 校验通过 |
 | FR-05 IR v2 | `CourseControl/src/course_control/rendering/blender_scene.py`、`rendering/blender_runner.py`、`rendering/scene_presets.py`、`rendering/colormaps.py`；`BlenderStudio/scripts/scene_system/`、`verify_scene.py`；`shared/scene_expr/` | `CourseControl/tests/test_blender_scene.py`、`test_scene_expr.py` |
 | FR-06 本地建模 | `ModelingStudio/src/modeling_studio/` | `ModelingStudio/tests/` |
 | FR-07 时间线 | `CourseControl/src/course_control/content/collect.py`、`content/contracts.py`（annotations）、`platform/utils.py`；`shared/colormaps.json` | `test_contracts.py`、`test_staging.py` |

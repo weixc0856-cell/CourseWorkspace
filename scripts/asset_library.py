@@ -25,8 +25,11 @@ def load_library(path: Path) -> dict:
     return data
 
 
-def matches(asset: dict, query: str | None, tags: list[str], kind: str | None, used_in: str | None) -> bool:
+def matches(asset: dict, query: str | None, tags: list[str], kind: str | None, used_in: str | None,
+            quality: str | None = None) -> bool:
     if kind and asset.get("kind") != kind:
+        return False
+    if quality and asset.get("quality_level") != quality:
         return False
     if used_in and used_in not in (asset.get("used_in") or []):
         return False
@@ -52,6 +55,8 @@ def main() -> int:
     parser.add_argument("--tag", action="append", default=[], help="require this tag; repeatable")
     parser.add_argument("--kind", default=None, help="model, texture, hdri")
     parser.add_argument("--used-in", default=None, help="filter by project/lesson id")
+    parser.add_argument("--quality", default=None, choices=["proxy", "standard", "hero"],
+                        help="filter by asset quality tier")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--check", action="store_true", help="verify every path exists")
     args = parser.parse_args()
@@ -69,15 +74,29 @@ def main() -> int:
                 path = root / "assets" / "3d" / path
             if not path.exists():
                 missing.append({"id": asset.get("id"), "path": str(path)})
-        if missing:
-            print(json.dumps({"ok": False, "missing": missing}, ensure_ascii=False, indent=2))
+        broken_deps = []
+        by_id = {str(item.get("id")): item for item in assets}
+        for asset in assets:
+            for dep in asset.get("dependencies") or []:
+                if dep not in by_id:
+                    broken_deps.append({"id": asset.get("id"), "missing_dependency": dep})
+            preview = asset.get("preview")
+            if preview:
+                path = Path(str(preview))
+                if not path.is_absolute():
+                    path = root / "assets" / "3d" / path
+                if not path.is_file():
+                    missing.append({"id": asset.get("id"), "preview": str(path)})
+        if missing or broken_deps:
+            print(json.dumps({"ok": False, "missing": missing,
+                              "broken_dependencies": broken_deps}, ensure_ascii=False, indent=2))
             return 1
         print(f"asset library ok: {len(assets)} assets under {library_path}")
         return 0
 
     selected = [
         asset for asset in assets
-        if matches(asset, args.query, args.tag, args.kind, args.used_in)
+        if matches(asset, args.query, args.tag, args.kind, args.used_in, args.quality)
     ]
     if args.json:
         print(json.dumps(selected, ensure_ascii=False, indent=2))
@@ -88,6 +107,7 @@ def main() -> int:
             dim_text = " x ".join(f"{value:g}" for value in dims) + " m" if dims else ""
             print(
                 f"  {asset.get('id')}  [{asset.get('kind')}/{asset.get('license')}]  "
+                f"v{asset.get('version', 1)}/{asset.get('quality_level', 'standard')}  "
                 f"{asset.get('path')}"
                 + (f"  ({dim_text})" if dim_text else "")
             )

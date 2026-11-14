@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Asset catalog entry",
+  "type": "object",
+  "required": ["id", "kind", "license", "path"],
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "kind": {"enum": ["model", "texture", "hdri", "heightmap"]},
+    "source": {"type": "string"},
+    "source_url": {"type": "string"},
+    "license": {"type": "string"},
+    "path": {"type": "string"},
+    "format": {"type": "string"},
+    "resolution": {"type": "string"},
+    "dimensions_m": {"type": "array", "items": {"type": "number"}},
+    "polycount": {"type": "integer"},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "used_in": {"type": "array", "items": {"type": "string"}},
+    "version": {"type": "integer", "minimum": 1},
+    "quality_level": {"enum": ["proxy", "standard", "hero"]},
+    "dependencies": {"type": "array", "items": {"type": "string"}},
+    "preview": {"type": ["string", "null"]}
+  }
+}

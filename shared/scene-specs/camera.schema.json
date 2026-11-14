@@ -1,0 +1,199 @@
+{
+  "additionalProperties": true,
+  "description": "Camera rig.  Either explicit keyframes or a named template.",
+  "properties": {
+    "template": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Template"
+    },
+    "location": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Location"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target"
+    },
+    "lens": {
+      "default": 35,
+      "title": "Lens",
+      "type": "number"
+    },
+    "fstop": {
+      "default": 8,
+      "title": "Fstop",
+      "type": "number"
+    },
+    "focus_distance": {
+      "default": 10,
+      "title": "Focus Distance",
+      "type": "number"
+    },
+    "end_location": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End Location"
+    },
+    "end_target": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End Target"
+    },
+    "end_lens": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End Lens"
+    },
+    "keyframes": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Keyframes",
+      "type": "array"
+    },
+    "hold_start_s": {
+      "default": 1.0,
+      "title": "Hold Start S",
+      "type": "number"
+    },
+    "move_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Move S"
+    },
+    "hold_end_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Hold End S"
+    },
+    "center": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Center"
+    },
+    "radius": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Radius"
+    },
+    "height": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Height"
+    },
+    "start_angle_deg": {
+      "default": 0,
+      "title": "Start Angle Deg",
+      "type": "number"
+    },
+    "end_angle_deg": {
+      "default": 90,
+      "title": "End Angle Deg",
+      "type": "number"
+    },
+    "key_count": {
+      "default": 9,
+      "minimum": 3,
+      "title": "Key Count",
+      "type": "integer"
+    }
+  },
+  "title": "CameraSpec",
+  "type": "object"
+}

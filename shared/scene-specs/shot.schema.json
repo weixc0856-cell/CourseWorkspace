@@ -1,0 +1,401 @@
+{
+  "$defs": {
+    "CameraSpec": {
+      "additionalProperties": true,
+      "description": "Camera rig.  Either explicit keyframes or a named template.",
+      "properties": {
+        "template": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "lens": {
+          "default": 35,
+          "title": "Lens",
+          "type": "number"
+        },
+        "fstop": {
+          "default": 8,
+          "title": "Fstop",
+          "type": "number"
+        },
+        "focus_distance": {
+          "default": 10,
+          "title": "Focus Distance",
+          "type": "number"
+        },
+        "end_location": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Location"
+        },
+        "end_target": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Target"
+        },
+        "end_lens": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Lens"
+        },
+        "keyframes": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Keyframes",
+          "type": "array"
+        },
+        "hold_start_s": {
+          "default": 1.0,
+          "title": "Hold Start S",
+          "type": "number"
+        },
+        "move_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Move S"
+        },
+        "hold_end_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hold End S"
+        },
+        "center": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Center"
+        },
+        "radius": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Radius"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "start_angle_deg": {
+          "default": 0,
+          "title": "Start Angle Deg",
+          "type": "number"
+        },
+        "end_angle_deg": {
+          "default": 90,
+          "title": "End Angle Deg",
+          "type": "number"
+        },
+        "key_count": {
+          "default": 9,
+          "minimum": 3,
+          "title": "Key Count",
+          "type": "integer"
+        }
+      },
+      "title": "CameraSpec",
+      "type": "object"
+    },
+    "RenderSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "anyOf": [
+            {
+              "enum": [
+                "blockout",
+                "preview",
+                "hero"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile"
+        },
+        "engine": {
+          "default": "BLENDER_EEVEE",
+          "title": "Engine",
+          "type": "string"
+        },
+        "samples": {
+          "default": 32,
+          "minimum": 1,
+          "title": "Samples",
+          "type": "integer"
+        },
+        "resolution": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Resolution",
+          "type": "array"
+        },
+        "frames": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Frames",
+          "type": "integer"
+        },
+        "fps": {
+          "default": 30,
+          "minimum": 1,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "output": {
+          "default": "render.mp4",
+          "title": "Output",
+          "type": "string"
+        },
+        "passes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Passes",
+          "type": "array"
+        }
+      },
+      "title": "RenderSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Level 3: one camera setup that references an environment.",
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "shot",
+      "title": "Kind",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "default": "",
+      "title": "Name",
+      "type": "string"
+    },
+    "environment": {
+      "title": "Environment",
+      "type": "string"
+    },
+    "beat": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Beat"
+    },
+    "lane": {
+      "anyOf": [
+        {
+          "enum": [
+            "A",
+            "B",
+            "C"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lane"
+    },
+    "duration_s": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duration S"
+    },
+    "camera": {
+      "$ref": "#/$defs/CameraSpec"
+    },
+    "render": {
+      "$ref": "#/$defs/RenderSpec"
+    },
+    "objects": {
+      "anyOf": [
+        {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Objects"
+    },
+    "lights": {
+      "anyOf": [
+        {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lights"
+    },
+    "water": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Water"
+    },
+    "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "id",
+    "environment",
+    "camera"
+  ],
+  "title": "ShotSpec",
+  "type": "object"
+}

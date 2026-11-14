@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shot animation block",
+  "type": "object",
+  "properties": {
+    "camera": {"$ref": "camera.schema.json"},
+    "objects": {
+      "type": ["array", "null"],
+      "items": {"type": "object"},
+      "description": "Optional shot-level object overrides; environment objects are reused otherwise."
+    },
+    "water": {
+      "type": ["object", "null"],
+      "description": "Optional shot-level water override."
+    }
+  },
+  "required": ["camera"]
+}

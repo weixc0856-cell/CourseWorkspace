@@ -1,0 +1,110 @@
+schema_version: 1
+# Visual grammar presets for asset-based 3D.  A preset records the look
+# decisions that stay stable across shots; the shot spec records the camera.
+# These are defaults, not gates: a shot may override any field with a reason.
+presets:
+  cinematic_realism:
+    label: Cinematic Realism
+    use_for: [landscape, hero_shot, documentary_reconstruction]
+    composition:
+      subject: right_third
+      negative_space: left
+      horizon: upper_third
+      depth_layers: [foreground, midground, background, sky]
+    camera:
+      lenses: [35, 40, 45, 50]
+      move: hold-dolly-hold
+      height: eye_or_slightly_low
+      motion_blur_shutter: 0.5
+    lighting:
+      key: warm_sun
+      fill: cool_area
+      rim: cool_area
+      hdri: pure_sky_or_mountain
+      exposure: AgX
+      look: AgX - Medium High Contrast
+    color:
+      palette: [sun_warm, slate_blue, moss_green, rock_grey]
+      saturation: restrained
+    sound:
+      music: sparse_or_none
+      ambience: wind_or_water
+
+  scientific_visualization:
+    label: Scientific Visualization
+    use_for: [mechanism, data_relationship, cross_section]
+    composition:
+      subject: centered
+      negative_space: balanced
+      horizon: none
+      depth_layers: [subject, annotation, background]
+    camera:
+      lenses: [50, 85]
+      move: slow_orbit_or_static
+      orthographic_allowed: true
+      motion_blur_shutter: 0.25
+    lighting:
+      key: neutral_studio
+      fill: neutral
+      rim: optional
+      exposure: AgX_or_Standard
+      look: AgX - Base Contrast
+    color:
+      palette: [ink, paper, cinnabar, signal_blue]
+      saturation: semantic_only
+    sound:
+      music: minimal_pulse
+      ambience: none
+
+  stylized_diorama:
+    label: Stylized Diorama
+    use_for: [metaphor, miniature_world, explainer]
+    composition:
+      subject: centered_or_right
+      negative_space: generous
+      horizon: high
+      depth_layers: [set, props, backdrop]
+    camera:
+      lenses: [35, 50]
+      move: orbit_or_parallax
+      tilt_shift: optional
+      motion_blur_shutter: 0.25
+    lighting:
+      key: soft_directional
+      fill: broad
+      rim: warm
+      hdri: studio_or_pure_sky
+      exposure: AgX
+      look: AgX - Medium Low Contrast
+    color:
+      palette: [paper, ink, cinnabar, muted_green]
+      saturation: controlled
+    sound:
+      music: light_percussion
+      ambience: room_tone
+
+  technical_cutaway:
+    label: Technical Cutaway
+    use_for: [structure, process, engineering]
+    composition:
+      subject: centered
+      negative_space: label_space
+      horizon: none
+      depth_layers: [cut_surface, internals, callouts]
+    camera:
+      lenses: [50, 85]
+      move: static_or_slow_push
+      orthographic_allowed: true
+      motion_blur_shutter: 0.0
+    lighting:
+      key: even_studio
+      fill: even_studio
+      rim: none
+      exposure: Standard
+      look: Standard
+    color:
+      palette: [graphite, white, signal_blue, warning_amber]
+      saturation: functional
+    sound:
+      music: none
+      ambience: none

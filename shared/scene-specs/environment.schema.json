@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "TerrainSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "heightmap": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Heightmap"
+        },
+        "size_m": {
+          "default": 2400,
+          "title": "Size M",
+          "type": "number"
+        },
+        "subdivisions": {
+          "default": 300,
+          "minimum": 2,
+          "title": "Subdivisions",
+          "type": "integer"
+        },
+        "displacement_m": {
+          "default": 900,
+          "title": "Displacement M",
+          "type": "number"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "uv_scale": {
+          "default": 10,
+          "title": "Uv Scale",
+          "type": "number"
+        },
+        "z": {
+          "default": 0,
+          "title": "Z",
+          "type": "number"
+        },
+        "mid_level": {
+          "default": 0,
+          "title": "Mid Level",
+          "type": "number"
+        }
+      },
+      "required": [
+        "material"
+      ],
+      "title": "TerrainSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Level 2: one reusable place/set.",
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "environment",
+      "title": "Kind",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "default": "",
+      "title": "Name",
+      "type": "string"
+    },
+    "style": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Style"
+    },
+    "asset_root": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Asset Root"
+    },
+    "hdri": {
+      "title": "Hdri",
+      "type": "string"
+    },
+    "world_strength": {
+      "default": 1.0,
+      "title": "World Strength",
+      "type": "number"
+    },
+    "atmosphere": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Atmosphere"
+    },
+    "terrain": {
+      "$ref": "#/$defs/TerrainSpec"
+    },
+    "objects": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Objects",
+      "type": "array"
+    },
+    "sun": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sun"
+    },
+    "lights": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Lights",
+      "type": "array"
+    },
+    "water": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Water"
+    },
+    "camera": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Camera"
+    },
+    "render": {
+      "additionalProperties": true,
+      "title": "Render",
+      "type": "object"
+    },
+    "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "id",
+    "hdri",
+    "terrain"
+  ],
+  "title": "EnvironmentSpec",
+  "type": "object"
+}

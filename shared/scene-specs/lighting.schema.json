@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Environment lighting",
+  "type": "object",
+  "properties": {
+    "hdri": {"type": "string"},
+    "world_strength": {"type": "number", "minimum": 0},
+    "atmosphere": {
+      "type": ["object", "null"],
+      "properties": {
+        "size_m": {"type": "number"},
+        "location": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+        "density": {"type": "number", "minimum": 0},
+        "color": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
+        "anisotropy": {"type": "number"}
+      }
+    },
+    "sun": {
+      "type": ["object", "null"],
+      "properties": {
+        "location": {"type": "array", "items": {"type": "number"}},
+        "rotation_deg": {"type": "array", "items": {"type": "number"}},
+        "energy": {"type": "number"},
+        "angle_deg": {"type": "number"},
+        "color": {"type": "array", "items": {"type": "number"}}
+      }
+    },
+    "lights": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {"type": "string"},
+          "type": {"enum": ["SUN", "AREA", "SPOT", "POINT"]},
+          "location": {"type": "array", "items": {"type": "number"}},
+          "target": {"type": "array", "items": {"type": "number"}},
+          "rotation_deg": {"type": "array", "items": {"type": "number"}},
+          "energy": {"type": "number"},
+          "size": {"type": "number"},
+          "angle_deg": {"type": "number"},
+          "color": {"type": "array", "items": {"type": "number"}}
+        }
+      }
+    }
+  }
+}

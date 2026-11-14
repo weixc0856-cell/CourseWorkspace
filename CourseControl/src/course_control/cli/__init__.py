@@ -61,7 +61,8 @@ for _panel, _names in {
         "quality-report asr-align"
     ),
     "Scenes & 3D": (
-        "scene-validate scene-schema scene-run blender-task-validate simulation-validate "
+        "scene-validate scene-schema scene-run asset-scene-validate asset-scene-schema "
+        "blender-task-validate simulation-validate "
         "simulation-run formula-validate formula-render formula-video-qc formula-audit "
         "brand-plan brand-render"
     ),

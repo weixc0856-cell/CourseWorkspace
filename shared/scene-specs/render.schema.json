@@ -1,0 +1,66 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "anyOf": [
+        {
+          "enum": [
+            "blockout",
+            "preview",
+            "hero"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profile"
+    },
+    "engine": {
+      "default": "BLENDER_EEVEE",
+      "title": "Engine",
+      "type": "string"
+    },
+    "samples": {
+      "default": 32,
+      "minimum": 1,
+      "title": "Samples",
+      "type": "integer"
+    },
+    "resolution": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Resolution",
+      "type": "array"
+    },
+    "frames": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Frames",
+      "type": "integer"
+    },
+    "fps": {
+      "default": 30,
+      "minimum": 1,
+      "title": "Fps",
+      "type": "integer"
+    },
+    "output": {
+      "default": "render.mp4",
+      "title": "Output",
+      "type": "string"
+    },
+    "passes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Passes",
+      "type": "array"
+    }
+  },
+  "title": "RenderSpec",
+  "type": "object"
+}
