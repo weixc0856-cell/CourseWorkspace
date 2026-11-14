@@ -236,6 +236,8 @@ def _validate_shots(paths: LessonPaths, result: ValidationResult) -> ValidationR
             subtitles = paths.subtitles_path()
             if subtitles is None or not subtitles.is_file():
                 result.add("V-41", "error", "subtitles enabled but file not found")
+            else:
+                _check_subtitle_length(result, paths, subtitles)
     policy = resolve(lesson)
     if policy is not None:
         for problem in planned_problems(plan.total_seconds, policy):
@@ -245,6 +247,37 @@ def _validate_shots(paths: LessonPaths, result: ValidationResult) -> ValidationR
         _check_authoring(result, paths, notes.read_text(encoding="utf-8"))
     _check_beat_sheet(result, paths)
     return result
+
+
+def _check_subtitle_length(result, paths: LessonPaths, subtitles: Path) -> None:
+    """Stale subtitles are caught before rendering, not by collect.
+
+    A subtitle file built from an older cut can run past the measured
+    narration; burn-in would then emit cues for pictures that do not exist.
+    """
+    meta_path = paths.build_path("narration/narration.meta.json")
+    if not meta_path.is_file():
+        return
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        total = float((meta.get("assembly") or {}).get("duration_s") or 0.0)
+    except (OSError, ValueError):
+        return
+    if total <= 0:
+        return
+    from course_control.voice.srt import parse_srt
+
+    cues = parse_srt(subtitles.read_text(encoding="utf-8", errors="ignore"))
+    if not cues:
+        return
+    last = max(cue["end_ms"] for cue in cues) / 1000.0
+    if last > total + 0.5:
+        result.add(
+            "V-45",
+            "error",
+            f"subtitles end at {last:.1f}s but narration ends at {total:.1f}s; "
+            "rebuild and accept the subtitle draft",
+        )
 
 
 def validate(paths: LessonPaths) -> ValidationResult:

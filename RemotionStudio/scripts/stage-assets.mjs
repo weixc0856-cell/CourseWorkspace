@@ -38,6 +38,13 @@ if (timeline) {
   // build may live under a different root (fixtures, isolated production).
   // Resolve against the workspace and make it relative to the actual root.
   const toBuildRelative = (assetPath) => {
+    // The content root can sit outside the workspace, in which case the
+    // timeline carries an absolute path; make it build-relative when it falls
+    // under this build, otherwise leave it absolute for the copy step.
+    if (path.isAbsolute(assetPath)) {
+      const relative = path.relative(buildRoot, assetPath);
+      return relative.startsWith('..') ? assetPath : relative;
+    }
     if (!assetPath.startsWith('build/')) return assetPath;
     const absolute = path.resolve(workspaceRoot, assetPath);
     const relative = path.relative(buildRoot, absolute);
@@ -59,7 +66,7 @@ await mkdir(stagingDir, {recursive: true});
 
 const copied = [];
 for (const source of sources) {
-  const from = path.join(buildRoot, source);
+  const from = path.isAbsolute(source) ? source : path.join(buildRoot, source);
   const to = path.join(stagingDir, source);
   try {
     await mkdir(path.dirname(to), {recursive: true});

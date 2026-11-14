@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import time
 from pathlib import Path
@@ -129,6 +130,11 @@ def compose(paths: LessonPaths) -> StageOutcome:
             str(output),
             f"--props={props_path}",
             "--timeout=120000",
+            *(
+                [f"--concurrency={os.environ['COURSEWORKSPACE_RENDER_CONCURRENCY']}"]
+                if os.environ.get("COURSEWORKSPACE_RENDER_CONCURRENCY")
+                else []
+            ),
         ],
         remotion_root,
         timeout=render_timeout,
