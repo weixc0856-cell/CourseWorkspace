@@ -362,6 +362,7 @@ def _collect_shots(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]
                 timeline_role="base",
                 presentation=None,
                 transition=shot.transition,
+                theme=spec.theme,
             )
         )
         cursor += shot.duration_s
@@ -558,6 +559,7 @@ def collect(paths: LessonPaths) -> tuple[ShotsFile, list[str], list[Path]]:
                 duration_s=round(info.duration, 3),
                 timeline_role="overlay",
                 presentation="cutaway",
+                theme=spec.theme,
             )
         )
 

@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 from course_control.authoring.models import OutlinePage
 from course_control.design.board import board_svg
 from course_control.design.checks import check_design
+from course_control.design.handoff import apply_themes, load_theme_map
 from course_control.design.planner import (
     apply_override,
     derive_shot,
@@ -224,6 +225,59 @@ class BeatTest(unittest.TestCase):
         self.assertIn("beats", svg)
         self.assertIn("0s", svg)
         self.assertIn("transform", svg)
+
+
+class DesignHandoffTest(unittest.TestCase):
+    def board(self, themes: dict[str, str] | None = None):
+        from course_control.content.contracts import ShotSpec, Storyboard
+
+        spec = ShotSpec(
+            id="shot_003",
+            slide=3,
+            engine="manim",
+            scene="scenes/qkv.py",
+            cue_seconds=0.0,
+            theme=(themes or {}).get("own"),
+        )
+        return Storyboard(schema_version=1, lesson="01-transformer-demo", shots=[spec])
+
+    def test_a_design_theme_reaches_a_shot_that_has_none(self):
+        board, changed = apply_themes(self.board(), {"shot_003": "deep_space"})
+        self.assertEqual(changed, ["shot_003"])
+        self.assertEqual(board.shots[0].theme, "deep_space")
+
+    def test_a_shot_keeps_its_own_theme(self):
+        board, changed = apply_themes(
+            self.board({"own": "engineering_studio"}), {"shot_003": "deep_space"}
+        )
+        self.assertEqual(changed, [])
+        self.assertEqual(board.shots[0].theme, "engineering_studio")
+
+    def test_an_unknown_shot_is_ignored(self):
+        board, changed = apply_themes(self.board(), {"shot_999": "deep_space"})
+        self.assertEqual(changed, [])
+        self.assertIsNone(board.shots[0].theme)
+
+    def test_theme_map_reads_the_design_file(self):
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            design = Path(tmp) / "design"
+            design.mkdir()
+            (design / "visual_design.json").write_text(
+                json.dumps(
+                    {
+                        "shots": [
+                            {"shot_id": "shot_003", "art_direction": {"theme": "deep_space"}},
+                            {"shot_id": "shot_004", "art_direction": {}},
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertEqual(load_theme_map(Path(tmp)), {"shot_003": "deep_space"})
+            self.assertEqual(load_theme_map(Path(tmp) / "missing"), {})
 
 
 class DesignOverrideTest(unittest.TestCase):

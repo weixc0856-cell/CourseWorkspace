@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from course_control.rendering import adapters, scene_pages
+from course_control.design.handoff import apply_themes, load_theme_map
 from course_control.rendering.adapters.base import StageOutcome
 from course_control.platform.atomic import write_json_atomic
 from course_control.platform.build_lock import BuildLock
@@ -179,6 +180,12 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
                 storyboard_override=storyboard,
                 build_root_override=options.build_root,
             )
+    themed, themed_shots = apply_themes(paths.storyboard, load_theme_map(paths.build_root))
+    if themed_shots:
+        # The design layer owns the per-shot theme; the storyboard keeps its own
+        # value when it declares one.
+        paths.storyboard = themed
+
     if options.shots:
         known = {shot.id for shot in paths.storyboard.shots}
         unknown = sorted(set(options.shots) - known)
