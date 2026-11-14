@@ -208,6 +208,9 @@ def main():
     scene.frame_end = max(1, frames)
     scene.render.fps = int(render.get("fps", 30))
     if frames > 1:
+        if hasattr(scene.render, "use_motion_blur"):
+            scene.render.use_motion_blur = True
+            scene.render.motion_blur_shutter = 0.5
         scene.render.image_settings.media_type = "VIDEO"
         scene.render.image_settings.file_format = "FFMPEG"
         scene.render.ffmpeg.format = "MPEG4"
@@ -294,6 +297,9 @@ def main():
         if keys:
             for item in keys:
                 frame_no = int(item.get("frame", 1))
+                bpy.context.preferences.edit.keyframe_new_interpolation_type = str(
+                    item.get("easing", "BEZIER")
+                ).upper()
                 if item.get("location"):
                     cam.location = tuple(item["location"])
                 if item.get("target"):
@@ -315,6 +321,24 @@ def main():
             if camera.get("end_target"):
                 target.location = tuple(camera["end_target"])
                 target.keyframe_insert(data_path="location", frame=frames)
+        # Blender 5.2 actions are layered: fcurves live on channelbags.
+        easing_by_frame = {
+            int(item.get("frame", 1)): str(item.get("easing", "BEZIER")).upper()
+            for item in keys
+        }
+        for obj in (cam, target):
+            if not (obj.animation_data and obj.animation_data.action):
+                continue
+            for layer in obj.animation_data.action.layers:
+                for strip in layer.strips:
+                    for bag in strip.channelbags:
+                        for curve in bag.fcurves:
+                            for key in curve.keyframe_points:
+                                easing = easing_by_frame.get(round(key.co[0]), "BEZIER")
+                                key.interpolation = easing
+                                if easing == "BEZIER":
+                                    key.handle_left_type = "AUTO_CLAMPED"
+                                    key.handle_right_type = "AUTO_CLAMPED"
     sun_data = recipe.get("sun")
     if sun_data:
         light = bpy.data.lights.new("Sun", type="SUN")
