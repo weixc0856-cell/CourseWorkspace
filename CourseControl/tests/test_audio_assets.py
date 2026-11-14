@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import yaml
@@ -99,7 +101,9 @@ class VoiceBibleTest(unittest.TestCase):
     def test_relative_ref_audio_resolves_next_to_the_bible(self) -> None:
         bible = voice_bible_module.load(self.bible_path)
         audio = voice_bible_module.ref_audio_path(bible, self.bible_path)
-        self.assertEqual(audio, self.root / "voice-bibles" / "voice.wav")
+        # Windows hands tempfile a short (RUNNER~1) path while resolve() expands
+        # it; compare resolved paths so the assertion does not depend on casing.
+        self.assertEqual(audio.resolve(), (self.root / "voice-bibles" / "voice.wav").resolve())
         self.assertEqual(voice_bible_module.check(bible, self.bible_path), [])
 
     def test_digest_changes_when_the_voice_changes(self) -> None:
@@ -134,8 +138,15 @@ class ResolveAssetsTest(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.workspace = Path(self._tmp.name)
+        # Asset libraries resolve against the content root; pin it to the test
+        # workspace so a clean clone (content root = repo, no audio/) still runs.
+        self._content_root = patch.dict(
+            os.environ, {"COURSEWORKSPACE_CONTENT_ROOT": str(self.workspace)}
+        )
+        self._content_root.start()
 
     def tearDown(self) -> None:
+        self._content_root.stop()
         self._tmp.cleanup()
 
     def _write(self, relative: str, payload: dict) -> None:

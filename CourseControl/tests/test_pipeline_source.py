@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from course_control.content.paths import ContractError
@@ -10,7 +12,9 @@ from course_control.pipeline import BuildOptions, _validate_resume_from, storybo
 
 class StoryboardSourceTest(unittest.TestCase):
     def test_director_source_points_at_handoff(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(
+            os.environ, {"COURSEWORKSPACE_CONTENT_ROOT": str(Path(tmp).resolve())}
+        ):
             workspace = Path(tmp)
             lesson_dir = workspace / "lessons" / "demo"
             lesson_dir.mkdir(parents=True)

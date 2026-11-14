@@ -10,8 +10,12 @@ from course_control.direction.planners import plan_visual
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 FIXTURE = WORKSPACE / "CourseControl" / "tests" / "fixtures" / "lesson-simulation"
+# The fixture routes to a code_video shot whose SPEC is content, not workflow:
+# a clean clone has no CodeVideoStudio/shots, so these tests skip there.
+HAVE_SHOT = (WORKSPACE / "CodeVideoStudio" / "shots" / "primer-rps" / "SPEC.md").is_file()
 
 
+@unittest.skipUnless(HAVE_SHOT, "code_video shot sources are content")
 class SimulationDirectorTest(unittest.TestCase):
     def test_director_plan_routes_simulation_to_code_video(self):
         with tempfile.TemporaryDirectory() as tmp:
