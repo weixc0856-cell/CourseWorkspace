@@ -287,7 +287,7 @@ uv run --project CourseControl course-control validate --lesson <slug>
 | 预览成本记录 | `preview-pilot --lesson <slug>` | `build/<slug>/preview/pilot.json`（P0/P1/P2 各自耗时、缓存命中、失败数） |
 | 构建 | `build-lesson.ps1`；可选 `build --storyboard <path> [--shots shot_007]` | `final/course-video.mp4` + `final/course-video-captioned.mp4` |
 | 发布检查 | `release-check --lesson <slug>` 或 `release-check --project <path>` | `PASS` / `FAIL` / `INCOMPLETE` + 各步报告 |
-| 叙事契约 | `narrative-validate --lesson <slug>` | `build/<slug>/quality/narrative.json`（六段叙事骨架与时长校验） |
+| 叙事契约 | `narrative-validate --lesson <slug>` 或 `narrative-validate --project <project.yaml>` | `build/<slug>/quality/narrative.json`（六段叙事骨架与时长校验；主题视频用 `--project`） |
 | BGM 混音 | `audio-mix --lesson <slug>` | `final/course-video-mixed.mp4`、`audio/mix.json`（ducking + -16 LUFS） |
 | 全片 QC | `media-qc --lesson <slug>` | `quality/media-qc.json`（解码/格式/帧数/响度/静音/黑帧/冻结/字幕） |
 | 质量报告 | `quality-report --lesson <slug>` | `quality/quality-report.{json,md,html}`（五维独立状态与 BUILD/QUALITY/RELEASE） |

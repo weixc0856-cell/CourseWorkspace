@@ -1173,3 +1173,42 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **补测（同日）**：Blender 单镜头预览在 `lesson-blender-only` 夹具上实跑（854×480 / 1.0 s）；同时修掉 `scripts/blender-render.ps1` 与 `BlenderStudio/scripts/render_common.py` 把 `build/` 相对路径解析到工作区而不是内容根的旧缺陷。
 
 **未完成**：主题视频的 P0/P1 时间窗需要在 `project.yaml` 声明；10 分钟端到端试生产仍待真实课程；设计字段中的 `keyframes` / `continuity` 只传递、尚未被引擎逐项消费。
+
+## D-101 三条生产方向：课程、新闻、3 分钟 Vibe
+
+**背景**：2026-11-14 所有者给出三条后续生产方向，并要求结合实际展开，方便分别使用现有流程。所有者同时明确：**硬性门禁只有最终交付质量；没有什么东西是不能引用的。**
+
+**决策**：
+
+1. **三条线并存，共用控制层，不共用内容标准**：
+   - 01 完整课程：10–20 分钟，知识递进，`duration.profile: standard` 默认 target 1200 s / max 1320 s。
+   - 02 新闻与调查：4–12 分钟，六幕，证据矩阵 + 机制解释 + 独立判断。
+   - 03 3 分钟 Vibe：2–4 分钟，一个核心点 + 一次视觉体验，Blender / Remotion / Manim 按内容选择。
+2. **门禁只有交付质量与事实/法律红线**：不设比例、秒数、素材类型、风格、语法、镜头数量门禁；预览层级是工作方式，不是审批关卡。素材引用不设准入，只保留“不伪造、不错配来源、不改原声语义”。
+3. **不另建第二套代码**：三条线都用 `ProjectSpec`、`render shot|segment|project`、预览缓存、`release-check`。新闻/主题视频用 `production.topic_video`；课程用 `production.course.lesson`。
+4. **参考对象只校准方法**：课程线参考 CrashCourse / MRU / Great Courses / Wendover / Economics Explained / 3B1B / Yale / StatQuest / Swedish Investor；新闻线参考王志安 / Johnny Harris / Vox / DW；3 分钟线参考微型视觉纪录片 + 科学可视化。拆解记录写五问，不复制内容与风格。
+5. **保留两个待所有者决定的点**：新闻 100 分制的 75/85 数字阈值是否继续作为发布条件；风水频道“无旁白”是否改为旁白驱动。两者都不在本文暗改。
+6. **素材权利记录不设门禁**：D-099 继续有效。来源登记可记录 `rights_note` / `usage` 作为风险记录，不作为准入或发布条件；音乐作为背景使用时，许可与署名仍按 D-097 记录。
+
+**后果**：新增 `docs/v2/生产方向-00-总览.md`、`生产方向-01-完整课程.md`、`生产方向-02-新闻调查.md`、`生产方向-03-三分钟Vibe.md`。后续三条线分别用同一套预览/发布流程；10–20 分钟、4–12 分钟、2–4 分钟都是默认预算，不是秒数门禁。
+
+**补充（2026-11-14）**：
+
+1. `preview-pilot --project` 已支持主题视频，P0/P1/P2 成本记录不再只服务 lesson。
+2. 新增 `docs/v2/任务书-风水AB测试.md`：38.09 s 段落、三版共用脚本/节拍/音乐、共同评价 + 方向性评价、交付物与验收。
+3. 方向 02 的版权表述改为三层：来源使用、内容引用、素材再利用；只有“复用风险”被记录（`rights_note` / `usage`），不是门禁；D-099 不因表述调整而改变。
+4. `visual-design` / `sound-design` 的 `--project` 适配器仍未做；等 A/B/C 样片跑完，根据实际字段需求再定。
+
+## D-102 主题视频源码与素材归内容根
+
+**背景**：2026-11-14 所有者明确：临时文件和实际课程文件相关内容都应放在内容根。此前一次性主题视频的 Remotion 源码与 public 素材在仓库内，和“远程仓库只放工作流”的边界不一致。
+
+**决策**：
+
+1. **源码归内容根**：`fengshui`、`fengshui3d`、`compound`、`guofeng`、`vibe` 与 A/B/C 实验源码移到内容根；仓库只保留程序。
+2. **Remotion 用本地 junction**：`RemotionStudio/src/<name>` 是指向内容根的本地 junction，不提交。`tsconfig`/webpack 按原路径解析，换机器需重建 junction。
+3. **public 用生成副本**：Remotion bundler 在 Windows 上不能跟随 `public/` junction（EPERM），所以 `TopicPlan.public_assets` 在渲染前把内容根源目录复制到 `RemotionStudio/public/<name>/`；副本 gitignore，源仍在内容根。
+4. **git 索引移除**：已提交的主题视频源码从索引移除并加入 `.gitignore`；仓库克隆后不含这些课程内容。
+5. **Blender 任务用绝对路径**：实验任务放在内容根，`blender-render.ps1 -Task` 用绝对路径；`scene_system` 与 `render_common` 增加 `content_root` 参数，`build/` 解析按内容根。
+
+**后果**：仓库只剩程序、夹具与契约；内容根持有课程源码、素材、构建与交付。`check.ps1` 仍通过；主题视频渲染前需保留 junction 或运行内容根同步。

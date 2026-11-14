@@ -119,3 +119,15 @@ MotionStudio/src/scenes.generated.js
 assets/fonts/arial.ttf
 # Machine-specific config backups.
 config/*.bak-*
+
+# Course/project compositions live in the content root, not in this repository.
+# These paths are local junctions, not repository files.
+RemotionStudio/src/fengshui/
+RemotionStudio/src/fengshui3d/
+RemotionStudio/src/compound/
+RemotionStudio/src/guofeng/
+RemotionStudio/src/vibe/
+RemotionStudio/src/fengshui-ab
+RemotionStudio/public/fengshui/
+RemotionStudio/public/fengshui-ab/
+RemotionStudio/public/vibe/

@@ -113,9 +113,23 @@ class TopicLicence(StrictModel):
         return self
 
 
+class PublicAsset(StrictModel):
+    """A directory of static assets copied into Remotion's public folder.
+
+    The source lives in the content root; ``RemotionStudio/public/<name>`` is a
+    generated staging copy, never the source of truth.
+    """
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9_-]{0,63}$")
+    source: str = Field(min_length=1)
+
+
 class TopicPlan(StrictModel):
     series: Literal["auto", "single"] = "auto"
     target_seconds: float = Field(default=900.0, gt=0)
+    # Start the composition at this offset.  A monolithic film can be
+    # previewed as an excerpt without building a second composition.
+    offset_s: float = Field(default=0.0, ge=0)
     # A topic film is rendered by one Remotion entry/composition.  Course
     # lessons keep lesson.yaml; this is the equivalent pointer for a topic.
     entry: str | None = None
@@ -128,6 +142,7 @@ class TopicPlan(StrictModel):
     shots: list[TopicSegment] = Field(default_factory=list)
     segments: list[TopicSegment] = Field(default_factory=list)
     licences: list[TopicLicence] = Field(default_factory=list)
+    public_assets: list[PublicAsset] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_segments(self):

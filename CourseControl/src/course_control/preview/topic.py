@@ -9,6 +9,7 @@ preview/release split.  The film is a Remotion composition declared in
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -158,6 +159,29 @@ def _units_from(context: TopicContext, level: PreviewLevel) -> list[PreviewUnit]
     ]
 
 
+def _sync_public_assets(context: TopicContext) -> None:
+    """Copy topic asset directories into Remotion's public folder.
+
+    Remotion's bundler cannot follow Windows junctions in ``public/`` (it tries
+    to recreate them as symlinks and gets EPERM), so the source stays in the
+    content root and this function makes a real staging copy before rendering.
+    """
+    assets = context.plan.public_assets if context.plan is not None else []
+    if not assets:
+        return
+    public = context.workspace / "RemotionStudio" / "public"
+    for item in assets:
+        source = Path(item.source)
+        if not source.is_absolute():
+            source = (context.project_dir / source).resolve()
+        if not source.is_dir():
+            raise ValueError(f"public asset source not found: {source}")
+        target = public / item.name
+        if target.is_dir():
+            shutil.rmtree(target, ignore_errors=True)
+        shutil.copytree(source, target)
+
+
 def run_topic_preview(
     context: TopicContext,
     *,
@@ -167,6 +191,7 @@ def run_topic_preview(
     force: bool = False,
 ) -> dict:
     level = PreviewLevel(level)
+    _sync_public_assets(context)
     if not context.entry or not context.composition:
         raise ValueError(
             "topic preview requires production.topic_video.entry and .composition"
@@ -178,6 +203,7 @@ def run_topic_preview(
         raise ValueError("no topic preview units matched")
     started = time.monotonic()
     rows: list[dict] = []
+    offset_frames = int(round(float(context.plan.offset_s) * profile.fps))
     for unit in units:
         result = render_window(
             unit_id=unit.id,
@@ -186,8 +212,8 @@ def run_topic_preview(
             entry=context.entry,
             composition=context.composition,
             output=context.build_root / "preview" / level.value / f"{unit.id}.mp4",
-            start_frame=unit.start_frame(profile.fps),
-            end_frame=unit.end_frame(profile.fps),
+            start_frame=offset_frames + unit.start_frame(profile.fps),
+            end_frame=offset_frames + unit.end_frame(profile.fps),
             profile=profile,
             props=context.props,
             timeout_s=1800,
@@ -239,10 +265,55 @@ def run_topic_preview(
     return payload
 
 
+def run_topic_pilot(
+    context: TopicContext,
+    *,
+    profile: PreviewProfile,
+    force: bool = False,
+) -> dict:
+    """Run P0, P1 and P2 for a topic project and record each level's cost."""
+    levels = [PreviewLevel.SHOT, PreviewLevel.SEGMENT, PreviewLevel.PROJECT]
+    results: dict[str, dict] = {}
+    for level in levels:
+        payload = run_topic_preview(
+            context, level=level, profile=profile, force=force
+        )
+        report_path = Path(payload["report"])
+        level_report = report_path.with_name(f"report-{level.value}.json")
+        try:
+            shutil.copyfile(report_path, level_report)
+        except OSError:
+            level_report = report_path
+        results[level.value] = {
+            "units": payload["totals"]["units"],
+            "ok": payload["totals"]["ok"],
+            "cached": payload["totals"]["cached"],
+            "failed": payload["totals"]["failed"],
+            "duration_ms": payload["totals"]["duration_ms"],
+            "report": str(level_report),
+        }
+    summary = {
+        "schema_version": 1,
+        "kind": "preview_pilot",
+        "project": context.project_id,
+        "profile": profile.as_dict(),
+        "levels": results,
+        "generated_at": _now(),
+    }
+    target = context.build_root / "preview" / "pilot.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    )
+    summary["report"] = str(target)
+    return summary
+
+
 def release_topic(context: TopicContext) -> dict:
     """Render the whole composition at release scale into ``deliver/``."""
     from course_control.preview.profile import profile_for
 
+    _sync_public_assets(context)
     if not context.entry or not context.composition:
         raise ValueError(
             "topic release requires production.topic_video.entry and .composition"
@@ -263,8 +334,13 @@ def release_topic(context: TopicContext) -> dict:
         entry=context.entry,
         composition=context.composition,
         output=output,
-        start_frame=0,
-        end_frame=int(round(context.plan.target_seconds * context.fps)),
+        start_frame=int(round(float(context.plan.offset_s) * context.fps)),
+        end_frame=int(
+            round(
+                (float(context.plan.offset_s) + float(context.plan.target_seconds))
+                * context.fps
+            )
+        ),
         profile=profile,
         props=context.props,
         timeout_s=3600,
@@ -307,4 +383,10 @@ def release_topic(context: TopicContext) -> dict:
     }
 
 
-__all__ = ["TopicContext", "load_topic", "release_topic", "run_topic_preview"]
+__all__ = [
+    "TopicContext",
+    "load_topic",
+    "release_topic",
+    "run_topic_pilot",
+    "run_topic_preview",
+]

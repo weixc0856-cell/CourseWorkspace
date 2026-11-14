@@ -272,6 +272,29 @@
       "title": "ProjectMeta",
       "type": "object"
     },
+    "PublicAsset": {
+      "additionalProperties": false,
+      "description": "A directory of static assets copied into Remotion's public folder.\n\nThe source lives in the content root; ``RemotionStudio/public/<name>`` is a\ngenerated staging copy, never the source of truth.",
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "source"
+      ],
+      "title": "PublicAsset",
+      "type": "object"
+    },
     "ResourceLimits": {
       "additionalProperties": false,
       "properties": {
@@ -434,6 +457,12 @@
           "title": "Target Seconds",
           "type": "number"
         },
+        "offset_s": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Offset S",
+          "type": "number"
+        },
         "entry": {
           "anyOf": [
             {
@@ -513,6 +542,13 @@
             "$ref": "#/$defs/TopicLicence"
           },
           "title": "Licences",
+          "type": "array"
+        },
+        "public_assets": {
+          "items": {
+            "$ref": "#/$defs/PublicAsset"
+          },
+          "title": "Public Assets",
           "type": "array"
         }
       },

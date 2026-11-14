@@ -11,8 +11,8 @@ from . import scene as scene_ops
 from .task_schema import STANDARD_COLLECTIONS, TaskError, validate_task
 
 
-def execute(task, cwd=None):
-    spec = validate_task(task, cwd=cwd)
+def execute(task, cwd=None, content_root=None):
+    spec = validate_task(task, cwd=cwd, content_root=content_root)
     scene_spec = spec["scene"]
 
     if spec["base_blend"]:

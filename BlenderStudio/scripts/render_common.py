@@ -239,12 +239,12 @@ def render_task(task):
     print("BLENDER_TASK_OK")
 
 
-def run(task):
+def run(task, content_root=None):
     try:
         if task.get("schema_version") == 2:
             from scene_system.executor import execute as execute_scene_task
 
-            execute_scene_task(task, cwd=os.getcwd())
+            execute_scene_task(task, cwd=os.getcwd(), content_root=content_root)
             return
         validated = validate_task(task)
         render_task(validated)

@@ -800,7 +800,7 @@ V2 增量完成条件（2026-11-13 起）：
 **目标**：课程与主题视频共用一套渲染入口、构建记录与发布结论。
 
 - `course-control render shot|segment|project --lesson`；`render project --project <project.yaml>` 处理主题视频。
-- 主题视频在 `production.topic_video` 声明 `entry` / `composition` / `output` / `delivery_dir` / `shots` / `segments` / `licences`。
+- 主题视频在 `production.topic_video` 声明 `entry` / `composition` / `output` / `delivery_dir` / `shots` / `segments` / `licences` / `public_assets`。
 - `release-check` 串起 `media-qc` → `subtitles-qc` → `quality-report` → `quality-gate` → 缺陷与证书；输出 `PASS` / `FAIL` / `INCOMPLETE`。
 - 缺检查、缺证据、无法执行一律 `INCOMPLETE`，不得当作通过。
 - 不新增风格、比例、秒数、素材类型门禁；只保留交付质量与法律风险。

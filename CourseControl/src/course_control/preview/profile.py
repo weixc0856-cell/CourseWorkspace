@@ -81,6 +81,7 @@ def profile_for(
     height: int,
     fps: int,
     audio: bool = True,
+    short_edge: int = PREVIEW_SHORT_EDGE,
 ) -> PreviewProfile:
     mode = RenderMode(mode)
     level = PreviewLevel(level)
@@ -95,7 +96,7 @@ def profile_for(
             render_scale=1.0,
             audio=audio,
         )
-    target_w, target_h, scale = preview_size(width, height)
+    target_w, target_h, scale = preview_size(width, height, short_edge)
     render_scale = 1.0 if min(width, height) <= 540 else 0.5
     return PreviewProfile(
         mode=mode,

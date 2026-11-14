@@ -122,6 +122,7 @@ else {
 }
 
 if ($engineOverride) { $pyArgs += @("--engine", $engineOverride) }
+$pyArgs += @("--content-root", $content)
 
 $allowedRoot = [IO.Path]::GetFullPath((Join-Path $content "build/$Lesson/blender"))
 $outputAbs = [IO.Path]::GetFullPath($output)

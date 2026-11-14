@@ -43,6 +43,7 @@ def _profile(paths, mode, level, short_edge: int):
         height=height,
         fps=int(paths.lesson.outputs.fps),
         audio=mode.value == "release" or level.value != "shot",
+        short_edge=short_edge,
     )
 
 
@@ -292,28 +293,55 @@ def render_project(
 
 @app.command("preview-pilot")
 def preview_pilot(
-    lesson: str = typer.Option(..., "--lesson"),
+    lesson: str | None = typer.Option(None, "--lesson"),
+    project: Path | None = typer.Option(None, "--project", help="project.yaml for a topic video"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     short_edge: int = typer.Option(480, "--short-edge"),
     force: bool = typer.Option(False, "--force"),
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
-    """Run P0, P1 and P2 for one lesson and record the cost of each level."""
+    """Run P0, P1 and P2 for a lesson or topic project and record the cost."""
     from course_control.preview.profile import PreviewLevel, RenderMode
     from course_control.preview.runner import run_pilot
 
-    try:
-        paths = _paths(workspace, lesson, lesson_dir)
-    except Exception as exc:  # noqa: BLE001
-        typer.echo(str(exc), err=True)
-        raise typer.Exit(1)
-    profile = _profile(paths, RenderMode.PREVIEW, PreviewLevel.SHOT, short_edge)
-    try:
-        payload = run_pilot(paths, profile=profile, force=force)
-    except (OSError, ValueError) as exc:
-        typer.echo(f"failed: {exc}", err=True)
-        raise typer.Exit(1)
+    if bool(lesson) == bool(project):
+        typer.echo("give exactly one of --lesson or --project", err=True)
+        raise typer.Exit(2)
+    if project is not None:
+        from course_control.preview.profile import profile_for
+        from course_control.preview.topic import load_topic, run_topic_pilot
+
+        try:
+            context = load_topic(workspace.resolve(), project)
+        except Exception as exc:  # noqa: BLE001
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        profile = profile_for(
+            RenderMode.PREVIEW,
+            PreviewLevel.SHOT,
+            width=context.width,
+            height=context.height,
+            fps=context.fps,
+            short_edge=short_edge,
+        )
+        try:
+            payload = run_topic_pilot(context, profile=profile, force=force)
+        except (OSError, ValueError) as exc:
+            typer.echo(f"failed: {exc}", err=True)
+            raise typer.Exit(1)
+    else:
+        try:
+            paths = _paths(workspace, lesson, lesson_dir)
+        except Exception as exc:  # noqa: BLE001
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        profile = _profile(paths, RenderMode.PREVIEW, PreviewLevel.SHOT, short_edge)
+        try:
+            payload = run_pilot(paths, profile=profile, force=force)
+        except (OSError, ValueError) as exc:
+            typer.echo(f"failed: {exc}", err=True)
+            raise typer.Exit(1)
     if as_json:
         typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
     else:

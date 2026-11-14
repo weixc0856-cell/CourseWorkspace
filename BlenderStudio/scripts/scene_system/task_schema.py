@@ -473,7 +473,7 @@ def _path_inside(path, allowed_root, label, base=None):
     return path_abs
 
 
-def validate_task(task, cwd=None):
+def validate_task(task, cwd=None, content_root=None):
     """Validate a task IR v2 document and return a normalized copy."""
     if not isinstance(task, dict):
         raise TaskError("task must be a JSON object")
@@ -1016,15 +1016,16 @@ def validate_task(task, cwd=None):
     expected_suffix = "." + fmt
     if not output.lower().endswith(expected_suffix):
         raise TaskError(f"render.output must end with {expected_suffix}")
-    lesson_root = os.path.join(cwd or os.getcwd(), "build", lesson, "blender")
-    output_abs = _path_inside(output, lesson_root, "render.output", base=cwd)
+    build_root = content_root or cwd or os.getcwd()
+    lesson_root = os.path.join(build_root, "build", lesson, "blender")
+    output_abs = _path_inside(output, lesson_root, "render.output", base=build_root)
 
     save_blend = render_in.get("save_blend")
     if save_blend is not None:
         save_blend = _require_str(save_blend, "render.save_blend")
         if not save_blend.lower().endswith(".blend"):
             raise TaskError("render.save_blend must end with .blend")
-        save_blend = _path_inside(save_blend, lesson_root, "render.save_blend", base=cwd)
+        save_blend = _path_inside(save_blend, lesson_root, "render.save_blend", base=build_root)
 
     view_transform = render_in.get("view_transform")
     if view_transform is not None:

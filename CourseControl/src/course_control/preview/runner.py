@@ -13,6 +13,7 @@ it.  Nothing here writes into ``deliver/``.
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -283,13 +284,19 @@ def run_pilot(paths: LessonPaths, *, profile: PreviewProfile, force: bool = Fals
     results: dict[str, dict] = {}
     for level in levels:
         payload = run_preview(paths, level=level, profile=profile, force=force)
+        report_path = Path(payload["report"])
+        level_report = report_path.with_name(f"report-{level.value}.json")
+        try:
+            shutil.copyfile(report_path, level_report)
+        except OSError:
+            level_report = report_path
         results[level.value] = {
             "units": payload["totals"]["units"],
             "ok": payload["totals"]["ok"],
             "cached": payload["totals"]["cached"],
             "failed": payload["totals"]["failed"],
             "duration_ms": payload["totals"]["duration_ms"],
-            "report": payload.get("report"),
+            "report": str(level_report),
         }
     summary = {
         "schema_version": 1,

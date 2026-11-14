@@ -211,19 +211,35 @@ def animation_score_command(
 
 @app.command("narrative-validate")
 def narrative_validate_command(
-    lesson: str = typer.Option(..., "--lesson"),
+    lesson: str | None = typer.Option(None, "--lesson"),
+    project: Path | None = typer.Option(None, "--project", help="project.yaml for a topic video"),
+    plan: Path | None = typer.Option(None, "--plan", help="narrative-plan.json override"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Validate the Director narrative plan against the content methodology."""
     from course_control.direction.narrative import validate_lesson
 
-    try:
-        paths = _paths(workspace, lesson, lesson_dir)
-    except ContractError as exc:
-        typer.echo(str(exc), err=True)
-        raise typer.Exit(1)
-    report, target = validate_lesson(workspace.resolve(), paths)
+    if bool(lesson) == bool(project):
+        typer.echo("give exactly one of --lesson or --project", err=True)
+        raise typer.Exit(2)
+    if project is not None:
+        from course_control.direction.narrative_project import validate_project
+
+        try:
+            report, target = validate_project(
+                workspace.resolve(), project, plan_path=plan
+            )
+        except (OSError, ValueError, ContractError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+    else:
+        try:
+            paths = _paths(workspace, lesson, lesson_dir)
+        except ContractError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        report, target = validate_lesson(workspace.resolve(), paths)
     typer.echo(f"status: {report['status']} (form={report['form']})")
     for issue in report["issues"]:
         typer.echo(f"  [{issue['rule']}] {issue['level']}: {issue['message']}")

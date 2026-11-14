@@ -188,6 +188,11 @@ class TopicProjectTest(unittest.TestCase):
             self.assertEqual(context.height, 1920)
             self.assertEqual(len(context.plan.shots), 2)
             self.assertEqual(context.delivery_dir, (workspace / "deliver/demo").resolve())
+            from course_control.preview.topic import _units_from
+
+            self.assertEqual(len(_units_from(context, PreviewLevel.SHOT)), 2)
+            self.assertEqual(len(_units_from(context, PreviewLevel.SEGMENT)), 1)
+            self.assertEqual(len(_units_from(context, PreviewLevel.PROJECT)), 1)
 
     def test_unknown_licence_is_not_a_pass(self) -> None:
         from course_control.release.check import _topic_steps
@@ -197,6 +202,96 @@ class TopicProjectTest(unittest.TestCase):
             steps = _topic_steps(Path(tmp), video, [{"asset": "music", "status": "unknown"}])
             self.assertEqual(steps[0].id, "final_video")
             self.assertEqual(steps[0].status, "incomplete")
+
+
+class TopicPilotTest(unittest.TestCase):
+    def test_pilot_aggregates_three_levels_without_rendering(self) -> None:
+        from types import SimpleNamespace
+        from unittest.mock import patch
+
+        from course_control.preview.profile import profile_for
+        from course_control.preview.topic import run_topic_pilot
+
+        with tempfile.TemporaryDirectory() as tmp:
+            context = SimpleNamespace(project_id="demo", build_root=Path(tmp))
+            profile = profile_for(
+                RenderMode.PREVIEW,
+                PreviewLevel.SHOT,
+                width=1080,
+                height=1920,
+                fps=30,
+            )
+            payloads = [
+                {"totals": {"units": 2, "ok": 2, "cached": 0, "failed": 0, "duration_ms": 100}, "report": "a"},
+                {"totals": {"units": 1, "ok": 1, "cached": 0, "failed": 0, "duration_ms": 50}, "report": "b"},
+                {"totals": {"units": 1, "ok": 1, "cached": 0, "failed": 0, "duration_ms": 25}, "report": "c"},
+            ]
+            with patch(
+                "course_control.preview.topic.run_topic_preview",
+                side_effect=payloads,
+            ):
+                summary = run_topic_pilot(context, profile=profile)
+            self.assertEqual(set(summary["levels"]), {"shot", "segment", "project"})
+            self.assertTrue((Path(tmp) / "preview" / "pilot.json").is_file())
+
+
+class NarrativeProjectTest(unittest.TestCase):
+    def test_topic_plan_validates_without_a_lesson(self) -> None:
+        import yaml
+        from course_control.direction.narrative_project import validate_project
+
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            project_dir = workspace / "projects" / "demo-topic"
+            (project_dir / "authoring").mkdir(parents=True)
+            (project_dir / "project.yaml").write_text(
+                yaml.safe_dump(
+                    {
+                        "schema_version": 1,
+                        "project": {
+                            "id": "demo-topic",
+                            "mode": "topic_video",
+                            "title": "Demo",
+                            "language": "en",
+                        },
+                        "input": {"topic": "demo"},
+                        "production": {
+                            "topic_video": {
+                                "target_seconds": 120,
+                                "entry": "src/demo/index.ts",
+                                "composition": "Demo",
+                                "output": "demo.mp4",
+                            }
+                        },
+                        "media": {"resolution": "1920x1080", "frame_rate": 30},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            beats = [
+                {"id": "cold_open", "start_s": 0, "end_s": 10, "summary": "hook"},
+                {"id": "question", "start_s": 10, "end_s": 30, "summary": "question"},
+                {"id": "intuition", "start_s": 30, "end_s": 55, "summary": "intuition"},
+                {"id": "mechanism", "start_s": 55, "end_s": 80, "summary": "mechanism"},
+                {"id": "test", "start_s": 80, "end_s": 105, "summary": "test"},
+                {"id": "connect", "start_s": 105, "end_s": 120, "summary": "connect"},
+            ]
+            (project_dir / "authoring" / "narrative-plan.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "form": "long",
+                        "audience": "demo",
+                        "promise": "demo",
+                        "beats": beats,
+                        "payoff": "demo",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            report, target = validate_project(workspace, project_dir / "project.yaml")
+            self.assertEqual(report["status"], "pass")
+            self.assertTrue(target.is_file())
 
 
 class ReleaseCheckTest(unittest.TestCase):

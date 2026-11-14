@@ -84,9 +84,12 @@ def main():
     if not task_path:
         render_common.fail("missing --task <json>")
 
+    content_root = get_arg(argv, "--content-root")
+    if content_root:
+        render_common.CONTENT_ROOT = content_root
     task = render_common.load_json(task_path)
     apply_overrides(task, argv)
-    render_common.run(task)
+    render_common.run(task, content_root=content_root)
 
 
 if __name__ == "__main__":
