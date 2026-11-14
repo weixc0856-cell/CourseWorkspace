@@ -19,6 +19,7 @@ class TerrainSpec(BaseModel):
     uv_scale: float = 10
     z: float = 0
     mid_level: float = 0
+    edge_falloff: float = 0
 
 
 class EnvironmentSpec(BaseModel):

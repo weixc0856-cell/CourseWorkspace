@@ -47,6 +47,11 @@
       "default": 0,
       "title": "Mid Level",
       "type": "number"
+    },
+    "edge_falloff": {
+      "default": 0,
+      "title": "Edge Falloff",
+      "type": "number"
     }
   },
   "required": [

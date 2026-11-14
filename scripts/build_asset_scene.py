@@ -825,6 +825,18 @@ def main():
             mod.texture_coords = "UV"
             mod.strength = float(terrain.get("displacement_m", 900))
             mod.mid_level = float(terrain.get("mid_level", 0.0))
+            falloff = float(terrain.get("edge_falloff", 0.0))
+            if falloff > 0:
+                bpy.context.view_layer.update()
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+                half = float(terrain.get("size_m", 2400)) / 2.0
+                for vertex in ground.data.vertices:
+                    edge = max(abs(vertex.co.x), abs(vertex.co.y)) / half
+                    if edge <= 0.65:
+                        continue
+                    t = min(1.0, (edge - 0.65) / 0.35)
+                    smooth = t * t * (3 - 2 * t)
+                    vertex.co.z *= max(0.0, 1.0 - falloff * smooth)
         bpy.context.view_layer.update()
 
     if spec.get("water"):
