@@ -21,6 +21,7 @@ from . import (  # noqa: E402,F401
     legacy,
     lesson,
     locks,
+    preview,
     producer,
     project,
     quality,
@@ -52,10 +53,10 @@ for _panel, _names in {
         "package package-verify release-approve review-status review-decide vendor-check "
         "vendor-sync stats config-resolve project-validate project-show artifact-index "
         "run-start run-status quality-diagnose quality-repair-plan quality-regression "
-        "quality-certificate lock lock-status"
+        "quality-certificate release-check lock lock-status"
     ),
     "Render & audio": (
-        "tts-status narrate narration-assets subtitles-build subtitles-rewrap "
+        "tts-status narrate narration-assets subtitles-build subtitles-retime subtitles-rewrap "
         "subtitles-accept burn-subs subtitles-qc audio-plan audio-mix media-qc "
         "quality-report asr-align"
     ),
@@ -64,7 +65,7 @@ for _panel, _names in {
         "simulation-run formula-validate formula-render formula-video-qc formula-audit "
         "brand-plan brand-render"
     ),
-    "Preview": "animatic session-validate session-run session-evidence-v1",
+    "Preview": "animatic preview-pilot session-validate session-run session-evidence-v1",
     "Legacy": "e6-adapt e65-adapt timeline-v1",
 }.items():
     for _name in _names.split():

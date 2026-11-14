@@ -84,6 +84,8 @@
 | FR-52 视觉设计层 | `CourseControl/src/course_control/design/`（schema/planner/checks/board/report）、`cli/design.py`；`authoring/visual-design.yaml` 覆盖 | `test_visual_design.py`（17 例）；`<slug>` 12 镜头关键帧看板 + beat 条实跑 |
 | FR-53 声音导演层 | `CourseControl/src/course_control/sound/`（schema/planner/checks/report）、`cli/sound.py` | `test_sound_design.py`（20 例）；`<slug>` 54 段旁白 cue sheet 实跑 |
 | FR-54 课程质量模型 | `docs/课程质量模型.md` | 文档标准；单集验收表待第一集实跑 |
+| FR-55 Preview / Release 双模式 | `CourseControl/src/course_control/preview/`（profile/units/remotion_window/engines/runner/topic/audio/sound_mix）、`cli/preview.py` | `test_preview_modes.py`；02/06 真实 P0/P1；fengshui P0/P1/P2 |
+| FR-56 统一渲染入口与发布检查 | `CourseControl/src/course_control/release/check.py`、`cli/preview.py`、`delivery/project.py`（TopicPlan） | `test_preview_modes.py`；05/aging release-check；fengshui release-check pass |
 
 ## 人工依赖
 

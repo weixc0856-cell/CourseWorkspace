@@ -115,8 +115,8 @@ def music_cues(lesson: LessonConfig, plan: DirectorPlan) -> list[MusicCue]:
                 start_s=0.0,
                 end_s=round(end, 3),
                 action="silence",
-                mood="lecture room tone",
-                reason=f"{lesson.audio.content_kind} carries no music bed; silence is the design",
+                mood="no music declared",
+                reason="no music cues declared; silence is the default until cues are authored",
             )
         ]
 

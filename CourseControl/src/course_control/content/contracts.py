@@ -299,6 +299,9 @@ class ShotSpec(StrictModel):
     validation: dict | None = None
     formula_ids: list[str] = Field(default_factory=list)
     theme: SceneTheme | None = None
+    # The visual design document for this shot, carried through to the
+    # compositor.  It is a view, not a second storyboard authority.
+    design: dict | None = None
 
     # --- Shot Sheet fields (storyboard schema_version: 2 only) -------------
     purpose: ShotPurpose | None = None
@@ -453,6 +456,7 @@ class Shot(StrictModel):
     presentation: Literal["cutaway", "picture_in_picture", "transparent_overlay"] | None = None
     transition: Transition | None = None
     theme: SceneTheme | None = None
+    design: dict | None = None
 
     @model_validator(mode="after")
     def overlay_needs_presentation(self):

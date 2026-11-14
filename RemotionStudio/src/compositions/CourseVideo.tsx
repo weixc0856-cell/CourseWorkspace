@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import {Narration} from '../audio/Narration';
+import {DesignMotion} from '../components/DesignMotion';
 import {Annotations} from '../overlays/Annotations';
 import {Captions} from '../subtitles/Captions';
 import {COLORS} from '../styles/tokens';
@@ -49,11 +50,13 @@ const BaseShot: React.FC<{lesson: string; shot: Shot; fps: number}> = ({
 
   return (
     <Sequence from={from} durationInFrames={durationInFrames} name={`${shot.id}:base`}>
-      {shot.kind === 'recording' ? (
-        <OffthreadVideo src={src} style={videoStyle} />
-      ) : (
-        <Img src={src} style={videoStyle} />
-      )}
+      <DesignMotion design={shot.design} durationInFrames={durationInFrames}>
+        {shot.kind === 'recording' ? (
+          <OffthreadVideo src={src} style={videoStyle} />
+        ) : (
+          <Img src={src} style={videoStyle} />
+        )}
+      </DesignMotion>
     </Sequence>
   );
 };
@@ -62,7 +65,8 @@ const OverlayContent: React.FC<{
   lesson: string;
   shot: Shot;
   presentation: Presentation;
-}> = ({lesson, shot, presentation}) => {
+  durationInFrames: number;
+}> = ({lesson, shot, presentation, durationInFrames}) => {
   const src = staticFile(stagingPath(lesson, shot.source));
 
   if (presentation === 'picture_in_picture') {
@@ -115,7 +119,14 @@ const OverlayShot: React.FC<{lesson: string; shot: Shot; fps: number}> = ({
   return (
     <Sequence from={from} durationInFrames={durationInFrames} name={`${shot.id}:overlay`}>
       <Fade durationInFrames={durationInFrames}>
-        <OverlayContent lesson={lesson} shot={shot} presentation={shot.presentation} />
+        <DesignMotion design={shot.design} durationInFrames={durationInFrames}>
+          <OverlayContent
+            lesson={lesson}
+            shot={shot}
+            presentation={shot.presentation}
+            durationInFrames={durationInFrames}
+          />
+        </DesignMotion>
       </Fade>
     </Sequence>
   );

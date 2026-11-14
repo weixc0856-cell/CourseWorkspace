@@ -112,7 +112,7 @@ class ConfigResolveTest(unittest.TestCase):
             codes = {item["code"] for item in blocking_conflicts(report)}
             self.assertIn("subtitle_language_mismatch", codes)
 
-    def test_formal_course_must_not_declare_bgm(self) -> None:
+    def test_formal_course_bgm_is_advisory_not_blocking(self) -> None:
         extra = """
 audio:
   content_kind: formal_course
@@ -126,8 +126,12 @@ audio:
         with tempfile.TemporaryDirectory() as tmp:
             workspace, paths = make_workspace(tmp, lesson_extra=extra)
             report = resolve_config(workspace, paths)
+            advisories = {
+                item["code"]: item["severity"] for item in report.get("conflicts") or []
+            }
+            self.assertEqual(advisories.get("bgm_policy_advisory"), "warning")
             codes = {item["code"] for item in blocking_conflicts(report)}
-            self.assertIn("bgm_policy_violation", codes)
+            self.assertNotIn("bgm_policy_advisory", codes)
 
     def test_deepseek_pro_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

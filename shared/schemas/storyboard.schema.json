@@ -273,6 +273,19 @@
           "default": null,
           "title": "Theme"
         },
+        "design": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Design"
+        },
         "purpose": {
           "anyOf": [
             {

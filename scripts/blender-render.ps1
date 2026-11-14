@@ -103,7 +103,14 @@ else {
     if ([string]::IsNullOrWhiteSpace($output)) {
         Stop-WithError "task output is missing: $taskPath" 4
     }
-    if (-not [IO.Path]::IsPathRooted($output)) { $output = Join-Path $root $output }
+    if (-not [IO.Path]::IsPathRooted($output)) {
+        # build/ paths belong to the content root, which may sit outside the
+        # workspace.  Resolving them against the workspace was the old bug.
+        if ($output.StartsWith("build/") -or $output.StartsWith("build\")) {
+            $output = Join-Path $content $output
+        }
+        else { $output = Join-Path $root $output }
+    }
     $script = Join-Path $root "BlenderStudio/scripts/render_shot.py"
     $logName = "blender-" + [IO.Path]::GetFileNameWithoutExtension($taskPath) + ".log"
     $pyArgs = @("--task", $taskPath)
@@ -152,6 +159,8 @@ $psi.UseShellExecute = $false
 $psi.RedirectStandardOutput = $true
 $psi.RedirectStandardError = $true
 $psi.CreateNoWindow = $true
+$psi.EnvironmentVariables["COURSE_CONTENT_ROOT"] = $content
+if ($env:COURSE_DESIGN_JSON) { $psi.EnvironmentVariables["COURSE_DESIGN_JSON"] = $env:COURSE_DESIGN_JSON }
 try {
     $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
     $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8

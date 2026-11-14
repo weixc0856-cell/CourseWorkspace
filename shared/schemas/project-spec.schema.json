@@ -45,6 +45,18 @@
           ],
           "default": null,
           "title": "Justification"
+        },
+        "lesson": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lesson"
         }
       },
       "title": "CoursePlan",
@@ -360,6 +372,50 @@
       "title": "SourceRef",
       "type": "object"
     },
+    "TopicLicence": {
+      "additionalProperties": false,
+      "description": "One asset whose licence must be clear before a topic film is released.",
+      "properties": {
+        "asset": {
+          "minLength": 1,
+          "title": "Asset",
+          "type": "string"
+        },
+        "status": {
+          "default": "unknown",
+          "enum": [
+            "public_domain",
+            "cc_by",
+            "owner_authorized",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "commercial_allowed": {
+          "default": false,
+          "title": "Commercial Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "asset"
+      ],
+      "title": "TopicLicence",
+      "type": "object"
+    },
     "TopicPlan": {
       "additionalProperties": false,
       "properties": {
@@ -377,9 +433,143 @@
           "exclusiveMinimum": 0,
           "title": "Target Seconds",
           "type": "number"
+        },
+        "entry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entry"
+        },
+        "composition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Composition"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output"
+        },
+        "delivery_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delivery Dir"
+        },
+        "props": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Props"
+        },
+        "shots": {
+          "items": {
+            "$ref": "#/$defs/TopicSegment"
+          },
+          "title": "Shots",
+          "type": "array"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/TopicSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        },
+        "licences": {
+          "items": {
+            "$ref": "#/$defs/TopicLicence"
+          },
+          "title": "Licences",
+          "type": "array"
         }
       },
       "title": "TopicPlan",
+      "type": "object"
+    },
+    "TopicSegment": {
+      "additionalProperties": false,
+      "description": "A time window a topic film can be previewed and cached on.\n\n``shots`` are the finest review units (P0); ``segments`` group them (P1).\nA monolithic composition may declare only segments and still get P0/P1/P2.",
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "exclusiveMinimum": 0,
+          "title": "End S",
+          "type": "number"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "segment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Segment"
+        }
+      },
+      "required": [
+        "id",
+        "start_s",
+        "end_s"
+      ],
+      "title": "TopicSegment",
       "type": "object"
     }
   },

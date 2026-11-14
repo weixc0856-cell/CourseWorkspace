@@ -57,7 +57,7 @@ build/<slug>/logs/config-resolution.json   本次运行的不可变快照
 | 检查 | 条件 | 级别 |
 | --- | --- | --- |
 | `subtitle_language_mismatch` | 声明双语但 SRT 只有一种语言；或声明单语但 SRT 含两种 | blocking |
-| `bgm_policy_violation` | `formal_course` / `news` 声明了 BGM cue | blocking |
+| `bgm_policy_advisory` | `formal_course` / `news` 声明了 BGM cue（提示确认，不阻断，D-097） | warning |
 | `deepseek_model_pinned` | provider=deepseek 且 model/vision_model 不是 `deepseek-flash` | blocking |
 | `duration_outside_policy` | 实测旁白超出 min/max | blocking |
 | 目标时长偏差 | 实测与 target 相差超过 `acceptance.duration_tolerance_seconds` | warning（实测权威，D-032） |

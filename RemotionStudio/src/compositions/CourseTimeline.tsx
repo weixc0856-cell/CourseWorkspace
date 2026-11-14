@@ -10,11 +10,13 @@ import {
   useCurrentFrame,
 } from 'remotion';
 import {KenBurnsMotion, MotionImage} from '../components/MotionImage';
+import {DesignMotion} from '../components/DesignMotion';
 import {Annotations} from '../overlays/Annotations';
 import {AgingHud, AgingHudOverlay} from '../overlays/AgingHud';
 import {COLORS, FONTS} from '../styles/tokens';
 import {
   Annotation,
+  DesignSpec,
   Presentation,
   TimelineAudio,
   TimelineCue,
@@ -90,20 +92,31 @@ const AssetFrame: React.FC<{
   shot: TimelineVideo;
 }> = ({lesson, shot}) => {
   const src = staticFile(timelineAssetPath(lesson, shot.asset.path));
+  const design = shot.metadata?.legacy_design as DesignSpec | undefined;
   if (shot.asset.kind === 'image') {
     const motion = shot.metadata?.legacy_motion as KenBurnsMotion | undefined;
     if (motion && motion.kind === 'ken_burns') {
       return (
-        <MotionImage
-          src={src}
-          durationInFrames={shot.duration_frames}
-          motion={motion}
-        />
+        <DesignMotion design={design} durationInFrames={shot.duration_frames}>
+          <MotionImage
+            src={src}
+            durationInFrames={shot.duration_frames}
+            motion={motion}
+          />
+        </DesignMotion>
       );
     }
-    return <Img src={src} style={videoStyle} />;
+    return (
+      <DesignMotion design={design} durationInFrames={shot.duration_frames}>
+        <Img src={src} style={videoStyle} />
+      </DesignMotion>
+    );
   }
-  return <OffthreadVideo src={src} style={videoStyle} />;
+  return (
+    <DesignMotion design={design} durationInFrames={shot.duration_frames}>
+      <OffthreadVideo src={src} style={videoStyle} />
+    </DesignMotion>
+  );
 };
 
 const BaseVideo: React.FC<{lesson: string; shot: TimelineVideo}> = ({

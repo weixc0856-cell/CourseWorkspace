@@ -1,11 +1,20 @@
 # 项目当前状态与 PRD 盘点
 
 - **盘点日期**：2026-11-03
-- **最近更新**：2026-11-13（M0 架构审计草案、M1 闭环修补：字幕 QC 交付门、报告新鲜度、预览容差告警、五态映射表）
-- **代码基线**：`origin/main` = `b6fb662`（PR #16）；当前分支 `feat/v1-pipeline-remote-fallback`，基线提交 `07bef7b`，工作区含本轮改动（未提交）
-- **基线核实**：2026-11-10 实跑 `check.ps1` = `check ok`；六套 647 个用例（641 通过、6 跳过），Remotion `tsc --noEmit` 通过
+- **最近更新**：2026-11-14（Preview/Release 双模式、P0/P1/P2、统一 `render` 入口、`release-check`、设计进入成片、风水主题视频试点）
+- **代码基线**：以 `git` 实况为准。2026-11-14：`main` 领先 `origin/main` 6 个提交（HEAD `9811fa7`），另有未提交改动；不再引用旧分支 `feat/v1-pipeline-remote-fallback`。
+- **基线核实**：2026-11-14 实跑 `scripts/check.ps1` = `check ok`（exit 0）；`CourseControl` 单测 662 通过 / 9 跳过；Remotion `tsc --noEmit` 通过。
 - **需求基准**：[PRD.md](PRD.md)（v2.0，D-092）
 - **映射索引**：[TRACEABILITY.md](TRACEABILITY.md)；工作流见 [WORKFLOW.md](WORKFLOW.md)
+
+## 0.0000E 2026-11-14 Preview / Release 双模式与统一发布检查
+
+- **双模式**：新增 `CourseControl/src/course_control/preview/` 与 `cli/preview.py`。`preview` 短边 480，写 `build/<slug>/preview/`；`release` 走现有 `build`。P0 单镜头、P1 段落、P2 全片均有命令，层级不是门禁。
+- **统一入口**：`render shot|segment|project --lesson`；`render project --project <project.yaml>` 走 `ProjectSpec.production.topic_video`。主题视频可声明 `entry` / `composition` / `output` / `delivery_dir` / `shots` / `segments` / `licences`。
+- **设计消费**：`design/visual_design.json` 的完整镜头设计进入 `shots.json` 与时间线 metadata；Remotion `DesignMotion` 消费构图焦点与运镜。只传主题的历史限制已解除。
+- **发布三态**：新增 `release-check`，串起 `media-qc`、`subtitles-qc`、`quality-report`、`quality-gate`、缺陷与证书；缺项记 `INCOMPLETE`，不当作通过。
+- **实测**：`02-car-aerodynamics` P0 854×480（10.1 s）；`06-attention-sample` P0（Manim 与 CodeVideo）、P1 `seq-01` 854×480（65.5 s，源无旁白，预览静音并告警）；`fengshui-wind-water` P0 480×854（7.6 s）、P1 `opening`、P2 152 s（117 s 完成，二次命中缓存 0 s）；`lesson-blender-only` P0 854×480（1.0 s，Blender 实跑）；`preview-pilot` 在 `06-attention-sample` 记录 P0 54.6 s / P1 69.2 s / P2 70.8 s；`release-check` 在 `aging-evolution` 上停在“人工复核待签”（`INCOMPLETE`），在 `fengshui` 主题视频上 `PASS`。
+- **未完成**：10 分钟端到端试生产仍待真实课程；`keyframes` / `continuity` 只传递、尚未被引擎逐项消费；正式混音仍只消费 BGM；其余四条线外主题视频尚未补 `project.yaml`。
 
 ## 0.0000D 2026-11-13 M0 架构基线与 M1 闭环修补
 

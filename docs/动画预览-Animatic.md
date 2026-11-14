@@ -14,7 +14,27 @@
 
 ## 2. 用法
 
+P2 全片预览也可以走统一入口（等价于 animatic，但共享新的预览清单）：
+
 ```powershell
+course-control render project --lesson <slug> --mode preview
+```
+
+P0 镜头与 P1 段落预览：
+
+```powershell
+course-control render shot --lesson <slug> --shot <id> --mode preview
+course-control render segment --lesson <slug> --segment <id> --mode preview
+```
+
+主题视频（`project.yaml`）：
+
+```powershell
+course-control render project --project <path>/project.yaml --mode preview
+course-control render project --project <path>/project.yaml --segment <id> --mode preview
+```
+
+
 # 默认：480p，用 build/<slug>/narration/narration.wav
 course-control animatic --lesson a01-why-cars-need-aerodynamics
 
@@ -87,6 +107,10 @@ build/<slug>/animatic/
 片段缓存的键包含：单元 ID、画面类型、源文件 SHA-256、帧数、fps、分辨率、标签图 SHA-256。任一项变了才重编这一段。
 
 `--shot <id>` 只是把指定单元排除在复用之外，其余照常命中缓存。实测：`--shot page-005` 在 24 单元上得到 `1 encoded, 23 reused`，总耗时约 2 秒。
+
+## 7.1 与 Preview / Release 双模式的关系
+
+`animatic` 是 P2 的一种实现：它消费已经渲染好的片段与截图。`render` 命令补上 P0（单镜头）与 P1（段落）两层，并把预览产物统一写到 `build/<slug>/preview/`，带 `mode: preview` 身份，不写 `deliver/`。设计、摄影机、灯光、动画、字体与时间线在预览与正式渲染之间保持一致；只降低分辨率、采样与编码成本。详见 [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)。
 
 ## 8. 已知限制
 

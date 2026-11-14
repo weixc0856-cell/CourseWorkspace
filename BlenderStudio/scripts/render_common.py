@@ -12,6 +12,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ALLOWED_ENGINES = {"BLENDER_EEVEE", "CYCLES", "BLENDER_WORKBENCH"}
 ALLOWED_FORMATS = {"png", "mp4"}
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CONTENT_ROOT = os.environ.get("COURSE_CONTENT_ROOT")
+
+
+def resolve_build_path(value):
+    """Resolve a build/ path against the content root when one is configured."""
+    if (
+        CONTENT_ROOT
+        and isinstance(value, str)
+        and not os.path.isabs(value)
+        and value.replace("\\", "/").startswith("build/")
+    ):
+        return os.path.join(CONTENT_ROOT, value)
+    return value
 
 
 def fail(message):
@@ -81,8 +94,10 @@ def validate_task(task):
     if not isinstance(output, str) or not output.strip():
         fail("output must be a non-empty path")
 
-    output_abs = os.path.abspath(output)
-    allowed_root = os.path.abspath(os.path.join("build", lesson, "blender"))
+    output_abs = os.path.abspath(resolve_build_path(output))
+    allowed_root = os.path.abspath(
+        os.path.join(CONTENT_ROOT or os.getcwd(), "build", lesson, "blender")
+    )
     try:
         inside = os.path.commonpath([output_abs, allowed_root]) == allowed_root
     except ValueError:

@@ -781,5 +781,29 @@ V2 增量完成条件（2026-11-13 起）：
 - 计划以 `profile: news` 先行，复用 `docs/新闻视频生产流程.md` 的步骤，再扩通用主题视频。
 - 未实现：Mode B 的阶段流程、CLI 与验收模板。
 
-**验收**：当前仅能通过 `project-validate` 校验契约；流程验收未开始。
+**验收**：当前仅能通过 `project-validate` 校验契约；预览/发布渲染与 `release-check` 由 FR-55/FR-56 提供，完整 Mode B 流程未开始。
+
+### FR-55 Preview / Release 双模式 —— IMPLEMENTED
+
+**目标**：把“尽早看见问题”变成生产线的一等能力，而不是正式渲染后的补救。
+
+- 两种模式：`preview`（短边 480，写 `build/<slug>/preview/`，永不进 `deliver/`）与 `release`（声明分辨率，走现有 `build`）。
+- 三个层级：P0 单镜头、P1 段落、P2 全片；层级是工作方式，不是审批门禁。
+- 预览只降低分辨率、采样与编码成本；摄影机、灯光、场景、动画、字体、构图与时间线沿用正式配置。
+- 每个单元有指纹缓存，键含源文件、设计文档、渲染入口、帧范围与预览配置；未变化的单元直接复用。
+- 产物带 `mode: preview` 身份；预览缓存与正式缓存物理分开。
+
+**验收**：`CourseControl/tests/test_preview_modes.py`；`02-car-aerodynamics` P0、`06-attention-sample` P0/P1、`fengshui-wind-water` P0/P1/P2 实跑。
+
+### FR-56 统一渲染入口与发布检查 —— IMPLEMENTED
+
+**目标**：课程与主题视频共用一套渲染入口、构建记录与发布结论。
+
+- `course-control render shot|segment|project --lesson`；`render project --project <project.yaml>` 处理主题视频。
+- 主题视频在 `production.topic_video` 声明 `entry` / `composition` / `output` / `delivery_dir` / `shots` / `segments` / `licences`。
+- `release-check` 串起 `media-qc` → `subtitles-qc` → `quality-report` → `quality-gate` → 缺陷与证书；输出 `PASS` / `FAIL` / `INCOMPLETE`。
+- 缺检查、缺证据、无法执行一律 `INCOMPLETE`，不得当作通过。
+- 不新增风格、比例、秒数、素材类型门禁；只保留交付质量与法律风险。
+
+**验收**：`CourseControl/tests/test_preview_modes.py`；`05-transformer-5min` 与 `aging-evolution` 的 `release-check` 实跑；`fengshui` 主题视频 `release-check` pass。
 

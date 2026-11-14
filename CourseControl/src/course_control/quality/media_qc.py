@@ -124,11 +124,12 @@ def run_media_qc(
     paths: LessonPaths,
     *,
     video_name: str = "course-video-mixed.mp4",
+    video_path: Path | None = None,
 ) -> tuple[dict, Path]:
     workspace = workspace.resolve()
     final_dir = paths.build_root / "final"
-    video = final_dir / video_name
-    if not video.is_file():
+    video = Path(video_path) if video_path is not None else final_dir / video_name
+    if video_path is None and not video.is_file():
         alternative = final_dir / "course-video.mp4"
         video = alternative if alternative.is_file() else video
 

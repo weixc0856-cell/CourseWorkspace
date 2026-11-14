@@ -251,7 +251,7 @@ const DirectionalShot: React.FC = () => {
               <Callout x={148} y={92} dx={-30} dy={-24} text="C4F8 POLYMER" color={C.pink} progress={p} delay={0.45} size={5.4} boxW={48} />
             )}
             {p > 0.55 && (
-              <Callout x={196} y={120} dx={20} dy={18} text="SIDEWALL PROTECTED" color={C.pink} progress={p} delay={0.55} size={4.8} boxW={60} />
+              <Callout x={196} y={120} dx={8} dy={18} text="SIDEWALL PROTECTED" color={C.pink} progress={p} delay={0.55} size={4.8} boxW={60} />
             )}
           </CalloutLayer>
         </Profile>
@@ -269,7 +269,7 @@ const BoschShot: React.FC = () => {
   const {s, p, t} = useShot('bosch');
   const fr = getFrame('bosch_closeup', p);
   const gasPhase = Math.floor(t / 1.875) % 2;
-  const zoom = 1 + 0.55 * easeOut((p - 0.45) / 0.55);
+  const zoom = 1 + 0.2 * easeOut((p - 0.45) / 0.55);
   return (
     <AbsoluteFill>
       <Backdrop accent={C.pink} />
@@ -298,7 +298,7 @@ const BoschShot: React.FC = () => {
             t={t}
             mode="ion"
             color={C.cyan}
-            count={55}
+            count={35}
             intensity={gasPhase === 0 ? 1 : 0.12}
             viewBox={CROP.closeup}
           />
@@ -308,8 +308,8 @@ const BoschShot: React.FC = () => {
             t={t + 0.7}
             mode="polymer"
             color={C.pink}
-            count={34}
-            intensity={gasPhase === 1 ? 0.95 : 0.1}
+            count={18}
+            intensity={gasPhase === 1 ? 0.8 : 0.08}
             seed={29}
             viewBox={CROP.closeup}
           />
@@ -511,7 +511,7 @@ const PayoffShot: React.FC = () => {
 // ---------------------------------------------------------------- 09 end
 const EndShot: React.FC = () => {
   const {s, frame, d, t} = useShot('end');
-  const fade = interpolate(frame, [d - 14, d - 1], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const fade = interpolate(frame, [d - 8, d - 1], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   return (
     <AbsoluteFill style={{background: '#03050A'}}>
       <Backdrop accent={C.cyan} />
@@ -519,9 +519,9 @@ const EndShot: React.FC = () => {
         <Kicker text="END // SIMULATION" color={C.cyan} delay={2} align="center" />
         <div style={{height: 30}} />
         <Giant
-          lines={['EVERY CHIP', 'IS A LANDSCAPE']}
+          lines={['EVERY CHIP', 'IS A', 'LANDSCAPE']}
           size={104}
-          delay={5}
+          delay={2}
           align="center"
           accent="LANDSCAPE"
           accentColor={C.cyan}

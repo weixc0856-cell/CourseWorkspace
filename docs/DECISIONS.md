@@ -1088,3 +1088,88 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 5. **取代范围**：D-090 第 2 条的“真实 CFD 为案例证据”与第 4 条的 STAR/ParaView 口径在本轮 90 集中暂不使用；D-090 关于书为内容权威、C 版旁白、Cp 上限与通用参数的其他条款继续有效。
 
 **后果**：`COURSE_MAP.md` §3.5、`第一季方案.md` §3.5、`汽车空气动力学-生产方向.md` §4 与 `空气动力学-通用参数与口径.md` §7 已同步；真实案例资产保留给后续需要案例的专题，不在本轮引用或上屏。
+
+## D-096 新闻类升级为调查报道标准，作废“新闻禁用 BGM”
+
+**背景**：2026-11-14 所有者对新闻类生产提出升级方向：从成熟的短篇商业新闻解说升级到专业纪录片 / 商业调查水准，并要求按“内容研究 → 叙事 → 视觉导演 → 声音设计 → 后期 → 成片验收”的优先级排布，与既有文档冲突处改旧内容。首个实例为 `nvidia-huang-file`（262 s，82 分为主观粗评）。
+
+**决策**：
+
+1. **建立编辑标准**：[新闻与调查报道标准.md](新闻与调查报道标准.md) 为新闻类唯一编辑标准；[新闻视频生产流程.md](新闻视频生产流程.md) 改为它的执行步骤。
+2. **证据优先**：`authoring/fact-check.md` 必含证据矩阵、时间线交叉验证、反方证据检索（找不到也写检索范围）、数字口径与「本片明确不主张」；做不完不开工。
+3. **六幕叙事**：Cold Open → Context → Discovery → Mechanism → Counterargument → Implications；机器契约仍是 `narrative-plan` 的六个 beat，映射见标准 §2。
+4. **视觉语法库**：实景 / 关系动态图 / 地理空间 / 数据可视化 / 证据展示 / 三维机制六类，信息变化才换画面。
+5. **声音四层**：旁白 / 音乐 / 音效 / 环境声分开设计，音乐分段进退、关键证据处让路。**“新闻类禁用 BGM”作废**。
+6. **发布线**：100 分制 ≥ 75 才发布、≥ 85 为专业线；研究与事实准确性 < 16/20 直接不发布；另回答双验收问题（关闭旁白画面是否成立、打开旁白逻辑是否完整）。
+
+**取代范围**：D-073 第 4 条把“课程/新闻带 BGM”列为 blocking 的口径，对新闻类由本决策取代（正式课程仍禁用 BGM）；`docs/内容类型与音频策略.md` 的新闻行、`docs/声音导演层.md` 的 `news` 音乐策略同步修改。D-073 的其余配置快照条款继续有效。
+
+**后果**：文档已同步；**代码未改**——`voice/audio_plan.py`、`sound/planner.py`、`sound/checks.py` 仍按旧策略拦截新闻音乐，缺口登记在标准 §10。在门禁放开前，新闻音乐只做设计与试混，不得写成“已通过检查”；是否改门禁由所有者决定。
+
+## D-097 交付质量为唯一门禁，音乐策略不再拦截
+
+**背景**：D-096 记录的新闻音乐层被 `content_kind` 门禁拦截。所有者 2026-11-14 明确：**改门禁，除了交付质量是最终门禁，没有其他门禁。** 内容类型只决定默认口味，不决定能不能用音乐。
+
+**决策**：
+
+1. **移除音乐的内容类型门禁。** `voice/audio_plan.py` 不再因 `content_kind` 报错（`bgm_allowed` 恒为允许）；`sound/checks.py` 删除 `sound.bgm_policy`；`sound/planner.py` 的静默 cue 改为“未声明音乐时的默认”，不再声明策略禁令。
+2. **配置层降级。** `bgm_policy_violation`（blocking）改为 `bgm_policy_advisory`（warning）：正式课程 / 新闻声明 BGM 时提示确认，不阻断构建。
+3. **保留的阻断项都属于交付质量或法律风险**：未知许可、CC BY 缺署名、未核实授权标商用；响度与峰值目标；解码、冻结、字幕结构等 `media-qc` 检查。风格、模板、语法、镜头时长一律不作为门禁（与 D-071 一致）。
+4. **同时修复** `build_lock._pid_alive`：Windows 上 `CTRL_C_EVENT == 0`，`os.kill(pid, 0)` 会向控制台进程组发 Ctrl+C 而不是探活；改用 `OpenProcess` + `GetExitCodeProcess`，`test_stale_lock_is_reclaimed` 恢复稳定。
+
+**取代范围**：D-073 第 4 条把“课程/新闻带 BGM”列为 blocking 的口径整条作废（不只新闻类）；D-096 的“代码未改、门禁待定”后果由本决策关闭。其余条款继续有效。
+
+**后果**：`test_audio_plan.py`、`test_config_resolve.py`、`test_sound_design.py` 已按新口径改写；`docs/内容类型与音频策略.md`、`docs/声音导演层.md`、`docs/stabilization/CONFIGURATION_STANDARD.md`、`docs/新闻与调查报道标准.md` §10、`CLAUDE.md` §2.5 已同步。正式课程的音乐仍是“默认不用”，只是不再由代码强制。
+
+## D-098 编辑口吻定为「有锋芒的调查解说」，反讽为调味不是门禁
+
+**背景**：2026-11-14 所有者提出把新闻/商业/科技内容做成 **Intelligent Satirical Documentary**：用调查建立可信度，用视觉建立沉浸感，用反讽建立锋芒，用幽默降低理解门槛；配比 40% 调查与事实 / 30% 视觉与叙事 / 20% 观点与反讽 / 10% 情绪与幽默。要求“有机结合，后续按照这个来”。
+
+**决策**：
+
+1. **建立语气层**：[docs/creative/编辑口吻与反讽指南.md](creative/编辑口吻与反讽指南.md)。调查为底座、解释为主体、反讽为调味；反讽必须从事实矛盾中产生，之后回到证据。
+2. **密度**：一个叙事片段最多一个反讽点，整片 2–5 处；没有合适的就写直白，不硬凑。
+3. **四种表达**：deadpan / 逻辑反差 / 反问 / 荒诞类比 / 制度性讽刺；优先前两种与制度性讽刺。
+4. **四条边界**：已证实可讽；合理推论可调侃但须同屏给依据与反方；未证实指控不包装成事实；阴谋论只分析传播逻辑。禁区为外貌、口音、身份、隐私。
+5. **视觉反讽**：严肃版式配荒谬内容、关系图扩张、标题对照、冷停顿；画面说，旁白不说破。
+6. **不新增门禁**：语气标注（`deadpan` / `irony` / `straight`）只影响读法，不改变事实层级；验收用“指向证据 / 指向结构 / 对方只反对语气”三问。
+
+**同步**：`docs/新闻与调查报道标准.md` 新增 §2.2；`CLAUDE.md` §1 索引与 §2.5 第 7 条；`docs/README.md`、`docs/阅读顺序.md` 索引；系列 bible §13 增加一条语气规则。
+
+**范围**：从下一集开始适用。`data-center-power-bill`（2026-11-14 在产）按旧口吻完成，不为此返工。
+
+**后果**：无代码改动；语气层不改变证据、结构、视觉语法、声音四层与 100 分制。
+
+## D-099 新闻素材不设授权门禁，切片与网页滚动直接用
+
+**背景**：2026-11-14 所有者明确：新闻解说就是找资料整合；引用公开报道的短片段、官方发布、新闻网页滚动是常规做法，要求“先授权”等于让自媒体没法做。审计后确认：代码层没有拦视频素材（`RenderArtifact` 支持 `video`，`compose.mode=recording` 接受 `base_video`），真正拦人的是两处编辑规则。
+
+**决策**：
+
+1. **删除素材授权门禁**：新闻视频切片、官方发布、网页滚动与截图、静帧都可以直接使用；不设授权审批、不设素材准入门槛。
+2. **只保留两条红线**：不伪造、不错配来源；不改原声以改变语义。
+3. **出处照标**：画面或片尾标来源即可，不作为前置条件。
+4. **同步范围**：`projects/beyond-headlines/README.md` 规则 4、`docs/新闻与调查报道标准.md` §3.1/§3.3、`CLAUDE.md` §2.5 第 8 条。
+
+**取代范围**：系列 bible 原“不使用未授权的新闻视频”、新闻标准“未授权新闻画面”与新故事风格评估中“无 broadcaster footage”的限制，全部不再作为规则。音乐许可与声线授权不在本条范围内。
+
+**后果**：剪辑流程改为“找素材 → 切片/滚动 → 配讲解 → 标来源”，不再为每段素材找授权。样片见 `build/news-cut/`。
+
+## D-100 预览/发布双模式：先缩短反馈循环，再谈自动化
+
+**背景**：2026-11-14 所有者转发生产线建议并明确：按建议落地；除客观事实必须校验外，门槛只剩交付质量，不设比例、秒数、素材禁用一类的门禁。核验后确认：480p 全片预览（`animatic`）已存在，缺的是 P0/P1、引擎单镜头预览缓存、统一入口与发布三态；视觉设计只传主题、声音设计不进构建；主题视频仍在线外生产。
+
+**决策**：
+
+1. **两种模式**：`preview` 与 `release` 共用场景、镜头、动画、字体、构图与时间线；预览只降分辨率、采样与编码成本。预览产物写 `build/<slug>/preview/`，永远不进 `deliver/`。
+2. **三个层级**：P0 单镜头、P1 段落、P2 全片。层级不是门禁；成熟模板可以只做 P2 或抽样。触发预览的条件是变更，不是日历。
+3. **统一入口**：`course-control render shot|segment|project`；`--project` 走 `ProjectSpec` 的 `topic_video`。课程与主题视频共用预览清单、缓存与构建记录，不强行统一底层引擎。
+4. **设计消费**：`design/visual_design.json` 的完整镜头设计写入 `shots.json`，Remotion 消费构图焦点与运镜；引擎侧保留 `design.json` 供场景读取。改设计会改变画面并触发对应单元重渲。
+5. **发布三态**：`release-check` 串起 `media-qc`、`subtitles-qc`、`quality-report`、`quality-gate`、缺陷与证书；`PASS` / `FAIL` / `INCOMPLETE`，缺项不通过。
+6. **只保留交付质量与法律风险**：不新增风格、比例、秒数、素材类型门禁；预览层级、镜头数量、动画比例都不作为发布条件。主题视频的许可声明进入 `production.topic_video.licences`，`unknown` 或 CC BY 缺署名阻断发布。
+
+**落地**：`CourseControl/src/course_control/preview/`、`release/check.py`、`cli/preview.py`；`shared/schemas/project-spec.schema.json`、`storyboard.schema.json`、`shots.schema.json` 已再生成；`RemotionStudio/src/components/DesignMotion.tsx` 消费设计。实测：`02-car-aerodynamics` P0 854×480；`06-attention-sample` P0（Manim/CodeVideo）与 P1；`fengshui-wind-water` P0 480×854、P1、P2 152 s；`aging-evolution` release-check 停在人工复核（`INCOMPLETE`），符合“skip ≠ pass”。
+
+**补测（同日）**：Blender 单镜头预览在 `lesson-blender-only` 夹具上实跑（854×480 / 1.0 s）；同时修掉 `scripts/blender-render.ps1` 与 `BlenderStudio/scripts/render_common.py` 把 `build/` 相对路径解析到工作区而不是内容根的旧缺陷。
+
+**未完成**：主题视频的 P0/P1 时间窗需要在 `project.yaml` 声明；10 分钟端到端试生产仍待真实课程；设计字段中的 `keyframes` / `continuity` 只传递、尚未被引擎逐项消费。

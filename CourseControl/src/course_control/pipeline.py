@@ -7,7 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from course_control.rendering import adapters, scene_pages
-from course_control.design.handoff import apply_themes, load_theme_map
+from course_control.design.handoff import (
+    apply_design,
+    apply_themes,
+    load_design_map,
+    load_theme_map,
+)
 from course_control.rendering.adapters.base import StageOutcome
 from course_control.platform.atomic import write_json_atomic
 from course_control.platform.build_lock import BuildLock
@@ -185,6 +190,11 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
         # The design layer owns the per-shot theme; the storyboard keeps its own
         # value when it declares one.
         paths.storyboard = themed
+    designed, designed_shots = apply_design(paths.storyboard, load_design_map(paths.build_root))
+    if designed_shots:
+        # The full design travels with the shot so the compositor can consume
+        # composition, motion and keyframes instead of only the theme name.
+        paths.storyboard = designed
 
     if options.shots:
         known = {shot.id for shot in paths.storyboard.shots}

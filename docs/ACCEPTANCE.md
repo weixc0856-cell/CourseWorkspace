@@ -491,6 +491,7 @@ R1 真实产物：
 | 镜头驱动校验 | `course-control validate --lesson <slug> --lesson-dir <dir>`（`compose.mode=shots`） | 不要求 slides/notes 页数对齐 |
 | 镜头驱动构建 | `course-control build --lesson <slug> --lesson-dir <dir>` | validate/render/collect/compose/verify 全 pass |
 | 分层质量 | `course-control quality-gate --lesson <slug>` | hard / grammar / metrics / human 四段；不输出 85 分线 |
+| 预览/发布 | `course-control render project --lesson <slug> --mode preview`；`release-check --lesson <slug>` | 预览 854×480 / 480×854；`release-check` 输出 PASS/FAIL/INCOMPLETE，缺项不算通过 |
 | 指标工具 | `course-control animation-score --lesson <slug> --profile kinetic_edit` | `release_gate: metric_only`，退出码 0 |
 | 参考对比 | `course-control reference-compare --lesson <slug> --reference 3b1b-attention` | 六维报告；三维修为 human_review |
 | 分块捕获 | `capture.mjs <dir> --dur 12 --chunk-seconds 4` | 帧数一致；PSNR vs 单次捕获 > 50 dB |

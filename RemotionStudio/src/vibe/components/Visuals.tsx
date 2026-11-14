@@ -72,7 +72,6 @@ export const HookVisual: React.FC<{progress: number; t: number}> = ({progress, t
         <g opacity={fadeLabels * detail}>
           {[
             {x: 540, y: 860, label: '20B TRANSISTORS', side: 1},
-            {x: 700, y: 1040, label: '3 NM CLASS', side: 1},
             {x: 540, y: 1230, label: '300 MM WAFER', side: -1},
           ].map((L, i) => (
             <g key={i} opacity={0.8}>

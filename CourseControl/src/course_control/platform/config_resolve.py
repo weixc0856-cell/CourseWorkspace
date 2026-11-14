@@ -255,13 +255,14 @@ def resolve_config(workspace: Path, paths: LessonPaths) -> dict:
                 )
             )
 
-    # Content kinds that never carry BGM must not declare a music bed.
+    # Music is a creative choice; a content kind that usually runs silent is a
+    # taste default, not a gate.  Delivery quality is the only gate (D-097).
     if lesson.audio.content_kind in {"formal_course", "news"} and lesson.audio.bgm:
         conflicts.append(
             _conflict(
-                "bgm_policy_violation",
-                "blocking",
-                "formal courses and news must not declare BGM cues",
+                "bgm_policy_advisory",
+                "warning",
+                "this content kind usually carries no music bed; confirm every cue earns its place",
                 content_kind=lesson.audio.content_kind,
                 cues=[cue.track_id for cue in lesson.audio.bgm],
             )

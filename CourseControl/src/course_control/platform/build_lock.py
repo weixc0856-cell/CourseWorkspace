@@ -21,11 +21,41 @@ class BuildLockError(RuntimeError):
 def _pid_alive(pid: int) -> bool:
     if pid <= 0:
         return False
+    if os.name == "nt":
+        return _pid_alive_windows(pid)
     try:
         os.kill(pid, 0)
     except (OSError, ProcessLookupError):
         return False
     return True
+
+
+def _pid_alive_windows(pid: int) -> bool:
+    """Probe liveness without ``os.kill``.
+
+    ``CTRL_C_EVENT`` is 0 on Windows, so ``os.kill(pid, 0)`` is not a probe
+    there: CPython calls ``GenerateConsoleCtrlEvent(0, pid)`` and sends a real
+    Ctrl+C to console process group ``pid``.  Ask the kernel instead.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    process_query_limited_information = 0x1000
+    still_active = 259
+    error_access_denied = 5
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+    if not handle:
+        # Access denied means the process exists but we may not open it.
+        return ctypes.get_last_error() == error_access_denied
+    try:
+        code = wintypes.DWORD()
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+            return False
+        return code.value == still_active
+    finally:
+        kernel32.CloseHandle(handle)
 
 
 class BuildLock:

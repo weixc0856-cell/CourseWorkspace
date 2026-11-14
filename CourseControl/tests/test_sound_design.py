@@ -178,11 +178,13 @@ class SoundCheckTest(unittest.TestCase):
         levels = self.run_checks(sound())
         self.assertFalse([item for item in levels.values() if item == "error"])
 
-    def test_music_in_a_lecture_is_an_error(self):
+    def test_music_in_a_lecture_is_a_creative_choice(self):
         design = sound(
             music=[MusicCue(start_s=0, end_s=120, action="hold", mood="bed", track_id="x", reason="r")]
         )
-        self.assertEqual(self.run_checks(design).get("sound.bgm_policy"), "error")
+        levels = self.run_checks(design)
+        self.assertNotIn("sound.bgm_policy", levels)
+        self.assertFalse([item for item in levels.values() if item == "error"])
 
     def test_unknown_licence_is_an_error(self):
         design = sound(

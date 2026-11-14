@@ -46,6 +46,42 @@ export type LegendAnnotation = {
 
 export type Annotation = TextAnnotation | LegendAnnotation;
 
+export type DesignMotionSpec = {
+  primary?: string;
+  secondary?: string;
+  camera?: string;
+  end_hold_s?: number;
+};
+
+export type DesignComposition = {
+  focal_object?: string;
+  focal_point?: [number, number];
+  negative_space?: string;
+  hierarchy?: string[];
+  depth_layers?: Array<{id: string; role?: string; contrast?: string; content?: string}>;
+};
+
+export type DesignKeyframe = {
+  id: string;
+  at_s: number;
+  objects?: unknown[];
+};
+
+export type DesignSpec = {
+  shot_id?: string;
+  art_direction?: {
+    theme?: string;
+    family?: string;
+    atmosphere?: string;
+    contrast?: string;
+  };
+  composition?: DesignComposition;
+  motion?: DesignMotionSpec;
+  keyframes?: DesignKeyframe[];
+  continuity?: {persistent_objects?: string[]; carries_from?: string | null};
+  beats?: Array<{at_s: number; kind?: string; action?: string}>;
+};
+
 export type Shot = {
   id: string;
   kind: ShotKind;
@@ -56,6 +92,7 @@ export type Shot = {
   duration_s: number;
   timeline_role: TimelineRole;
   presentation?: Presentation | null;
+  design?: DesignSpec | null;
 };
 
 export type ShotsFile = {

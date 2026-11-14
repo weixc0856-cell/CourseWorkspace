@@ -15,6 +15,42 @@ from course_control.content.contracts import Storyboard
 DESIGN_FILE = ("design", "visual_design.json")
 
 
+def load_design_map(build_root: Path) -> dict[str, dict]:
+    """Return the full design document per shot, keyed by shot id."""
+    path = Path(build_root).joinpath(*DESIGN_FILE)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    designs: dict[str, dict] = {}
+    for shot in data.get("shots") or []:
+        if not isinstance(shot, dict):
+            continue
+        shot_id = shot.get("shot_id")
+        if isinstance(shot_id, str):
+            designs[shot_id] = shot
+    return designs
+
+
+def apply_design(storyboard: Storyboard, designs: dict[str, dict]) -> tuple[Storyboard, list[str]]:
+    """Attach the full design document to shots that do not carry one."""
+    if not designs:
+        return storyboard, []
+    changed: list[str] = []
+    shots = []
+    for shot in storyboard.shots:
+        design = designs.get(shot.id)
+        if design is not None and shot.design is None:
+            shot = shot.model_copy(update={"design": design})
+            changed.append(shot.id)
+        shots.append(shot)
+    if not changed:
+        return storyboard, []
+    return storyboard.model_copy(update={"shots": shots}), changed
+
+
 def load_theme_map(build_root: Path) -> dict[str, str]:
     path = Path(build_root).joinpath(*DESIGN_FILE)
     if not path.is_file():

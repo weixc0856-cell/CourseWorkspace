@@ -126,6 +126,8 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 
 # 只校验课程契约
 uv run --project CourseControl course-control validate --lesson <slug>
+uv run --project CourseControl course-control render project --lesson <slug> --mode preview
+uv run --project CourseControl course-control release-check --lesson <slug>
 uv run --project CourseControl course-control director-plan --lesson <slug>
 uv run --project CourseControl course-control producer-run --lesson <slug>
 uv run --project CourseControl course-control producer-rebuild --lesson <slug>

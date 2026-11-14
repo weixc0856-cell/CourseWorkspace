@@ -55,15 +55,6 @@ def check_sound(design: SoundDesign, *, has_visual_design: bool, has_narration: 
             )
 
     audible_music = [cue for cue in design.music if cue.action != "silence"]
-    if design.content_kind in {"formal_course", "news"} and audible_music:
-        checks.append(
-            SoundCheck(
-                id="sound.bgm_policy",
-                level="error",
-                rule="formal courses and news carry no music bed",
-                message=f"{len(audible_music)} music cues contradict content_kind={design.content_kind}",
-            )
-        )
 
     if design.content_kind == "popular_science":
         if not any(cue.action in {"duck", "silence"} for cue in design.music):

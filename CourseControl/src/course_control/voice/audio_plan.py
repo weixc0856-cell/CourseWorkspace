@@ -1,7 +1,8 @@
 """Audio policy and BGM planning.
 
-The plan is deliberately data-only: it validates the content kind, BGM licence
-and level policy, and writes a JSON artifact. Rendering/mixing stays in the
+The plan is deliberately data-only: it validates BGM licence and level policy
+and writes a JSON artifact.  Content kind no longer decides whether music is
+allowed (D-097); it only informs the default.  Rendering/mixing stays in the
 Remotion layer.
 """
 from __future__ import annotations
@@ -32,13 +33,10 @@ def build_audio_plan(lesson: LessonConfig) -> AudioPlan:
     cues = list(policy.bgm)
     errors: list[str] = []
     warnings: list[str] = []
-    bgm_allowed = policy.content_kind == "popular_science"
+    # Music is a creative decision, not a permission.  Content kind informs the
+    # default; only delivery quality (licence, level, the final mix) gates a film.
+    bgm_allowed = True
 
-    if not bgm_allowed and cues:
-        errors.append(
-            f"content_kind={policy.content_kind!r} does not allow BGM; "
-            "remove audio.bgm or change the content kind"
-        )
     if not cues:
         warnings.append("no BGM cue configured")
 

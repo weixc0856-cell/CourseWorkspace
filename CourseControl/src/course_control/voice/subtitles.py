@@ -809,10 +809,14 @@ def retime_draft(
             item["end_ms"] = int(round(end * 1000))
             cues.append(item)
             cursor = cursor + allocated
+    for cue in cues:
+        cue["en_lines"] = _wrap(cue["en"], policy.en_max_chars_per_line, policy.max_lines)
+        cue["zh_lines"] = _wrap_zh(cue["zh"], policy.zh_max_chars_per_line, policy.max_lines)
     for position, cue in enumerate(cues, start=1):
         cue["index"] = position
     cues = merge_short_cues(cues, policy, fps)
     cues = enforce_limits(cues, policy, fps)
+    cues = merge_dense_cues(cues, policy, fps)
     for cue in cues:
         cue["en_lines"] = _wrap(cue["en"], policy.en_max_chars_per_line, policy.max_lines)
         cue["zh_lines"] = _wrap_zh(cue["zh"], policy.zh_max_chars_per_line, policy.max_lines)
@@ -822,6 +826,68 @@ def retime_draft(
     return draft.model_copy(
         update={"cues": [BilingualCue(**cue) for cue in cues], "counts": counts}
     )
+
+
+def merge_dense_cues(cues: list[dict], policy: CuePolicy, fps: float) -> list[dict]:
+    """Merge a cue whose Chinese is too dense into the neighbour that fits.
+
+    Dense cues come from translation, not timing: a short English phrase can
+    carry a long Chinese clause.  Merging is the only fix that does not rewrite
+    the translation, so try the next cue first, then the previous one.
+    """
+
+    def cps(cue: dict) -> float:
+        duration = (cue["end_ms"] - cue["start_ms"]) / 1000.0
+        return len(re.sub(r"\s", "", cue["zh"])) / duration if duration > 0 else 0.0
+
+    def combined(first: dict, second: dict) -> dict | None:
+        duration = (second["end_ms"] - first["start_ms"]) / 1000.0
+        english = first["en"].rstrip() + " " + second["en"].lstrip()
+        chinese = first["zh"].rstrip() + second["zh"].lstrip()
+        if duration <= 0 or duration > policy.max_seconds:
+            return None
+        if (
+            len(_wrap(english, policy.en_max_chars_per_line, policy.max_lines))
+            > policy.max_lines
+        ):
+            return None
+        if len(re.sub(r"\s", "", chinese)) / duration > policy.zh_cps_max:
+            return None
+        return {
+            "index": first["index"],
+            "slide": first["slide"],
+            "segment_id": first["segment_id"],
+            "start_ms": first["start_ms"],
+            "end_ms": second["end_ms"],
+            "en": english,
+            "zh": chinese,
+            "en_lines": _wrap(english, policy.en_max_chars_per_line, policy.max_lines),
+            "zh_lines": _wrap_zh(chinese, policy.zh_max_chars_per_line, policy.max_lines),
+        }
+
+    items = [dict(cue) for cue in cues]
+    result: list[dict] = []
+    index = 0
+    while index < len(items):
+        item = items[index]
+        if cps(item) > policy.zh_cps_max:
+            if index + 1 < len(items):
+                merged = combined(item, items[index + 1])
+                if merged is not None:
+                    result.append(merged)
+                    index += 2
+                    continue
+            if result:
+                merged = combined(result[-1], item)
+                if merged is not None:
+                    result[-1] = merged
+                    index += 1
+                    continue
+        result.append(item)
+        index += 1
+    for position, cue in enumerate(result, start=1):
+        cue["index"] = position
+    return result
 
 
 def merge_short_cues(cues: list[dict], policy: CuePolicy, fps: float) -> list[dict]:
@@ -836,7 +902,7 @@ def merge_short_cues(cues: list[dict], policy: CuePolicy, fps: float) -> list[di
             and merged
             and merged[-1]["slide"] == item["slide"]
             and merged[-1]["segment_id"] == item["segment_id"]
-            and item["start_ms"] - merged[-1]["end_ms"] <= gap + 2
+            and item["start_ms"] - merged[-1]["end_ms"] <= max(gap + 2, 500)
         ):
             previous = merged[-1]
             combined = (item["end_ms"] - previous["start_ms"]) / 1000.0

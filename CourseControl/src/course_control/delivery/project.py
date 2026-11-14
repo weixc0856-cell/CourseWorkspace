@@ -73,11 +73,74 @@ class CoursePlan(StrictModel):
     lesson_count: CountRange = Field(default_factory=CountRange)
     lesson_seconds: SecondsRange = Field(default_factory=SecondsRange)
     justification: str | None = None
+    # The lesson a project renders when it has exactly one.  Defaults to the
+    # project id so the common case needs no extra field.
+    lesson: str | None = None
+
+
+class TopicSegment(StrictModel):
+    """A time window a topic film can be previewed and cached on.
+
+    ``shots`` are the finest review units (P0); ``segments`` group them (P1).
+    A monolithic composition may declare only segments and still get P0/P1/P2.
+    """
+
+    id: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9_-]{0,63}$")
+    start_s: float = Field(ge=0)
+    end_s: float = Field(gt=0)
+    label: str | None = None
+    segment: str | None = None
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.end_s <= self.start_s:
+            raise ValueError(f"{self.id}: end_s must be greater than start_s")
+        return self
+
+
+class TopicLicence(StrictModel):
+    """One asset whose licence must be clear before a topic film is released."""
+
+    asset: str = Field(min_length=1)
+    status: Literal["public_domain", "cc_by", "owner_authorized", "unknown"] = "unknown"
+    attribution: str | None = None
+    commercial_allowed: bool = False
+
+    @model_validator(mode="after")
+    def _cc_by_needs_attribution(self):
+        if self.status == "cc_by" and not (self.attribution or "").strip():
+            raise ValueError(f"{self.asset}: CC BY requires an attribution line")
+        return self
 
 
 class TopicPlan(StrictModel):
     series: Literal["auto", "single"] = "auto"
     target_seconds: float = Field(default=900.0, gt=0)
+    # A topic film is rendered by one Remotion entry/composition.  Course
+    # lessons keep lesson.yaml; this is the equivalent pointer for a topic.
+    entry: str | None = None
+    composition: str | None = None
+    output: str | None = None
+    # Where the finished film lands, relative to the content root.  Default is
+    # ``deliver/<project id>/``.
+    delivery_dir: str | None = None
+    props: str | None = None
+    shots: list[TopicSegment] = Field(default_factory=list)
+    segments: list[TopicSegment] = Field(default_factory=list)
+    licences: list[TopicLicence] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _unique_segments(self):
+        ids = [item.id for item in [*self.shots, *self.segments]]
+        duplicates = sorted({item for item in ids if ids.count(item) > 1})
+        if duplicates:
+            raise ValueError(f"topic segment ids must be unique: {duplicates}")
+        for item in self.shots:
+            if item.segment and item.segment not in {seg.id for seg in self.segments}:
+                raise ValueError(
+                    f"shot {item.id} references unknown segment {item.segment!r}"
+                )
+        return self
 
 
 class ProductionSpec(StrictModel):

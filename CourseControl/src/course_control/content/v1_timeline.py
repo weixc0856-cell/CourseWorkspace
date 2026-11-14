@@ -110,6 +110,8 @@ def timeline_from_shots(
         }
         if shot.transition is not None:
             metadata["legacy_transition"] = shot.transition.model_dump(by_alias=True)
+        if shot.design is not None:
+            metadata["legacy_design"] = shot.design
         if motion is not None and shot.kind == "slide":
             spec = slide_motion(shot.slide or 0, motion)
             if spec is not None:

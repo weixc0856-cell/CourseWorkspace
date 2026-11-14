@@ -30,17 +30,26 @@ class AudioPlanTest(unittest.TestCase):
     def test_default_is_formal_course_without_bgm(self):
         plan = build_audio_plan(self.paths.lesson)
         self.assertEqual(plan.content_kind, "formal_course")
-        self.assertFalse(plan.bgm_allowed)
+        self.assertTrue(plan.bgm_allowed)
         self.assertEqual(plan.cues, [])
         self.assertEqual(plan.status, "ready")
 
-    def test_formal_course_rejects_bgm(self):
+    def test_formal_course_accepts_bgm(self):
         cue = BgmCue(track_id="bgm_x", start_s=0, end_s=30, license_status="public_domain")
         plan = build_audio_plan(
             self.with_audio(AudioPolicy(content_kind="formal_course", bgm=[cue]))
         )
-        self.assertEqual(plan.status, "blocked")
-        self.assertTrue(any("does not allow BGM" in error for error in plan.errors))
+        self.assertEqual(plan.status, "ready")
+        self.assertFalse(plan.errors)
+        self.assertTrue(plan.bgm_allowed)
+
+    def test_news_accepts_bgm(self):
+        cue = BgmCue(track_id="bgm_x", start_s=0, end_s=30, license_status="public_domain")
+        plan = build_audio_plan(
+            self.with_audio(AudioPolicy(content_kind="news", bgm=[cue]))
+        )
+        self.assertEqual(plan.status, "ready")
+        self.assertFalse(plan.errors)
 
     def test_popular_science_needs_attribution_for_cc_by(self):
         cue = BgmCue(track_id="bgm_x", start_s=0, end_s=30, license_status="cc_by")
