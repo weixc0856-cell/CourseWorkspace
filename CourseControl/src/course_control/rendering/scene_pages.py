@@ -171,10 +171,13 @@ def run(paths: LessonPaths, *, force: bool = False) -> StageOutcome:
             if not (paths.build_root / page["file"]).is_file()
         ]
         if not missing:
+            # A complete manifest is this stage's output, not a skipped stage:
+            # reporting SKIPPED would make a good build verdict "incomplete".
             return StageOutcome(
                 "render:scenes",
-                Status.SKIPPED,
+                Status.PASS,
                 outputs=[manifest_path],
+                warnings=["reused the existing scene manifest; every page file is present"],
                 reason="manifest_present",
                 duration_ms=int((time.monotonic() - started) * 1000),
             )
