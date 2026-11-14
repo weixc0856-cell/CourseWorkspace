@@ -737,7 +737,11 @@ def build_subtitles(
 
 
 def retime_draft(
-    draft: BilingualDraft, meta: dict, policy: CuePolicy, fps: float
+    draft: BilingualDraft,
+    meta: dict,
+    policy: CuePolicy,
+    fps: float,
+    asr_words: list[dict] | None = None,
 ) -> BilingualDraft:
     """Fit existing cue text to the measured narration segments.
 
@@ -765,6 +769,33 @@ def retime_draft(
         if duration_s <= 0:
             cues.extend(items)
             continue
+        window = [
+            word
+            for word in (asr_words or [])
+            if start_s * 1000 - 250
+            <= int(word.get("start_ms") or 0)
+            <= (start_s + duration_s) * 1000 + 250
+        ]
+        if asr_words and len(window) >= len(items) + 1:
+            # Speech is the clock: place each cue where its words are actually
+            # spoken, not where an even split of the segment would put them.
+            counts = [max(1, len(item["en"].split())) for item in items]
+            total = sum(counts) or 1
+            boundaries = [start_s]
+            cumulative = 0
+            for count in counts[:-1]:
+                cumulative += count
+                index = min(len(window) - 1, int(round(len(window) * cumulative / total)))
+                boundaries.append(max(boundaries[-1], window[index]["start_ms"] / 1000.0))
+            boundaries.append(start_s + duration_s)
+            for position, item in enumerate(items):
+                begin = boundaries[position]
+                end = boundaries[position + 1] - (gaps if position < len(items) - 1 else 0.0)
+                item["start_ms"] = int(round(begin * 1000))
+                item["end_ms"] = int(round(min(start_s + duration_s, max(begin + 0.3, end)) * 1000))
+                cues.append(item)
+            continue
+
         weights = [
             max(1, len(item["en"]), len(item["zh"]) * 3) for item in items
         ]

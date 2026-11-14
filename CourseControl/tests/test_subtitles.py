@@ -7,7 +7,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from course_control.voice.subtitles import (
+    BilingualCue,
+    BilingualDraft,
     CuePolicy,
+    retime_draft,
     _wrap,
     _wrap_zh,
     rewrap_srt,
@@ -166,3 +169,50 @@ class BuildSubtitleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AsrRetimeTest(unittest.TestCase):
+    def draft(self):
+        cues = [
+            BilingualCue(
+                index=index,
+                slide=1,
+                segment_id="seg_1",
+                start_ms=start,
+                end_ms=start + 2000,
+                en=text,
+                zh=text,
+                en_lines=[text],
+                zh_lines=[text],
+            )
+            for index, (start, text) in enumerate(
+                [(0, "alpha beta"), (5000, "gamma delta")], start=1
+            )
+        ]
+        return BilingualDraft(
+            lesson="demo",
+            languages={"top": "en", "bottom": "zh-Hans"},
+            policy={},
+            cues=cues,
+            counts={"cues": 2},
+            translation={},
+        )
+
+    def test_speech_timestamps_move_the_cues(self):
+        meta = {"segments": [{"segment_id": "seg_1", "start_s": 0.0, "duration_s": 10.0}]}
+        words = [
+            {"start_ms": 0, "end_ms": 300, "text": "alpha"},
+            {"start_ms": 300, "end_ms": 600, "text": "beta"},
+            {"start_ms": 7000, "end_ms": 7300, "text": "gamma"},
+            {"start_ms": 7300, "end_ms": 7600, "text": "delta"},
+        ]
+        updated = retime_draft(self.draft(), meta, CuePolicy(), 30.0, asr_words=words)
+        starts = [cue.start_ms for cue in updated.cues]
+        self.assertEqual(starts[0], 0)
+        self.assertGreaterEqual(starts[1], 6800)
+        self.assertLessEqual(starts[1], 7200)
+
+    def test_without_asr_words_the_old_allocation_is_kept(self):
+        meta = {"segments": [{"segment_id": "seg_1", "start_s": 0.0, "duration_s": 10.0}]}
+        updated = retime_draft(self.draft(), meta, CuePolicy(), 30.0)
+        self.assertLess(updated.cues[1].start_ms, 7000)

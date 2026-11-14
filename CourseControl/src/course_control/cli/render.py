@@ -340,6 +340,76 @@ def subtitles_build_command(
         raise typer.Exit(1)
 
 
+@app.command("subtitles-retime")
+def subtitles_retime_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    asr: Path | None = typer.Option(
+        None, "--asr", help="ASR alignment JSON; defaults to quality/asr-alignment.json"
+    ),
+    write: bool = typer.Option(False, "--write", help="write the retimed draft back"),
+) -> None:
+    """Re-time the bilingual draft to ASR word timestamps; translation is kept."""
+    from course_control.voice.subtitles import (
+        BilingualDraft,
+        CuePolicy,
+        retime_draft,
+        write_srt,
+        write_vtt,
+    )
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
+    meta_path = paths.build_root / "narration" / "narration.meta.json"
+    asr_path = asr or (paths.build_root / "quality" / "asr-alignment.json")
+    for path in (draft_path, meta_path, asr_path):
+        if not path.is_file():
+            typer.echo(f"required input not found: {path}", err=True)
+            raise typer.Exit(1)
+    original = BilingualDraft.model_validate(
+        json.loads(draft_path.read_text(encoding="utf-8"))
+    )
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    words = json.loads(asr_path.read_text(encoding="utf-8")).get("words") or []
+    if not words:
+        typer.echo(f"no ASR words in {asr_path}", err=True)
+        raise typer.Exit(1)
+    updated = retime_draft(
+        original, meta, CuePolicy(), float(paths.lesson.outputs.fps), asr_words=words
+    )
+    before = {cue.index: cue.start_ms for cue in original.cues}
+    shifts = [
+        abs(cue.start_ms - before[cue.index]) / 1000.0
+        for cue in updated.cues
+        if cue.index in before
+    ]
+    typer.echo(f"source: {draft_path}")
+    typer.echo(f"cues: {len(original.cues)} -> {len(updated.cues)}")
+    if shifts:
+        typer.echo(
+            f"mean shift: {sum(shifts) / len(shifts):.2f}s; max {max(shifts):.2f}s"
+        )
+    if write:
+        draft_path.write_text(
+            json.dumps(updated.model_dump(mode="json"), ensure_ascii=False, indent=2) + chr(10),
+            encoding="utf-8",
+        )
+        write_srt(
+            [cue.model_dump(mode="json") for cue in updated.cues],
+            draft_path.with_suffix(".srt"),
+        )
+        write_vtt(
+            [cue.model_dump(mode="json") for cue in updated.cues],
+            draft_path.with_suffix(".vtt"),
+        )
+        typer.echo(f"wrote: {draft_path}")
+
+
 @app.command("subtitles-rewrap")
 def subtitles_rewrap_command(
     lesson: str = typer.Option(..., "--lesson"),
