@@ -14,6 +14,10 @@ program validates and renders it.
 Every build writes a manifest (inputs, versions, render parameters, status) and
 a log under ``manifests/`` next to the output.  A second build with the same
 inputs and render parameters is served from cache unless ``--no-cache`` is set.
+
+``--build environment`` writes ``blends/environments/<place>.blend``;
+``--build shot`` links that environment, writes ``blends/shots/<shot>.blend``
+and renders.  ``--build inline`` keeps the legacy merge path.
 """
 
 from __future__ import annotations
@@ -56,6 +60,7 @@ def parse_args():
     parser.add_argument("--library", default=None)
     parser.add_argument("--out", default=None)
     parser.add_argument("--profile", choices=sorted(PROFILES), default=None)
+    parser.add_argument("--build", choices=["auto", "environment", "shot", "inline"], default="auto")
     parser.add_argument("--frames", type=int, default=None, help="override frame count for still tests")
     parser.add_argument("--cache", action=argparse.BooleanOptionalAction, default=True,
                         help="reuse a passing manifest with the same inputs")
@@ -486,70 +491,9 @@ def setup_passes(scene, passes: list[str], pass_dir: Path, shot_id: str):
             print(f"pass {name} skipped: {exc}")
 
 
-def main():
-    args = parse_args()
-    spec_path = Path(args.spec).resolve()
-    spec, shot = resolve_spec(spec_path)
-    profile = apply_profile(spec, args.profile)
-    if args.frames is not None:
-        spec.setdefault("render", {})["frames"] = max(1, int(args.frames))
-    root = Path(spec.get("asset_root") or spec_path.parent.parent).resolve()
-    library_path = Path(args.library) if args.library else root / "library.json"
-    library = load_library(library_path)
-    render = spec.get("render", {})
-    out = Path(args.out) if args.out else Path(str(render.get("output") or "render.png"))
-    if not out.is_absolute():
-        out = spec_path.parent / out
-    if args.print_plan:
-        print(json.dumps({
-            "spec": str(spec_path),
-            "kind": spec.get("kind"),
-            "id": spec.get("id"),
-            "profile": profile,
-            "environment": spec.get("environment_spec"),
-            "camera": spec.get("camera", {}).get("template") or "explicit",
-            "frames": int(render.get("frames", 1)),
-            "resolution": render.get("resolution", [1080, 1920]),
-            "output": str(out),
-        }, ensure_ascii=False, indent=2))
-        return
-
-    if profile:
-        render["profile"] = profile
-    manifest_core = load_manifest_core()
-    addons = addon_versions()
-    prepared = manifest_core.prepare(
-        spec_path=spec_path,
-        spec=spec,
-        render=render,
-        out=out,
-        builder_path=Path(__file__),
-        builder_version=manifest_core.BUILDER_VERSION,
-        blender_version=bpy.app.version_string,
-        python_version=sys.version.split()[0],
-        addons=addons,
-        library_path=library_path,
-        manifest_dir=Path(args.manifest_dir) if args.manifest_dir else None,
-        use_cache=args.cache,
-        visual_grammar=spec.get("visual_grammar") or spec.get("style"),
-        grammar_path=Path(__file__).resolve().parents[1] / "shared/grammars/style-presets.yaml",
-        seed=int(spec.get("seed", 0)),
-    )
-    if prepared.cache_hit:
-        print(f"ASSET_SCENE_CACHED {prepared.cached_manifest} {out}")
-        return
-    log_path = prepared.log_path
-    manifest_path = prepared.manifest_path
-    build_id = prepared.manifest["build_id"]
-    temp_out = out.parent / f".{out.stem}.{build_id}.tmp{out.suffix}"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    started = manifest_core.start_clock()
-    manifest_core.log_line(log_path, f"spec={spec_path}")
-    manifest_core.log_line(log_path, f"cache_key={prepared.manifest['cache_key']}")
-    manifest_core.log_line(log_path, f"render={json.dumps(render, ensure_ascii=False, sort_keys=True)}")
-
-    clear()
-    scene = bpy.context.scene
+def configure_render(scene, render: dict, filepath: Path) -> tuple[int, int]:
+    frames = int(render.get("frames", 1))
+    fps = int(render.get("fps", 30))
     scene.render.engine = render.get("engine", "CYCLES")
     if scene.render.engine == "CYCLES":
         scene.cycles.samples = int(render.get("samples", 40))
@@ -566,8 +510,6 @@ def main():
     scene.render.resolution_x = int(width)
     scene.render.resolution_y = int(height)
     scene.render.resolution_percentage = 100
-    frames = int(render.get("frames", 1))
-    fps = int(render.get("fps", 30))
     scene.frame_start = 1
     scene.frame_end = max(1, frames)
     scene.render.fps = fps
@@ -583,9 +525,226 @@ def main():
         scene.render.ffmpeg.audio_codec = "NONE"
     else:
         scene.render.image_settings.file_format = "PNG"
-    scene.render.filepath = str(temp_out)
+    scene.render.filepath = str(filepath)
     scene.view_settings.view_transform = "AgX"
     scene.view_settings.look = "AgX - Medium High Contrast"
+    return frames, fps
+
+
+def add_lights(scene, data: dict):
+    sun_data = data.get("sun")
+    if sun_data:
+        light = bpy.data.lights.new("Sun", type="SUN")
+        light.energy = float(sun_data.get("energy", 2.0))
+        light.angle = math.radians(float(sun_data.get("angle_deg", 2.0)))
+        light.color = tuple(sun_data.get("color", [1.0, 0.88, 0.72]))
+        obj = bpy.data.objects.new("Sun", light)
+        scene.collection.objects.link(obj)
+        obj.location = tuple(sun_data.get("location", [0, 0, 10]))
+        obj.rotation_euler = tuple(math.radians(v) for v in sun_data.get("rotation_deg", [50, 0, 35]))
+
+    for item in data.get("lights", []):
+        light_data = bpy.data.lights.new(str(item.get("id", "Light")), type=item.get("type", "AREA"))
+        light_data.energy = float(item.get("energy", 500.0))
+        light_data.color = tuple(item.get("color", [1.0, 1.0, 1.0]))
+        if hasattr(light_data, "size"):
+            light_data.size = float(item.get("size", 5.0))
+        if item.get("type") == "SUN" and hasattr(light_data, "angle"):
+            light_data.angle = math.radians(float(item.get("angle_deg", 2.0)))
+        obj = bpy.data.objects.new(str(item.get("id", "Light")), light_data)
+        scene.collection.objects.link(obj)
+        obj.location = tuple(item.get("location", [0, 0, 10]))
+        if item.get("target"):
+            aim = bpy.data.objects.new(f"{item.get('id', 'Light')}Target", None)
+            scene.collection.objects.link(aim)
+            aim.location = tuple(item["target"])
+            track = obj.constraints.new(type="TRACK_TO")
+            track.target = aim
+            track.track_axis = "TRACK_NEGATIVE_Z"
+            track.up_axis = "UP_Y"
+        elif item.get("rotation_deg"):
+            obj.rotation_euler = tuple(math.radians(v) for v in item["rotation_deg"])
+
+
+def move_to_collection(obj, collection):
+    for current in list(obj.users_collection):
+        current.objects.unlink(obj)
+    collection.objects.link(obj)
+
+
+def prepare_environment_collections(scene):
+    env = bpy.data.collections.new("ENV")
+    assets = bpy.data.collections.new("ENV_ASSETS")
+    lights = bpy.data.collections.new("ENV_LIGHTS")
+    for collection in (env, assets, lights):
+        scene.collection.children.link(collection)
+    for obj in list(scene.objects):
+        if obj.type == "LIGHT" or (obj.type == "EMPTY" and obj.name.endswith("Target")):
+            move_to_collection(obj, lights)
+        elif obj.name in {"Terrain", "Atmosphere", "Water"}:
+            move_to_collection(obj, env)
+        else:
+            move_to_collection(obj, assets)
+
+
+def environment_blend_path(environment_spec_path: Path) -> Path:
+    return environment_spec_path.resolve().parent.parent / "blends" / "environments" / f"{environment_spec_path.stem}.blend"
+
+
+def shot_blend_path(shot_spec_path: Path) -> Path:
+    return shot_spec_path.resolve().parent.parent / "blends" / "shots" / f"{shot_spec_path.stem}.blend"
+
+
+def link_environment(scene, environment_blend: Path):
+    if not environment_blend.is_file():
+        raise SystemExit(f"environment blend not found: {environment_blend}; build it first")
+    with bpy.data.libraries.load(str(environment_blend), link=True) as (src, dst):
+        names = [name for name in ("ENV", "ENV_ASSETS", "ENV_LIGHTS") if name in src.collections]
+        dst.collections = names
+        dst.worlds = ["AssetWorld"] if "AssetWorld" in src.worlds else []
+    for collection in dst.collections:
+        scene.collection.children.link(collection)
+    if dst.worlds:
+        scene.world = dst.worlds[0]
+    return dst
+
+
+def resolve_build_mode(requested: str, spec_path: Path, spec: dict, shot: dict | None, legacy: bool) -> str:
+    if requested != "auto":
+        return requested
+    if legacy:
+        return "inline"
+    if shot is None:
+        return "environment"
+    env_spec_path = Path(str(spec.get("environment_spec") or "")).resolve()
+    if environment_blend_path(env_spec_path).is_file():
+        return "shot"
+    return "inline"
+
+
+def main():
+    args = parse_args()
+    spec_path = Path(args.spec).resolve()
+    raw_spec = load_json(spec_path)
+    legacy = "kind" not in raw_spec and "terrain" in raw_spec
+    spec, shot = resolve_spec(spec_path)
+    args.build = resolve_build_mode(args.build, spec_path, spec, shot, legacy)
+    profile = apply_profile(spec, args.profile)
+    if args.frames is not None:
+        spec.setdefault("render", {})["frames"] = max(1, int(args.frames))
+    root = Path(spec.get("asset_root") or spec_path.parent.parent).resolve()
+    library_path = Path(args.library) if args.library else root / "library.json"
+    library = load_library(library_path)
+    render = spec.get("render", {})
+    out = Path(args.out) if args.out else Path(str(render.get("output") or "render.png"))
+    if not out.is_absolute():
+        out = spec_path.parent / out
+    if args.build == "environment":
+        out = environment_blend_path(spec_path)
+    if args.print_plan:
+        print(json.dumps({
+            "spec": str(spec_path),
+            "kind": spec.get("kind"),
+            "id": spec.get("id"),
+            "profile": profile,
+            "environment": spec.get("environment_spec"),
+            "camera": spec.get("camera", {}).get("template") or "explicit",
+            "frames": int(render.get("frames", 1)),
+            "resolution": render.get("resolution", [1080, 1920]),
+            "output": str(out),
+            "build": args.build,
+        }, ensure_ascii=False, indent=2))
+        return
+
+    if profile:
+        render["profile"] = profile
+    manifest_core = load_manifest_core()
+    addons = addon_versions()
+    env_blend = None
+    extra_inputs = None
+    if args.build == "shot":
+        env_spec_path = Path(str(spec.get("environment_spec") or "")).resolve()
+        env_blend = environment_blend_path(env_spec_path)
+        if not env_blend.is_file():
+            raise SystemExit(f"environment blend not found: {env_blend}; build the environment first")
+        extra_inputs = {"environment_blend": manifest_core.hash_path(env_blend)}
+    prepared = manifest_core.prepare(
+        spec_path=spec_path,
+        spec=spec,
+        render=render,
+        out=out,
+        builder_path=Path(__file__),
+        builder_version=manifest_core.BUILDER_VERSION,
+        blender_version=bpy.app.version_string,
+        python_version=sys.version.split()[0],
+        addons=addons,
+        library_path=library_path,
+        manifest_dir=Path(args.manifest_dir) if args.manifest_dir else None,
+        use_cache=args.cache,
+        visual_grammar=spec.get("visual_grammar") or spec.get("style"),
+        grammar_path=Path(__file__).resolve().parents[1] / "shared/grammars/style-presets.yaml",
+        seed=int(spec.get("seed", 0)),
+        build_kind=args.build,
+        extra_inputs=extra_inputs,
+    )
+    if prepared.cache_hit:
+        print(f"ASSET_SCENE_CACHED {prepared.cached_manifest} {out}")
+        return
+    log_path = prepared.log_path
+    manifest_path = prepared.manifest_path
+    build_id = prepared.manifest["build_id"]
+    temp_out = out.parent / f".{out.stem}.{build_id}.tmp{out.suffix}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    started = manifest_core.start_clock()
+    manifest_core.log_line(log_path, f"spec={spec_path}")
+    manifest_core.log_line(log_path, f"cache_key={prepared.manifest['cache_key']}")
+    manifest_core.log_line(log_path, f"render={json.dumps(render, ensure_ascii=False, sort_keys=True)}")
+    if env_blend is not None:
+        manifest_core.log_line(log_path, f"environment_blend={env_blend}")
+
+    if args.build == "shot":
+        clear()
+        scene = bpy.context.scene
+        link_environment(scene, env_blend)
+        frames, fps = configure_render(scene, render, temp_out)
+        setup_camera(scene, spec.get("camera") or {}, frames, fps, str(spec.get("id") or "shot"))
+        shot_lights = {
+            "sun": (shot or {}).get("sun"),
+            "lights": (shot or {}).get("lights") or [],
+        }
+        add_lights(scene, shot_lights)
+        passes = render.get("passes") or []
+        if passes:
+            pass_dir = Path(str(render.get("pass_dir") or (out.parent / "passes")))
+            setup_passes(scene, passes, pass_dir, str(spec.get("id") or "shot"))
+        shot_blend = shot_blend_path(spec_path)
+        shot_blend.parent.mkdir(parents=True, exist_ok=True)
+        bpy.ops.wm.save_as_mainfile(filepath=str(shot_blend))
+        manifest_core.log_line(log_path, f"shot_blend={shot_blend}")
+        try:
+            if frames > 1:
+                bpy.ops.render.render(animation=True)
+            else:
+                bpy.ops.render.render(write_still=True)
+            os.replace(str(temp_out), str(out))
+        except Exception as exc:  # noqa: BLE001
+            manifest_core.finalize(
+                manifest_path, status="fail", output=out, temp_output=temp_out,
+                elapsed_s=time.time() - started, error=f"{type(exc).__name__}: {exc}",
+            )
+            manifest_core.log_line(log_path, f"FAILED: {type(exc).__name__}: {exc}")
+            raise
+        manifest_core.finalize(
+            manifest_path, status="pass", output=out, temp_output=temp_out, blend=shot_blend,
+            elapsed_s=time.time() - started, error=None,
+        )
+        manifest_core.log_line(log_path, f"output={out}")
+        print(f"ASSET_SCENE_DONE {out}")
+        return
+
+    clear()
+    scene = bpy.context.scene
+    frames, fps = configure_render(scene, render, temp_out)
 
     hdri = resolve(library, spec["hdri"], root)
     setup_world(hdri, float(spec.get("world_strength", 1.0)))
@@ -633,40 +792,22 @@ def main():
                 obj.rotation_euler[2] += math.radians(float(item.get("rotation_deg", 0)))
     bpy.context.view_layer.update()
 
-    setup_camera(scene, spec.get("camera") or {}, frames, fps, str(spec.get("id") or "shot"))
+    if args.build != "environment":
+        setup_camera(scene, spec.get("camera") or {}, frames, fps, str(spec.get("id") or "shot"))
 
-    sun_data = spec.get("sun")
-    if sun_data:
-        light = bpy.data.lights.new("Sun", type="SUN")
-        light.energy = float(sun_data.get("energy", 2.0))
-        light.angle = math.radians(float(sun_data.get("angle_deg", 2.0)))
-        light.color = tuple(sun_data.get("color", [1.0, 0.88, 0.72]))
-        obj = bpy.data.objects.new("Sun", light)
-        scene.collection.objects.link(obj)
-        obj.location = tuple(sun_data.get("location", [0, 0, 10]))
-        obj.rotation_euler = tuple(math.radians(v) for v in sun_data.get("rotation_deg", [50, 0, 35]))
+    add_lights(scene, spec)
 
-    for item in spec.get("lights", []):
-        light_data = bpy.data.lights.new(str(item.get("id", "Light")), type=item.get("type", "AREA"))
-        light_data.energy = float(item.get("energy", 500.0))
-        light_data.color = tuple(item.get("color", [1.0, 1.0, 1.0]))
-        if hasattr(light_data, "size"):
-            light_data.size = float(item.get("size", 5.0))
-        if item.get("type") == "SUN" and hasattr(light_data, "angle"):
-            light_data.angle = math.radians(float(item.get("angle_deg", 2.0)))
-        obj = bpy.data.objects.new(str(item.get("id", "Light")), light_data)
-        scene.collection.objects.link(obj)
-        obj.location = tuple(item.get("location", [0, 0, 10]))
-        if item.get("target"):
-            aim = bpy.data.objects.new(f"{item.get('id', 'Light')}Target", None)
-            scene.collection.objects.link(aim)
-            aim.location = tuple(item["target"])
-            track = obj.constraints.new(type="TRACK_TO")
-            track.target = aim
-            track.track_axis = "TRACK_NEGATIVE_Z"
-            track.up_axis = "UP_Y"
-        elif item.get("rotation_deg"):
-            obj.rotation_euler = tuple(math.radians(v) for v in item["rotation_deg"])
+    if args.build == "environment":
+        prepare_environment_collections(scene)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        bpy.ops.wm.save_as_mainfile(filepath=str(out))
+        manifest_core.finalize(
+            manifest_path, status="pass", output=out, temp_output=None, blend=out,
+            elapsed_s=time.time() - started, error=None,
+        )
+        manifest_core.log_line(log_path, f"environment_blend={out}")
+        print(f"ASSET_SCENE_DONE {out}")
+        return
 
     passes = render.get("passes") or []
     if passes:
@@ -697,6 +838,7 @@ def main():
         status="pass",
         output=out,
         temp_output=temp_out,
+        blend=out.with_suffix(".blend"),
         elapsed_s=time.time() - started,
         error=None,
     )

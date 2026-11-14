@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Spec,
     [ValidateSet("blockout", "preview", "hero")][string]$Profile = "preview",
+    [ValidateSet("auto", "environment", "shot", "inline")][string]$Build = "auto",
     [string]$Out,
     [int]$Frames = 0,
     [switch]$NoCache,
@@ -33,7 +34,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $builder = Join-Path $PSScriptRoot "build_asset_scene.py"
 $arguments = @("--background", "--factory-startup", "--python", $builder, "--",
-    "--spec", (Resolve-Path -LiteralPath $Spec).Path, "--profile", $Profile)
+    "--spec", (Resolve-Path -LiteralPath $Spec).Path, "--profile", $Profile, "--build", $Build)
 if ($Out) {
     $arguments += @("--out", $Out)
 }

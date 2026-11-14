@@ -48,6 +48,7 @@
 - [v2/证据-画面关联-设计记录.md](v2/证据-画面关联-设计记录.md)：P4 才实现的 claim/evidence 设计记录，v0.2 不增加字段
 - [v2/Three.js-技术借鉴清单.md](v2/Three.js-技术借鉴清单.md)：只吸收 GLB/glTF、R3F/Drei、Theatre.js、VTK.js 等可借鉴点；不纳入 v0.2，不新增门禁
 - [v2/生产管线v0.2-P0交付记录.md](v2/生产管线v0.2-P0交付记录.md)：P0 可复现构建的实际交付、manifest 字段、缓存与测试证据
+- [v2/生产管线v0.2-P1交付记录.md](v2/生产管线v0.2-P1交付记录.md)：Environment `.blend` + Linking、a1/a4 隔离验证与 Overrides 缺口
 - [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 三级预览、增量缓存、统一入口与 `release-check`（2026-11-14）
 - [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
 - [制片层.md](制片层.md)：订单、授权、用量、交付清单与增量重建

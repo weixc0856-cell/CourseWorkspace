@@ -85,6 +85,7 @@
 - 环境/镜头 JSON 契约与能力注册表：[shared/scene-specs/README.md](shared/scene-specs/README.md)、[shared/scene-specs/capabilities.json](shared/scene-specs/capabilities.json)
 - 生产管线 v0.2 实施任务书（P0–P3）：[docs/v2/生产管线v0.2-实施任务书.md](docs/v2/生产管线v0.2-实施任务书.md)
 - 生产管线 v0.2 P0 交付记录（manifest/缓存）：[docs/v2/生产管线v0.2-P0交付记录.md](docs/v2/生产管线v0.2-P0交付记录.md)
+- 生产管线 v0.2 P1 交付记录（Environment Linking）：[docs/v2/生产管线v0.2-P1交付记录.md](docs/v2/生产管线v0.2-P1交付记录.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)

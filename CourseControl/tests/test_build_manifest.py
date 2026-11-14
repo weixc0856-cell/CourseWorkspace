@@ -112,6 +112,21 @@ class BuildManifestTests(unittest.TestCase):
             self.assertTrue(cached.cache_hit)
             self.assertEqual(cached.cached_manifest, prepared.manifest_path)
 
+    def test_build_kind_and_extra_inputs_change_cache_key(self):
+        with tempfile.TemporaryDirectory() as raw:
+            tmp = Path(raw)
+            spec_path, library_path, builder, _content = _environment(tmp)
+            spec = json.loads(spec_path.read_text(encoding="utf-8"))
+            out = tmp / "out.png"
+            inputs = manifest_core.collect_inputs(spec_path, spec, builder, library_path=library_path)
+            shot = manifest_core.cache_key(inputs, spec["render"], out, "0.2.0", "cinematic_realism", 0, "shot")
+            environment = manifest_core.cache_key(inputs, spec["render"], out, "0.2.0", "cinematic_realism", 0, "environment")
+            linked = dict(inputs)
+            linked["environment_blend"] = {"sha256": "a" * 64}
+            with_blend = manifest_core.cache_key(linked, spec["render"], out, "0.2.0", "cinematic_realism", 0, "shot")
+            self.assertNotEqual(shot, environment)
+            self.assertNotEqual(shot, with_blend)
+
     def test_missing_asset_writes_failed_manifest(self):
         with tempfile.TemporaryDirectory() as raw:
             tmp = Path(raw)

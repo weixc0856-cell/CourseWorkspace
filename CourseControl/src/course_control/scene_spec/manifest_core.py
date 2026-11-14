@@ -158,6 +158,7 @@ def collect_inputs(
     blender_version: str | None = None,
     addons: list[dict[str, Any]] | None = None,
     grammar_path: Path | None = None,
+    extra_inputs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     spec_path = Path(spec_path).resolve()
     root = _asset_root(spec_path, spec)
@@ -218,6 +219,8 @@ def collect_inputs(
         inputs["addons"] = addons
     if grammar_path is not None and Path(grammar_path).is_file():
         inputs["visual_grammar_file"] = hash_path(Path(grammar_path))
+    if extra_inputs:
+        inputs.update(extra_inputs)
     return inputs
 
 
@@ -243,6 +246,7 @@ def cache_key(
     builder_version: str,
     visual_grammar: str | None,
     seed: int = 0,
+    build_kind: str = "shot",
 ) -> str:
     payload = {
         "inputs": inputs,
@@ -250,6 +254,7 @@ def cache_key(
         "builder_version": builder_version,
         "visual_grammar": visual_grammar,
         "seed": seed,
+        "build_kind": build_kind,
     }
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -329,6 +334,8 @@ def prepare(
     visual_grammar: str | None = None,
     grammar_path: Path | None = None,
     seed: int = 0,
+    build_kind: str = "shot",
+    extra_inputs: dict[str, Any] | None = None,
 ) -> PrepareResult:
     out = Path(out).resolve()
     spec_path = Path(spec_path).resolve()
@@ -341,6 +348,7 @@ def prepare(
         "build_id": "",
         "project": _project_name(spec_path, spec),
         "shot": shot,
+        "build_kind": build_kind,
         "environment": _environment_path(spec),
         "builder_version": builder_version,
         "blender_version": blender_version,
@@ -358,6 +366,7 @@ def prepare(
         "elapsed_s": None,
         "output": str(out),
         "temp_output": None,
+        "blend": None,
         "log": None,
     }
     try:
@@ -369,6 +378,7 @@ def prepare(
             blender_version=blender_version,
             addons=addons,
             grammar_path=grammar_path,
+            extra_inputs=extra_inputs,
         )
     except Exception as exc:  # noqa: BLE001 - the manifest records the reason
         manifest.update({"status": "fail", "error": str(exc), "finished_at": now_iso()})
@@ -377,7 +387,7 @@ def prepare(
         write_json_atomic(manifest_path, manifest)
         raise ManifestError(str(exc), manifest_path) from exc
 
-    key = cache_key(inputs, render, out, builder_version, visual_grammar, seed)
+    key = cache_key(inputs, render, out, builder_version, visual_grammar, seed, build_kind)
     build_id = f"{_stamp()}-{shot}-{key[:6]}"
     manifest.update({
         "build_id": build_id,
@@ -410,6 +420,7 @@ def finalize(
     status: str,
     output: Path | None = None,
     temp_output: Path | None = None,
+    blend: Path | None = None,
     elapsed_s: float | None = None,
     error: str | None = None,
 ) -> Path:
@@ -425,6 +436,8 @@ def finalize(
         data["output"] = str(Path(output).resolve())
     if temp_output is not None:
         data["temp_output"] = str(Path(temp_output).resolve())
+    if blend is not None:
+        data["blend"] = str(Path(blend).resolve())
     write_json_atomic(manifest_path, data)
     return manifest_path
 

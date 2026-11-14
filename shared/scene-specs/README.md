@@ -61,6 +61,19 @@ blender --background --factory-startup --python scripts/build_asset_scene.py -- 
   --spec <spec>.json --profile blockout
 ```
 
+## Build modes
+
+```text
+--build environment   # build blends/environments/<place>.blend
+--build shot          # link the environment blend, build blends/shots/<shot>.blend, render
+--build inline        # legacy: merge environment into the shot and render
+--build auto          # default: environment spec -> environment; shot with env blend -> shot
+```
+
+Environment blends hold `ENV`, `ENV_ASSETS`, `ENV_LIGHTS` and `AssetWorld`.
+Shot blends link those collections and the world, and keep only their own
+camera and shot lights. Library Overrides are not implemented yet.
+
 ## Build manifest and cache
 
 Each Blender build writes `manifests/<shot>-<build-id>.json` and `.log` next to
