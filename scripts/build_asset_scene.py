@@ -178,7 +178,19 @@ def main():
     scene.render.resolution_x = int(width)
     scene.render.resolution_y = int(height)
     scene.render.resolution_percentage = 100
-    scene.render.image_settings.file_format = "PNG"
+    frames = int(render.get("frames", 1))
+    scene.frame_start = 1
+    scene.frame_end = max(1, frames)
+    scene.render.fps = int(render.get("fps", 30))
+    if frames > 1:
+        scene.render.image_settings.media_type = "VIDEO"
+        scene.render.image_settings.file_format = "FFMPEG"
+        scene.render.ffmpeg.format = "MPEG4"
+        scene.render.ffmpeg.codec = "H264"
+        scene.render.ffmpeg.constant_rate_factor = "MEDIUM"
+        scene.render.ffmpeg.audio_codec = "NONE"
+    else:
+        scene.render.image_settings.file_format = "PNG"
     scene.render.filepath = str(out)
     scene.view_settings.view_transform = "AgX"
     scene.view_settings.look = "AgX - Medium High Contrast"
@@ -229,6 +241,8 @@ def main():
     cam.location = tuple(camera["location"])
     cam.data.lens = float(camera.get("lens", 35))
     cam.data.sensor_width = 36
+    cam.data.clip_start = 0.1
+    cam.data.clip_end = 20000.0
     cam.data.dof.use_dof = True
     cam.data.dof.focus_distance = float(camera.get("focus_distance", 10))
     cam.data.dof.aperture_fstop = float(camera.get("fstop", 8))
@@ -240,6 +254,19 @@ def main():
     track.track_axis = "TRACK_NEGATIVE_Z"
     track.up_axis = "UP_Y"
     scene.camera = cam
+
+    if frames > 1:
+        cam.keyframe_insert(data_path="location", frame=1)
+        cam.data.keyframe_insert(data_path="lens", frame=1)
+        if camera.get("end_location"):
+            cam.location = tuple(camera["end_location"])
+            cam.keyframe_insert(data_path="location", frame=frames)
+        if camera.get("end_lens"):
+            cam.data.lens = float(camera["end_lens"])
+            cam.data.keyframe_insert(data_path="lens", frame=frames)
+        if camera.get("end_target"):
+            target.location = tuple(camera["end_target"])
+            target.keyframe_insert(data_path="location", frame=frames)
 
     sun_data = recipe.get("sun")
     if sun_data:
@@ -254,7 +281,10 @@ def main():
 
     out.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(out.with_suffix(".blend")))
-    bpy.ops.render.render(write_still=True)
+    if frames > 1:
+        bpy.ops.render.render(animation=True)
+    else:
+        bpy.ops.render.render(write_still=True)
     print(f"ASSET_SCENE_DONE {out}")
 
 
