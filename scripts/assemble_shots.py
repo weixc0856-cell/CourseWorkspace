@@ -68,13 +68,14 @@ def main() -> int:
     start = 0.0
     labels = []
     for index, (path, clip) in enumerate(zip(args.shot, clips)):
-        label = args.label[index] if index < len(args.label) else path.stem
-        end = start + clip["duration"] - 0.05
-        safe = label.replace(":", chr(92) + ":").replace(chr(39), chr(92) + chr(39))
-        labels.append(
-            f"drawtext=text='{safe}':x=24:y=24:fontsize=22:fontcolor=white@0.85:"
-            f"fontfile='C{chr(92)}:/Windows/Fonts/arialbd.ttf':enable='between(t,{start:.3f},{end:.3f})'"
-        )
+        if index < len(args.label):
+            label = args.label[index]
+            end = start + clip["duration"] - 0.05
+            safe = label.replace(":", chr(92) + ":").replace(chr(39), chr(92) + chr(39))
+            labels.append(
+                f"drawtext=text='{safe}':x=24:y=24:fontsize=22:fontcolor=white@0.85:"
+                f"fontfile='C{chr(92)}:/Windows/Fonts/arialbd.ttf':enable='between(t,{start:.3f},{end:.3f})'"
+            )
         start += clip["duration"]
     if labels:
         filters.append("[base]" + ",".join(labels) + "[vout]")

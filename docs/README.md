@@ -51,6 +51,7 @@
 - [v2/生产管线v0.2-P1交付记录.md](v2/生产管线v0.2-P1交付记录.md)：Environment `.blend` + Linking、a1/a4 隔离验证与 Overrides 缺口
 - [v2/生产管线v0.2-P2交付记录.md](v2/生产管线v0.2-P2交付记录.md)：Shot Review Package、QC、A/B 对比与自动触发
 - [v2/生产管线v0.2-P3交付记录.md](v2/生产管线v0.2-P3交付记录.md)：Visual Grammar 版本化/Builder 消费、release-check shot_review 与人工豁免
+- [v2/生产管线v0.2-P4交付记录.md](v2/生产管线v0.2-P4交付记录.md)：38.1 s / 6 镜 / 1080p 成片、6 个 Review Package、release-check PASS
 - [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 三级预览、增量缓存、统一入口与 `release-check`（2026-11-14）
 - [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
 - [制片层.md](制片层.md)：订单、授权、用量、交付清单与增量重建

@@ -88,6 +88,7 @@
 - 生产管线 v0.2 P1 交付记录（Environment Linking）：[docs/v2/生产管线v0.2-P1交付记录.md](docs/v2/生产管线v0.2-P1交付记录.md)
 - 生产管线 v0.2 P2 交付记录（Shot Review）：[docs/v2/生产管线v0.2-P2交付记录.md](docs/v2/生产管线v0.2-P2交付记录.md)
 - 生产管线 v0.2 P3 交付记录（Visual Grammar + QC）：[docs/v2/生产管线v0.2-P3交付记录.md](docs/v2/生产管线v0.2-P3交付记录.md)
+- 生产管线 v0.2 P4 交付记录（完整影片）：[docs/v2/生产管线v0.2-P4交付记录.md](docs/v2/生产管线v0.2-P4交付记录.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)
