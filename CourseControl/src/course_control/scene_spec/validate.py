@@ -28,6 +28,34 @@ CAMERA_TEMPLATES = {
 RENDER_PASSES = {"beauty", "ao", "depth", "mist", "normal", "cryptomatte", "emission"}
 
 
+def _check_grammar(spec: dict, workspace: Path, issues: list[Issue]) -> None:
+    value = spec.get("visual_grammar")
+    if not value:
+        return
+    if "@" not in str(value):
+        issues.append(Issue("error", f"visual_grammar must be id@version: {value}"))
+        return
+    grammar_id, version = str(value).rsplit("@", 1)
+    registry = workspace / "shared" / "grammars" / "style-presets.json"
+    if not registry.is_file():
+        issues.append(Issue("error", f"visual grammar registry missing: {registry}"))
+        return
+    try:
+        data = json.loads(registry.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        issues.append(Issue("error", f"visual grammar registry unreadable: {exc}"))
+        return
+    preset = (data.get("presets") or {}).get(grammar_id)
+    if preset is None:
+        issues.append(Issue("error", f"visual_grammar preset not found: {grammar_id}"))
+        return
+    if str(preset.get("version")) != version:
+        issues.append(Issue(
+            "error",
+            f"visual_grammar version mismatch: {grammar_id}@{version} (registry {preset.get('version')})",
+        ))
+
+
 @dataclass(frozen=True)
 class Issue:
     level: str
@@ -131,6 +159,7 @@ def validate_spec(
             if key in {"objects", "lights", "water"} and value is not None
         }}
         _check_environment(EnvironmentSpec.model_validate(fields), asset_root, library, issues)
+        _check_grammar(fields, workspace, issues)
         _check_camera(spec.camera, spec.render.frames, spec.render.fps, issues)
         _check_render(spec.render, issues)
         if spec.duration_s is not None and spec.render.frames > 1:
@@ -143,6 +172,7 @@ def validate_spec(
         return issues
 
     _check_environment(spec, asset_root, library, issues)
+    _check_grammar(spec.model_dump(), workspace, issues)
     if spec.camera:
         from .models import CameraSpec
 

@@ -74,6 +74,14 @@ Environment blends hold `ENV`, `ENV_ASSETS`, `ENV_LIGHTS` and `AssetWorld`.
 Shot blends link those collections and the world, and keep only their own
 camera and shot lights. Library Overrides are not implemented yet.
 
+## Visual grammar
+
+Specs may declare `"visual_grammar": "cinematic_realism@1.0"`. The validator
+checks the version against `shared/grammars/style-presets.json`; the builder
+applies the preset's `builder` block (color management, look, exposure, world
+strength defaults, lens default, shutter) and writes `<output>.look.json`.
+Explicit spec values win over grammar defaults.
+
 ## Shot review
 
 After a shot is rendered, build a review package:

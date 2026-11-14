@@ -90,6 +90,38 @@ def load_manifest_core():
     return module
 
 
+def load_visual_grammar(value: str | None) -> dict | None:
+    if not value:
+        return None
+    raw = str(value)
+    grammar_id, version = (raw.rsplit("@", 1) if "@" in raw else (raw, None))
+    path = Path(__file__).resolve().parents[1] / "shared/grammars/style-presets.json"
+    if not path.is_file():
+        raise SystemExit(f"visual grammar registry not found: {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    preset = (data.get("presets") or {}).get(grammar_id)
+    if preset is None:
+        raise SystemExit(f"visual grammar preset not found: {grammar_id}")
+    if version is not None and str(preset.get("version")) != version:
+        raise SystemExit(f"visual grammar version mismatch: {raw}")
+    return {**preset, "_id": grammar_id, "_version": str(preset.get("version"))}
+
+
+def write_look(path: Path, grammar: dict | None) -> Path | None:
+    if grammar is None:
+        return None
+    payload = {
+        "visual_grammar": f"{grammar['_id']}@{grammar['_version']}",
+        "builder": grammar.get("builder") or {},
+        "composition": grammar.get("composition") or {},
+        "sound": grammar.get("sound") or {},
+    }
+    target = path.with_suffix(".look.json")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8")
+    return target
+
+
 def addon_versions() -> list[dict]:
     entries = []
     for addon in bpy.context.preferences.addons:
@@ -491,7 +523,7 @@ def setup_passes(scene, passes: list[str], pass_dir: Path, shot_id: str):
             print(f"pass {name} skipped: {exc}")
 
 
-def configure_render(scene, render: dict, filepath: Path) -> tuple[int, int]:
+def configure_render(scene, render: dict, filepath: Path, grammar: dict | None = None) -> tuple[int, int]:
     frames = int(render.get("frames", 1))
     fps = int(render.get("fps", 30))
     scene.render.engine = render.get("engine", "CYCLES")
@@ -516,7 +548,8 @@ def configure_render(scene, render: dict, filepath: Path) -> tuple[int, int]:
     if frames > 1:
         if hasattr(scene.render, "use_motion_blur"):
             scene.render.use_motion_blur = True
-            scene.render.motion_blur_shutter = 0.5
+            shutter = (grammar or {}).get("builder", {}).get("motion_blur_shutter", 0.5)
+            scene.render.motion_blur_shutter = float(shutter)
         scene.render.image_settings.media_type = "VIDEO"
         scene.render.image_settings.file_format = "FFMPEG"
         scene.render.ffmpeg.format = "MPEG4"
@@ -526,8 +559,16 @@ def configure_render(scene, render: dict, filepath: Path) -> tuple[int, int]:
     else:
         scene.render.image_settings.file_format = "PNG"
     scene.render.filepath = str(filepath)
-    scene.view_settings.view_transform = "AgX"
-    scene.view_settings.look = "AgX - Medium High Contrast"
+    builder = (grammar or {}).get("builder") or {}
+    transform = str(builder.get("color_management", "agx")).lower()
+    scene.view_settings.view_transform = "Standard" if transform == "standard" else "AgX"
+    look = builder.get("look")
+    if look:
+        try:
+            scene.view_settings.look = str(look)
+        except Exception:  # noqa: BLE001 - look names vary by Blender version
+            pass
+    scene.view_settings.exposure = float(builder.get("exposure", 0.0))
     return frames, fps
 
 
@@ -658,6 +699,8 @@ def main():
 
     if profile:
         render["profile"] = profile
+    grammar = load_visual_grammar(spec.get("visual_grammar") or spec.get("style"))
+    builder = (grammar or {}).get("builder") or {}
     manifest_core = load_manifest_core()
     addons = addon_versions()
     env_blend = None
@@ -682,7 +725,7 @@ def main():
         manifest_dir=Path(args.manifest_dir) if args.manifest_dir else None,
         use_cache=args.cache,
         visual_grammar=spec.get("visual_grammar") or spec.get("style"),
-        grammar_path=Path(__file__).resolve().parents[1] / "shared/grammars/style-presets.yaml",
+        grammar_path=Path(__file__).resolve().parents[1] / "shared/grammars/style-presets.json",
         seed=int(spec.get("seed", 0)),
         build_kind=args.build,
         extra_inputs=extra_inputs,
@@ -706,8 +749,11 @@ def main():
         clear()
         scene = bpy.context.scene
         link_environment(scene, env_blend)
-        frames, fps = configure_render(scene, render, temp_out)
-        setup_camera(scene, spec.get("camera") or {}, frames, fps, str(spec.get("id") or "shot"))
+        frames, fps = configure_render(scene, render, temp_out, grammar)
+        camera_spec = dict(spec.get("camera") or {})
+        if "lens" not in camera_spec and builder.get("lens_default") is not None:
+            camera_spec["lens"] = float(builder["lens_default"])
+        setup_camera(scene, camera_spec, frames, fps, str(spec.get("id") or "shot"))
         shot_lights = {
             "sun": (shot or {}).get("sun"),
             "lights": (shot or {}).get("lights") or [],
@@ -717,6 +763,9 @@ def main():
         if passes:
             pass_dir = Path(str(render.get("pass_dir") or (out.parent / "passes")))
             setup_passes(scene, passes, pass_dir, str(spec.get("id") or "shot"))
+        look_path = write_look(out, grammar)
+        if look_path:
+            manifest_core.log_line(log_path, f"look={look_path}")
         shot_blend = shot_blend_path(spec_path)
         shot_blend.parent.mkdir(parents=True, exist_ok=True)
         bpy.ops.wm.save_as_mainfile(filepath=str(shot_blend))
@@ -744,10 +793,13 @@ def main():
 
     clear()
     scene = bpy.context.scene
-    frames, fps = configure_render(scene, render, temp_out)
+    frames, fps = configure_render(scene, render, temp_out, grammar)
 
     hdri = resolve(library, spec["hdri"], root)
-    setup_world(hdri, float(spec.get("world_strength", 1.0)))
+    world_strength = spec.get("world_strength")
+    if world_strength is None:
+        world_strength = builder.get("world_strength", 1.0)
+    setup_world(hdri, float(world_strength))
     if spec.get("atmosphere"):
         add_atmosphere(scene, spec["atmosphere"])
 
@@ -793,11 +845,17 @@ def main():
     bpy.context.view_layer.update()
 
     if args.build != "environment":
-        setup_camera(scene, spec.get("camera") or {}, frames, fps, str(spec.get("id") or "shot"))
+        camera_spec = dict(spec.get("camera") or {})
+        if "lens" not in camera_spec and builder.get("lens_default") is not None:
+            camera_spec["lens"] = float(builder["lens_default"])
+        setup_camera(scene, camera_spec, frames, fps, str(spec.get("id") or "shot"))
 
     add_lights(scene, spec)
 
     if args.build == "environment":
+        look_path = write_look(out, grammar)
+        if look_path:
+            manifest_core.log_line(log_path, f"look={look_path}")
         prepare_environment_collections(scene)
         out.parent.mkdir(parents=True, exist_ok=True)
         bpy.ops.wm.save_as_mainfile(filepath=str(out))
@@ -814,6 +872,9 @@ def main():
         pass_dir = Path(str(render.get("pass_dir") or (out.parent / "passes")))
         setup_passes(scene, passes, pass_dir, str(spec.get("id") or "shot"))
 
+    look_path = write_look(out, grammar)
+    if look_path:
+        manifest_core.log_line(log_path, f"look={look_path}")
     bpy.ops.wm.save_as_mainfile(filepath=str(out.with_suffix(".blend")))
     manifest_core.log_line(log_path, f"blend={out.with_suffix('.blend')}")
     try:

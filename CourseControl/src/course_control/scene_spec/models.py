@@ -31,6 +31,7 @@ class EnvironmentSpec(BaseModel):
     id: str
     name: str = ""
     style: str | None = None
+    visual_grammar: str | None = None
     asset_root: str | None = None
     hdri: str
     world_strength: float = 1.0
@@ -122,6 +123,7 @@ class ShotSpec(BaseModel):
     environment: str
     beat: str | None = None
     lane: Literal["A", "B", "C"] | None = None
+    visual_grammar: str | None = None
     duration_s: float | None = None
     camera: CameraSpec
     render: RenderSpec = Field(default_factory=RenderSpec)

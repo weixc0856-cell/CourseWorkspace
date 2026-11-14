@@ -70,5 +70,12 @@
     "lighting",
     "animation",
     "asset_catalog"
-  ]
+  ],
+  "visual_grammar_registry": "shared/grammars/style-presets.json",
+  "visual_grammar_versions": {
+    "cinematic_realism": "1.0",
+    "scientific_visualization": "1.0",
+    "stylized_diorama": "1.0",
+    "technical_cutaway": "1.0"
+  }
 }

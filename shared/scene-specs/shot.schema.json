@@ -321,6 +321,18 @@
       "default": null,
       "title": "Lane"
     },
+    "visual_grammar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Visual Grammar"
+    },
     "duration_s": {
       "anyOf": [
         {

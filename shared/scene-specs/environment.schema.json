@@ -92,6 +92,18 @@
       "default": null,
       "title": "Style"
     },
+    "visual_grammar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Visual Grammar"
+    },
     "asset_root": {
       "anyOf": [
         {

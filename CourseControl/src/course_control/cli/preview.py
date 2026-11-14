@@ -361,11 +361,12 @@ def release_check(
     lesson: str = typer.Option(None, "--lesson"),
     project: Path = typer.Option(None, "--project", help="project.yaml for a topic video"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    shot_review_dir: Path | None = typer.Option(None, "--shot-review-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
     """Run the delivery checks in order and print PASS / FAIL / INCOMPLETE."""
-    from course_control.release.check import INCOMPLETE, run_release_check
+    from course_control.release.check import INCOMPLETE, PASS, PASS_WITH_EXEMPTION, run_release_check
 
     if bool(lesson) == bool(project):
         typer.echo("give exactly one of --lesson or --project", err=True)
@@ -376,7 +377,9 @@ def release_check(
         except Exception as exc:  # noqa: BLE001
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
-        payload = run_release_check(workspace.resolve(), paths=paths)
+        payload = run_release_check(
+            workspace.resolve(), paths=paths, shot_review_dir=shot_review_dir
+        )
     else:
         from course_control.delivery.project import load_project
         from course_control.preview.topic import load_topic
@@ -397,7 +400,9 @@ def release_check(
             except Exception as exc:  # noqa: BLE001
                 typer.echo(str(exc), err=True)
                 raise typer.Exit(1)
-            payload = run_release_check(workspace.resolve(), paths=paths)
+            payload = run_release_check(
+                workspace.resolve(), paths=paths, shot_review_dir=shot_review_dir
+            )
             if as_json:
                 typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
             else:
@@ -405,7 +410,8 @@ def release_check(
                 for step in payload["steps"]:
                     typer.echo(f"  [{step['status']}] {step['id']}: {step['detail']}")
             raise typer.Exit(
-                0 if payload["status"] == "pass" else (3 if payload["status"] == INCOMPLETE else 1)
+                0 if payload["status"] in {PASS, PASS_WITH_EXEMPTION}
+                else (3 if payload["status"] == INCOMPLETE else 1)
             )
         try:
             context = load_topic(workspace.resolve(), project)
@@ -415,7 +421,8 @@ def release_check(
         video = context.delivery_dir / context.output_name
         licences = [item.model_dump(mode="json") for item in context.plan.licences]
         payload = run_release_check(
-            workspace.resolve(), topic_video=video, licences=licences
+            workspace.resolve(), topic_video=video, licences=licences,
+            shot_review_dir=shot_review_dir,
         )
     if as_json:
         typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -426,4 +433,7 @@ def release_check(
         for step in payload["steps"]:
             for item in (step.get("data") or {}).get("hard_failures") or []:
                 typer.echo(f"  ! {item.get('id')}: {item.get('detail')}")
-    raise typer.Exit(0 if payload["status"] == "pass" else (3 if payload["status"] == INCOMPLETE else 1))
+    raise typer.Exit(
+        0 if payload["status"] in {PASS, PASS_WITH_EXEMPTION}
+        else (3 if payload["status"] == INCOMPLETE else 1)
+    )

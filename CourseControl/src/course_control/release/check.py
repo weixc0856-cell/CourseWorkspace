@@ -15,8 +15,10 @@ from pathlib import Path
 from course_control.content.paths import LessonPaths
 
 PASS = "pass"
+PASS_WITH_EXEMPTION = "pass_with_exemption"
 FAIL = "fail"
 INCOMPLETE = "incomplete"
+EXEMPT = "exempt"
 
 
 @dataclass
@@ -46,6 +48,8 @@ def _overall(steps: list[Step]) -> str:
         return FAIL
     if any(step.status == INCOMPLETE for step in steps):
         return INCOMPLETE
+    if any(step.status == EXEMPT for step in steps):
+        return PASS_WITH_EXEMPTION
     return PASS
 
 
@@ -294,12 +298,101 @@ def _topic_steps(
     return steps
 
 
+_EXEMPTION_FIELDS = ("object", "reason", "operator", "time", "missing_checks", "delivery_version")
+
+
+def _valid_exemption(path: Path) -> tuple[bool, str]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, str(exc)
+    if not isinstance(data, dict):
+        return False, "exemption is not an object"
+    missing = [key for key in _EXEMPTION_FIELDS if not data.get(key)]
+    if missing:
+        return False, "missing fields: " + ", ".join(missing)
+    return True, ""
+
+
+def _shot_review_steps(workspace: Path, shot_review_dir: Path) -> list[Step]:
+    directory = Path(shot_review_dir)
+    if not directory.is_dir():
+        return [Step("shot_review", INCOMPLETE, f"review directory missing: {directory}")]
+    packages = sorted(
+        item for item in directory.iterdir()
+        if item.is_dir() and ((item / "qc.json").is_file() or (item / "exemption.json").is_file())
+    )
+    if not packages:
+        return [Step("shot_review", INCOMPLETE, f"no review packages under {directory}")]
+    shots: list[dict] = []
+    status = PASS
+    exempt = False
+    for package in packages:
+        shot = package.name
+        qc_path = package / "qc.json"
+        exemption = package / "exemption.json"
+        valid_exemption, exemption_detail = (False, "")
+        if exemption.is_file():
+            valid_exemption, exemption_detail = _valid_exemption(exemption)
+        if not qc_path.is_file():
+            if valid_exemption:
+                shots.append({"shot": shot, "status": EXEMPT,
+                              "detail": exemption_detail or "recorded exemption"})
+                exempt = True
+            else:
+                shots.append({"shot": shot, "status": INCOMPLETE,
+                              "detail": "review missing; no valid exemption"})
+                status = INCOMPLETE if status != FAIL else status
+            continue
+        try:
+            qc = json.loads(qc_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            shots.append({"shot": shot, "status": INCOMPLETE, "detail": str(exc)})
+            status = INCOMPLETE if status != FAIL else status
+            continue
+        qc_status = str(qc.get("status") or INCOMPLETE).upper()
+        if qc_status == "FAIL":
+            shots.append({"shot": shot, "status": FAIL, "detail": "review QC failed"})
+            status = FAIL
+        elif qc_status in {"PASS", "WARN"}:
+            detail = "review passed" if qc_status == "PASS" else "review passed with warnings"
+            shots.append({"shot": shot, "status": PASS, "detail": detail})
+        elif valid_exemption:
+            shots.append({"shot": shot, "status": EXEMPT,
+                          "detail": exemption_detail or "recorded exemption"})
+            exempt = True
+        elif exemption.is_file():
+            shots.append({"shot": shot, "status": INCOMPLETE,
+                          "detail": f"invalid exemption: {exemption_detail}"})
+            status = INCOMPLETE if status != FAIL else status
+        else:
+            shots.append({"shot": shot, "status": INCOMPLETE,
+                          "detail": "review incomplete; no exemption"})
+            status = INCOMPLETE if status != FAIL else status
+    if status == FAIL:
+        final = FAIL
+    elif status == INCOMPLETE:
+        final = INCOMPLETE
+    elif exempt:
+        final = EXEMPT
+    else:
+        final = PASS
+    return [Step(
+        "shot_review",
+        final,
+        f"{len(packages)} package(s); {sum(1 for item in shots if item['status'] == EXEMPT)} exemption(s)",
+        str(directory),
+        data={"shots": shots},
+    )]
+
+
 def run_release_check(
     workspace: Path,
     *,
     paths: LessonPaths | None = None,
     topic_video: Path | None = None,
     licences: list[dict] | None = None,
+    shot_review_dir: Path | None = None,
 ) -> dict:
     if paths is not None:
         steps = _lesson_steps(workspace.resolve(), paths)
@@ -309,6 +402,8 @@ def run_release_check(
         subject = {"kind": "topic_video", "id": topic_video.stem}
     else:
         raise ValueError("release-check needs a lesson or a topic video")
+    if shot_review_dir is not None:
+        steps.extend(_shot_review_steps(workspace.resolve(), shot_review_dir))
     status = _overall(steps)
     return {
         "schema_version": 1,
@@ -317,8 +412,8 @@ def run_release_check(
         "subject": subject,
         "status": status,
         "steps": [step.as_dict() for step in steps],
-        "delivery_allowed": status == PASS,
+        "delivery_allowed": status in {PASS, PASS_WITH_EXEMPTION},
     }
 
 
-__all__ = ["FAIL", "INCOMPLETE", "PASS", "Step", "run_release_check"]
+__all__ = ["FAIL", "INCOMPLETE", "PASS", "PASS_WITH_EXEMPTION", "Step", "run_release_check"]

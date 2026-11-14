@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "presets": {
+    "cinematic_realism": {
+      "label": "Cinematic Realism",
+      "use_for": [
+        "landscape",
+        "hero_shot",
+        "documentary_reconstruction"
+      ],
+      "composition": {
+        "subject": "right_third",
+        "negative_space": "left",
+        "horizon": "upper_third",
+        "depth_layers": [
+          "foreground",
+          "midground",
+          "background",
+          "sky"
+        ]
+      },
+      "camera": {
+        "lenses": [
+          35,
+          40,
+          45,
+          50
+        ],
+        "move": "hold-dolly-hold",
+        "height": "eye_or_slightly_low",
+        "motion_blur_shutter": 0.5
+      },
+      "lighting": {
+        "key": "warm_sun",
+        "fill": "cool_area",
+        "rim": "cool_area",
+        "hdri": "pure_sky_or_mountain",
+        "exposure": "AgX",
+        "look": "AgX - Medium High Contrast"
+      },
+      "color": {
+        "palette": [
+          "sun_warm",
+          "slate_blue",
+          "moss_green",
+          "rock_grey"
+        ],
+        "saturation": "restrained"
+      },
+      "sound": {
+        "music": "sparse_or_none",
+        "ambience": "wind_or_water"
+      },
+      "version": "1.0",
+      "builder": {
+        "color_management": "agx",
+        "look": "AgX - Medium High Contrast",
+        "exposure": 0.0,
+        "world_strength": 0.35,
+        "atmosphere_density": 6e-05,
+        "lens_default": 45,
+        "motion_blur_shutter": 0.5,
+        "grain": "subtle",
+        "typography": "editorial"
+      }
+    },
+    "scientific_visualization": {
+      "label": "Scientific Visualization",
+      "use_for": [
+        "mechanism",
+        "data_relationship",
+        "cross_section"
+      ],
+      "composition": {
+        "subject": "centered",
+        "negative_space": "balanced",
+        "horizon": "none",
+        "depth_layers": [
+          "subject",
+          "annotation",
+          "background"
+        ]
+      },
+      "camera": {
+        "lenses": [
+          50,
+          85
+        ],
+        "move": "slow_orbit_or_static",
+        "orthographic_allowed": true,
+        "motion_blur_shutter": 0.25
+      },
+      "lighting": {
+        "key": "neutral_studio",
+        "fill": "neutral",
+        "rim": "optional",
+        "exposure": "AgX_or_Standard",
+        "look": "AgX - Base Contrast"
+      },
+      "color": {
+        "palette": [
+          "ink",
+          "paper",
+          "cinnabar",
+          "signal_blue"
+        ],
+        "saturation": "semantic_only"
+      },
+      "sound": {
+        "music": "minimal_pulse",
+        "ambience": "none"
+      },
+      "version": "1.0",
+      "builder": {
+        "color_management": "agx",
+        "look": "AgX - Base Contrast",
+        "exposure": 0.0,
+        "world_strength": 1.0,
+        "atmosphere_density": 0.0,
+        "lens_default": 50,
+        "motion_blur_shutter": 0.25,
+        "grain": "none",
+        "typography": "technical"
+      }
+    },
+    "stylized_diorama": {
+      "label": "Stylized Diorama",
+      "use_for": [
+        "metaphor",
+        "miniature_world",
+        "explainer"
+      ],
+      "composition": {
+        "subject": "centered_or_right",
+        "negative_space": "generous",
+        "horizon": "high",
+        "depth_layers": [
+          "set",
+          "props",
+          "backdrop"
+        ]
+      },
+      "camera": {
+        "lenses": [
+          35,
+          50
+        ],
+        "move": "orbit_or_parallax",
+        "tilt_shift": "optional",
+        "motion_blur_shutter": 0.25
+      },
+      "lighting": {
+        "key": "soft_directional",
+        "fill": "broad",
+        "rim": "warm",
+        "hdri": "studio_or_pure_sky",
+        "exposure": "AgX",
+        "look": "AgX - Medium Low Contrast"
+      },
+      "color": {
+        "palette": [
+          "paper",
+          "ink",
+          "cinnabar",
+          "muted_green"
+        ],
+        "saturation": "controlled"
+      },
+      "sound": {
+        "music": "light_percussion",
+        "ambience": "room_tone"
+      },
+      "version": "1.0",
+      "builder": {
+        "color_management": "agx",
+        "look": "AgX - Medium Low Contrast",
+        "exposure": 0.0,
+        "world_strength": 0.8,
+        "atmosphere_density": 2e-05,
+        "lens_default": 40,
+        "motion_blur_shutter": 0.25,
+        "grain": "subtle",
+        "typography": "editorial"
+      }
+    },
+    "technical_cutaway": {
+      "label": "Technical Cutaway",
+      "use_for": [
+        "structure",
+        "process",
+        "engineering"
+      ],
+      "composition": {
+        "subject": "centered",
+        "negative_space": "label_space",
+        "horizon": "none",
+        "depth_layers": [
+          "cut_surface",
+          "internals",
+          "callouts"
+        ]
+      },
+      "camera": {
+        "lenses": [
+          50,
+          85
+        ],
+        "move": "static_or_slow_push",
+        "orthographic_allowed": true,
+        "motion_blur_shutter": 0.0
+      },
+      "lighting": {
+        "key": "even_studio",
+        "fill": "even_studio",
+        "rim": "none",
+        "exposure": "Standard",
+        "look": "Standard"
+      },
+      "color": {
+        "palette": [
+          "graphite",
+          "white",
+          "signal_blue",
+          "warning_amber"
+        ],
+        "saturation": "functional"
+      },
+      "sound": {
+        "music": "none",
+        "ambience": "none"
+      },
+      "version": "1.0",
+      "builder": {
+        "color_management": "standard",
+        "look": "Standard",
+        "exposure": 0.0,
+        "world_strength": 1.0,
+        "atmosphere_density": 0.0,
+        "lens_default": 50,
+        "motion_blur_shutter": 0.0,
+        "grain": "none",
+        "typography": "technical"
+      }
+    }
+  }
+}
