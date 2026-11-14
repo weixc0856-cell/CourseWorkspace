@@ -44,6 +44,10 @@
 - [动画预览-Animatic.md](动画预览-Animatic.md)：正式渲染前的 480p 时间线预览、四条检查与片段缓存
 - [3D动画生产流程.md](3D动画生产流程.md)：AI 指导 + 资产库 + Blender 电影/动画标准流程（blockout → animatic → 细节 → 渲染 → 合成 → QC）；三层结构资产库 → 环境 → 镜头
 - [../shared/scene-specs/README.md](../shared/scene-specs/README.md)：环境/镜头 JSON 契约、相机模板、render passes 与能力注册表
+- [v2/生产管线v0.2-实施任务书.md](v2/生产管线v0.2-实施任务书.md)：v0.1 进度盘点后的 P0–P3 工程化任务书（可复现、Linking、Shot Review、Visual Grammar + QC）
+- [v2/证据-画面关联-设计记录.md](v2/证据-画面关联-设计记录.md)：P4 才实现的 claim/evidence 设计记录，v0.2 不增加字段
+- [v2/Three.js-技术借鉴清单.md](v2/Three.js-技术借鉴清单.md)：只吸收 GLB/glTF、R3F/Drei、Theatre.js、VTK.js 等可借鉴点；不纳入 v0.2，不新增门禁
+- [v2/生产管线v0.2-P0交付记录.md](v2/生产管线v0.2-P0交付记录.md)：P0 可复现构建的实际交付、manifest 字段、缓存与测试证据
 - [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 三级预览、增量缓存、统一入口与 `release-check`（2026-11-14）
 - [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
 - [制片层.md](制片层.md)：订单、授权、用量、交付清单与增量重建

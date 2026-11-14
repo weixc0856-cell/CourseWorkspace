@@ -10,16 +10,23 @@ Run with Blender:
 The builder only arranges assets indexed in library.json.  It does not model a
 new asset and it does not execute AI-written Python.  AI proposes a spec; this
 program validates and renders it.
+
+Every build writes a manifest (inputs, versions, render parameters, status) and
+a log under ``manifests/`` next to the output.  A second build with the same
+inputs and render parameters is served from cache unless ``--no-cache`` is set.
 """
 
 from __future__ import annotations
 
 import argparse
 import copy
+import importlib
+import importlib.util
 import json
 import math
 import os
 import sys
+import time
 from pathlib import Path
 
 import bpy
@@ -50,6 +57,9 @@ def parse_args():
     parser.add_argument("--out", default=None)
     parser.add_argument("--profile", choices=sorted(PROFILES), default=None)
     parser.add_argument("--frames", type=int, default=None, help="override frame count for still tests")
+    parser.add_argument("--cache", action=argparse.BooleanOptionalAction, default=True,
+                        help="reuse a passing manifest with the same inputs")
+    parser.add_argument("--manifest-dir", default=None)
     parser.add_argument("--print-plan", action="store_true")
     return parser.parse_args(argv)
 
@@ -61,6 +71,35 @@ def load_json(path: Path) -> dict:
 def load_library(path: Path) -> dict:
     data = load_json(path)
     return {item["id"]: item for item in data.get("assets", []) if "id" in item}
+
+
+def load_manifest_core():
+    path = Path(__file__).resolve().parents[1] / "CourseControl/src/course_control/scene_spec/manifest_core.py"
+    if not path.is_file():
+        raise SystemExit(f"manifest core not found: {path}")
+    spec = importlib.util.spec_from_file_location("asset_build_manifest_core", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def addon_versions() -> list[dict]:
+    entries = []
+    for addon in bpy.context.preferences.addons:
+        module_name = str(getattr(addon, "module", ""))
+        version = None
+        try:
+            module = importlib.import_module(module_name)
+            info = getattr(module, "bl_info", None) or {}
+            value = info.get("version") if isinstance(info, dict) else None
+            if isinstance(value, (list, tuple)):
+                version = ".".join(str(part) for part in value)
+        except Exception:  # noqa: BLE001 - an addon may not be importable
+            version = None
+        entries.append({"name": module_name, "version": version})
+    return sorted(entries, key=lambda item: item["name"])
 
 
 def resolve_spec(path: Path) -> tuple[dict, dict | None]:
@@ -475,6 +514,40 @@ def main():
         }, ensure_ascii=False, indent=2))
         return
 
+    if profile:
+        render["profile"] = profile
+    manifest_core = load_manifest_core()
+    addons = addon_versions()
+    prepared = manifest_core.prepare(
+        spec_path=spec_path,
+        spec=spec,
+        render=render,
+        out=out,
+        builder_path=Path(__file__),
+        builder_version=manifest_core.BUILDER_VERSION,
+        blender_version=bpy.app.version_string,
+        python_version=sys.version.split()[0],
+        addons=addons,
+        library_path=library_path,
+        manifest_dir=Path(args.manifest_dir) if args.manifest_dir else None,
+        use_cache=args.cache,
+        visual_grammar=spec.get("visual_grammar") or spec.get("style"),
+        grammar_path=Path(__file__).resolve().parents[1] / "shared/grammars/style-presets.yaml",
+        seed=int(spec.get("seed", 0)),
+    )
+    if prepared.cache_hit:
+        print(f"ASSET_SCENE_CACHED {prepared.cached_manifest} {out}")
+        return
+    log_path = prepared.log_path
+    manifest_path = prepared.manifest_path
+    build_id = prepared.manifest["build_id"]
+    temp_out = out.parent / f".{out.stem}.{build_id}.tmp{out.suffix}"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    started = manifest_core.start_clock()
+    manifest_core.log_line(log_path, f"spec={spec_path}")
+    manifest_core.log_line(log_path, f"cache_key={prepared.manifest['cache_key']}")
+    manifest_core.log_line(log_path, f"render={json.dumps(render, ensure_ascii=False, sort_keys=True)}")
+
     clear()
     scene = bpy.context.scene
     scene.render.engine = render.get("engine", "CYCLES")
@@ -510,7 +583,7 @@ def main():
         scene.render.ffmpeg.audio_codec = "NONE"
     else:
         scene.render.image_settings.file_format = "PNG"
-    scene.render.filepath = str(out)
+    scene.render.filepath = str(temp_out)
     scene.view_settings.view_transform = "AgX"
     scene.view_settings.look = "AgX - Medium High Contrast"
 
@@ -600,12 +673,34 @@ def main():
         pass_dir = Path(str(render.get("pass_dir") or (out.parent / "passes")))
         setup_passes(scene, passes, pass_dir, str(spec.get("id") or "shot"))
 
-    out.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(out.with_suffix(".blend")))
-    if frames > 1:
-        bpy.ops.render.render(animation=True)
-    else:
-        bpy.ops.render.render(write_still=True)
+    manifest_core.log_line(log_path, f"blend={out.with_suffix('.blend')}")
+    try:
+        if frames > 1:
+            bpy.ops.render.render(animation=True)
+        else:
+            bpy.ops.render.render(write_still=True)
+        os.replace(str(temp_out), str(out))
+    except Exception as exc:  # noqa: BLE001 - manifest records the failure
+        manifest_core.finalize(
+            manifest_path,
+            status="fail",
+            output=out,
+            temp_output=temp_out,
+            elapsed_s=time.time() - started,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+        manifest_core.log_line(log_path, f"FAILED: {type(exc).__name__}: {exc}")
+        raise
+    manifest_core.finalize(
+        manifest_path,
+        status="pass",
+        output=out,
+        temp_output=temp_out,
+        elapsed_s=time.time() - started,
+        error=None,
+    )
+    manifest_core.log_line(log_path, f"output={out}")
     print(f"ASSET_SCENE_DONE {out}")
 
 

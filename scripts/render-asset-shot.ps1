@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory = $true)][string]$Spec,
     [ValidateSet("blockout", "preview", "hero")][string]$Profile = "preview",
     [string]$Out,
-    [int]$Frames = 0
+    [int]$Frames = 0,
+    [switch]$NoCache,
+    [string]$ManifestDir
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,6 +39,12 @@ if ($Out) {
 }
 if ($Frames -gt 0) {
     $arguments += @("--frames", $Frames)
+}
+if ($NoCache) {
+    $arguments += "--no-cache"
+}
+if ($ManifestDir) {
+    $arguments += @("--manifest-dir", $ManifestDir)
 }
 & $exe @arguments
 exit $LASTEXITCODE

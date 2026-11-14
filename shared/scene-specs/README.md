@@ -61,6 +61,22 @@ blender --background --factory-startup --python scripts/build_asset_scene.py -- 
   --spec <spec>.json --profile blockout
 ```
 
+## Build manifest and cache
+
+Each Blender build writes `manifests/<shot>-<build-id>.json` and `.log` next to
+the output (or under `--manifest-dir`). The manifest records hashes of the shot
+spec, environment spec, library, builder, assets, Blender/Python/addons, render
+parameters and the Visual Grammar file. A second build with identical inputs
+prints `ASSET_SCENE_CACHED` and skips the render.
+
+```powershell
+scripts/render-asset-shot.ps1 -Spec <shot>.json -Profile preview `
+  -ManifestDir <dir> [-NoCache] [-Frames 1]
+```
+
+The manifest is build evidence, not a release gate. See
+`docs/v2/生产管线v0.2-P0交付记录.md`.
+
 ## Camera templates
 
 `static_hold`, `dolly_in`, `dolly_out`, `pan`, `tilt`, `crane`, `orbit`,

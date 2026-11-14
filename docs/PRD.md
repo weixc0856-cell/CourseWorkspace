@@ -1,8 +1,9 @@
 # CourseWorkspace 产品需求基线（PRD）
 
 - **版本**：v2.0
-- **日期**：2026-11-13
+- **日期**：2026-11-14
 - **地位**：本文件是唯一有效的产品需求基线。任何开发任务必须能对应到本文的 `FR-*` / `NFR-*` 条目。
+- **2026-11-14 补充**：新增 §1.3 长期愿景（Knowledge Media Studio），不改变当前产品名、范围与验收项。
 - **v2.0 变更**：采纳双生产模式（Course / Topic Video）与无人值守目标（A3，当前实现 A1）；新增 FR-45～FR-51；质量从“检查通过”升级为“缺陷闭环 + 交付证书”。产品边界变更记录见 D-092。`docs/v2/m0/` 是本次升级的规划与审计，不替代本文件。
 - **取代**：`<内容根>/archive/CourseWorkspace-R0-R5改造PRD.md`（改造规格，已执行完毕）、`<内容根>/archive/ContentQA_实施评估.md`（设计稿，仅保留审查内核）、`<内容根>/archive/AI-Blender落地路线图.md`（历史状态快照）。
 - **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；真实工作流见 [WORKFLOW.md](WORKFLOW.md)；当前状态见 [PROJECT_STATUS.md](PROJECT_STATUS.md)。
@@ -39,6 +40,20 @@
 - 自研基础模型、自研 3D 渲染引擎、多 Agent 自由讨论系统。
 - 部署 Code2Video 27B 权重；外部引擎只做镜头级能力。
 - 在线编辑器、逐帧人工修改工具、多人协作审稿平台、实时交互教学平台。
+
+### 1.3 长期愿景（不影响当前产品定位）
+
+长期可以把这个工作区理解为 **Knowledge Media Studio**：CourseWorkspace 是其中的生产系统，Blender Pipeline 是其中的三维制作引擎，频道、课程与定制内容是最终产品。
+
+这是长期愿景，**不改变**当前产品名、v2.0 产品范围、命令、验收项与交付边界。当前版本仍按本 PRD 的 Course / Topic Video 双模式执行。
+
+三个验证项目串行推进，放在 v0.2 生产管线验收之后：
+
+1. 风水专题短片（电影化叙事与环境制作）；
+2. 汽车空气动力学课程（科学准确性与工程可视化）；
+3. AI 产业经济学课程（知识组织、商业解释与跨领域复用）。
+
+“证据—画面关联”是 P4 的设计记录，v0.2 不增加字段、不增加验收项。
 
 ---
 
