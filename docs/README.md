@@ -42,6 +42,7 @@
 - [视觉设计层.md](视觉设计层.md)：艺术方向、blocking、三关键帧、运动与连续性；`course-control visual-design`
 - [镜头表-ShotSheet.md](镜头表-ShotSheet.md)：storyboard v2 设计字段、连续性与资产引用、编译复核与设计指纹
 - [动画预览-Animatic.md](动画预览-Animatic.md)：正式渲染前的 480p 时间线预览、四条检查与片段缓存
+- [3D动画生产流程.md](3D动画生产流程.md)：AI 指导 + 资产库 + Blender 电影/动画标准流程（blockout → animatic → 细节 → 渲染 → 合成 → QC）
 - [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 三级预览、增量缓存、统一入口与 `release-check`（2026-11-14）
 - [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
 - [制片层.md](制片层.md)：订单、授权、用量、交付清单与增量重建

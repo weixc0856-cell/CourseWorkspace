@@ -81,6 +81,7 @@
 - 资料采集与预处理（PDF / YouTube → 本机 Docling 区）：[docs/资料采集与预处理.md](docs/资料采集与预处理.md)
 - 本地图像生成（FLUX.3 只出静帧，不能生成视频）：[docs/本地图像生成-FLUX3.md](docs/本地图像生成-FLUX3.md)
 - 本地 3D 资产库（模型/HDRI/PBR 贴图 + JSON 索引 + 查询脚本）：[docs/本地3D资产库.md](docs/本地3D资产库.md)
+- 3D 动画/电影生产流程（AI 指导 + 资产库 + Blender 标准流程）：[docs/3D动画生产流程.md](docs/3D动画生产流程.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)
