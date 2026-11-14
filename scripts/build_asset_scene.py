@@ -102,6 +102,26 @@ def terrain_material(texture_id: str, root: Path, library: dict, uv_scale: float
     return mat
 
 
+def add_atmosphere(scene, cfg: dict):
+    size = float(cfg.get("size_m", 6000))
+    location = tuple(cfg.get("location", [0, 0, 600]))
+    bpy.ops.mesh.primitive_cube_add(size=size, location=location)
+    cube = bpy.context.active_object
+    cube.name = "Atmosphere"
+    mat = bpy.data.materials.new("Atmosphere")
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+    out = nodes.new("ShaderNodeOutputMaterial")
+    volume = nodes.new("ShaderNodeVolumePrincipled")
+    volume.inputs["Density"].default_value = float(cfg.get("density", 0.0008))
+    volume.inputs["Color"].default_value = tuple(cfg.get("color", [0.55, 0.65, 0.75, 1.0]))
+    volume.inputs["Anisotropy"].default_value = float(cfg.get("anisotropy", 0.3))
+    links.new(volume.outputs["Volume"], out.inputs["Volume"])
+    cube.data.materials.append(mat)
+
+
 def setup_world(hdri: Path, strength: float):
     world = bpy.data.worlds.new("AssetWorld")
     world.use_nodes = True
@@ -174,6 +194,11 @@ def main():
         scene.cycles.max_bounces = 6
     else:
         scene.eevee.taa_render_samples = int(render.get("samples", 64))
+        scene.eevee.use_volumetric_shadows = True
+        scene.eevee.volumetric_start = 10.0
+        scene.eevee.volumetric_end = 9000.0
+        scene.eevee.volumetric_samples = 64
+        scene.eevee.volumetric_tile_size = "4"
     width, height = render.get("resolution", [1080, 1920])
     scene.render.resolution_x = int(width)
     scene.render.resolution_y = int(height)
@@ -197,6 +222,8 @@ def main():
 
     hdri = resolve(library, recipe["hdri"], root)
     setup_world(hdri, float(recipe.get("world_strength", 1.0)))
+    if recipe.get("atmosphere"):
+        add_atmosphere(scene, recipe["atmosphere"])
 
     terrain = recipe["terrain"]
     height = resolve(library, terrain["heightmap"], root) if terrain.get("heightmap") in library else (root / terrain["heightmap"])
@@ -234,7 +261,12 @@ def main():
                 obj.rotation_euler[2] += math.radians(float(item.get("rotation_deg", 0)))
     bpy.context.view_layer.update()
 
-    camera = recipe["camera"]
+    camera = dict(recipe["camera"])
+    if camera.get("keyframes"):
+        first = camera["keyframes"][0]
+        camera.setdefault("location", first.get("location", [0, -10, 3]))
+        camera.setdefault("target", first.get("target", [0, 0, 0]))
+        camera.setdefault("lens", first.get("lens", 35))
     cam_data = bpy.data.cameras.new("Cam")
     cam = bpy.data.objects.new("Cam", cam_data)
     scene.collection.objects.link(cam)
@@ -256,18 +288,33 @@ def main():
     scene.camera = cam
 
     if frames > 1:
-        cam.keyframe_insert(data_path="location", frame=1)
-        cam.data.keyframe_insert(data_path="lens", frame=1)
-        if camera.get("end_location"):
-            cam.location = tuple(camera["end_location"])
-            cam.keyframe_insert(data_path="location", frame=frames)
-        if camera.get("end_lens"):
-            cam.data.lens = float(camera["end_lens"])
-            cam.data.keyframe_insert(data_path="lens", frame=frames)
-        if camera.get("end_target"):
-            target.location = tuple(camera["end_target"])
-            target.keyframe_insert(data_path="location", frame=frames)
-
+        bpy.context.preferences.edit.keyframe_new_interpolation_type = "BEZIER"
+        bpy.context.preferences.edit.keyframe_new_handle_type = "AUTO_CLAMPED"
+        keys = camera.get("keyframes")
+        if keys:
+            for item in keys:
+                frame_no = int(item.get("frame", 1))
+                if item.get("location"):
+                    cam.location = tuple(item["location"])
+                if item.get("target"):
+                    target.location = tuple(item["target"])
+                if item.get("lens"):
+                    cam.data.lens = float(item["lens"])
+                cam.keyframe_insert(data_path="location", frame=frame_no)
+                cam.data.keyframe_insert(data_path="lens", frame=frame_no)
+                target.keyframe_insert(data_path="location", frame=frame_no)
+        else:
+            cam.keyframe_insert(data_path="location", frame=1)
+            cam.data.keyframe_insert(data_path="lens", frame=1)
+            if camera.get("end_location"):
+                cam.location = tuple(camera["end_location"])
+                cam.keyframe_insert(data_path="location", frame=frames)
+            if camera.get("end_lens"):
+                cam.data.lens = float(camera["end_lens"])
+                cam.data.keyframe_insert(data_path="lens", frame=frames)
+            if camera.get("end_target"):
+                target.location = tuple(camera["end_target"])
+                target.keyframe_insert(data_path="location", frame=frames)
     sun_data = recipe.get("sun")
     if sun_data:
         light = bpy.data.lights.new("Sun", type="SUN")
@@ -278,6 +325,28 @@ def main():
         scene.collection.objects.link(obj)
         obj.location = tuple(sun_data.get("location", [0, 0, 10]))
         obj.rotation_euler = tuple(math.radians(v) for v in sun_data.get("rotation_deg", [50, 0, 35]))
+
+    for item in recipe.get("lights", []):
+        light_data = bpy.data.lights.new(str(item.get("id", "Light")), type=item.get("type", "AREA"))
+        light_data.energy = float(item.get("energy", 500.0))
+        light_data.color = tuple(item.get("color", [1.0, 1.0, 1.0]))
+        if hasattr(light_data, "size"):
+            light_data.size = float(item.get("size", 5.0))
+        if item.get("type") == "SUN" and hasattr(light_data, "angle"):
+            light_data.angle = math.radians(float(item.get("angle_deg", 2.0)))
+        obj = bpy.data.objects.new(str(item.get("id", "Light")), light_data)
+        scene.collection.objects.link(obj)
+        obj.location = tuple(item.get("location", [0, 0, 10]))
+        if item.get("target"):
+            aim = bpy.data.objects.new(f"{item.get('id', 'Light')}Target", None)
+            scene.collection.objects.link(aim)
+            aim.location = tuple(item["target"])
+            track = obj.constraints.new(type="TRACK_TO")
+            track.target = aim
+            track.track_axis = "TRACK_NEGATIVE_Z"
+            track.up_axis = "UP_Y"
+        elif item.get("rotation_deg"):
+            obj.rotation_euler = tuple(math.radians(v) for v in item["rotation_deg"])
 
     out.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(out.with_suffix(".blend")))
