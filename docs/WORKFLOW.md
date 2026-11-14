@@ -21,6 +21,10 @@
    │
    ├─[自动][可选] render:blender (v1)  scripts/blender-render.ps1 → build/<slug>/blender/
    │
+   ├─[自动] render:scenes（仅 scene 模式）
+   │    Remotion ScenePage → build/<slug>/scenes/pages/page-XXX.mp4 + scenes/manifest.json
+   │    按实测旁白分页、按句切 beat；manifest 已存在且页文件齐全时跳过
+   │
    ▼
 [自动] collect                         页面预算 + 镜头 → build/<slug>/shots.json
    │

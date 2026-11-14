@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from course_control.rendering import adapters
+from course_control.rendering import adapters, scene_pages
 from course_control.rendering.adapters.base import StageOutcome
 from course_control.platform.atomic import write_json_atomic
 from course_control.platform.build_lock import BuildLock
@@ -325,6 +325,15 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
         builder.add_stage(_stage("compose", Status.NOT_RUN, reason="upstream_skipped"))
         builder.add_stage(_stage("verify", Status.NOT_RUN, reason="upstream_skipped"))
         return run.finish()
+
+    if paths.lesson.compose.mode == "scene" and not options.skip_render:
+        # Scene mode needs one full-screen page clip per page; nothing else
+        # produced them, so collect used to fail on a missing manifest.
+        scene_outcome = scene_pages.run(paths, force=bool(options.resume_from))
+        builder.add_stage(scene_outcome)
+        if scene_outcome.status == Status.FAIL:
+            _mark_not_run(builder, ["collect", "compose", "brand", "verify"], "upstream_failed")
+            return run.finish()
 
     shots_file = paths.build_root / "shots.json"
     collect_inputs = stage_inputs(paths, "collect")
