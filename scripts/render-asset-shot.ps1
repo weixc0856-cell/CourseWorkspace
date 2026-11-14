@@ -6,7 +6,8 @@ param(
     [string]$Out,
     [int]$Frames = 0,
     [switch]$NoCache,
-    [string]$ManifestDir
+    [string]$ManifestDir,
+    [bool]$Review = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,4 +49,17 @@ if ($ManifestDir) {
     $arguments += @("--manifest-dir", $ManifestDir)
 }
 & $exe @arguments
-exit $LASTEXITCODE
+$code = $LASTEXITCODE
+if ($Review -and $code -eq 0 -and $Build -ne "environment" -and $Out -and ($Out -match '\.(mp4|mov|mkv)$')) {
+    $reviewManifestDir = if ($ManifestDir) { $ManifestDir } else { Join-Path (Split-Path -Parent $Out) "manifests" }
+    $manifest = Get-ChildItem -LiteralPath $reviewManifestDir -Filter "*.json" |
+        Sort-Object LastWriteTime |
+        Select-Object -Last 1
+    if ($manifest) {
+        $shot = (Get-Content -LiteralPath $manifest.FullName -Raw | ConvertFrom-Json).shot
+        $reviewOut = Join-Path (Split-Path -Parent $Out) (Join-Path "review" $shot)
+        uv run --project CourseControl course-control shot-review `
+            --shot $shot --video $Out --manifest $manifest.FullName --out $reviewOut
+    }
+}
+exit $code

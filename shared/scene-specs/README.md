@@ -74,6 +74,19 @@ Environment blends hold `ENV`, `ENV_ASSETS`, `ENV_LIGHTS` and `AssetWorld`.
 Shot blends link those collections and the world, and keep only their own
 camera and shot lights. Library Overrides are not implemented yet.
 
+## Shot review
+
+After a shot is rendered, build a review package:
+
+```powershell
+course-control shot-review --shot a1 --video <a1.mp4> --manifest-dir <manifests> --out <review/a1>
+course-control shot-review-compare --shot a1 --take "v001=<a1-v1.mp4>" --take "v002=<a1-v2.mp4>" --out <compare.jpg>
+```
+
+The package contains first/middle/last frames, contact sheet, 480p preview,
+metadata, QC and a human review sheet. It is evidence, not an aesthetic score
+and not a new release gate.
+
 ## Build manifest and cache
 
 Each Blender build writes `manifests/<shot>-<build-id>.json` and `.log` next to

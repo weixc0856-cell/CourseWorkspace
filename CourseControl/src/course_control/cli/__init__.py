@@ -26,6 +26,7 @@ from . import (  # noqa: E402,F401
     project,
     quality,
     render,
+    review,
     scene,
     session,
     sound,
@@ -66,7 +67,7 @@ for _panel, _names in {
         "simulation-run formula-validate formula-render formula-video-qc formula-audit "
         "brand-plan brand-render"
     ),
-    "Preview": "animatic preview-pilot session-validate session-run session-evidence-v1",
+    "Preview": "animatic preview-pilot shot-review shot-review-compare session-validate session-run session-evidence-v1",
     "Legacy": "e6-adapt e65-adapt timeline-v1",
 }.items():
     for _name in _names.split():
