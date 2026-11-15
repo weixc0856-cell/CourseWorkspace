@@ -134,7 +134,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.selftest:
-        return selftest(Path(args.dir) if args.dir else Path("D:/CourseContent/build"))
+        return selftest(Path(args.dir) if args.dir else Path.cwd() / "build")
 
     source = "audit-render"
     expected = None
@@ -165,7 +165,8 @@ def main() -> int:
             return 2
         expected = math.ceil(frames / args.step)
         extract = subprocess.run(
-            [ffmpeg, "-y", "-i", str(film), "-vf", f"select='not(mod(n\,{args.step}))'",
+            [ffmpeg, "-y", "-i", str(film), "-vf",
+             "select='not(mod(n" + chr(92) + "," + str(args.step) + "))'",
              "-vsync", "0", str(work / "frame-%05d.png")],
             capture_output=True, text=True, check=False,
         )
