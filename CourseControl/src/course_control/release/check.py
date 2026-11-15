@@ -53,6 +53,28 @@ def _overall(steps: list[Step]) -> str:
     return PASS
 
 
+def _stale_reason(paths: LessonPaths, video: Path) -> str | None:
+    """The final video must be newer than every input it claims to encode."""
+    inputs = [
+        paths.lesson_dir / "lesson.yaml",
+        paths.lesson_dir / "authoring" / "episode.spec.yaml",
+        paths.lesson_dir / "authoring" / "quality.rubric.yaml",
+        paths.build_root / "contracts" / "timeline.spec.json",
+        paths.build_root / "narration" / "narration.meta.json",
+        paths.build_root / "subtitles.srt",
+    ]
+    video_time = video.stat().st_mtime
+    for item in inputs:
+        if not item.is_file():
+            continue
+        if item.stat().st_mtime > video_time:
+            return (
+                f"stale: {video} (mtime {video_time:.0f}) is older than "
+                f"{item} (mtime {item.stat().st_mtime:.0f})"
+            )
+    return None
+
+
 def _final_video(paths: LessonPaths) -> Path | None:
     final = paths.build_root / "final"
     for name in (
@@ -91,6 +113,10 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
         steps.append(
             Step("final_video", INCOMPLETE, "no final/course-video*.mp4; build first")
         )
+        return steps
+    stale = _stale_reason(paths, video)
+    if stale:
+        steps.append(Step("final_video", FAIL, stale))
         return steps
     steps.append(Step("final_video", PASS, str(video)))
 
