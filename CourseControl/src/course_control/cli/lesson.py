@@ -64,6 +64,10 @@ def separation_command(
             typer.echo(f"  staging: {used:.1f} MB of {limit:.0f} MB")
             if report.get("staging_problem"):
                 typer.echo(f"  [PROBLEM] {report['staging_problem']}")
+            elif report.get("staging_warning"):
+                typer.echo(f"  [warn] {report['staging_warning']}")
+            for slug, size in (report.get("staging_slugs") or [])[:5]:
+                typer.echo(f"  staging slug: {slug} {size / (1024 * 1024):.1f} MB")
         for entry in report["entries"]:
             mark = "allowed" if entry["allowed"] else "PROBLEM"
             reason = f"  ({entry['reason']})" if entry["allowed"] else ""

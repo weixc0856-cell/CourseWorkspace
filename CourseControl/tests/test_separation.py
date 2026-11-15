@@ -153,6 +153,38 @@ class SeparationTest(unittest.TestCase):
         self.assertEqual(report["media_problems"], [])
         self.assertEqual(report["problems"], [])
 
+    def test_extensionless_png_is_reported_by_signature(self) -> None:
+        self._lesson("lesson-x")
+        target = self.workspace / "RemotionStudio" / "public" / "chapter"
+        target.mkdir(parents=True)
+        (target / "150").write_bytes(bytes.fromhex("89504e470d0a1a0a") + b"x" * (70 * 1024))
+        report = audit(self.workspace)
+        self.assertIn("RemotionStudio/public/chapter/150", report["media_problems"])
+
+    def test_small_extensionless_file_is_not_probed(self) -> None:
+        self._lesson("lesson-x")
+        target = self.workspace / "RemotionStudio" / "public" / "chapter"
+        target.mkdir(parents=True)
+        (target / "small").write_bytes(bytes.fromhex("89504e470d0a1a0a") + b"x" * 1024)
+        self.assertEqual(audit(self.workspace)["media_problems"], [])
+
+    def test_large_extensionless_text_file_is_not_reported(self) -> None:
+        self._lesson("lesson-x")
+        target = self.workspace / "scripts"
+        target.mkdir(parents=True)
+        (target / "notes").write_bytes(b"plain text " * (10 * 1024))
+        self.assertEqual(audit(self.workspace)["media_problems"], [])
+
+    def test_staging_above_the_warning_line_is_reported(self) -> None:
+        self._lesson("lesson-x")
+        staged = self.workspace / "RemotionStudio" / "public" / "staging" / "lesson-x"
+        staged.mkdir(parents=True)
+        (staged / "clip.mp4").write_bytes(b"mp4")
+        with patch.object(separation, "STAGING_WARN_BYTES", 1):
+            report = audit(self.workspace)
+        self.assertIsNotNone(report["staging_warning"])
+        self.assertEqual(report["staging_slugs"][0][0], "lesson-x")
+
 
 if __name__ == "__main__":
     unittest.main()

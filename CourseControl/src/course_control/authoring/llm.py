@@ -36,7 +36,7 @@ from ai_runtime import (
     is_healthy,
     route_model,
 )
-from course_control.platform.workspace_layout import build_root_for
+from course_control.platform.workspace_layout import build_root_for, content_root
 
 
 class AuthoringError(RuntimeError):
@@ -65,8 +65,10 @@ class AuthoringConfig:
     max_retries: int = 1
     temperature: float = 0.2
     remote_thinking: str = "disabled"
-    lock_path: str = "runtime/locks/llama-8080.lock"
-    task_root: str = "runtime/tasks"
+    # Filled by load(): both paths live under the content root, never under
+    # the repository. A relative value in the config is resolved there too.
+    lock_path: str = ""
+    task_root: str = ""
     lock_timeout_s: int = 3600
     stale_after_s: int = 3600
     backend: str = "auto"
@@ -83,6 +85,7 @@ class AuthoringConfig:
                 "config/authoring.yaml not found; copy config/authoring.example.yaml"
             )
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        root = content_root(workspace)
         server = data.get("server") or {}
         model = data.get("model") or {}
         llm = data.get("llm") or {}
@@ -133,8 +136,8 @@ class AuthoringConfig:
             max_retries=int(llm.get("max_retries", 1)),
             temperature=float(llm.get("temperature", 0.2)),
             remote_thinking=str(llm.get("remote_thinking", "disabled")),
-            lock_path=str(runtime.get("lock_path", "runtime/locks/llama-8080.lock")),
-            task_root=str(runtime.get("task_root", "runtime/tasks")),
+            lock_path=_runtime_path(runtime.get("lock_path"), "runtime/locks/llama-8080.lock", root),
+            task_root=_runtime_path(runtime.get("task_root"), "runtime/tasks", root),
             lock_timeout_s=int(runtime.get("lock_timeout_s", 3600)),
             stale_after_s=int(runtime.get("stale_after_s", 3600)),
             backend=backend,
@@ -142,6 +145,13 @@ class AuthoringConfig:
             remote=remote,
             claude_code=claude_code,
         )
+
+
+def _runtime_path(value: object, default: str, root: Path) -> str:
+    path = Path(str(value)) if value else Path(default)
+    if not path.is_absolute():
+        path = root / path
+    return str(path)
 
 
 def _now() -> str:

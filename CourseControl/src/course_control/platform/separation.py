@@ -62,7 +62,31 @@ OUTPUT_DIR_NAMES = {"out", "output", "frames", "renders", "captures"}
 
 # Staging is a cache: it may hold media, but it must not grow without bound.
 STAGING_DIR = "RemotionStudio/public/staging"
+STAGING_WARN_BYTES = 512 * 1024 * 1024
 STAGING_LIMIT_BYTES = 2 * 1024 * 1024 * 1024
+
+# Remotion writes a still to the current directory when no output path is
+# given, and the file carries no extension. Sniff the header instead of relying
+# on the name. Anything smaller than 64 KB is not worth probing.
+SIGNATURE_MIN_BYTES = 64 * 1024
+
+
+def _sniff_media(path: Path) -> str | None:
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(12)
+    except OSError:
+        return None
+    if head.startswith(bytes.fromhex("89504e470d0a1a0a")):
+        return "png"
+    if head.startswith(bytes.fromhex("ffd8ff")):
+        return "jpeg"
+    if len(head) >= 12 and head[4:8] == b"ftyp":
+        return "mp4"
+    if head[:4] == b"RIFF" and head[8:12] == b"WAVE":
+        return "wav"
+    return None
+
 
 # Media paths that stay in the repository on purpose.  Add an entry only
 # together with its reason; episode media belongs in the content root and
@@ -132,6 +156,7 @@ def audit(workspace: Path) -> dict:
     media: list[dict] = []
     output_dirs: set[str] = set()
     staging_bytes = 0
+    staging_slugs: dict[str, int] = {}
     for dirpath, dirnames, filenames in os.walk(workspace):
         current = Path(dirpath)
         kept: list[str] = []
@@ -157,16 +182,26 @@ def audit(workspace: Path) -> dict:
                 }
             )
         for name in filenames:
-            if Path(name).suffix.lower() not in MEDIA_SUFFIXES:
-                continue
+            suffix = Path(name).suffix.lower()
+            if suffix not in MEDIA_SUFFIXES:
+                try:
+                    size = (current / name).stat().st_size
+                except OSError:
+                    continue
+                if size < SIGNATURE_MIN_BYTES or _sniff_media(current / name) is None:
+                    continue
+            else:
+                try:
+                    size = (current / name).stat().st_size
+                except OSError:
+                    size = 0
             relative = name if relative_dir == "." else relative_dir + "/" + name
             reason = _media_allowed(relative)
             media.append({"path": relative, "allowed": reason is not None, "reason": reason})
             if relative.startswith(STAGING_DIR + "/"):
-                try:
-                    staging_bytes += (current / name).stat().st_size
-                except OSError:
-                    pass
+                staging_bytes += size
+                slug = relative[len(STAGING_DIR) + 1:].split("/")[0]
+                staging_slugs[slug] = staging_slugs.get(slug, 0) + size
 
     problems = [entry["path"] for entry in entries if not entry["allowed"]]
     media_problems = [item["path"] for item in media if not item["allowed"]]
@@ -174,6 +209,11 @@ def audit(workspace: Path) -> dict:
     if staging_bytes > STAGING_LIMIT_BYTES:
         staging_problem = (
             f"{STAGING_DIR}: {staging_bytes} bytes exceeds the {STAGING_LIMIT_BYTES}-byte limit"
+        )
+    staging_warning = None
+    if staging_bytes > STAGING_WARN_BYTES and staging_problem is None:
+        staging_warning = (
+            f"{STAGING_DIR}: {staging_bytes} bytes is above the {STAGING_WARN_BYTES}-byte warning line"
         )
     output_dir_problems = sorted(
         relative
@@ -192,8 +232,13 @@ def audit(workspace: Path) -> dict:
         "media_problems": media_problems,
         "output_dir_problems": output_dir_problems,
         "staging_bytes": staging_bytes,
+        "staging_warn_bytes": STAGING_WARN_BYTES,
         "staging_limit_bytes": STAGING_LIMIT_BYTES,
         "staging_problem": staging_problem,
+        "staging_warning": staging_warning,
+        "staging_slugs": sorted(
+            staging_slugs.items(), key=lambda item: item[1], reverse=True
+        ),
         "docs_data": docs_data_files(workspace),
         "note": None,
     }

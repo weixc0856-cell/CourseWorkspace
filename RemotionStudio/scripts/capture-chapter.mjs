@@ -18,10 +18,11 @@ const studio = resolve(workspace, 'RemotionStudio');
 
 for (const frame of list) {
   const out = resolve(outDir, 'chapter-' + frame + '.png');
+  const cli = resolve(studio, 'node_modules', '@remotion', 'cli', 'remotion-cli.js');
   const run = spawnSync(
-    'npx',
-    ['remotion', 'still', 'src/chapter/index.ts', 'Chapter', frame, out],
-    { cwd: studio, stdio: 'inherit', shell: true },
+    process.execPath,
+    [cli, 'still', 'src/chapter/index.ts', 'Chapter', '--frame=' + frame, '--output=' + out],
+    { cwd: studio, stdio: 'inherit' },
   );
   if (run.status !== 0) process.exit(run.status || 1);
   console.log('wrote ' + out);
