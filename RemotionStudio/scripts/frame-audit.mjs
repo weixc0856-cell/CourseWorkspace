@@ -212,6 +212,11 @@ const auditInPage = () => {
     element,
     rect: toComposition(element.getBoundingClientRect()),
   }));
+  for (const figure of figures) {
+    if (!figure.element.querySelector('[data-source]')) {
+      issues.push({rule: 'figure_source_missing', figure: figure.id, selector: selectorOf(figure.element)});
+    }
+  }
   for (const box of textBoxes) {
     for (const figure of figures) {
       if (figure.element.contains(box.element)) continue;
@@ -343,6 +348,46 @@ async function main() {
       const falsePositive = separated.issues.some(
         (item) => item.rule === 'subtitle_covers_evidence' && item.selector === 'subtitle:selftest-subtitle',
       );
+      const sourceSetup = await page.evaluate(() => {
+        const player = document.querySelector('.__remotion-player');
+        if (!player) return { injected: false };
+        const figure = document.createElement('div');
+        figure.setAttribute('data-figure', 'selftest-figure');
+        Object.assign(figure.style, {
+          position: 'absolute',
+          left: '1200px',
+          top: '700px',
+          width: '300px',
+          height: '200px',
+          background: 'black',
+        });
+        player.appendChild(figure);
+        return { injected: true };
+      });
+      const sourceMissing = await page.evaluate(auditInPage);
+      const sourceCaught = sourceMissing.issues.some(
+        (item) => item.rule === 'figure_source_missing' && item.figure === 'selftest-figure',
+      );
+      await page.evaluate(() => {
+        const figure = document.querySelector('[data-figure="selftest-figure"]');
+        if (!figure) return;
+        const line = document.createElement('div');
+        line.setAttribute('data-source', 'selftest');
+        line.textContent = 'SELFTEST SOURCE';
+        Object.assign(line.style, {
+          position: 'absolute',
+          left: '10px',
+          bottom: '10px',
+          color: 'white',
+          background: 'black',
+        });
+        figure.appendChild(line);
+      });
+      const sourceFixed = await page.evaluate(auditInPage);
+      const sourceFixedFalsePositive = sourceFixed.issues.some(
+        (item) => item.rule === 'figure_source_missing' && item.figure === 'selftest-figure',
+      );
+
       await page.evaluate(() => {
         const player = document.querySelector('.__remotion-player');
         if (!player) return;
@@ -382,9 +427,17 @@ async function main() {
           '  injected: true  overlapping_caught: ' + caught +
           '  separated_caught: ' + falsePositive +
           '  text_overlap_caught: ' + overlapCaught +
-          '  text_overlap_separated: ' + overlapFalsePositive,
+          '  text_overlap_separated: ' + overlapFalsePositive +
+          '  source_missing_caught: ' + sourceCaught +
+          '  source_fixed: ' + sourceFixedFalsePositive,
       );
-      const ok = caught && !falsePositive && overlapCaught && !overlapFalsePositive;
+      const ok =
+        caught &&
+        !falsePositive &&
+        overlapCaught &&
+        !overlapFalsePositive &&
+        sourceCaught &&
+        !sourceFixedFalsePositive;
       console.log('selftest: ' + (ok ? 'PASS' : 'FAIL'));
       process.exitCode = ok ? 0 : 1;
       return;

@@ -75,12 +75,12 @@ export const PhotoScene: React.FC<PhotoInsertProps> = ({
         {punchline}
       </div>
 
-      <div style={{position: 'absolute', left: 760, top: 170, width: 1040, height: 470, background: C.paper, opacity: panel, transform: `scale(${0.96 + panel * 0.04})`, boxShadow: '0 30px 90px rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.08)'}}>
+      <div data-figure="fig1.67" style={{position: 'absolute', left: 760, top: 170, width: 1040, height: 470, background: C.paper, opacity: panel, transform: `scale(${0.96 + panel * 0.04})`, boxShadow: '0 30px 90px rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.08)'}}>
         <Img src={staticFile(image)} style={{position: 'absolute', left: 30, top: 34, width: 980, height: 'auto'}} />
         <div style={{position: 'absolute', left: 44, top: 350, color: C.muted, fontSize: 19}}>{leftLabel}</div>
         <div style={{position: 'absolute', left: 580, top: 350, color: C.muted, fontSize: 19}}>{rightLabel}</div>
         <div style={{position: 'absolute', left: 44, right: 44, bottom: 34, height: 1, background: C.graph}} />
-        <div style={{position: 'absolute', left: 44, right: 44, bottom: 12, color: C.muted, fontSize: 16, lineHeight: 1.4}}>
+        <div data-source="fig1.67" style={{position: 'absolute', left: 44, right: 44, bottom: 12, color: C.muted, fontSize: 16, lineHeight: 1.4}}>
           {source}
         </div>
       </div>

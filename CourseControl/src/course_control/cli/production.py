@@ -131,3 +131,29 @@ def contract_schemas_command(
     for target in export_schemas(output):
         typer.echo(f"wrote {target}")
 
+@app.command("retime")
+def retime_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Recompute beat timing from the measured narration track."""
+    from course_control.production.retime import RetimeError, write_retime
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    mapping = paths.lesson_dir / "authoring" / "beat-segments.yaml"
+    meta = paths.build_root / "narration" / "narration.meta.json"
+    try:
+        timings = write_retime(paths.lesson_dir, paths.build_root, mapping, meta)
+    except RetimeError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    for item in timings:
+        typer.echo(f"  {item.id} {item.type}: {item.seconds}s ({item.start_s}-{item.end_s})")
+    typer.echo(f"total: {round(sum(item.seconds for item in timings), 3)}s")
+    typer.echo(f"written: {paths.lesson_dir / 'authoring' / 'beat-timing.md'}")
+

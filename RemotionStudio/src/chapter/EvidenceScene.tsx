@@ -53,7 +53,7 @@ export const EvidenceScene: React.FC<ChartOverlayProps> = ({
         <div style={{position: 'absolute', inset: 0, transform: `scale(${z}) translateX(${px}px)`, transformOrigin: '38% 82%'}}>
           <Img src={staticFile(image)} style={{position: 'absolute', left: 40, top: 20, width: 960, height: 'auto'}} />
         </div>
-        <div style={{position: 'absolute', left: 34, bottom: 10, color: C.muted, fontSize: 14}}>
+        <div data-source="fig3.9" style={{position: 'absolute', left: 34, bottom: 10, color: C.muted, fontSize: 14}}>
           {source}
         </div>
       </div>
