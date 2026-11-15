@@ -1,36 +1,136 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://courseworkspace.local/schemas/timeline.schema.json",
-  "title": "Production timeline (distinct from timeline-v1)",
-  "type": "object",
-  "required": ["schema_version", "product", "fps", "duration_s", "entries"],
-  "properties": {
-    "schema_version": {"const": 1},
-    "product": {"type": "string", "minLength": 1},
-    "fps": {"type": "integer", "minimum": 1},
-    "resolution": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 2},
-    "duration_s": {"type": "number", "exclusiveMinimum": 0},
-    "entries": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "kind", "start_s", "duration_s"],
-        "properties": {
-          "id": {"type": "string", "minLength": 1},
-          "kind": {"enum": ["scene", "slide", "clip", "audio", "subtitle", "card"]},
-          "source": {"type": "string"},
-          "start_s": {"type": "number", "minimum": 0},
-          "duration_s": {"type": "number", "exclusiveMinimum": 0},
-          "in_s": {"type": "number", "minimum": 0},
-          "out_s": {"type": "number", "exclusiveMinimum": 0},
-          "renderer": {"type": "string"},
-          "claim_ids": {"type": "array", "items": {"type": "string"}},
-          "asset_ids": {"type": "array", "items": {"type": "string"}},
-          "text": {"type": "string"}
+  "$defs": {
+    "TimelineEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
         },
-        "additionalProperties": false
-      }
+        "kind": {
+          "enum": [
+            "scene",
+            "slide",
+            "clip",
+            "audio",
+            "subtitle",
+            "card"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "default": null,
+          "title": "Source",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "in_s": {
+          "default": null,
+          "minimum": 0,
+          "title": "In S",
+          "type": "number"
+        },
+        "out_s": {
+          "default": null,
+          "exclusiveMinimum": 0,
+          "title": "Out S",
+          "type": "number"
+        },
+        "renderer": {
+          "default": null,
+          "title": "Renderer",
+          "type": "string"
+        },
+        "claim_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "asset_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Asset Ids",
+          "type": "array"
+        },
+        "text": {
+          "default": null,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "start_s",
+        "duration_s"
+      ],
+      "title": "TimelineEntry",
+      "type": "object"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "product": {
+      "minLength": 1,
+      "title": "Product",
+      "type": "string"
+    },
+    "fps": {
+      "minimum": 1,
+      "title": "Fps",
+      "type": "integer"
+    },
+    "resolution": {
+      "default": null,
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Resolution",
+      "type": "array"
+    },
+    "duration_s": {
+      "exclusiveMinimum": 0,
+      "title": "Duration S",
+      "type": "number"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/TimelineEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "product",
+    "fps",
+    "duration_s",
+    "entries"
+  ],
+  "title": "Production timeline (distinct from timeline-v1)",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/schemas/production-timeline.schema.json"
 }

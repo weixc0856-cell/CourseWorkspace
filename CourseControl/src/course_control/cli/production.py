@@ -104,3 +104,30 @@ def book_index_command(
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))
     raise typer.Exit(0 if not problems else 1)
 
+@app.command("contract-validate")
+def contract_validate_command(
+    kind: str = typer.Option(..., "--kind", help="product | ledger | timeline"),
+    path: Path = typer.Option(..., "--path", help="YAML or JSON contract file"),
+) -> None:
+    """Validate a product profile, asset ledger or production timeline."""
+    from course_control.production.contracts import ContractModelError, load_contract
+
+    try:
+        model = load_contract(kind, path)
+    except ContractModelError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    typer.echo(f"{kind}: ok  ({model.__class__.__name__})")
+    raise typer.Exit(0)
+
+
+@app.command("contract-schemas")
+def contract_schemas_command(
+    output: Path = typer.Option(Path("shared/schemas"), "--output"),
+) -> None:
+    """Export product/ledger/timeline JSON Schema from their models."""
+    from course_control.production.contracts import export_schemas
+
+    for target in export_schemas(output):
+        typer.echo(f"wrote {target}")
+
