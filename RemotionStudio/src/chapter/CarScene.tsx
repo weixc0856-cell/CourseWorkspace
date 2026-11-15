@@ -39,10 +39,10 @@ export const CarScene: React.FC = () => {
         FRONT → ROOF → UNDERBODY → WHEELS → WAKE
       </div>
 
-      <div style={{position: 'absolute', left: 84, top: 196, width: 820, opacity: cap1, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
+      <div data-subtitle="cap1" style={{position: 'absolute', left: 84, top: 196, width: 820, opacity: cap1, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
         Over the roof, the air speeds up. Pressure falls.
       </div>
-      <div style={{position: 'absolute', left: 84, top: 196, width: 820, opacity: cap2, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
+      <div data-subtitle="cap2" style={{position: 'absolute', left: 84, top: 196, width: 820, opacity: cap2, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
         Behind the car, the flow separates. Low pressure, drag.
       </div>
 

@@ -7,7 +7,7 @@ the generator only checks that their locators resolve.
 
 Usage:
     uv run --project CourseControl python scripts/build_book_index.py \
-        --docling D:/Project/Docling/output/hucho-en-5e \
+        --docling <docling_output>/hucho-en-5e \
         --chapters 1,2,3 --curation <book>/curation.yaml \
         --out <book>/index.json
 """

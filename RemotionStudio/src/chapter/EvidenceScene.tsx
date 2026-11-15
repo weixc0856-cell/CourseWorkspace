@@ -22,7 +22,7 @@ export const EvidenceScene: React.FC = () => {
         The book&rsquo;s chart agrees.
       </div>
 
-      <div style={{position: 'absolute', left: 100, top: 190, width: 1120, height: 680, background: C.paper, opacity: panel, boxShadow: '0 30px 90px rgba(0,0,0,0.45)', overflow: 'hidden'}}>
+      <div data-evidence="fig3-9" style={{position: 'absolute', left: 100, top: 190, width: 1120, height: 680, background: C.paper, opacity: panel, boxShadow: '0 30px 90px rgba(0,0,0,0.45)', overflow: 'hidden'}}>
         <div style={{position: 'absolute', inset: 0, transform: `scale(${z}) translateX(${px}px)`, transformOrigin: '38% 82%'}}>
           <Img src={staticFile('staging/t1-01-why-aerodynamics/fig3-9-tight.png')} style={{position: 'absolute', left: 40, top: 20, width: 960, height: 'auto'}} />
         </div>
