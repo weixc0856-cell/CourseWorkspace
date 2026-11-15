@@ -6,9 +6,25 @@ param([switch]$CleanClone, [switch]$SkipUnitTests)
 # checks below run with Continue and inspect $LASTEXITCODE explicitly.
 $ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $PSScriptRoot
+Write-Host "check start: $root"
+# A missing script or wrong root used to look like a silent exit 0. Refuse to
+# report anything unless the workspace really is the repository root.
+$required = @(
+    (Join-Path $root "CourseControl/pyproject.toml"),
+    (Join-Path $root "scripts/check.ps1")
+)
+$missing = @($required | Where-Object { -not (Test-Path -LiteralPath $_) })
+if ($missing.Count -gt 0) {
+    Write-Host "check aborted: not running from the repository root"
+    foreach ($item in $missing) {
+        Write-Host "  missing: $item"
+    }
+    exit 2
+}
 . (Join-Path $PSScriptRoot "_layout.ps1")
 $content = Get-ContentRoot -Workspace $root
 $script:failed = $false
+$script:checksRun = 0
 
 # One full regression per workspace. Two sessions sharing the workspace must not
 # run check.ps1 at the same time: they would race for ports and temp files and
@@ -81,11 +97,13 @@ function Get-RegressionLock {
     finally {
         $stream.Close()
     }
+    Write-Host "check lock: $path pid=$PID started=$($record.started)"
     return $path
 }
 
 function Invoke-Checked {
     param([string]$Label, [scriptblock]$Action, [switch]$Quiet)
+    $script:checksRun += 1
     Write-Host $Label
     if ($Quiet) {
         $output = (& $Action 2>&1 | Out-String)
@@ -107,6 +125,7 @@ function Invoke-Checked {
 
 function Expect-Failure {
     param([string]$Label, [scriptblock]$Action)
+    $script:checksRun += 1
     Write-Host $Label
     & $Action
     if ($LASTEXITCODE -eq 0) {
@@ -328,9 +347,11 @@ try {
     }
 
     if ($script:failed) {
+        Write-Host "check summary: checks=$script:checksRun failed=1"
         Write-Host "check failed"
         exit 1
     }
+    Write-Host "check summary: checks=$script:checksRun failed=0"
     Write-Host "check ok"
     exit 0
 }
