@@ -16,6 +16,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import shutil
+import subprocess
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageStat
@@ -121,6 +124,8 @@ def selftest(root: Path) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", type=Path)
+    parser.add_argument("--film", type=Path)
+    parser.add_argument("--work", type=Path)
     parser.add_argument("--beats", type=Path)
     parser.add_argument("--step", type=int, default=15)
     parser.add_argument("--fps", type=int, default=30)
@@ -130,6 +135,45 @@ def main() -> int:
 
     if args.selftest:
         return selftest(Path(args.dir) if args.dir else Path("D:/CourseContent/build"))
+
+    source = "audit-render"
+    expected = None
+    if args.film:
+        film = args.film
+        if not film.is_file():
+            print(f"film not found: {film}")
+            return 2
+        work = args.work or (film.parent / "static-hold")
+        work.mkdir(parents=True, exist_ok=True)
+        for stale in work.glob("frame-*.png"):
+            stale.unlink()
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg:
+            print("ffmpeg not found on PATH")
+            return 2
+        probe = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+             "stream=nb_frames,r_frame_rate,duration", "-of", "json", str(film)],
+            capture_output=True, text=True, check=False,
+        )
+        try:
+            info = json.loads(probe.stdout)["streams"][0]
+            fps = int(round(eval(info["r_frame_rate"])))
+            frames = int(info.get("nb_frames") or 0) or int(float(info["duration"]) * fps)
+        except Exception as exc:  # noqa: BLE001
+            print(f"cannot probe {film}: {exc}")
+            return 2
+        expected = math.ceil(frames / args.step)
+        extract = subprocess.run(
+            [ffmpeg, "-y", "-i", str(film), "-vf", f"select='not(mod(n\,{args.step}))'",
+             "-vsync", "0", str(work / "frame-%05d.png")],
+            capture_output=True, text=True, check=False,
+        )
+        if extract.returncode != 0:
+            print(extract.stderr[-800:])
+            return 2
+        args.dir = work
+        source = "film"
 
     if not args.dir or not args.dir.is_dir():
         print("frame directory not found")
@@ -148,11 +192,21 @@ def main() -> int:
         int(args.min_seconds * args.fps),
         cuts,
     )
+    report["source"] = source
+    report["expected"] = expected
+    report["incomplete"] = expected is not None and report["sampled"] < expected
+    report["coverage"] = (
+        f"{report['sampled']}/{expected} sampled frames" if expected else f"{report['sampled']} sampled frames"
+    )
     out = args.dir / "static-hold.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     for beat in report["beats"]:
         print(f"  beat {beat['index']}: max_static {beat['max_static_s']}s")
+    print(f"source: {source}  coverage: {report['coverage']}")
     print(f"violations: {len(report['violations'])}  sampled: {report['sampled']}  report: {out}")
+    if report["incomplete"]:
+        print(f"incomplete: sampled {report['sampled']}/{expected} - result is not a conclusion")
+        return 2
     return 1 if report["violations"] else 0
 
 
