@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill} from 'remotion';
+import {useSceneTime} from './timing';
 import {Formula} from './Formula';
 import {C, DISPLAY, FONT, ease, win} from './theme';
 
@@ -44,6 +45,7 @@ const Parcels: React.FC<{t: number; fast: boolean}> = ({t, fast}) => {
 };
 
 export type MechanismDiagramProps = {
+  duration?: number;
   eyebrow?: string;
   title?: string;
   leftLabel?: string;
@@ -59,8 +61,9 @@ export const MechanismScene: React.FC<MechanismDiagramProps> = ({
   leftNote = '4 parcels per second · momentum p',
   rightLabel = 'speed 2v',
   rightNote = '8 parcels per second · momentum 2p',
+  duration,
 }) => {
-  const t = useCurrentFrame() / 30;
+  const t = useSceneTime(duration);
   const q = ease(t / 0.8);
   const panels = ease((t - 4) / 0.8);
   const force = ease((t - 6) / 0.8);

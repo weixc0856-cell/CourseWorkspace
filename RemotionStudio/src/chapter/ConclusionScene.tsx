@@ -1,12 +1,13 @@
 import React from 'react';
 import * as THREE from 'three';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill} from 'remotion';
+import {useSceneTime} from './timing';
 import {ThreeCanvas} from '@remotion/three';
 import {World} from '../carflow/Scene';
 import {C, DISPLAY, FONT, ease} from './theme';
 
-export const ConclusionScene: React.FC = () => {
-  const t = useCurrentFrame() / 30;
+export const ConclusionScene: React.FC<{duration?: number}> = ({duration}) => {
+  const t = useSceneTime(duration);
   const worldT = 25.6 + t * 0.085;
   const q = ease(t / 0.8);
   const l1 = ease((t - 3) / 0.7);

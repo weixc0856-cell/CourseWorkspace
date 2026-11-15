@@ -1,8 +1,10 @@
 import React from 'react';
-import {AbsoluteFill, Img, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Img, staticFile} from 'remotion';
+import {useSceneTime} from './timing';
 import {C, DISPLAY, FONT, ease} from './theme';
 
 export type ChartOverlayProps = {
+  duration?: number;
   image?: string;
   eyebrow?: string;
   title?: string;
@@ -29,8 +31,9 @@ export const EvidenceScene: React.FC<ChartOverlayProps> = ({
       <br />1 m/s² of acceleration, as hard as the air at 230.
     </>
   ),
+  duration,
 }) => {
-  const t = useCurrentFrame() / 30;
+  const t = useSceneTime(duration);
   const q = ease(t / 0.8);
   const panel = ease((t - 1) / 1);
   const cross = ease((t - 6) / 0.9);

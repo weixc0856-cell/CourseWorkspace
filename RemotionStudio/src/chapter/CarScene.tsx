@@ -1,11 +1,13 @@
 import React from 'react';
 import * as THREE from 'three';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill} from 'remotion';
+import {useSceneTime} from './timing';
 import {ThreeCanvas} from '@remotion/three';
 import {World} from '../carflow/Scene';
 import {C, DISPLAY, FONT, ease, win} from './theme';
 
 export type CarFlowSceneProps = {
+  duration?: number;
   eyebrow?: string;
   headline?: string;
   caption1?: string;
@@ -19,8 +21,9 @@ export const CarScene: React.FC<CarFlowSceneProps> = ({
   caption1 = 'Over the roof, the air speeds up. Pressure falls.',
   caption2 = 'Behind the car, the flow separates. Low pressure, drag.',
   pathLabel = 'FRONT → ROOF → UNDERBODY → WHEELS → WAKE',
+  duration,
 }) => {
-  const t = useCurrentFrame() / 30;
+  const t = useSceneTime(duration);
   const title = ease(t / 0.8);
   const path = Math.min(ease((t - 2) / 0.7), 1 - ease((t - 11) / 0.7));
   const air = ease((t - 21) / 0.8);

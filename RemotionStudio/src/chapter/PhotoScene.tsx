@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, Img, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Img, staticFile} from 'remotion';
+import {useSceneTime} from './timing';
 import {C, DISPLAY, FONT, ease} from './theme';
 
 export type PhotoInsertProps = {
@@ -13,6 +14,7 @@ export type PhotoInsertProps = {
   rightLabel?: React.ReactNode;
   source?: string;
   footer?: string;
+  duration?: number;
 };
 
 export const PhotoScene: React.FC<PhotoInsertProps> = ({
@@ -44,8 +46,9 @@ export const PhotoScene: React.FC<PhotoInsertProps> = ({
   ),
   source = 'Fig. 1.67, p. 61 · Schuetz (ed.), Aerodynamics of Road Vehicles, 5th ed. · Photos: Daimler AG',
   footer = 'MODEL: SAME FAMILY, TWO GENERATIONS · cD IS NOT A STYLE CHOICE',
+  duration,
 }) => {
-  const t = useCurrentFrame() / 30;
+  const t = useSceneTime(duration);
   const panel = ease(t / 1.1);
   const l1 = ease((t - 0.4) / 0.7);
   const l2 = ease((t - 1.6) / 0.7);
