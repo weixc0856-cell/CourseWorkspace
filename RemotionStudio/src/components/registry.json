@@ -2,39 +2,95 @@
   "schema_version": 1,
   "components": {
     "CarFlow": {
-      "path": "RemotionStudio/src/carflow/Scene.tsx",
-      "props": ["t", "car"],
+      "path": "RemotionStudio/src/components/CarFlow.tsx",
+      "props": [
+        "t",
+        "car"
+      ],
       "max_seconds": 30,
       "golden": "build/golden/chapter-750.png",
-      "qc": ["flow direction matches the car heading", "body proportions readable", "no clipping through the ground"]
+      "qc": [
+        "flow direction matches the car heading",
+        "body proportions readable",
+        "no clipping through the ground"
+      ]
     },
     "MechanismDiagram": {
-      "path": "RemotionStudio/src/chapter/MechanismScene.tsx",
-      "props": ["t"],
+      "path": "RemotionStudio/src/components/MechanismDiagram.tsx",
+      "props": [
+        "eyebrow",
+        "title",
+        "leftLabel",
+        "leftNote",
+        "rightLabel",
+        "rightNote"
+      ],
       "max_seconds": 40,
       "golden": null,
-      "qc": ["the mechanism is shown, not only the result", "labels match the formulas", "no text collision"]
+      "qc": [
+        "the mechanism is shown, not only the result",
+        "labels match the formulas",
+        "no text collision"
+      ]
     },
     "ChartOverlay": {
-      "path": "RemotionStudio/src/chapter/EvidenceScene.tsx",
-      "props": ["t"],
+      "path": "RemotionStudio/src/components/ChartOverlay.tsx",
+      "props": [
+        "image",
+        "eyebrow",
+        "title",
+        "source",
+        "crossValue",
+        "crossNote",
+        "tenValue",
+        "tenNote",
+        "footnote"
+      ],
       "max_seconds": 35,
       "golden": "build/golden/chapter-3000.png",
-      "qc": ["the book figure stays legible", "annotations point at real data", "source line present"]
+      "qc": [
+        "the book figure stays legible",
+        "annotations point at real data",
+        "source line present"
+      ]
     },
     "PhotoInsert": {
-      "path": "RemotionStudio/src/chapter/PhotoScene.tsx",
-      "props": ["t"],
+      "path": "RemotionStudio/src/components/PhotoInsert.tsx",
+      "props": [
+        "image",
+        "eyebrow",
+        "headline",
+        "values",
+        "question",
+        "punchline",
+        "leftLabel",
+        "rightLabel",
+        "source",
+        "footer"
+      ],
       "max_seconds": 20,
       "golden": "build/golden/chapter-150.png",
-      "qc": ["caption and source visible", "photo not cropped through the subject", "no overlay on the subject"]
+      "qc": [
+        "caption and source visible",
+        "photo not cropped through the subject",
+        "no overlay on the subject"
+      ]
     },
     "FormulaBlock": {
-      "path": "RemotionStudio/src/chapter/Formula.tsx",
-      "props": ["latex", "t"],
+      "path": "RemotionStudio/src/components/FormulaBlock.tsx",
+      "props": [
+        "tex",
+        "size",
+        "color",
+        "opacity"
+      ],
       "max_seconds": 15,
       "golden": "build/golden/chapter-4050.png",
-      "qc": ["KaTeX renders without overflow", "one formula per line", "symbols introduced on screen"]
+      "qc": [
+        "KaTeX renders without overflow",
+        "one formula per line",
+        "symbols introduced on screen"
+      ]
     }
   }
 }

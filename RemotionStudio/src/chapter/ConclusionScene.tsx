@@ -28,14 +28,14 @@ export const ConclusionScene: React.FC = () => {
         <World t={worldT} />
       </ThreeCanvas>
 
-      <div style={{position: 'absolute', left: 84, top: 66, opacity: q, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em', fontFamily: FONT}}>
+      <div style={{position: 'absolute', left: 96, top: 96, opacity: q, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em', fontFamily: FONT}}>
         T1-01 · 05 / WHAT IT MEANS
       </div>
-      <div style={{position: 'absolute', left: 84, top: 106, width: 900, opacity: q, transform: `translateY(${(1 - q) * 12}px)`, fontFamily: DISPLAY, fontSize: 56, fontWeight: 600, lineHeight: 1.02, letterSpacing: '-0.035em', color: C.paper, textShadow: '0 3px 24px rgba(0,0,0,0.9)'}}>
+      <div style={{position: 'absolute', left: 96, top: 138, width: 900, opacity: q, transform: `translateY(${(1 - q) * 12}px)`, fontFamily: DISPLAY, fontSize: 56, fontWeight: 600, lineHeight: 1.02, letterSpacing: '-0.035em', color: C.paper, textShadow: '0 3px 24px rgba(0,0,0,0.9)'}}>
         Shape is the energy bill.
       </div>
 
-      <div style={{position: 'absolute', left: 84, top: 300, width: 650, fontFamily: FONT, color: C.paper, textShadow: '0 3px 22px rgba(0,0,0,0.95)'}}>
+      <div style={{position: 'absolute', left: 96, top: 300, width: 650, fontFamily: FONT, color: C.paper, textShadow: '0 3px 22px rgba(0,0,0,0.95)'}}>
         <div style={{opacity: l1, transform: `translateY(${(1 - l1) * 12}px)`, display: 'flex', gap: 18, fontSize: 26, lineHeight: 1.45, marginBottom: 22}}>
           <span style={{color: C.orange, fontFamily: DISPLAY, fontWeight: 600}}>01</span>
           <span>Above ~60 km/h, air is the main load.</span>
@@ -50,11 +50,11 @@ export const ConclusionScene: React.FC = () => {
         </div>
       </div>
 
-      <div style={{position: 'absolute', left: 84, top: 660, opacity: fuel, transform: `translateY(${(1 - fuel) * 12}px)`, padding: '18px 24px', borderLeft: `4px solid ${C.orange}`, background: 'rgba(232,115,59,0.10)', color: C.paper, fontSize: 26, lineHeight: 1.45, textShadow: '0 2px 14px rgba(0,0,0,0.9)'}}>
+      <div style={{position: 'absolute', left: 96, top: 960, opacity: fuel, transform: `translateY(${(1 - fuel) * 12}px)`, padding: '18px 24px', borderLeft: `4px solid ${C.orange}`, background: 'rgba(232,115,59,0.10)', color: C.paper, fontSize: 26, lineHeight: 1.45, textShadow: '0 2px 14px rgba(0,0,0,0.9)'}}>
         c<sub>D</sub> 0.30 → 0.26: about <b>0.6 l/100 km</b> at a constant 140 km/h.
       </div>
 
-      <div style={{position: 'absolute', left: 84, bottom: 42, opacity: src, color: 'rgba(244,241,234,0.35)', fontSize: 13, letterSpacing: '0.1em'}}>
+      <div style={{position: 'absolute', left: 96, bottom: 96, opacity: src, color: 'rgba(244,241,234,0.35)', fontSize: 13, letterSpacing: '0.1em'}}>
         SYNTHESIS · Ch. 3 §3.1–3.2.6 · Fig. 3.25, p. 187 · MODEL CALCULATION AT 120 km/h
       </div>
     </AbsoluteFill>

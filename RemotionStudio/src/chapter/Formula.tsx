@@ -1,5 +1,6 @@
 import React from 'react';
 import katex from 'katex';
+import 'katex/dist/katex.min.css';
 import {C} from './theme';
 
 export const Formula: React.FC<{tex: string; size?: number; color?: string; opacity?: number}> = ({
@@ -11,7 +12,7 @@ export const Formula: React.FC<{tex: string; size?: number; color?: string; opac
   <div
     style={{fontSize: size, color, opacity, lineHeight: 1.1}}
     dangerouslySetInnerHTML={{
-      __html: katex.renderToString(tex, {displayMode: true, throwOnError: false, strict: false}),
+      __html: katex.renderToString(tex, {displayMode: true, throwOnError: false, strict: false, output: 'html'}),
     }}
   />
 );

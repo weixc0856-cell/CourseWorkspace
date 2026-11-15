@@ -5,7 +5,21 @@ import {ThreeCanvas} from '@remotion/three';
 import {World} from '../carflow/Scene';
 import {C, DISPLAY, FONT, ease, win} from './theme';
 
-export const CarScene: React.FC = () => {
+export type CarFlowSceneProps = {
+  eyebrow?: string;
+  headline?: string;
+  caption1?: string;
+  caption2?: string;
+  pathLabel?: string;
+};
+
+export const CarScene: React.FC<CarFlowSceneProps> = ({
+  eyebrow = 'T1-01 · 02 / THE BILL',
+  headline = 'At 120 km/h, where does the energy go?',
+  caption1 = 'Over the roof, the air speeds up. Pressure falls.',
+  caption2 = 'Behind the car, the flow separates. Low pressure, drag.',
+  pathLabel = 'FRONT → ROOF → UNDERBODY → WHEELS → WAKE',
+}) => {
   const t = useCurrentFrame() / 30;
   const title = ease(t / 0.8);
   const path = Math.min(ease((t - 2) / 0.7), 1 - ease((t - 11) / 0.7));
@@ -28,22 +42,22 @@ export const CarScene: React.FC = () => {
         <World t={t} />
       </ThreeCanvas>
 
-      <div style={{position: 'absolute', left: 84, top: 66, opacity: title, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em', fontFamily: FONT}}>
-        T1-01 · 02 / THE BILL
+      <div style={{position: 'absolute', left: 96, top: 96, opacity: title, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em', fontFamily: FONT}}>
+        {eyebrow}
       </div>
-      <div style={{position: 'absolute', left: 84, top: 104, width: 1100, opacity: title, transform: `translateY(${(1 - title) * 12}px)`, fontFamily: DISPLAY, fontSize: 44, fontWeight: 600, letterSpacing: '-0.025em', color: C.paper, textShadow: '0 2px 20px rgba(0,0,0,0.8)'}}>
-        At 120 km/h, where does the energy go?
-      </div>
-
-      <div style={{position: 'absolute', left: 84, bottom: 70, opacity: path, color: 'rgba(244,241,234,0.58)', fontSize: 20, letterSpacing: '0.12em', fontFamily: FONT}}>
-        FRONT → ROOF → UNDERBODY → WHEELS → WAKE
+      <div style={{position: 'absolute', left: 96, top: 132, width: 1100, opacity: title, transform: `translateY(${(1 - title) * 12}px)`, fontFamily: DISPLAY, fontSize: 44, fontWeight: 600, letterSpacing: '-0.025em', color: C.paper, textShadow: '0 2px 20px rgba(0,0,0,0.8)'}}>
+        {headline}
       </div>
 
-      <div data-subtitle="cap1" style={{position: 'absolute', left: 84, top: 196, width: 820, opacity: cap1, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
-        Over the roof, the air speeds up. Pressure falls.
+      <div style={{position: 'absolute', left: 96, bottom: 96, opacity: path, color: 'rgba(244,241,234,0.58)', fontSize: 20, letterSpacing: '0.12em', fontFamily: FONT}}>
+        {pathLabel}
       </div>
-      <div data-subtitle="cap2" style={{position: 'absolute', left: 84, top: 196, width: 820, opacity: cap2, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
-        Behind the car, the flow separates. Low pressure, drag.
+
+      <div data-subtitle="cap1" style={{position: 'absolute', left: 96, top: 220, width: 820, opacity: cap1, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
+        {caption1}
+      </div>
+      <div data-subtitle="cap2" style={{position: 'absolute', left: 96, top: 220, width: 820, opacity: cap2, color: 'rgba(244,241,234,0.82)', fontSize: 25, lineHeight: 1.45, fontFamily: FONT, textShadow: '0 2px 16px rgba(0,0,0,0.9)'}}>
+        {caption2}
       </div>
 
       <div style={{position: 'absolute', left: 96, top: 780, opacity: air, transform: `translateY(${(1 - air) * 12}px)`, fontFamily: FONT, color: C.paper, textShadow: '0 3px 24px rgba(0,0,0,0.95)'}}>
