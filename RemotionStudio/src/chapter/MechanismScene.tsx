@@ -27,8 +27,18 @@ const Parcels: React.FC<{t: number; fast: boolean}> = ({t, fast}) => {
           })}
         </g>
       ))}
-      <path d="M 690 30 L 650 30 Q 620 30 620 60 L 620 250 Q 620 280 650 280 L 690 280 Z" fill={fast ? C.orangeSoft : C.graph} stroke={C.ink} strokeWidth={3} />
-      <text x="630" y="296" fill={C.muted} fontFamily={FONT} fontSize="16">car</text>
+      <g>
+        <path
+          d="M 690 218 L 690 166 L 662 160 L 642 116 Q 630 94 604 94 L 512 94 Q 486 94 470 116 L 452 160 L 420 166 L 420 218 Z"
+          fill={fast ? C.orangeSoft : C.graph}
+          stroke={C.ink}
+          strokeWidth={3}
+        />
+        <circle cx="474" cy="220" r="20" fill={C.ink} stroke={C.muted} strokeWidth="3" />
+        <circle cx="628" cy="220" r="20" fill={C.ink} stroke={C.muted} strokeWidth="3" />
+        <line x1="420" y1="166" x2="420" y2="218" stroke={fast ? C.orange : C.muted} strokeWidth="4" />
+        <text x="520" y="240" fill={C.muted} fontFamily={FONT} fontSize="16">car · front face</text>
+      </g>
     </svg>
   );
 };
@@ -94,6 +104,22 @@ export const MechanismScene: React.FC<MechanismDiagramProps> = ({
         ))}
       </div>
 
+
+      <div style={{position: 'absolute', left: 1244, top: 560, width: 580, opacity: force}}>
+        <div style={{color: 'rgba(244,241,234,0.55)', fontSize: 14, letterSpacing: '0.2em', marginBottom: 10}}>MASS FLOW = DENSITY × AREA × SPEED</div>
+        <svg viewBox="0 0 560 260" width="560" height="260">
+          <rect x="20" y="20" width="230" height="220" fill="none" stroke={C.muted} strokeWidth="3" />
+          <rect x="310" y="20" width="230" height="220" fill="none" stroke={C.orange} strokeWidth="3" />
+          {[0, 1, 2, 3].map((i) => (
+            <circle key={`a${i}`} cx={40 + (i % 2) * 90} cy={55 + Math.floor(i / 2) * 110} r="12" fill={C.graph} />
+          ))}
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <circle key={`b${i}`} cx={330 + (i % 2) * 90} cy={50 + Math.floor(i / 2) * 55} r="12" fill={C.orange} />
+          ))}
+          <text x="80" y="256" fill={C.muted} fontFamily={FONT} fontSize="15">4 parcels / s</text>
+          <text x="368" y="256" fill={C.orange} fontFamily={FONT} fontSize="15">8 parcels / s</text>
+        </svg>
+      </div>
       <div style={{position: 'absolute', left: 120, top: 660, width: 1050, opacity: force}}>
         <div style={{color: 'rgba(244,241,234,0.55)', fontSize: 14, letterSpacing: '0.2em', marginBottom: 8}}>FORCE = MASS FLOW × VELOCITY CHANGE</div>
         <Formula tex={String.raw`\dot m=\rho A v,\qquad \Delta v=k\,v`} size={28} color={C.paper} />

@@ -26,12 +26,13 @@
         "rightNote"
       ],
       "max_seconds": 40,
-      "golden": null,
+      "golden": "build/golden/chapter-1800.png",
       "qc": [
         "the mechanism is shown, not only the result",
         "labels match the formulas",
         "no text collision"
-      ]
+      ],
+      "provisional": true
     },
     "ChartOverlay": {
       "path": "RemotionStudio/src/components/ChartOverlay.tsx",

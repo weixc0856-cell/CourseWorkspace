@@ -26,8 +26,9 @@
       "name": "mechanism",
       "component": "MechanismDiagram",
       "frame": 1800,
-      "golden": null,
-      "threshold": 0.03
+      "golden": "build/golden/chapter-1800.png",
+      "threshold": 0.03,
+      "provisional": true
     },
     {
       "name": "chart",

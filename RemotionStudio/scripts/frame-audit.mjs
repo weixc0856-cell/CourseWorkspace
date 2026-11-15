@@ -103,6 +103,7 @@ const auditInPage = () => {
   const issues = [];
   const notes = [];
   const textElements = [];
+  const textBoxes = [];
   let skippedSymbolic = 0;
   for (const element of scope.querySelectorAll('*')) {
     if (element.closest('[data-audit-ignore]')) continue;
@@ -179,6 +180,52 @@ const auditInPage = () => {
       notes.push({ selector: selectorOf(element), note: 'background is an image or gradient; contrast skipped' });
     }
     textElements.push(selectorOf(element));
+    textBoxes.push({element, selector: selectorOf(element), text: direct.slice(0, 80), rect: composed});
+  }
+
+  const area = (rect) => rect.w * rect.h;
+  const overlapArea = (a, b) => {
+    const w = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+    const h = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    return w * h;
+  };
+  for (let i = 0; i < textBoxes.length; i += 1) {
+    for (let j = i + 1; j < textBoxes.length; j += 1) {
+      const a = textBoxes[i];
+      const b = textBoxes[j];
+      if (a.element.contains(b.element) || b.element.contains(a.element)) continue;
+      const shared = overlapArea(a.rect, b.rect) / Math.min(area(a.rect), area(b.rect));
+      if (shared > 0.05) {
+        issues.push({
+          rule: 'text_overlap',
+          selector: a.selector,
+          other: b.selector,
+          text: a.text,
+          other_text: b.text,
+          ratio: Math.round(shared * 100) / 100,
+        });
+      }
+    }
+  }
+  const figures = [...scope.querySelectorAll('[data-evidence], [data-figure]')].map((element) => ({
+    id: element.getAttribute('data-evidence') || element.getAttribute('data-figure'),
+    element,
+    rect: toComposition(element.getBoundingClientRect()),
+  }));
+  for (const box of textBoxes) {
+    for (const figure of figures) {
+      if (figure.element.contains(box.element)) continue;
+      const shared = overlapArea(box.rect, figure.rect) / Math.min(area(box.rect), area(figure.rect));
+      if (shared > 0.05) {
+        issues.push({
+          rule: 'text_covers_figure',
+          selector: box.selector,
+          figure: figure.id,
+          text: box.text,
+          ratio: Math.round(shared * 100) / 100,
+        });
+      }
+    }
   }
 
   const evidence = [...scope.querySelectorAll('[data-evidence]')].map((element) => ({
@@ -296,13 +343,48 @@ async function main() {
       const falsePositive = separated.issues.some(
         (item) => item.rule === 'subtitle_covers_evidence' && item.selector === 'subtitle:selftest-subtitle',
       );
+      await page.evaluate(() => {
+        const player = document.querySelector('.__remotion-player');
+        if (!player) return;
+        const host = document.createElement('div');
+        Object.assign(host.style, {position: 'absolute', left: '0px', top: '0px', width: '1920px', height: '1080px'});
+        const make = (left, top, value) => {
+          const box = document.createElement('div');
+          box.textContent = value;
+          box.setAttribute('data-audit-selftest', '');
+          Object.assign(box.style, {
+            position: 'absolute',
+            left: left + 'px',
+            top: top + 'px',
+            width: '300px',
+            height: '60px',
+            color: 'white',
+            background: 'black',
+          });
+          return box;
+        };
+        host.append(make(1400, 1000, 'OVERLAP A'), make(1420, 1020, 'OVERLAP B'));
+        player.appendChild(host);
+      });
+      const overlapAudit = await page.evaluate(auditInPage);
+      const overlapCaught = overlapAudit.issues.some((item) => item.rule === 'text_overlap');
+      await page.evaluate(() => {
+        const target = [...document.querySelectorAll('[data-audit-selftest]')].find(
+          (element) => element.textContent === 'OVERLAP B',
+        );
+        if (target) { target.style.left = '900px'; target.style.top = '1000px'; }
+      });
+      const overlapSeparated = await page.evaluate(auditInPage);
+      const overlapFalsePositive = overlapSeparated.issues.some((item) => item.rule === 'text_overlap');
       console.log(
         'evidence_found: ' + setup.evidence_found +
           '  subtitles: ' + setup.subtitle_found +
           '  injected: true  overlapping_caught: ' + caught +
-          '  separated_caught: ' + falsePositive,
+          '  separated_caught: ' + falsePositive +
+          '  text_overlap_caught: ' + overlapCaught +
+          '  text_overlap_separated: ' + overlapFalsePositive,
       );
-      const ok = caught && !falsePositive;
+      const ok = caught && !falsePositive && overlapCaught && !overlapFalsePositive;
       console.log('selftest: ' + (ok ? 'PASS' : 'FAIL'));
       process.exitCode = ok ? 0 : 1;
       return;
