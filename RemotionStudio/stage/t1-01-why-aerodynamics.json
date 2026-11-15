@@ -1,0 +1,8 @@
+{
+  "slug": "t1-01-why-aerodynamics",
+  "files": [
+    { "from": "build/t1-01-carflow/drivaer.glb", "to": "drivaer.glb" },
+    { "from": "build/t1-01-sample/car-hero.png", "to": "car-hero.png" },
+    { "from": "build/t1-01-sample/fig3-9-tight.png", "to": "fig3-9-tight.png" }
+  ]
+}

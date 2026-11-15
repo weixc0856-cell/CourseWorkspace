@@ -10,6 +10,80 @@ $root = Split-Path -Parent $PSScriptRoot
 $content = Get-ContentRoot -Workspace $root
 $script:failed = $false
 
+# One full regression per workspace. Two sessions sharing the workspace must not
+# run check.ps1 at the same time: they would race for ports and temp files and
+# the green result would be untrustworthy. The lock lives in the content root
+# with the other runtime state, never in the repository.
+function Get-RegressionLock {
+    param([string]$Root, [string]$Content)
+    $sha1 = [System.Security.Cryptography.SHA1]::Create()
+    try {
+        $digest = [System.BitConverter]::ToString(
+            $sha1.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Root.ToLowerInvariant()))
+        ).Replace("-", "").Substring(0, 8).ToLowerInvariant()
+    }
+    finally {
+        $sha1.Dispose()
+    }
+    $dir = Join-Path $Content "runtime\locks"
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    $path = Join-Path $dir ("check.{0}.lock" -f $digest)
+    if (Test-Path -LiteralPath $path) {
+        $info = $null
+        try { $info = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json } catch { $info = $null }
+        $started = $null
+        if ($info -and $info.started) {
+            try {
+                $started = [datetime]::Parse(
+                    $info.started,
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::RoundtripKind
+                )
+            }
+            catch { $started = $null }
+        }
+        $ageMinutes = if ($started) {
+            ((Get-Date).ToUniversalTime() - $started.ToUniversalTime()).TotalMinutes
+        }
+        else { 999 }
+        if ($ageMinutes -le 30) {
+            $holder = if ($info -and $info.pid) { $info.pid } else { "unknown" }
+            $when = if ($info -and $info.started) { $info.started } else { "unknown" }
+            Write-Host "FAILED: full regression already running (pid $holder, started $when)"
+            Write-Host "lock: $path"
+            Write-Host "a stale lock may be taken over after 30 minutes"
+            return $null
+        }
+        Write-Host "WARNING: taking over a stale regression lock (pid $($info.pid), started $($info.started))"
+        Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+    }
+    $record = [ordered]@{
+        pid = $PID
+        started = (Get-Date).ToUniversalTime().ToString("o")
+        workspace = $Root
+    }
+    try {
+        $stream = [System.IO.File]::Open(
+            $path,
+            [System.IO.FileMode]::CreateNew,
+            [System.IO.FileAccess]::Write,
+            [System.IO.FileShare]::None
+        )
+    }
+    catch {
+        Write-Host "FAILED: could not take the regression lock: $path"
+        return $null
+    }
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes(($record | ConvertTo-Json -Compress))
+        $stream.Write($bytes, 0, $bytes.Length)
+    }
+    finally {
+        $stream.Close()
+    }
+    return $path
+}
+
 function Invoke-Checked {
     param([string]$Label, [scriptblock]$Action, [switch]$Quiet)
     Write-Host $Label
@@ -41,6 +115,11 @@ function Expect-Failure {
     }
 }
 
+$lock = Get-RegressionLock -Root $root -Content $content
+if (-not $lock) {
+    exit 1
+}
+
 Push-Location $root
 try {
     Invoke-Checked "fixtures" { & (Join-Path $PSScriptRoot "prepare-fixtures.ps1") }
@@ -51,6 +130,12 @@ try {
 
     Invoke-Checked "path hygiene" {
         & (Join-Path $PSScriptRoot "check-paths.ps1")
+    }
+
+    # Course media belongs in the content root. The audit walks the disk, not
+    # git: an ignored file is still a file sitting in the repository.
+    Invoke-Checked "content separation" {
+        uv run --project CourseControl course-control separation --workspace .
     }
 
     # Missing evidence is allowed only when every path has a recorded
@@ -228,4 +313,7 @@ try {
 }
 finally {
     Pop-Location
+    if ($lock -and (Test-Path -LiteralPath $lock)) {
+        Remove-Item -LiteralPath $lock -Force -ErrorAction SilentlyContinue
+    }
 }

@@ -380,6 +380,7 @@ Motion Canvas 已从人工节点改为自动节点；真实课程本轮没有重
 | 环境变量优先 | `test_env.py`、`test_remote.py::EnvironmentOverrideTest`、`test_env_overrides.py` | `.env` 自动加载；shell env 优先；通用 `REMOTE_*` 与 DeepSeek `DEEPSEEK_*` 覆盖本地 YAML；env 设 pro 仍被拒绝 |
 | 密钥隔离 | 系统环境变量 `DeepSeek-API` | key 不写入 `.env`/YAML/日志/跟踪文件；跟踪文件只含不含 key 的 `.env.example` |
 | 路径卫生 | `scripts/check-paths.ps1` | `path check ok`；跟踪文件中无本机盘符/用户目录绝对路径 |
+| 内容分离 | `course-control separation`、`check.ps1` 的 `content separation` 门 | 仓库内无课程媒体、无渲染输出目录；检测不读 `.gitignore`；违规退出码 1 |
 | 真实课程无配置 | `content-qa review --lesson <slug>` | **blocked，exit 3**；报告写入 `build/<slug>/review/review.json` |
 
 本地模型的真实作业证据（历史记录，本轮未重跑）：`ModelingStudio/workspace/jobs/sample-001` 六阶段 completed；`sample-002` 停在 generate；`fallback-test` build+validate 通过。

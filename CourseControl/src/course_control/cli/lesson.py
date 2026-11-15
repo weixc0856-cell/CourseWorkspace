@@ -58,12 +58,23 @@ def separation_command(
         typer.echo(report["note"])
     else:
         typer.echo(f"content root: {report['content_root']}  lessons: {report['lessons']}")
+        if "staging_bytes" in report:
+            used = report["staging_bytes"] / (1024 * 1024)
+            limit = report["staging_limit_bytes"] / (1024 * 1024)
+            typer.echo(f"  staging: {used:.1f} MB of {limit:.0f} MB")
+            if report.get("staging_problem"):
+                typer.echo(f"  [PROBLEM] {report['staging_problem']}")
         for entry in report["entries"]:
             mark = "allowed" if entry["allowed"] else "PROBLEM"
             reason = f"  ({entry['reason']})" if entry["allowed"] else ""
             typer.echo(f"  [{mark}] {entry['path']}{reason}")
         if not report["entries"]:
             typer.echo("  no lesson-shaped files in the workspace")
+        for item in report.get("media") or []:
+            if not item["allowed"]:
+                typer.echo(f"  [PROBLEM] media in the workspace: {item['path']}")
+        for path in report.get("output_dir_problems") or []:
+            typer.echo(f"  [PROBLEM] render output directory: {path}")
         for item in report.get("docs_data") or []:
             typer.echo(f"  [warn] docs carries non-prose data: {item}")
     raise typer.Exit(1 if report["problems"] else 0)

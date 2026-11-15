@@ -105,5 +105,54 @@ class SeparationTest(unittest.TestCase):
             link.rmdir()
 
 
+    def test_media_file_in_the_workspace_is_reported(self) -> None:
+        self._lesson("lesson-x")
+        media = self.workspace / "RemotionStudio" / "public" / "chapter"
+        media.mkdir(parents=True)
+        (media / "x.png").write_bytes(b"png")
+        report = audit(self.workspace)
+        self.assertIn("RemotionStudio/public/chapter/x.png", report["media_problems"])
+        self.assertIn("RemotionStudio/public/chapter/x.png", report["problems"])
+
+    def test_render_output_directory_with_media_is_reported(self) -> None:
+        self._lesson("lesson-x")
+        target = self.workspace / "RemotionStudio" / "out" / "frames"
+        target.mkdir(parents=True)
+        (target / "1.png").write_bytes(b"png")
+        report = audit(self.workspace)
+        self.assertIn("RemotionStudio/out", report["output_dir_problems"])
+        self.assertIn("RemotionStudio/out", report["problems"])
+
+    def test_gitignore_does_not_whitelist_media(self) -> None:
+        self._lesson("lesson-x")
+        (self.workspace / ".gitignore").write_text("RemotionStudio/public/chapter/" + chr(10), encoding="utf-8")
+        media = self.workspace / "RemotionStudio" / "public" / "chapter"
+        media.mkdir(parents=True)
+        (media / "x.png").write_bytes(b"png")
+        self.assertIn("RemotionStudio/public/chapter/x.png", audit(self.workspace)["media_problems"])
+
+    def test_declared_media_is_allowed_with_its_reason(self) -> None:
+        self._lesson("lesson-x")
+        fixture = self.workspace / "CourseControl" / "tests" / "fixtures"
+        fixture.mkdir(parents=True)
+        (fixture / "frame.png").write_bytes(b"png")
+        allowed = {"CourseControl/tests/fixtures": "test fixtures"}
+        with patch.dict(separation.MEDIA_ALLOWED, allowed, clear=True):
+            report = audit(self.workspace)
+        self.assertEqual(report["media_problems"], [])
+        entry = next(item for item in report["media"] if item["path"].endswith("frame.png"))
+        self.assertTrue(entry["allowed"])
+        self.assertEqual(entry["reason"], "test fixtures")
+
+    def test_staging_area_is_allowed_by_default(self) -> None:
+        self._lesson("lesson-x")
+        staged = self.workspace / "RemotionStudio" / "public" / "staging" / "lesson-x"
+        staged.mkdir(parents=True)
+        (staged / "clip.mp4").write_bytes(b"mp4")
+        report = audit(self.workspace)
+        self.assertEqual(report["media_problems"], [])
+        self.assertEqual(report["problems"], [])
+
+
 if __name__ == "__main__":
     unittest.main()
