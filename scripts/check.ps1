@@ -268,6 +268,17 @@ try {
         Write-Host "skip golden set (no golden frames in the content root)"
     }
 
+    # The audit renders the chapter composition and reads the DOM; it needs the
+    # staged assets, so it only runs where a content root exists.
+    if (-not $CleanClone -and $content -ne $root) {
+        Invoke-Checked "frame audit" {
+            node RemotionStudio/scripts/frame-audit.mjs
+        }
+    }
+    else {
+        Write-Host "skip frame audit (no content root)"
+    }
+
     Invoke-Checked "remotion typecheck" -Quiet {
         & (Join-Path $root "RemotionStudio/node_modules/.bin/tsc.cmd") `
             --noEmit -p (Join-Path $root "RemotionStudio/tsconfig.json")
