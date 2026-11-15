@@ -157,3 +157,26 @@ def retime_command(
     typer.echo(f"total: {round(sum(item.seconds for item in timings), 3)}s")
     typer.echo(f"written: {paths.lesson_dir / 'authoring' / 'beat-timing.md'}")
 
+@app.command("beat-plan")
+def beat_plan_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Validate the beat plan: instance durations must add up to each beat."""
+    from course_control.production.beat_plan import BeatPlanError, load_plan
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    try:
+        beats = load_plan(paths.lesson_dir / "authoring" / "beat-segments.yaml")
+    except BeatPlanError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    for beat in beats:
+        typer.echo(f"  {beat.id}: {beat.seconds}s = " + " + ".join(f"{i.component} {i.duration}s" for i in beat.instances))
+    typer.echo(f"total: {round(sum(b.seconds for b in beats), 3)}s")
+

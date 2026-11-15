@@ -27,10 +27,11 @@ class BeatTiming:
     segment_ids: list[str]
     start_s: float
     end_s: float
+    duration_s: float
 
     @property
     def seconds(self) -> float:
-        return round(self.end_s - self.start_s, 3)
+        return round(self.duration_s, 3)
 
 
 def load_narration(meta_path: Path) -> dict[str, dict]:
@@ -68,6 +69,7 @@ def load_mapping(path: Path) -> dict:
 def compute(segments: dict[str, dict], mapping: dict) -> list[BeatTiming]:
     assigned: dict[str, str] = {}
     timings: list[BeatTiming] = []
+    cursor = 0.0
     for beat in mapping["beats"]:
         beat_id = str(beat.get("id") or "")
         segment_ids = [str(item) for item in beat.get("segments") or []]
@@ -84,8 +86,17 @@ def compute(segments: dict[str, dict], mapping: dict) -> list[BeatTiming]:
                     f"segment {segment_id} is assigned to both {assigned[segment_id]} and {beat_id}"
                 )
             assigned[segment_id] = beat_id
-        start = min(float(segments[item].get("start_s") or 0) for item in segment_ids)
-        end = max(float(segments[item].get("end_s") or 0) for item in segment_ids)
+        duration = sum(
+            float(segments[item].get("duration_s"))
+            if segments[item].get("duration_s") is not None
+            else float(segments[item].get("end_s") or 0) - float(segments[item].get("start_s") or 0)
+            for item in segment_ids
+        )
+        # Lay beats out in mapping order: the new cut reorders the narration, so
+        # the original start/end are inputs to the splice, not the new timeline.
+        start = cursor
+        end = cursor + duration
+        cursor = end
         timings.append(
             BeatTiming(
                 id=beat_id,
@@ -94,6 +105,7 @@ def compute(segments: dict[str, dict], mapping: dict) -> list[BeatTiming]:
                 segment_ids=segment_ids,
                 start_s=round(start, 3),
                 end_s=round(end, 3),
+                duration_s=round(duration, 3),
             )
         )
     unassigned = sorted(set(segments) - set(assigned))
