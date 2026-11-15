@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/schemas/product.schema.json",
+  "title": "Product profile",
+  "type": "object",
+  "required": ["schema_version", "product", "format", "time_authority", "duration", "evidence", "acceptance"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "product": {"type": "string", "minLength": 1},
+    "title": {"type": "string"},
+    "format": {"enum": ["course", "news", "explainer"]},
+    "time_authority": {"enum": ["spec", "timeline", "audio"]},
+    "duration": {
+      "type": "object",
+      "required": ["target_s"],
+      "properties": {
+        "target_s": {"type": "number", "exclusiveMinimum": 0},
+        "min_s": {"type": "number", "minimum": 0},
+        "max_s": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "visual_sources": {"type": "array", "items": {"type": "string"}},
+    "narration": {"type": "object"},
+    "evidence": {
+      "type": "object",
+      "required": ["requirements"],
+      "properties": {
+        "requirements": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "data_authority": {"type": "string"},
+        "render_only": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["rubric"],
+      "properties": {
+        "rubric": {"type": "string", "minLength": 1},
+        "spec": {"type": "string"},
+        "gates": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

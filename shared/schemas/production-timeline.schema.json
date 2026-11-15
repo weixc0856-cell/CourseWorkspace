@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/schemas/timeline.schema.json",
+  "title": "Production timeline (distinct from timeline-v1)",
+  "type": "object",
+  "required": ["schema_version", "product", "fps", "duration_s", "entries"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "product": {"type": "string", "minLength": 1},
+    "fps": {"type": "integer", "minimum": 1},
+    "resolution": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 2, "maxItems": 2},
+    "duration_s": {"type": "number", "exclusiveMinimum": 0},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "start_s", "duration_s"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["scene", "slide", "clip", "audio", "subtitle", "card"]},
+          "source": {"type": "string"},
+          "start_s": {"type": "number", "minimum": 0},
+          "duration_s": {"type": "number", "exclusiveMinimum": 0},
+          "in_s": {"type": "number", "minimum": 0},
+          "out_s": {"type": "number", "exclusiveMinimum": 0},
+          "renderer": {"type": "string"},
+          "claim_ids": {"type": "array", "items": {"type": "string"}},
+          "asset_ids": {"type": "array", "items": {"type": "string"}},
+          "text": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://courseworkspace.local/schemas/ledger.schema.json",
+  "title": "Visual asset ledger",
+  "type": "object",
+  "required": ["schema_version", "product", "records"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "product": {"type": "string", "minLength": 1},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["asset_id", "kind", "role", "source", "license"],
+        "properties": {
+          "asset_id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["book_figure", "paper_figure", "photo", "video", "screen", "render", "schematic", "data"]},
+          "role": {"enum": ["render_only", "evidence", "context", "schematic", "data"]},
+          "path": {"type": "string"},
+          "source": {"type": "string", "minLength": 1},
+          "source_url": {"type": "string"},
+          "publisher": {"type": "string"},
+          "captured_at": {"type": "string", "format": "date-time"},
+          "license": {"type": "string", "minLength": 1},
+          "attribution": {"type": "string"},
+          "tags": {"type": "array", "items": {"type": "string"}},
+          "used_in": {"type": "array", "items": {"type": "string"}},
+          "notes": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
