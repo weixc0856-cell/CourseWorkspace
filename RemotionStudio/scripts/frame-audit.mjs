@@ -10,7 +10,8 @@
 // <content_root>/build/frame-audit/frames/.
 
 import { chromium } from 'playwright';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -261,13 +262,45 @@ const auditInPage = () => {
   return { issues, notes, text_count: textElements.length, skipped_symbolic: skippedSymbolic };
 };
 
-function frameUrl(bundleIndex, frame) {
-  return pathToFileURL(bundleIndex).href + '?frame=' + frame;
+function startServer(root) {
+  const types = {
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.glb': 'model/gltf-binary',
+  };
+  return new Promise((ready) => {
+    const server = createServer((request, response) => {
+      const clean = decodeURIComponent((request.url || '/').split('?')[0]);
+      const file = resolve(root, '.' + clean);
+      if (!file.startsWith(root)) {
+        response.statusCode = 403;
+        response.end();
+        return;
+      }
+      try {
+        const data = readFileSync(file);
+        const suffix = file.slice(file.lastIndexOf('.'));
+        response.setHeader('Content-Type', types[suffix] || 'application/octet-stream');
+        response.end(data);
+      } catch {
+        response.statusCode = 404;
+        response.end('not found');
+      }
+    });
+    server.listen(0, '127.0.0.1', () => ready(server));
+  });
 }
 
-async function openFrame(page, bundleIndex, frame) {
-  await page.goto(frameUrl(bundleIndex, frame), { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => window.remotion_renderReady === true, null, { timeout: 20000 });
+function frameUrl(baseUrl, frame) {
+  return baseUrl + '/index.html?frame=' + frame;
+}
+
+async function openFrame(page, baseUrl, frame) {
+  await page.goto(frameUrl(baseUrl, frame), { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => window.remotion_renderReady === true, null, { timeout: 45000 });
   await page.waitForTimeout(250);
 }
 
@@ -275,6 +308,11 @@ async function main() {
   const args = process.argv.slice(2);
   const selftestMode = args.includes('--selftest');
   const noBundle = args.includes('--no-bundle');
+  const dumpIndex = args.indexOf('--dump');
+  const dumpDir = dumpIndex >= 0 ? args[dumpIndex + 1] : null;
+  const from = Number(args[args.indexOf('--from') + 1] ?? 0);
+  const to = Number(args[args.indexOf('--to') + 1] ?? 4590);
+  const step = Number(args[args.indexOf('--step') + 1] ?? 15);
   const frames = args.map(Number).filter((value) => Number.isFinite(value) && value >= 0);
   const root = contentRoot();
   const outDir = resolve(root, 'build', 'frame-audit');
@@ -295,12 +333,32 @@ async function main() {
     }
   }
 
-  const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  const server = await startServer(bundleDir);
+  const baseUrl = 'http://127.0.0.1:' + server.address().port;
+  const browser = await chromium.launch({
+    channel: 'chrome',
+    headless: true,
+    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+  });
   try {
     const page = await browser.newPage({ viewport: { width: COMPOSITION.width, height: COMPOSITION.height } });
 
+    if (dumpDir) {
+      mkdirSync(dumpDir, { recursive: true });
+      let written = 0;
+      for (let frame = from; frame <= to; frame += step) {
+        await openFrame(page, baseUrl, frame);
+        const target = resolve(dumpDir, `frame-${String(frame).padStart(5, '0')}.png`);
+        await page.screenshot({ path: target });
+        written += 1;
+        if (written % 20 === 0) console.log(`  dumped ${written} frames`);
+      }
+      console.log(`dumped ${written} frames -> ${dumpDir}`);
+      return;
+    }
+
     if (selftestMode) {
-      await openFrame(page, bundleIndex, 0);
+      await openFrame(page, baseUrl, 0);
       const setup = await page.evaluate(() => {
         const player = document.querySelector('.__remotion-player');
         if (!player) return { injected: false, reason: 'player not found' };
@@ -446,7 +504,7 @@ async function main() {
     const list = frames.length ? frames : DEFAULT_FRAMES;
     const results = [];
     for (const frame of list) {
-      await openFrame(page, bundleIndex, frame);
+      await openFrame(page, baseUrl, frame);
       const result = await page.evaluate(auditInPage);
       const entry = {
         frame,
@@ -482,6 +540,7 @@ async function main() {
     process.exitCode = exceptions.length ? 1 : 0;
   } finally {
     await browser.close();
+    server.close();
   }
 }
 

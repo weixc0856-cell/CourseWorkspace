@@ -50,7 +50,7 @@ export const ConclusionScene: React.FC = () => {
         </div>
       </div>
 
-      <div style={{position: 'absolute', left: 96, top: 960, opacity: fuel, transform: `translateY(${(1 - fuel) * 12}px)`, padding: '18px 24px', borderLeft: `4px solid ${C.orange}`, background: 'rgba(232,115,59,0.10)', color: C.paper, fontSize: 26, lineHeight: 1.45, textShadow: '0 2px 14px rgba(0,0,0,0.9)'}}>
+      <div style={{position: 'absolute', left: 96, top: 820, opacity: fuel, transform: `translateY(${(1 - fuel) * 12}px)`, padding: '18px 24px', borderLeft: `4px solid ${C.orange}`, background: 'rgba(232,115,59,0.10)', color: C.paper, fontSize: 26, lineHeight: 1.45, textShadow: '0 2px 14px rgba(0,0,0,0.9)'}}>
         c<sub>D</sub> 0.30 → 0.26: about <b>0.6 l/100 km</b> at a constant 140 km/h.
       </div>
 
