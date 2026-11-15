@@ -27,7 +27,8 @@
 - [知识视频质量基准.md](知识视频质量基准.md)：什么算好（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）；不新增门禁
 - [课程质量模型.md](课程质量模型.md)：八个维度（知识/教学/叙事/视觉/声音/配套/体验/交付）的单集验收标准；是标准，不是门禁
 - [生产路线.md](生产路线.md)：Slide-first / Motion-enhanced / Narration-led；两条产品线、四类画面、M0–M3。路线建议，不是门禁
-- [课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)
+- [课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)、[课程页面系统.md](课程页面系统.md)
+- [生产合同.md](生产合同.md)：四份合同、G0–G7、自动检查、三次人工治理、组件库、回归与落地顺序
 - [工业化动画工作流.md](工业化动画工作流.md)、[动画视觉导演规范.md](动画视觉导演规范.md)
 - [运镜与剪辑.md](运镜与剪辑.md)：静帧慢推、边界与剪辑节奏
 - [creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)：长视频叙事骨架、Shorts、A/B 视觉与质量门禁
@@ -52,7 +53,7 @@
 - [v2/生产管线v0.2-P2交付记录.md](v2/生产管线v0.2-P2交付记录.md)：Shot Review Package、QC、A/B 对比与自动触发
 - [v2/生产管线v0.2-P3交付记录.md](v2/生产管线v0.2-P3交付记录.md)：Visual Grammar 版本化/Builder 消费、release-check shot_review 与人工豁免
 - [v2/生产管线v0.2-P4交付记录.md](v2/生产管线v0.2-P4交付记录.md)：38.1 s / 6 镜 / 1080p 成片、6 个 Review Package、release-check PASS
-- [v2/生产管线v0.2-P5视觉升级记录.md](v2/生产管线v0.2-P5视觉升级记录.md)：ridge / valley / water 三场景视觉升级前后对比；P4 判定返修
+- [v2/生产管线v0.2-P5视觉升级记录.md](v2/生产管线v0.2-P5视觉升级记录.md)：P5 视觉复刻 38.1 s 成片、三场景前后对比；P4 判定返修
 - [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 三级预览、增量缓存、统一入口与 `release-check`（2026-11-14）
 - [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
 - [制片层.md](制片层.md)：订单、授权、用量、交付清单与增量重建
@@ -121,6 +122,7 @@
 
 - [evaluations/课程复刻差距与稳定工作流.md](evaluations/课程复刻差距与稳定工作流.md)
 - [evaluations/样片-注意力-3B1B差距与路线.md](evaluations/样片-注意力-3B1B差距与路线.md)
+- [evaluations/复盘-T1-01视觉生产.md](evaluations/复盘-T1-01视觉生产.md)：v1 拒收根因、九条整改规则、30 秒视觉样片门槛与临时文件路径纪律（2026-11-15）
 - [evaluations/配色方案-学科适配.md](evaluations/配色方案-学科适配.md)
 - [evaluations/评估-Blender写实渲染能力.md](evaluations/评估-Blender写实渲染能力.md)
 

@@ -45,6 +45,9 @@
 - 统一契约 V1：[docs/课程生产统一契约V1.md](docs/课程生产统一契约V1.md)
 - E6.5 成片（本地归档，不入库）：`<内容根>/archive/E6.5/E6.5-成片报告.md`
 - 课程复刻差距与视觉规范：[docs/evaluations/课程复刻差距与稳定工作流.md](docs/evaluations/课程复刻差距与稳定工作流.md)、[docs/课程视觉风格指南.md](docs/课程视觉风格指南.md)
+- 视觉生产复盘与整改（30 秒样片门槛 / 临时文件归位）：[docs/evaluations/复盘-T1-01视觉生产.md](docs/evaluations/复盘-T1-01视觉生产.md)
+- 页面类型与固定网格（六类页面 / 教学链 / 出处锚点）：[docs/课程页面系统.md](docs/课程页面系统.md)
+- 生产合同（开工前置 / G0–G7 / 自动检查 / 三次人工治理）：[docs/生产合同.md](docs/生产合同.md)
 - Blender 写实渲染能力评估：[docs/evaluations/评估-Blender写实渲染能力.md](docs/evaluations/评估-Blender写实渲染能力.md)
 - 公式排版与 Formula Pipeline：[docs/公式排版规范.md](docs/公式排版规范.md)
 - 科学计算/绘图接入：[docs/evaluations/科学图形与图表接入评估.md](docs/evaluations/科学图形与图表接入评估.md)
@@ -89,7 +92,7 @@
 - 生产管线 v0.2 P2 交付记录（Shot Review）：[docs/v2/生产管线v0.2-P2交付记录.md](docs/v2/生产管线v0.2-P2交付记录.md)
 - 生产管线 v0.2 P3 交付记录（Visual Grammar + QC）：[docs/v2/生产管线v0.2-P3交付记录.md](docs/v2/生产管线v0.2-P3交付记录.md)
 - 生产管线 v0.2 P4 交付记录（完整影片）：[docs/v2/生产管线v0.2-P4交付记录.md](docs/v2/生产管线v0.2-P4交付记录.md)
-- 生产管线 v0.2 P5 视觉升级记录（三场景前后对比）：[docs/v2/生产管线v0.2-P5视觉升级记录.md](docs/v2/生产管线v0.2-P5视觉升级记录.md)
+- 生产管线 v0.2 P5 视觉升级记录（38.1 s 复刻成片 + 三场景对比）：[docs/v2/生产管线v0.2-P5视觉升级记录.md](docs/v2/生产管线v0.2-P5视觉升级记录.md)
 - 配色方案与学科适配（7 组古画色族）：[docs/evaluations/配色方案-学科适配.md](docs/evaluations/配色方案-学科适配.md)
 - 运镜与剪辑（静帧慢推/边界）：[docs/运镜与剪辑.md](docs/运镜与剪辑.md)
 - 音乐资产盘点与选曲：[docs/音乐资产盘点.md](docs/音乐资产盘点.md)
