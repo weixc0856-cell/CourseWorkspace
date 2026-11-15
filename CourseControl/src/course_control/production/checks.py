@@ -123,6 +123,67 @@ def _drivaer(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
     return ("fail" if bad else "pass"), bad or "ok", "render_only", "authoring/episode.spec.yaml"
 
 
+def _beat_coverage(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
+    beats = getattr(ctx.spec, "beats", None)
+    claims = getattr(ctx.spec, "claims", None)
+    if not beats or not claims:
+        return "not_run", None, "beats and claims", "spec"
+    required = {"question", "case", "mechanism", "derivation", "evidence", "conclusion"}
+    present = {getattr(beat, "type", None) for beat in beats}
+    missing_types = sorted(required - present)
+    must_teach = {claim.id for claim in claims if getattr(claim, "status", "") == "must_teach"}
+    used = {claim for beat in beats for claim in getattr(beat, "claims", [])}
+    unused = sorted(must_teach - used)
+    if missing_types or unused:
+        return "fail", {"missing_types": missing_types, "unused_claims": unused}, "all six beat types, every must_teach claim used", "spec"
+    return "pass", len(beats), len(beats), "spec"
+
+
+def _timeline_assets(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
+    path = ctx.build_root / "contracts" / "timeline.spec.json"
+    if not path.is_file():
+        return "not_run", None, "timeline.spec.json", str(path)
+    try:
+        timeline = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return "fail", str(exc), "readable timeline", str(path)
+    entries = list(timeline.get("video") or []) + list(timeline.get("audio") or [])
+    if not entries:
+        return "fail", 0, ">=1 timeline entry", str(path)
+    missing = []
+    for entry in entries:
+        asset = entry.get("asset") or {}
+        asset_path = asset.get("path")
+        if not asset_path:
+            missing.append(f"{entry.get('shot_id') or entry.get('role')}: no asset path")
+            continue
+        if not Path(asset_path).is_file():
+            missing.append(asset_path)
+    if missing:
+        return "fail", missing, "every timeline asset exists", str(path)
+    return "pass", len(entries), len(entries), str(path)
+
+
+def _narration_measured(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
+    path = ctx.build_root / "narration" / "narration.meta.json"
+    if not path.is_file():
+        return "not_run", None, "narration.meta.json", str(path)
+    try:
+        meta = json.loads(path.read_text(encoding="utf-8"))
+        segments = meta.get("segments") or []
+    except (OSError, ValueError) as exc:
+        return "fail", str(exc), "readable narration.meta.json", str(path)
+    if not segments:
+        return "fail", 0, ">=1 narration segment", str(path)
+    measured = max(float(segment.get("end_s") or 0) for segment in segments)
+    lo = getattr(ctx.spec, "min_seconds", None)
+    hi = getattr(ctx.spec, "max_seconds", None)
+    if lo is None or hi is None:
+        return "not_run", measured, "spec duration window", "spec"
+    ok = lo <= measured <= hi
+    return ("pass" if ok else "fail"), {"measured_s": round(measured, 3), "target_s": getattr(ctx.spec, "total_seconds", None)}, [lo, hi], str(path)
+
+
 def _frames(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
     candidates = [
         p
@@ -150,6 +211,9 @@ def _audio(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
 
 
 AUTO_RULES: dict[str, Callable[[EvalContext], tuple[Status, Any, Any, str]]] = {
+    "beat_coverage": _beat_coverage,
+    "timeline_assets": _timeline_assets,
+    "narration_measured": _narration_measured,
     "claim_source_coverage": _claim_source,
     "duration_window": _duration,
     "voice_decided": _voice,

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "composition": {
+    "entry": "src/chapter/index.ts",
+    "id": "Chapter",
+    "fps": 30,
+    "width": 1920,
+    "height": 1080
+  },
+  "cases": [
+    {
+      "name": "photo",
+      "component": "PhotoInsert",
+      "frame": 150,
+      "golden": "build/golden/chapter-150.png",
+      "threshold": 0.02
+    },
+    {
+      "name": "carflow",
+      "component": "CarFlow",
+      "frame": 750,
+      "golden": "build/golden/chapter-750.png",
+      "threshold": 0.02
+    },
+    {
+      "name": "mechanism",
+      "component": "MechanismDiagram",
+      "frame": 1800,
+      "golden": null,
+      "threshold": 0.02
+    },
+    {
+      "name": "chart",
+      "component": "ChartOverlay",
+      "frame": 3000,
+      "golden": "build/golden/chapter-3000.png",
+      "threshold": 0.02
+    },
+    {
+      "name": "formula",
+      "component": "FormulaBlock",
+      "frame": 4050,
+      "golden": "build/golden/chapter-4050.png",
+      "threshold": 0.02
+    }
+  ]
+}

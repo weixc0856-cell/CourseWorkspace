@@ -76,3 +76,31 @@ def checks_command(
     failed = bool(report.auto_failed) or (strict and bool(report.review_open))
     typer.echo("status: " + ("FAIL" if failed else "PASS"))
     raise typer.Exit(1 if failed else 0)
+
+@app.command("book-index")
+def book_index_command(
+    index: Path = typer.Option(..., "--index", help="book/index.json"),
+    cards_dir: Path = typer.Option(..., "--cards-dir", help="episodes directory with */card.yaml"),
+) -> None:
+    """Check episode cards against the book index references."""
+    from course_control.production.book_index import (
+        BookIndexError,
+        check_cards,
+        load_book_index,
+        load_card_dir,
+    )
+
+    try:
+        data = load_book_index(index)
+        cards = load_card_dir(cards_dir)
+    except BookIndexError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2)
+    problems = check_cards(data, cards)
+    typer.echo(f"book index: {index}")
+    typer.echo(f"cards: {len(cards)}")
+    for problem in problems:
+        typer.echo(f"  [error] {problem}")
+    typer.echo("status: " + ("PASS" if not problems else "FAIL"))
+    raise typer.Exit(0 if not problems else 1)
+

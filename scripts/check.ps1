@@ -187,6 +187,29 @@ try {
                 -s KnowledgeStudio/tests -t KnowledgeStudio
         }
     }
+    # Book index and episode cards live in the content root; a clean clone has
+    # neither, so the gate only runs where the source material is present.
+    $bookIndex = Join-Path $content "runtime/course-content/automotive-aerodynamics/book/index.json"
+    $bookCards = Join-Path $content "runtime/course-content/automotive-aerodynamics/episodes"
+    if (-not $CleanClone -and (Test-Path $bookIndex) -and (Test-Path $bookCards)) {
+        Invoke-Checked "book index" {
+            uv run --project CourseControl course-control book-index --index $bookIndex --cards-dir $bookCards
+        }
+    }
+    else {
+        Write-Host "skip book index (source material not present)"
+    }
+
+    $goldenRoot = Join-Path $content "build/golden"
+    if (-not $CleanClone -and (Test-Path $goldenRoot)) {
+        Invoke-Checked "golden set" {
+            uv run --project CourseControl python scripts/golden_check.py --workspace .
+        }
+    }
+    else {
+        Write-Host "skip golden set (no golden frames in the content root)"
+    }
+
     Invoke-Checked "remotion typecheck" -Quiet {
         & (Join-Path $root "RemotionStudio/node_modules/.bin/tsc.cmd") `
             --noEmit -p (Join-Path $root "RemotionStudio/tsconfig.json")

@@ -213,6 +213,59 @@ class EpisodeSpecTests(unittest.TestCase):
         report = run_checks(spec, rubric, self.root, self.root / "build")
         self.assertTrue(any(r.id == "x" and r.status == "fail" for r in report.auto_failed))
 
+    def test_beat_coverage_fails_on_a_missing_type(self):
+        from types import SimpleNamespace
+
+        rubric = load_quality_rubric(self._rubric())
+        beats = [
+            SimpleNamespace(type="question", claims=["C1"]),
+            SimpleNamespace(type="conclusion", claims=["C1"]),
+        ]
+        spec = SimpleNamespace(episode="X", claims=[SimpleNamespace(id="C1", status="must_teach")], beats=beats)
+        report = run_checks(spec, rubric, self.root, self.root / "build")
+        result = next(r for r in report.results if r.id == "claim_source")
+        self.assertEqual(result.status, "not_run")
+        # beat_coverage is exercised through a rubric that names the rule.
+        from course_control.production.checks import _beat_coverage, EvalContext
+
+        status, actual, _expected, _evidence = _beat_coverage(EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build"))
+        self.assertEqual(status, "fail")
+        self.assertIn("mechanism", actual["missing_types"])
+
+    def test_timeline_assets_reports_missing_files(self):
+        from course_control.production.checks import _timeline_assets, EvalContext
+        from types import SimpleNamespace
+
+        contracts = self.root / "build" / "contracts"
+        contracts.mkdir(parents=True)
+        (contracts / "timeline.spec.json").write_text(
+            json.dumps({"video": [{"shot_id": "s1", "asset": {"path": str(self.root / "missing.png")}}], "audio": []}),
+            encoding="utf-8",
+        )
+        spec = SimpleNamespace(episode="X")
+        status, actual, _expected, _evidence = _timeline_assets(EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build"))
+        self.assertEqual(status, "fail")
+        self.assertEqual(len(actual), 1)
+
+    def test_narration_measured_uses_the_spec_window(self):
+        from course_control.production.checks import _narration_measured, EvalContext
+        from types import SimpleNamespace
+
+        narration = self.root / "build" / "narration"
+        narration.mkdir(parents=True)
+        (narration / "narration.meta.json").write_text(
+            json.dumps({"segments": [{"end_s": 700.0}, {"end_s": 719.2}]}),
+            encoding="utf-8",
+        )
+        spec = SimpleNamespace(episode="X", total_seconds=600, min_seconds=480, max_seconds=900)
+        status, actual, _expected, _evidence = _narration_measured(EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build"))
+        self.assertEqual(status, "pass")
+        self.assertAlmostEqual(actual["measured_s"], 719.2)
+
+        spec.max_seconds = 600
+        status, _actual, _expected, _evidence = _narration_measured(EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build"))
+        self.assertEqual(status, "fail")
+
 
 if __name__ == "__main__":
     unittest.main()
