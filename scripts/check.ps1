@@ -101,6 +101,34 @@ function Get-RegressionLock {
     return $path
 }
 
+function Invoke-TestSuite {
+    param([string]$Label, [string]$Project, [string]$TestsPath, [string]$TopPath)
+    $script:checksRun += 1
+    Write-Host "unit tests: $Label"
+    $output = & uv run --project $Project python -m unittest discover `
+        -s $TestsPath -t $TopPath 2>&1 | Out-String
+    $code = $LASTEXITCODE
+    Write-Host $output
+    if ($code -ne 0) {
+        Write-Host "FAILED: unit tests: $Label (exit $code)"
+        $script:failed = $true
+        return
+    }
+    $match = [regex]::Match($output, "Ran (\d+) tests")
+    if (-not $match.Success) {
+        Write-Host "FAILED: unit tests: $Label (no test count in the output)"
+        $script:failed = $true
+        return
+    }
+    $count = [int]$match.Groups[1].Value
+    $previous = $script:previousCounts[$Label]
+    if ($null -ne $previous -and $count -lt $previous) {
+        Write-Host "FAILED: test count dropped: $Label $previous -> $count"
+        $script:failed = $true
+    }
+    $script:testCounts[$Label] = $count
+}
+
 function Invoke-Checked {
     param([string]$Label, [scriptblock]$Action, [switch]$Quiet)
     $script:checksRun += 1
@@ -138,6 +166,35 @@ $lock = Get-RegressionLock -Root $root -Content $content
 if (-not $lock) {
     exit 1
 }
+
+$logDir = Join-Path $content "runtime/logs"
+New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+$logPath = Join-Path $logDir ("check-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
+$script:transcript = $false
+try {
+    Start-Transcript -Path $logPath -Append | Out-Null
+    $script:transcript = $true
+}
+catch {
+    Write-Host "WARNING: cannot write the regression log: $logPath"
+}
+
+# A test count that silently drops is a deleted test. Compare with the last
+# recorded count and fail on a decrease.
+$countsPath = Join-Path $logDir "test-counts.json"
+$script:previousCounts = @{}
+if (Test-Path -LiteralPath $countsPath) {
+    try {
+        $loaded = Get-Content -LiteralPath $countsPath -Raw | ConvertFrom-Json
+        foreach ($prop in $loaded.PSObject.Properties) {
+            $script:previousCounts[$prop.Name] = [int]$prop.Value
+        }
+    }
+    catch {
+        Write-Host "WARNING: cannot read $countsPath"
+    }
+}
+$script:testCounts = @{}
 
 Push-Location $root
 try {
@@ -181,30 +238,12 @@ try {
         Write-Host "skip unit tests (run separately)"
     }
     else {
-        Invoke-Checked "unit tests: CourseControl" {
-            uv run --project CourseControl python -m unittest discover `
-                -s CourseControl/tests -t CourseControl
-        }
-        Invoke-Checked "unit tests: ModelingStudio" {
-            uv run --project ModelingStudio python -m unittest discover `
-                -s ModelingStudio/tests -t ModelingStudio
-        }
-        Invoke-Checked "unit tests: ai_runtime" {
-            uv run --project shared/ai_runtime python -m unittest discover `
-                -s shared/ai_runtime/tests -t shared/ai_runtime
-        }
-        Invoke-Checked "unit tests: ContentQA" {
-            uv run --project ContentQA python -m unittest discover `
-                -s ContentQA/tests -t ContentQA
-        }
-        Invoke-Checked "unit tests: ManimSandbox" {
-            uv run --project ManimSandbox python -m unittest discover `
-                -s ManimSandbox/tests -t ManimSandbox
-        }
-        Invoke-Checked "unit tests: KnowledgeStudio" {
-            uv run --project KnowledgeStudio python -m unittest discover `
-                -s KnowledgeStudio/tests -t KnowledgeStudio
-        }
+        Invoke-TestSuite "CourseControl" "CourseControl" "CourseControl/tests" "CourseControl"
+        Invoke-TestSuite "ModelingStudio" "ModelingStudio" "ModelingStudio/tests" "ModelingStudio"
+        Invoke-TestSuite "ai_runtime" "shared/ai_runtime" "shared/ai_runtime/tests" "shared/ai_runtime"
+        Invoke-TestSuite "ContentQA" "ContentQA" "ContentQA/tests" "ContentQA"
+        Invoke-TestSuite "ManimSandbox" "ManimSandbox" "ManimSandbox/tests" "ManimSandbox"
+        Invoke-TestSuite "KnowledgeStudio" "KnowledgeStudio" "KnowledgeStudio/tests" "KnowledgeStudio"
     }
     # Book index and episode cards live in the content root; a clean clone has
     # neither, so the gate only runs where the source material is present.
@@ -348,10 +387,15 @@ try {
 
     if ($script:failed) {
         Write-Host "check summary: checks=$script:checksRun failed=1"
+        Write-Host "check log: $logPath"
         Write-Host "check failed"
         exit 1
     }
+    if ($script:testCounts.Count -gt 0) {
+        $script:testCounts | ConvertTo-Json | Set-Content -LiteralPath $countsPath -Encoding utf8
+    }
     Write-Host "check summary: checks=$script:checksRun failed=0"
+    Write-Host "check log: $logPath"
     Write-Host "check ok"
     exit 0
 }
@@ -359,5 +403,14 @@ finally {
     Pop-Location
     if ($lock -and (Test-Path -LiteralPath $lock)) {
         Remove-Item -LiteralPath $lock -Force -ErrorAction SilentlyContinue
+    }
+    if ($script:transcript) {
+        Stop-Transcript | Out-Null
+    }
+    if (Test-Path -LiteralPath $logDir) {
+        Get-ChildItem -LiteralPath $logDir -Filter "check-*.log" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -Skip 20 |
+            Remove-Item -Force -ErrorAction SilentlyContinue
     }
 }
