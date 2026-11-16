@@ -2,7 +2,7 @@
 
 The runner never participates in the production chain: it does not change
 lessons, does not modify source files, and never emits a production verdict.
-It produces a local audit trail under ``build/reviews/`` whose status is split
+It produces a local audit trail under ``build/_shared/reviews/`` whose status is split
 into two independent axes (execution and review completeness).
 """
 

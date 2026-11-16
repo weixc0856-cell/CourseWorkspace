@@ -85,6 +85,167 @@ def _subtitles(paths: LessonPaths) -> list[Path]:
     return unique
 
 
+
+QUALITY_IDS = {"Q1", "Q2", "Q3", "Q4", "Q5"}
+_BAD_DIMENSIONS = {"BLOCKED", "INCOMPLETE", "FAIL"}
+
+
+def _read_json(path: Path) -> dict | None:
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _quality_problems(certificate_path: Path, quality_path: Path, lesson: str) -> list[str]:
+    """Check the typed certificate and the quality report it pins."""
+    problems: list[str] = []
+    from course_control.quality.certificate import load as load_certificate
+
+    try:
+        certificate = load_certificate(certificate_path)
+    except Exception:  # noqa: BLE001 - an invalid certificate is a problem
+        certificate = None
+    if certificate is None:
+        problems.append("quality certificate missing or invalid")
+    else:
+        if certificate.project_id != lesson:
+            problems.append(
+                f"certificate is for {certificate.project_id}, not {lesson}"
+            )
+        if certificate.verdict != "pass":
+            problems.append(f"quality certificate is {certificate.verdict}")
+        quality_data = _read_json(quality_path)
+        if quality_data is None:
+            problems.append("quality report missing or invalid")
+        else:
+            from course_control.quality.certificate import quality_content_sha256
+
+            expected = quality_content_sha256(quality_data)
+            if certificate.quality_report_content_sha256 != expected:
+                problems.append("certificate does not pin the current quality content")
+
+    quality = _read_json(quality_path)
+    if quality is None:
+        problems.append("quality report missing or invalid")
+        return problems
+    states = quality.get("states") or {}
+    if not states.get("VERIFY_PASS"):
+        problems.append("quality report is not VERIFY_PASS")
+    if states.get("VERIFY_INCOMPLETE") or states.get("VERIFY_FAIL"):
+        problems.append("quality report contains an incomplete or failed verification")
+    if states.get("BLOCKED_WARNINGS"):
+        problems.append("quality report has blocking warnings")
+    if not states.get("RELEASE_APPROVED"):
+        problems.append("quality report has no release approval")
+    dimensions = {
+        str(item.get("id")): str(item.get("status"))
+        for item in quality.get("dimensions") or []
+        if isinstance(item, dict)
+    }
+    missing = sorted(QUALITY_IDS - set(dimensions))
+    if missing:
+        problems.append("quality report is missing dimensions: " + ", ".join(missing))
+    bad = sorted(key for key, status in dimensions.items() if status in _BAD_DIMENSIONS)
+    if bad:
+        problems.append("quality dimensions not passed: " + ", ".join(bad))
+    return problems
+
+
+def _approval_problems(
+    review_path: Path,
+    release_path: Path,
+    build_report: Path,
+    final_video: Path,
+    quality_path: Path,
+) -> list[str]:
+    """Check that both approvals bind this build, film and quality report."""
+    problems: list[str] = []
+    quality = _read_json(quality_path)
+    from course_control.quality.certificate import quality_content_sha256
+
+    expected = {
+        "build_report_sha256": _sha(build_report) if build_report.is_file() else None,
+        "final_video_sha256": _sha(final_video) if final_video.is_file() else None,
+        "quality_report_content_sha256": (
+            quality_content_sha256(quality) if quality is not None else None
+        ),
+    }
+    for label, path in (("review", review_path), ("release", release_path)):
+        approval = _read_json(path)
+        if approval is None:
+            problems.append(f"{label} approval missing or invalid")
+            continue
+        if approval.get("decision") != "approved" or not str(approval.get("approved_by") or "").strip():
+            problems.append(f"{label} approval is not a named approval")
+        for key, value in expected.items():
+            if value is None:
+                problems.append(f"{label} approval cannot be checked: {key.replace('_sha256', '')} missing")
+            elif approval.get(key) != value:
+                problems.append(f"{label} approval does not bind the current {key.replace('_sha256', '')}")
+    return problems
+
+
+def _delivery_verdict(paths: LessonPaths) -> tuple[str, list[str], dict]:
+    """The package verdict must describe the evidence, not hope.
+
+    A package is a copy of the build, so it can be produced at any time.  Its
+    verdict is ``pass`` only when the typed certificate, all five quality
+    dimensions, both approvals (bound to this build, film and report) and the
+    storyboard sign-off agree.  Any missing piece is ``incomplete``.
+    """
+    build_root = paths.build_root
+    reasons: list[str] = []
+    detail: dict = {}
+
+    certificate_path = build_root / "quality" / "certificate.json"
+    quality_path = build_root / "quality" / "quality-report.json"
+    build_report = build_root / "final" / "build-report.json"
+    final = _final_video(paths)
+    detail["certificate"] = str(certificate_path) if certificate_path.is_file() else None
+    detail["quality_report"] = str(quality_path) if quality_path.is_file() else None
+
+    reasons.extend(_quality_problems(certificate_path, quality_path, paths.slug))
+    reasons.extend(
+        _approval_problems(
+            build_root / "quality" / "review-approval.json",
+            build_root / "quality" / "release-approval.json",
+            build_report,
+            final,
+            quality_path,
+        )
+    )
+
+    try:
+        from course_control.release.check import content_exception_for
+
+        exception = content_exception_for(build_root, paths.slug)
+        if exception is not None:
+            reasons.append(
+                "open content exception: "
+                + str(exception.get("reason") or exception.get("detail") or "see queue")
+            )
+    except Exception:  # noqa: BLE001 - the verdict records missing evidence
+        reasons.append("content exception queue could not be read")
+
+    try:
+        from course_control.authoring.pipeline import assert_storyboard_signed
+
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+        detail["storyboard_signed"] = True
+    except Exception as exc:  # noqa: BLE001 - the verdict records the reason
+        detail["storyboard_signed"] = False
+        reasons.append(str(exc))
+
+    certificate = _read_json(certificate_path)
+    if str((certificate or {}).get("verdict") or "") == "fail":
+        return "fail", reasons, detail
+    return ("pass" if not reasons else "incomplete"), reasons, detail
+
+
 def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[dict, Path]:
     """Collect a delivery package and return (manifest, package_root).
 
@@ -143,6 +304,32 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     for relative, source, _ in required:
         target = _copy(root, source, relative)
         records.append(_record(root, target, True))
+
+    # The package must carry the evidence a verifier needs: a typed
+    # certificate, the quality report it pins, both approvals and the
+    # storyboard sign-off.  A pass package without them cannot be verified.
+    evidence_pairs = [
+        ("evidence/certificate.json", build_root / "quality" / "certificate.json"),
+        ("evidence/quality-report.json", build_root / "quality" / "quality-report.json"),
+        ("evidence/review-approval.json", build_root / "quality" / "review-approval.json"),
+        ("evidence/release-approval.json", build_root / "quality" / "release-approval.json"),
+    ]
+    for relative, source in evidence_pairs:
+        if source.is_file():
+            records.append(_record(root, _copy(root, source, relative), True))
+        else:
+            records.append({"path": relative, "required": True, "status": "missing", "bytes": None, "sha256": None})
+    storyboard_pairs = [
+        ("evidence/storyboard/review.json", paths.lesson_dir / "authoring" / "storyboard-review.json"),
+        ("evidence/storyboard/review.html", paths.lesson_dir / "authoring" / "storyboard-review.html"),
+        ("evidence/storyboard/decisions.json", paths.lesson_dir / "authoring" / "storyboard-decisions.json"),
+    ]
+    storyboard_evidence = all(source.is_file() for _, source in storyboard_pairs)
+    for relative, source in storyboard_pairs:
+        if source.is_file():
+            records.append(_record(root, _copy(root, source, relative), True))
+        else:
+            records.append({"path": relative, "required": True, "status": "missing", "bytes": None, "sha256": None})
 
     captioned = build_root / "final" / "course-video-captioned.mp4"
     if captioned.is_file():
@@ -238,12 +425,16 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     )
     records.append(_record(root, root / "metadata.json", True))
 
+    verdict, verdict_reasons, verdict_detail = _delivery_verdict(paths)
     manifest = {
         "schema_version": 1,
         "lesson": paths.slug,
         "run_id": run_id,
         "generated_at": _now(),
-        "verdict": "pass",
+        "verdict": verdict,
+        "verdict_reasons": verdict_reasons,
+        "verdict_detail": verdict_detail,
+        "evidence": {"storyboard": storyboard_evidence},
         "files": records,
         "external_assets": external_assets,
         "referenced_assets": referenced_assets,
@@ -260,6 +451,8 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         f"- run_id: `{run_id or 'unknown'}`",
         f"- generated_at: {manifest['generated_at']}",
         f"- master: `final/master.mp4` ({probe.get('duration')} s, {probe.get('width')}x{probe.get('height')})",
+        f"- verdict: `{verdict}`",
+        *([f"- reason: {reason}" for reason in verdict_reasons] if verdict_reasons else []),
         "",
         "| file | required | status | sha256 |",
         "| --- | --- | --- | --- |",
@@ -272,6 +465,24 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     (root / "delivery-checklist.md").write_text(
         "\n".join(checklist) + "\n", encoding="utf-8"
     )
+    records.append(_record(root, root / "delivery-checklist.md", True))
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    )
+    if verdict != "pass":
+        # An incomplete or failed attempt must never displace the last passing
+        # delivery.  Keep it beside the delivery for inspection and say so.
+        attempt = final_root.with_name(final_root.name + ".attempt")
+        if attempt.exists():
+            shutil.rmtree(attempt)
+        root.rename(attempt)
+        manifest["installed"] = False
+        manifest["attempt_path"] = str(attempt)
+        (attempt / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+        )
+        return manifest, attempt
+
     backup = final_root.with_name(final_root.name + ".old")
     if backup.exists():
         shutil.rmtree(backup)
@@ -285,12 +496,31 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         raise
     if backup.exists():
         shutil.rmtree(backup)
+    manifest["installed"] = True
+    (final_root / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    )
     return manifest, final_root
 
 
+def _package_path(root: Path, relative: object) -> Path | None:
+    """Resolve a manifest path without allowing absolute paths or traversal."""
+    value = str(relative or "")
+    if not value:
+        return None
+    candidate = Path(value)
+    if candidate.is_absolute():
+        return None
+    target = (root / candidate).resolve()
+    if not is_under(root, target):
+        return None
+    return target
+
+
 def verify_package(root: Path) -> list[str]:
-    """Re-hash every file in a package and report mismatches."""
+    """Verify hashes and the evidence chain a pass package claims."""
     root = root.resolve()
+    problems: list[str] = []
     manifest_path = root / "manifest.json"
     if not manifest_path.is_file():
         return ["manifest.json is missing"]
@@ -298,24 +528,101 @@ def verify_package(root: Path) -> list[str]:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         return [f"manifest.json is unreadable: {exc}"]
-    problems: list[str] = []
-    for item in manifest.get("files") or []:
-        path = root / str(item.get("path") or "")
+
+    if int(manifest.get("schema_version") or 0) != 1:
+        problems.append("manifest schema_version is not 1")
+    lesson = str(manifest.get("lesson") or "")
+    if not lesson:
+        problems.append("manifest does not name a lesson")
+    if manifest.get("verdict") != "pass":
+        problems.append(f"manifest verdict is {manifest.get('verdict') or 'missing'}, not pass")
+
+    items = [item for item in manifest.get("files") or [] if isinstance(item, dict)]
+    by_path = {str(item.get("path") or ""): item for item in items}
+    required = {
+        "final/master.mp4",
+        "build-report.json",
+        "evidence/media-qc.json",
+        "evidence/certificate.json",
+        "evidence/quality-report.json",
+        "evidence/review-approval.json",
+        "evidence/release-approval.json",
+        "metadata.json",
+        "delivery-checklist.md",
+    }
+    storyboard_present = any(
+        (root / "evidence" / "storyboard" / name).is_file()
+        for name in ("review.json", "review.html", "decisions.json")
+    )
+    if (manifest.get("evidence") or {}).get("storyboard") or storyboard_present:
+        required.update(
+            {
+                "evidence/storyboard/review.json",
+                "evidence/storyboard/review.html",
+                "evidence/storyboard/decisions.json",
+            }
+        )
+    for relative in sorted(required):
+        if relative not in by_path:
+            problems.append(f"manifest does not list required: {relative}")
+        elif by_path[relative].get("status") != "present":
+            problems.append(f"manifest says {relative} is not present")
+
+    for item in items:
+        relative = str(item.get("path") or "")
+        path = _package_path(root, relative)
+        if path is None:
+            problems.append(f"unsafe package path: {relative}")
+            continue
         if item.get("status") != "present":
             if item.get("required"):
-                problems.append(f"missing required: {item.get('path')}")
+                problems.append(f"missing required: {relative}")
             continue
         if not path.is_file():
-            problems.append(f"missing: {item.get('path')}")
+            problems.append(f"missing: {relative}")
             continue
         if item.get("sha256") and _sha(path) != item["sha256"]:
-            problems.append(f"hash mismatch: {item.get('path')}")
+            problems.append(f"hash mismatch: {relative}")
+
     for item in manifest.get("external_assets") or []:
-        relative = item.get("bundled_path")
-        path = root / str(relative or "")
-        if not relative or not path.is_file():
+        relative = str((item or {}).get("bundled_path") or "")
+        path = _package_path(root, relative)
+        if path is None:
+            problems.append(f"unsafe bundled asset path: {relative or item.get('asset_id')}")
+            continue
+        if not path.is_file():
             problems.append(f"missing bundled asset: {relative or item.get('asset_id')}")
             continue
         if item.get("sha256") and _sha(path) != item["sha256"]:
             problems.append(f"hash mismatch: {relative}")
+
+    certificate = root / "evidence" / "certificate.json"
+    quality = root / "evidence" / "quality-report.json"
+    build_report = root / "build-report.json"
+    master = root / "final" / "master.mp4"
+    if certificate.is_file() or quality.is_file():
+        problems.extend(_quality_problems(certificate, quality, lesson))
+    else:
+        problems.append("evidence certificate and quality report are missing")
+    problems.extend(
+        _approval_problems(
+            root / "evidence" / "review-approval.json",
+            root / "evidence" / "release-approval.json",
+            build_report,
+            master,
+            quality,
+        )
+    )
+
+    if (manifest.get("evidence") or {}).get("storyboard") or storyboard_present:
+        review = _read_json(root / "evidence" / "storyboard" / "review.json")
+        page = root / "evidence" / "storyboard" / "review.html"
+        decisions = root / "evidence" / "storyboard" / "decisions.json"
+        if review is None:
+            problems.append("storyboard review evidence is missing or invalid")
+        else:
+            if not page.is_file() or review.get("page_sha256") != _sha(page):
+                problems.append("storyboard review page is missing or changed")
+            if not decisions.is_file() or review.get("decisions_sha256") != _sha(decisions):
+                problems.append("storyboard decisions are missing or changed")
     return problems

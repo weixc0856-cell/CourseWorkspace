@@ -1,5 +1,7 @@
 # 资产治理（ASSET_GOVERNANCE）
 
+> **状态：2026-11-10 基线记录，不是现行契约。** 现行命令链见 [../生产流水线-阶段与中间交付物.md](../生产流水线-阶段与中间交付物.md)。
+
 - 日期：2026-11-10
 - 关联：C-11、C-17、C-21、C-30
 - 实现：`assets.py`、`package.py`、`vendor.py`、`scripts/check_evidence.py`
@@ -64,7 +66,7 @@
 | `stale_ref` | 文档写错，应修文档 |
 | `external` | 工作区外生成 |
 
-2026-11-10 结果：引用 182，缺失 90，全部有处置，未分类 0。报告写入 `build/.audit/missing-evidence.txt` 与 `evidence-classification.json`。
+2026-11-10 结果：引用 182，缺失 90，全部有处置，未分类 0。报告写入 `build/_shared/evidence-audit/missing-evidence.txt` 与 `evidence-classification.json`。
 
 ## 4. 第三方运行时
 

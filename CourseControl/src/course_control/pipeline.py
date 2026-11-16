@@ -46,6 +46,9 @@ class BuildOptions:
     # everything after it while keeping earlier stages.
     resume: bool = False
     resume_from: str | None = None
+    # Internal test/tool override.  Production callers keep the default; the
+    # CLI has no flag for this, so a course build cannot silently skip the gate.
+    require_storyboard_signoff: bool = True
 
 
 def _stage(name: str, status: Status, reason: str | None = None, errors: list[str] | None = None) -> StageOutcome:
@@ -185,6 +188,10 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
                 storyboard_override=storyboard,
                 build_root_override=options.build_root,
             )
+    if options.require_storyboard_signoff:
+        from course_control.authoring.pipeline import assert_storyboard_signed
+
+        assert_storyboard_signed(lesson_dir, paths.storyboard_source)
     themed, themed_shots = apply_themes(paths.storyboard, load_theme_map(paths.build_root))
     if themed_shots:
         # The design layer owns the per-shot theme; the storyboard keeps its own

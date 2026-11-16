@@ -1,0 +1,471 @@
+version: 1
+updated: '2026-11-16'
+layers:
+  entry: 入口：第一次进入仓库先读这两份
+  contract: 现行契约：机器可校验或必须遵守，变更需决策
+  guide: 现行指南：按问题分工，每份只回答一个问题
+  record: 记录：一次性审计、评估、交付记录或未生效草案，不是指令
+questions:
+- question: 产品边界与功能需求
+  path: PRD.md
+- question: 系统怎么运行、数据契约在哪
+  path: ARCHITECTURE.md
+- question: 一条命令链：这一阶段跑什么、产出什么、谁签字
+  path: 生产流水线-阶段与中间交付物.md
+- question: 开工前要填哪些合同
+  path: 生产合同.md
+- question: 验收命令与状态词
+  path: ACCEPTANCE.md
+- question: 为什么这样定
+  path: DECISIONS.md
+- question: 什么进仓库、什么只在内容根
+  path: 仓库与项目边界.md
+- question: 什么叫好
+  path: 知识视频质量基准.md
+- question: 一集课怎么验收
+  path: 课程质量模型.md
+- question: 新闻怎么做
+  path: 新闻与调查报道标准.md
+- question: 用什么口吻讲
+  path: creative/编辑口吻与反讽指南.md
+- question: 三条产品线怎么分工
+  path: v2/生产方向-00-总览.md
+- question: 每个镜头看见什么
+  path: 视觉设计层.md
+- question: 声音怎么设计
+  path: 声音导演层.md
+- question: 课件怎么写
+  path: 课件制作总指导.md
+- question: 交付包长什么样
+  path: 课程生产交付物规范.md
+- question: 作者/验证/统筹怎么交接
+  path: 协作协议-双会话流水线.md
+documents:
+- path: README.md
+  layer: entry
+  status: current
+  answers: 文档地图：先读哪份、每份只回答什么问题
+- path: audit/handoff-2026-11-16.md
+  layer: record
+  status: record
+  answers: 2026-11-16 文档与目录整理的交接包与 Codex 只读审查条件
+- path: audit/content-changes-2026-11-16.md
+  layer: record
+  status: record
+  answers: 本轮内容根移动、归档、删除与未解决项清单
+- path: 阅读顺序.md
+  layer: entry
+  status: superseded
+  answers: 旧的阅读顺序；已并入 README，保留下方清单备查
+  superseded_by:
+  - README.md
+- path: 协作协议-双会话流水线.md
+  layer: entry
+  status: current
+  answers: 作者 / 验证 / 统筹三分与交接证据
+- path: PRD.md
+  layer: contract
+  status: current
+  answers: 产品为什么存在、范围、功能需求与验收目标
+- path: ARCHITECTURE.md
+  layer: contract
+  status: current
+  answers: 系统结构、模块职责与数据契约
+- path: 课程生产统一契约V1.md
+  layer: contract
+  status: current
+  answers: Lesson / Shot / Narration / Timeline / Evidence / Render 的字段契约
+- path: 生产合同.md
+  layer: contract
+  status: current
+  answers: 四份合同与 G0–G7 闸门，开工前先填
+- path: 生产流水线-阶段与中间交付物.md
+  layer: contract
+  status: current
+  answers: 唯一命令链：每个阶段跑什么命令、产出什么中间交付物、谁来签字
+- path: ACCEPTANCE.md
+  layer: contract
+  status: current
+  answers: 验收命令、状态词与证据要求
+- path: DECISIONS.md
+  layer: contract
+  status: current
+  answers: 决策记录（D-001 起），冲突时按日期新者优先
+- path: TRACEABILITY.md
+  layer: contract
+  status: current
+  answers: 需求—模块—测试映射
+- path: 仓库与项目边界.md
+  layer: contract
+  status: current
+  answers: 仓库 / 内容根 / 产物的三层边界与检查
+- path: 架构-DDD上下文与边界.md
+  layer: contract
+  status: current
+  answers: 八个上下文的职责、聚合、依赖方向与改造结果
+- path: contracts/examples/README.md
+  layer: contract
+  status: current
+  answers: 生产契约 JSON Schema 的示例索引
+- path: 知识视频质量基准.md
+  layer: guide
+  status: current
+  answers: 什么叫好：内容/视觉/交付三层与 L1–L3
+- path: 课程质量模型.md
+  layer: guide
+  status: current
+  answers: 一集课怎么验收：八个维度与人工/程序边界
+- path: 课件制作总指导.md
+  layer: guide
+  status: current
+  answers: 内容层四阶段与 slides / lecture_notes 契约
+- path: 课程视觉风格指南.md
+  layer: guide
+  status: current
+  answers: 字体、颜色、间距的落地取值
+- path: 课程页面系统.md
+  layer: guide
+  status: current
+  answers: 页面类型、固定网格与教学链
+- path: 版式系统.md
+  layer: guide
+  status: current
+  answers: 页面模板、区域与 DesignSystem
+- path: 配色规范.md
+  layer: guide
+  status: current
+  answers: Color Token、语义色与禁止项
+- path: 公式排版规范.md
+  layer: guide
+  status: current
+  answers: FormulaSpec 唯一源与四道门
+- path: 动画视觉导演规范.md
+  layer: guide
+  status: current
+  answers: 动画原语与镜头语言
+- path: 运镜与剪辑.md
+  layer: guide
+  status: current
+  answers: 静帧慢推、MotionPolicy 与剪辑节奏
+- path: 视觉设计层.md
+  layer: guide
+  status: current
+  answers: 镜头级视觉设计、blocking 与三关键帧
+- path: 导演层.md
+  layer: guide
+  status: current
+  answers: 章节、镜头、引擎与旁白计划
+- path: 镜头表-ShotSheet.md
+  layer: guide
+  status: current
+  answers: storyboard v2 设计字段、连续性与编译复核
+- path: 动画预览-Animatic.md
+  layer: guide
+  status: current
+  answers: 正式渲染前的 480p 时间线预览与缓存
+- path: 锁定与失效.md
+  layer: guide
+  status: current
+  answers: Picture / Dialogue Lock 快照与失效规则
+- path: 制片层.md
+  layer: guide
+  status: current
+  answers: 订单、授权、用量与增量重建
+- path: 课程生产交付物规范.md
+  layer: guide
+  status: current
+  answers: deliver/ 交付包与 build/<slug>/ 目录纪律
+- path: 课程交付清单模板.md
+  layer: guide
+  status: current
+  answers: 人工可读的交付清单模板
+- path: 声音导演层.md
+  layer: guide
+  status: current
+  answers: 旁白/音乐/音效/环境声/混音五轨与 cue sheet
+- path: 声音资产-VoiceBible与Lexicon.md
+  layer: guide
+  status: current
+  answers: 声线身份、读法词典与缓存失效
+- path: 内容类型与音频策略.md
+  layer: guide
+  status: current
+  answers: 哪类内容要不要 BGM
+- path: 音乐资产盘点.md
+  layer: guide
+  status: current
+  answers: 曲目、许可与电平
+- path: 本地模型与配音工作流.md
+  layer: guide
+  status: current
+  answers: VoxCPM2、串行锁与实时率
+- path: 3D动画生产流程.md
+  layer: guide
+  status: current
+  answers: AI + 资产库 + Blender 的电影/动画流程
+- path: 本地3D资产库.md
+  layer: guide
+  status: current
+  answers: 模型 / HDRI / PBR 贴图的索引与用法
+- path: Blender场景任务IR-v2.md
+  layer: guide
+  status: current
+  answers: Blender 任务 IR v2 的字段契约
+- path: AI-Blender本地建模工作流.md
+  layer: guide
+  status: current
+  answers: 建模阶段的接口、执行与反馈闭环
+- path: 本地图像生成-FLUX3.md
+  layer: guide
+  status: current
+  answers: 本地 FLUX.3 只出静帧的边界与调用
+- path: 动画渲染适配器.md
+  layer: guide
+  status: current
+  answers: 引擎路由、适配器契约与失败恢复
+- path: 品牌与片头片尾.md
+  layer: guide
+  status: current
+  answers: 品牌层字段、规格与验收
+- path: 资料采集与预处理.md
+  layer: guide
+  status: current
+  answers: PDF / YouTube → 本机 Docling 区
+- path: KnowledgeStudio.md
+  layer: guide
+  status: current
+  answers: 拆页、检索、claim 引用与已知边界
+- path: 第三方依赖准入规范.md
+  layer: guide
+  status: current
+  answers: 复用优先、准入检查与依赖登记
+- path: 提交前检查清单.md
+  layer: guide
+  status: current
+  answers: 提交前的机械检查
+- path: 新闻与调查报道标准.md
+  layer: guide
+  status: current
+  answers: 新闻类的证据矩阵、六幕叙事、视觉语法与 100 分制
+- path: 新闻视频生产流程.md
+  layer: guide
+  status: current
+  answers: 从一条新闻到一集成片的可复现步骤
+- path: creative/叙事设计与观众留存规范.md
+  layer: guide
+  status: current
+  answers: 长视频叙事骨架、Shorts 与 A/B 质量门
+- path: creative/编辑口吻与反讽指南.md
+  layer: guide
+  status: current
+  answers: 调查、解释、反讽的主次与边界
+- path: product/跨学科生产能力矩阵与能力边界规范.md
+  layer: guide
+  status: current
+  answers: 学科 × 内容类型 × 能力边界
+- path: v2/生产方向-00-总览.md
+  layer: guide
+  status: current
+  answers: 三条产品线的分工、共用以外的差异与共用流程
+- path: v2/生产方向-01-完整课程.md
+  layer: guide
+  status: current
+  answers: 10–20 分钟书籍/学科课程的生产方式
+- path: v2/生产方向-02-新闻调查.md
+  layer: guide
+  status: current
+  answers: 4–12 分钟新闻调查的生产方式
+- path: v2/生产方向-03-三分钟Vibe.md
+  layer: guide
+  status: current
+  answers: 2–4 分钟知识动画的生产方式
+- path: v2/预览与发布双模式-实施计划.md
+  layer: guide
+  status: current
+  answers: Preview/Release 双模式、P0/P1/P2 与 release-check
+- path: WORKFLOW.md
+  layer: guide
+  status: superseded
+  answers: 旧的端到端工作流叙述；命令链以生产流水线为准
+  superseded_by:
+  - 生产流水线-阶段与中间交付物.md
+- path: 生产路线.md
+  layer: guide
+  status: superseded
+  answers: Slide-first / Motion-enhanced 路线建议；已由生产方向总览取代
+  superseded_by:
+  - v2/生产方向-00-总览.md
+- path: 工业化动画工作流.md
+  layer: guide
+  status: superseded
+  answers: 旧的 3B1B 式动画流程；85 分线已废止，以动画视觉导演规范为准
+  superseded_by:
+  - 动画视觉导演规范.md
+  - 生产合同.md
+- path: v2/工业化生产流程V2.0-建议稿.md
+  layer: guide
+  status: superseded
+  answers: 2026-11-13 的 V2 工业化建议稿；现行以生产方向与流水线为准
+  superseded_by:
+  - v2/生产方向-00-总览.md
+  - 生产流水线-阶段与中间交付物.md
+- path: 五态映射表.md
+  layer: record
+  status: record
+  answers: 建议稿五个状态名与代码状态的对应
+- path: PROJECT_STATUS.md
+  layer: record
+  status: record
+  answers: 项目状态盘点与历史增量
+- path: 生产复杂度审计.md
+  layer: record
+  status: record
+  answers: 模块规模、调用链与瘦身停止条件（只读审计）
+- path: v2/P0-基线审计.md
+  layer: record
+  status: record
+  answers: V2 起点的基线审计
+- path: v2/生产管线v0.2-实施任务书.md
+  layer: record
+  status: record
+  answers: v0.1 盘点后的 P0–P3 工程任务书
+- path: v2/生产管线v0.2-P0交付记录.md
+  layer: record
+  status: record
+  answers: P0 可复现构建的交付记录
+- path: v2/生产管线v0.2-P1交付记录.md
+  layer: record
+  status: record
+  answers: P1 Environment + Linking 的交付记录
+- path: v2/生产管线v0.2-P2交付记录.md
+  layer: record
+  status: record
+  answers: P2 Shot Review Package 的交付记录
+- path: v2/生产管线v0.2-P3交付记录.md
+  layer: record
+  status: record
+  answers: P3 Visual Grammar 的交付记录
+- path: v2/生产管线v0.2-P4交付记录.md
+  layer: record
+  status: record
+  answers: P4 成片与 Review Package 的交付记录
+- path: v2/生产管线v0.2-P5视觉升级记录.md
+  layer: record
+  status: record
+  answers: P5 视觉复刻与前后对比记录
+- path: v2/证据-画面关联-设计记录.md
+  layer: record
+  status: record
+  answers: P4 claim/evidence 关联的设计记录
+- path: v2/Three.js-技术借鉴清单.md
+  layer: record
+  status: record
+  answers: 可借鉴的 Three.js 技术清单（未纳入）
+- path: v2/任务书-风水AB测试.md
+  layer: record
+  status: record
+  answers: 风水第一期 A/B/C 视觉压力测试任务书
+- path: v2/W3-T1-01-交付工单.md
+  layer: record
+  status: record
+  answers: W3 T1-01 整集交付工单
+- path: v2/m0/README.md
+  layer: record
+  status: draft
+  answers: 2026-11-13 V2 架构草案索引（未生效）
+- path: v2/m0/ARCHITECTURE_V2.md
+  layer: record
+  status: draft
+  answers: V2 架构草案（未生效）
+- path: v2/m0/DATA_CONTRACTS_V2.md
+  layer: record
+  status: draft
+  answers: V2 数据契约草案（未生效）
+- path: v2/m0/EXECUTION_PLAN.md
+  layer: record
+  status: draft
+  answers: V2 执行计划草案（未生效）
+- path: v2/m0/MIGRATION_PLAN_V2.md
+  layer: record
+  status: draft
+  answers: V2 迁移计划草案（未生效）
+- path: v2/m0/PRODUCTION_WORKFLOW_V2.md
+  layer: record
+  status: draft
+  answers: V2 生产工作流草案（未生效）
+- path: v2/m0/PRODUCT_SPEC_V2.md
+  layer: record
+  status: draft
+  answers: V2 产品规格草案（未生效）
+- path: v2/m0/QUALITY_SPEC_V2.md
+  layer: record
+  status: draft
+  answers: V2 质量标准草案（未生效）
+- path: stabilization/ANIMATION_QUALITY_MODEL.md
+  layer: record
+  status: record
+  answers: 2026-11-10 动画质量三分模型（基线记录）
+- path: stabilization/ASSET_GOVERNANCE.md
+  layer: record
+  status: record
+  answers: 2026-11-10 资产寻址与证据处置（基线记录）
+- path: stabilization/CONFIGURATION_STANDARD.md
+  layer: record
+  status: record
+  answers: 2026-11-10 配置权威与快照（基线记录）
+- path: stabilization/DELIVERY_CONTRACT.md
+  layer: record
+  status: record
+  answers: 2026-11-10 交付包与哈希（基线记录）
+- path: stabilization/DOCUMENTATION_STANDARD.md
+  layer: record
+  status: record
+  answers: 2026-11-10 文档层级与状态标记（基线记录）
+- path: stabilization/PRODUCTION_CONTRACT.md
+  layer: record
+  status: record
+  answers: 2026-11-10 两种生产模式与单一权威（基线记录）
+- path: stabilization/QUALITY_STANDARD.md
+  layer: record
+  status: record
+  answers: 2026-11-10 四层结论与字幕 QC（基线记录）
+- path: stabilization/QUALITY_STATE_MACHINE.md
+  layer: record
+  status: record
+  answers: 2026-11-10 BUILD/VERIFY/QUALITY/REVIEW/RELEASE 状态机（基线记录）
+- path: stabilization/TASK_EXECUTION_STANDARD.md
+  layer: record
+  status: record
+  answers: 2026-11-10 状态、检查点与 resume（基线记录）
+- path: stabilization/VISUAL_STANDARD.md
+  layer: record
+  status: record
+  answers: 2026-11-10 品牌与视觉密度（基线记录）
+- path: evaluations/复盘-T1-01视觉生产.md
+  layer: record
+  status: record
+  answers: T1-01 v1 拒收根因与九条整改规则
+- path: evaluations/课程复刻差距与稳定工作流.md
+  layer: record
+  status: record
+  answers: 课程复刻差距评估
+- path: evaluations/样片-注意力-3B1B差距与路线.md
+  layer: record
+  status: record
+  answers: 注意力样片差距评估
+- path: evaluations/新闻故事风格代码参考.md
+  layer: record
+  status: record
+  answers: 新闻故事风格的代码参考（评估中）
+- path: evaluations/科学图形与图表接入评估.md
+  layer: record
+  status: record
+  answers: 科学图形与图表接入评估
+- path: evaluations/评估-Blender写实渲染能力.md
+  layer: record
+  status: record
+  answers: Blender 写实渲染能力评估
+- path: evaluations/配色方案-学科适配.md
+  layer: record
+  status: record
+  answers: 按学科适配的配色方案评估

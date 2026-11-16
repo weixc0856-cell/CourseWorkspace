@@ -1,5 +1,7 @@
 # 交付契约（Delivery Contract）
 
+> **状态：2026-11-10 基线记录，不是现行契约。** 现行命令链见 [../生产流水线-阶段与中间交付物.md](../生产流水线-阶段与中间交付物.md)。
+
 - 日期：2026-11-10
 - 状态：已实现 `course-control package` / `package-verify`
 - 关联审计：`docs/audit/ARCHITECTURE_CONFLICTS.md` C-06、C-10

@@ -85,13 +85,13 @@ def main() -> int:
     workspace = args.workspace.resolve()
     root = content_root(workspace)
     if args.selftest:
-        return selftest(root / "build" / "golden")
+        return selftest(root / "build" / "_shared" / "golden")
 
     manifest_path = args.manifest if args.manifest.is_absolute() else workspace / args.manifest
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     composition = manifest["composition"]
     studio = workspace / "RemotionStudio"
-    current_dir = root / "build" / "golden" / "current"
+    current_dir = root / "build" / "_shared" / "golden" / "current"
     current_dir.mkdir(parents=True, exist_ok=True)
 
     results = []
@@ -123,11 +123,11 @@ def main() -> int:
         print(f"  [{entry['status']}] {entry['name']} diff={entry['diff']} threshold={entry['threshold']}")
 
     report = {"schema_version": 1, "manifest": str(manifest_path), "results": results}
-    report_path = root / "build" / "golden" / "report.json"
+    report_path = root / "build" / "_shared" / "golden" / "report.json"
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     failures = [item for item in results if item["status"] == "fail"]
     exceptions = [item for item in results if item["status"] in {"fail", "not_run"}]
-    (root / "build" / "golden" / "exceptions.json").write_text(
+    (root / "build" / "_shared" / "golden" / "exceptions.json").write_text(
         json.dumps({"schema_version": 1, "exceptions": exceptions}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )

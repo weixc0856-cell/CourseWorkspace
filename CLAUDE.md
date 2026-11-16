@@ -1,7 +1,7 @@
 # CourseWorkspace — 项目指导（Claude Code 入口）
 
 > 本文件只放**每次干活都必须遵守的红线**与**唯一入口**。细节在 `docs/`，按需查阅，不在此复制。
-> 全量文档地图：[docs/README.md](docs/README.md) · 阅读顺序：[docs/阅读顺序.md](docs/阅读顺序.md)
+> 文档地图：[docs/README.md](docs/README.md)（由 `docs/文档地图.yaml` 生成） · 命令链：[docs/生产流水线-阶段与中间交付物.md](docs/生产流水线-阶段与中间交付物.md)
 
 ---
 
@@ -43,7 +43,7 @@
 13. **skip ≠ pass。** 未执行的阶段不得写成通过；`not_run`、`incomplete`、采样不足一律不是通过，必须显式打印并计入异常队列。
 14. **视觉审计必须有正向断言。** 不能只查"0 重叠 / 0 越界"：必须同时校验**非背景像素占比 > 5%**、**页面无未捕获异常与 ErrorBoundary 节点**、**当前帧 `data-beat-id` / `data-asset-src` 与剧本一致**。每条规则必须配一个"能红"的负例。
 15. **不伪造验收。** 不得为通过而改测试预期、跳过检查、补写内容、拿旧产物顶替；发布签核必须由具名的人签字。
-16. **工程隔离。** 临时产物写 `build/<slug>/`，最终交付写 `deliver/<slug>/`；不全局安装依赖、不改系统 PATH；真实课程、模型权重与媒体不入库，远程仓库只放工作流。
+16. **工程隔离。** 临时产物写 `build/<slug>/`；跨课程工具产物写 `build/_shared/<tool>/`，日志写 `build/_logs/`；`build/` 顶层出现其他目录或散落文件即回归失败。最终交付写 `deliver/<slug>/`；不全局安装依赖、不改系统 PATH；真实课程、模型权重与媒体不入库，远程仓库只放工作流。
 17. **本地模型串行。** 所有本地模型调用走 `shared/ai_runtime` 跨进程锁，8080 唯一实例；**谁启动谁停止**，空闲时把端口让出来。VoxCPM2 在 50000、ComfyUI 在 8188，同样独占。
 18. **远程回退必须显式。** 仅当 `config/model-routing.yaml` 启用且环境变量存在才回退；DeepSeek 固定 `deepseek-flash`，禁用 `pro`；API key 只读环境变量，不写入文件或日志。
 19. **Claude Code 是默认文本后端。** 课程文本生产、字幕翻译、ContentQA 默认走 Claude Code（`--tools=`）；不可用即 `blocked`，只有 `claude_code_fallback: local_first` 才可回退，禁止静默降级。
@@ -62,22 +62,30 @@
 - **端口**：8080 本地模型（唯一）、8081 课件预览、3000 Remotion、5173 Motion Canvas、50000 VoxCPM2、8188 ComfyUI。8082 不存在。
 - **环境**：Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - **配置**（均不入库）：`config/tools.yaml`、`config/local-paths.yaml`（`content_root` / `docling_root` / TTS）、`config/model-routing.yaml`。
-- **内容根**：`<content_root>/{lessons,build,deliver,runtime,knowledge,audio,projects,references,archive}`；`course-control content-root` 可查询。
+- **内容根**：`<content_root>/{lessons,build,deliver,runtime,knowledge,audio,projects,references,archive}`；`course-control content-root` 可查询。`build/` 顶层只允许 `_engine-cache/`、`_shared/`、`_logs/`、`<slug>/`、`<project-id>/`，其余由回归直接失败。
 - **常用命令**：
   ```powershell
   .\scripts\check.ps1                                        # 全量回归（必须打印 check ok）
   course-control validate --lesson <slug>                     # 课程校验
   course-control preflight --lesson <slug>                    # 开工前置
+  course-control storyboard-page --lesson <slug>              # 静态分镜页（闸门）
+  course-control author-accept --lesson <slug> --kind storyboard-page  # 签字放行
+  python scripts/check_docs.py --write                        # 从 文档地图.yaml 生成 docs/README.md
   course-control checks --lesson <slug> --book-index <path>   # 类型化检查 + 异常队列
   course-control retime --lesson <slug>                       # 按实测旁白重算时间轴
   course-control subtitles-rebuild --lesson <slug>            # 字幕重建（实测对齐）
   course-control release-check --lesson <slug>                # 发布三态
+  course-control release-approve --lesson <slug> --by <name>  # 课程 review/release 签核
+  course-control release-approve --project <project.yaml> --by <name>  # 主题片候选签核
   course-control contract-validate --kind product|ledger|timeline --path <p>
   scripts/build-lesson.ps1 -Lesson <slug>                     # 完整构建
   scripts/check_segment_assets.py --lesson-dir <dir>          # 绑定扫描（缺参/复用图/禁令词）
   scripts/fetch_book_figures.py --source-id <id> --figure <n> # 从 Docling 取原书图
   node RemotionStudio/scripts/frame-audit.mjs                 # 帧审计（正向断言）
   python scripts/static_hold.py --film <mp4>                  # 死画面检测
+  python scripts/check_docs.py                                # 文档地图/链接/命令/路径
+  python scripts/check_build_layout.py <build> <lessons> <fixtures>  # build 顶层布局
+  python scripts/verify_content_manifest.py --manifest <json> --content-root <root>  # 内容根变更清单复核
   ```
   其余子命令见 `course-control --help`；完整验收命令见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
 - **协作协议**：[docs/协作协议-双会话流水线.md](docs/协作协议-双会话流水线.md)（作者 / 验证 / 统筹三分，交接三样证据）。
@@ -86,6 +94,7 @@
 
 ## 3. 索引（按需查阅，不在此堆砌）
 
+- **命令链与文档地图**：[docs/生产流水线-阶段与中间交付物.md](docs/生产流水线-阶段与中间交付物.md) · [docs/README.md](docs/README.md)
 - **架构与验收**：[docs/PRD.md](docs/PRD.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) · [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - **视觉与版式**：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md) · [docs/课程页面系统.md](docs/课程页面系统.md) · [docs/版式系统.md](docs/版式系统.md) · [docs/配色规范.md](docs/配色规范.md)
 - **生产合同与质量**：[docs/生产合同.md](docs/生产合同.md) · [docs/课程质量模型.md](docs/课程质量模型.md) · [docs/知识视频质量基准.md](docs/知识视频质量基准.md)

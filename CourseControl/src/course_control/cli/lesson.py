@@ -7,7 +7,7 @@ import typer
 from pathlib import Path
 
 from course_control.content.contracts import Status
-from course_control.content.paths import ContractError
+from course_control.content.paths import ContractError, LessonPaths
 from course_control.pipeline import BuildOptions, run_build
 from course_control.delivery.report import check_report_payload, toolchain_versions
 from course_control.content.validators import validate
@@ -124,6 +124,17 @@ def build_command(
     if storyboard_source not in (None, "storyboard", "director"):
         typer.echo("--storyboard-source must be storyboard or director", err=True)
         raise typer.Exit(2)
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    lesson_path = _lesson_path(workspace, lesson_dir, lesson)
+    try:
+        signed_paths = LessonPaths.load(
+            workspace.resolve(), lesson_path, storyboard_override=storyboard
+        )
+        assert_storyboard_signed(lesson_path, signed_paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     try:
         report, report_path = run_build(
             workspace.resolve(),

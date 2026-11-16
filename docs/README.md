@@ -1,141 +1,166 @@
-# 文档索引
+# 文档地图
 
-入口：**[阅读顺序.md](阅读顺序.md)** —— 先读哪份、每份只负责回答什么问题。
+> 本文件由 `scripts/check_docs.py --write` 从 `文档地图.yaml` 生成，不要手改。
+> 最后更新：2026-11-16
 
-仓库只保留两类文档：**现行契约与状态**，以及**供后续项目复用的指导文集**。项目材料、一次性记录、历史归档都在内容根（`<内容根>/projects/`、`<内容根>/archive/`），不进仓库。
+先读四份，其余按问题查表。**记录层不是指令**：审计、评估、交付记录与草案只说明当时看到了什么。
 
-边界规则与检查方法见 [仓库与项目边界.md](仓库与项目边界.md)，命令是 `course-control separation`。
+## 0. 先读四份
 
-## 1. 现行契约
+1. [PRD.md](PRD.md) —— 产品为什么存在、范围、功能需求与验收目标
+2. [ARCHITECTURE.md](ARCHITECTURE.md) —— 系统结构、模块职责与数据契约
+3. [课程生产统一契约V1.md](课程生产统一契约V1.md) —— Lesson / Shot / Narration / Timeline / Evidence / Render 的字段契约
+4. [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md) —— 唯一命令链：每个阶段跑什么命令、产出什么中间交付物、谁来签字
 
-- [PRD.md](PRD.md)：唯一产品基线
-- [ARCHITECTURE.md](ARCHITECTURE.md)：系统结构与数据契约
-- [架构-DDD上下文与边界.md](架构-DDD上下文与边界.md)：八个上下文的职责、聚合、依赖方向与改造结果
-- [课程生产统一契约V1.md](课程生产统一契约V1.md)：Lesson / Shot / Narration / Timeline / Evidence / Render
-- [contracts/](contracts/)：Production Contract / Visual Grammar / Quality Profile 的 JSON Schema 与示例
-- [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起）
+## 1. 按问题找文档
+
+| 问题 | 文档 | 只回答 |
+| --- | --- | --- |
+| 产品边界与功能需求 | [PRD.md](PRD.md) | 产品为什么存在、范围、功能需求与验收目标 |
+| 系统怎么运行、数据契约在哪 | [ARCHITECTURE.md](ARCHITECTURE.md) | 系统结构、模块职责与数据契约 |
+| 一条命令链：这一阶段跑什么、产出什么、谁签字 | [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md) | 唯一命令链：每个阶段跑什么命令、产出什么中间交付物、谁来签字 |
+| 开工前要填哪些合同 | [生产合同.md](生产合同.md) | 四份合同与 G0–G7 闸门，开工前先填 |
+| 验收命令与状态词 | [ACCEPTANCE.md](ACCEPTANCE.md) | 验收命令、状态词与证据要求 |
+| 为什么这样定 | [DECISIONS.md](DECISIONS.md) | 决策记录（D-001 起），冲突时按日期新者优先 |
+| 什么进仓库、什么只在内容根 | [仓库与项目边界.md](仓库与项目边界.md) | 仓库 / 内容根 / 产物的三层边界与检查 |
+| 什么叫好 | [知识视频质量基准.md](知识视频质量基准.md) | 什么叫好：内容/视觉/交付三层与 L1–L3 |
+| 一集课怎么验收 | [课程质量模型.md](课程质量模型.md) | 一集课怎么验收：八个维度与人工/程序边界 |
+| 新闻怎么做 | [新闻与调查报道标准.md](新闻与调查报道标准.md) | 新闻类的证据矩阵、六幕叙事、视觉语法与 100 分制 |
+| 用什么口吻讲 | [creative/编辑口吻与反讽指南.md](creative/编辑口吻与反讽指南.md) | 调查、解释、反讽的主次与边界 |
+| 三条产品线怎么分工 | [v2/生产方向-00-总览.md](v2/生产方向-00-总览.md) | 三条产品线的分工、共用以外的差异与共用流程 |
+| 每个镜头看见什么 | [视觉设计层.md](视觉设计层.md) | 镜头级视觉设计、blocking 与三关键帧 |
+| 声音怎么设计 | [声音导演层.md](声音导演层.md) | 旁白/音乐/音效/环境声/混音五轨与 cue sheet |
+| 课件怎么写 | [课件制作总指导.md](课件制作总指导.md) | 内容层四阶段与 slides / lecture_notes 契约 |
+| 交付包长什么样 | [课程生产交付物规范.md](课程生产交付物规范.md) | deliver/ 交付包与 build/<slug>/ 目录纪律 |
+| 作者/验证/统筹怎么交接 | [协作协议-双会话流水线.md](协作协议-双会话流水线.md) | 作者 / 验证 / 统筹三分与交接证据 |
+
+## 2. 入口
+
+- [协作协议-双会话流水线.md](协作协议-双会话流水线.md)：作者 / 验证 / 统筹三分与交接证据
+
+**以下不是现行规范，不要照做：**
+
+- [阅读顺序.md](阅读顺序.md)：旧的阅读顺序；已并入 README，保留下方清单备查（已取代 → README.md）
+
+## 3. 现行契约
+
+- [ACCEPTANCE.md](ACCEPTANCE.md)：验收命令、状态词与证据要求
+- [ARCHITECTURE.md](ARCHITECTURE.md)：系统结构、模块职责与数据契约
+- [DECISIONS.md](DECISIONS.md)：决策记录（D-001 起），冲突时按日期新者优先
+- [PRD.md](PRD.md)：产品为什么存在、范围、功能需求与验收目标
 - [TRACEABILITY.md](TRACEABILITY.md)：需求—模块—测试映射
-- [五态映射表.md](五态映射表.md)：建议稿名称与代码状态的对应
-- 项目/运行/质量/知识契约（2026-11-13 增量）：`shared/schemas/project-spec.schema.json`、`knowledge-ir.schema.json`、`curriculum.schema.json`；实现见 `delivery/project.py`、`platform/artifacts.py`、`platform/run_record.py`、`quality/defect.py`、`KnowledgeStudio/knowledge_ir.py`
-- [仓库与项目边界.md](仓库与项目边界.md)：工具、项目、产物三层；什么进仓库、什么只在内容根
-- [生产复杂度审计.md](生产复杂度审计.md)：模块清单、生产调用链、四象限分类与停止条件（2026-11-13 只读）
+- [contracts/examples/README.md](contracts/examples/README.md)：生产契约 JSON Schema 的示例索引
+- [仓库与项目边界.md](仓库与项目边界.md)：仓库 / 内容根 / 产物的三层边界与检查
+- [架构-DDD上下文与边界.md](架构-DDD上下文与边界.md)：八个上下文的职责、聚合、依赖方向与改造结果
+- [生产合同.md](生产合同.md)：四份合同与 G0–G7 闸门，开工前先填
+- [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md)：唯一命令链：每个阶段跑什么命令、产出什么中间交付物、谁来签字
+- [课程生产统一契约V1.md](课程生产统一契约V1.md)：Lesson / Shot / Narration / Timeline / Evidence / Render 的字段契约
 
-## 2. 生产指导文集
+## 4. 现行指南
 
-### 2.1 怎么做课
-
-- [知识视频质量基准.md](知识视频质量基准.md)：什么算好（内容/视觉/交付三层、L1/L2/L3、参考对标与反模式）；不新增门禁
-- [课程质量模型.md](课程质量模型.md)：八个维度（知识/教学/叙事/视觉/声音/配套/体验/交付）的单集验收标准；是标准，不是门禁
-- [生产路线.md](生产路线.md)：Slide-first / Motion-enhanced / Narration-led；两条产品线、四类画面、M0–M3。路线建议，不是门禁
-- [课件制作总指导.md](课件制作总指导.md)、[课程视觉风格指南.md](课程视觉风格指南.md)、[课程页面系统.md](课程页面系统.md)
-- [生产合同.md](生产合同.md)：四份合同、G0–G7、自动检查、三次人工治理、组件库、回归与落地顺序
-- [工业化动画工作流.md](工业化动画工作流.md)、[动画视觉导演规范.md](动画视觉导演规范.md)
-- [运镜与剪辑.md](运镜与剪辑.md)：静帧慢推、边界与剪辑节奏
-- [creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)：长视频叙事骨架、Shorts、A/B 视觉与质量门禁
-- [creative/编辑口吻与反讽指南.md](creative/编辑口吻与反讽指南.md)：调查、解释、反讽的主次与边界；40/30/20/10 配比、五种工具、验收三问（2026-11-14）
-- [新闻与调查报道标准.md](新闻与调查报道标准.md)：新闻类的编辑标准——证据矩阵、六幕叙事、六种视觉语法、四层声音、100 分制验收（2026-11-14）
-- [新闻视频生产流程.md](新闻视频生产流程.md)：从一条新闻到一集成片的可复现步骤（执行层面的命令与踩坑）
+- [3D动画生产流程.md](3D动画生产流程.md)：AI + 资产库 + Blender 的电影/动画流程
+- [AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)：建模阶段的接口、执行与反馈闭环
+- [Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)：Blender 任务 IR v2 的字段契约
+- [KnowledgeStudio.md](KnowledgeStudio.md)：拆页、检索、claim 引用与已知边界
+- [creative/叙事设计与观众留存规范.md](creative/叙事设计与观众留存规范.md)：长视频叙事骨架、Shorts 与 A/B 质量门
+- [creative/编辑口吻与反讽指南.md](creative/编辑口吻与反讽指南.md)：调查、解释、反讽的主次与边界
 - [product/跨学科生产能力矩阵与能力边界规范.md](product/跨学科生产能力矩阵与能力边界规范.md)：学科 × 内容类型 × 能力边界
-
-### 2.2 生产线
-
+- [v2/生产方向-00-总览.md](v2/生产方向-00-总览.md)：三条产品线的分工、共用以外的差异与共用流程
+- [v2/生产方向-01-完整课程.md](v2/生产方向-01-完整课程.md)：10–20 分钟书籍/学科课程的生产方式
+- [v2/生产方向-02-新闻调查.md](v2/生产方向-02-新闻调查.md)：4–12 分钟新闻调查的生产方式
+- [v2/生产方向-03-三分钟Vibe.md](v2/生产方向-03-三分钟Vibe.md)：2–4 分钟知识动画的生产方式
+- [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 与 release-check
+- [公式排版规范.md](公式排版规范.md)：FormulaSpec 唯一源与四道门
+- [内容类型与音频策略.md](内容类型与音频策略.md)：哪类内容要不要 BGM
+- [制片层.md](制片层.md)：订单、授权、用量与增量重建
+- [动画渲染适配器.md](动画渲染适配器.md)：引擎路由、适配器契约与失败恢复
+- [动画视觉导演规范.md](动画视觉导演规范.md)：动画原语与镜头语言
+- [动画预览-Animatic.md](动画预览-Animatic.md)：正式渲染前的 480p 时间线预览与缓存
+- [品牌与片头片尾.md](品牌与片头片尾.md)：品牌层字段、规格与验收
+- [声音导演层.md](声音导演层.md)：旁白/音乐/音效/环境声/混音五轨与 cue sheet
+- [声音资产-VoiceBible与Lexicon.md](声音资产-VoiceBible与Lexicon.md)：声线身份、读法词典与缓存失效
 - [导演层.md](导演层.md)：章节、镜头、引擎与旁白计划
-- [视觉设计层.md](视觉设计层.md)：艺术方向、blocking、三关键帧、运动与连续性；`course-control visual-design`
-- [镜头表-ShotSheet.md](镜头表-ShotSheet.md)：storyboard v2 设计字段、连续性与资产引用、编译复核与设计指纹
-- [动画预览-Animatic.md](动画预览-Animatic.md)：正式渲染前的 480p 时间线预览、四条检查与片段缓存
-- [3D动画生产流程.md](3D动画生产流程.md)：AI 指导 + 资产库 + Blender 电影/动画标准流程（blockout → animatic → 细节 → 渲染 → 合成 → QC）；三层结构资产库 → 环境 → 镜头
-- [../shared/scene-specs/README.md](../shared/scene-specs/README.md)：环境/镜头 JSON 契约、相机模板、render passes 与能力注册表
-- [v2/生产管线v0.2-实施任务书.md](v2/生产管线v0.2-实施任务书.md)：v0.1 进度盘点后的 P0–P3 工程化任务书（可复现、Linking、Shot Review、Visual Grammar + QC）
-- [v2/证据-画面关联-设计记录.md](v2/证据-画面关联-设计记录.md)：P4 才实现的 claim/evidence 设计记录，v0.2 不增加字段
-- [v2/Three.js-技术借鉴清单.md](v2/Three.js-技术借鉴清单.md)：只吸收 GLB/glTF、R3F/Drei、Theatre.js、VTK.js 等可借鉴点；不纳入 v0.2，不新增门禁
-- [v2/生产管线v0.2-P0交付记录.md](v2/生产管线v0.2-P0交付记录.md)：P0 可复现构建的实际交付、manifest 字段、缓存与测试证据
-- [v2/生产管线v0.2-P1交付记录.md](v2/生产管线v0.2-P1交付记录.md)：Environment `.blend` + Linking、a1/a4 隔离验证与 Overrides 缺口
-- [v2/生产管线v0.2-P2交付记录.md](v2/生产管线v0.2-P2交付记录.md)：Shot Review Package、QC、A/B 对比与自动触发
-- [v2/生产管线v0.2-P3交付记录.md](v2/生产管线v0.2-P3交付记录.md)：Visual Grammar 版本化/Builder 消费、release-check shot_review 与人工豁免
-- [v2/生产管线v0.2-P4交付记录.md](v2/生产管线v0.2-P4交付记录.md)：38.1 s / 6 镜 / 1080p 成片、6 个 Review Package、release-check PASS
-- [v2/生产管线v0.2-P5视觉升级记录.md](v2/生产管线v0.2-P5视觉升级记录.md)：P5 视觉复刻 38.1 s 成片、三场景前后对比；P4 判定返修
-- [v2/预览与发布双模式-实施计划.md](v2/预览与发布双模式-实施计划.md)：Preview/Release 双模式、P0/P1/P2 三级预览、增量缓存、统一入口与 `release-check`（2026-11-14）
-- [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照、四项检查与失效规则
-- [制片层.md](制片层.md)：订单、授权、用量、交付清单与增量重建
-- [动画渲染适配器.md](动画渲染适配器.md)：引擎路由、适配器契约、重试与产物校验
-- [WORKFLOW.md](WORKFLOW.md)：真实工作流；[提交前检查清单.md](提交前检查清单.md)：提交前的机械检查
-
-### 2.2.1 三条生产方向
-
-- [v2/生产方向-00-总览.md](v2/生产方向-00-总览.md)：课程 / 新闻 / 3 分钟 Vibe 三条线的共同原则、差异与共用流程
-- [v2/生产方向-01-完整课程.md](v2/生产方向-01-完整课程.md)：10–20 分钟书籍/学科课程；参考拆解、五段结构、预览与验收
-- [v2/生产方向-02-新闻调查.md](v2/生产方向-02-新闻调查.md)：4–12 分钟新闻调查；六幕、证据矩阵、素材体系、版权风险记录
-- [v2/生产方向-03-三分钟Vibe.md](v2/生产方向-03-三分钟Vibe.md)：2–4 分钟知识动画；一个点、四个空间层、三种动画语言、A/B/C 压力测试
-- [v2/任务书-风水AB测试.md](v2/任务书-风水AB测试.md)：风水第一期 38 s 段落的 A/B/C 视觉压力测试任务书（共同评价 + 方向性评价 + 交付物）
-
-### 2.3 声音与字幕
-
-- [声音资产-VoiceBible与Lexicon.md](声音资产-VoiceBible与Lexicon.md)：声线身份、读法词典、按片段失效的缓存键
+- [提交前检查清单.md](提交前检查清单.md)：提交前的机械检查
+- [新闻与调查报道标准.md](新闻与调查报道标准.md)：新闻类的证据矩阵、六幕叙事、视觉语法与 100 分制
+- [新闻视频生产流程.md](新闻视频生产流程.md)：从一条新闻到一集成片的可复现步骤
+- [本地3D资产库.md](本地3D资产库.md)：模型 / HDRI / PBR 贴图的索引与用法
+- [本地图像生成-FLUX3.md](本地图像生成-FLUX3.md)：本地 FLUX.3 只出静帧的边界与调用
 - [本地模型与配音工作流.md](本地模型与配音工作流.md)：VoxCPM2、串行锁与实时率
-- [内容类型与音频策略.md](内容类型与音频策略.md)、[音乐资产盘点.md](音乐资产盘点.md)
-- [声音导演层.md](声音导演层.md)：旁白/音乐/音效/环境声/混音五轨设计；`course-control sound-design`
-
-### 2.4 视觉与资产
-
-- [版式系统.md](版式系统.md)、[配色规范.md](配色规范.md)、[公式排版规范.md](公式排版规范.md)
-- [Blender场景任务IR-v2.md](Blender场景任务IR-v2.md)、[AI-Blender本地建模工作流.md](AI-Blender本地建模工作流.md)
-- [本地图像生成-FLUX3.md](本地图像生成-FLUX3.md)：只出静帧，不能生成视频
-- [本地3D资产库.md](本地3D资产库.md)：模型/HDRI/PBR 贴图的存放、JSON 索引、查询脚本与 Blender 用法；能用现成资产就不自己建（2026-11-14）
-- [品牌与片头片尾.md](品牌与片头片尾.md)、[../BrandIntro/README.md](../BrandIntro/README.md)：片头美术方向与 Gate
-- [evaluations/科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)
-- [evaluations/新闻故事风格代码参考.md](evaluations/新闻故事风格代码参考.md)：动画短段讲新闻的六种节拍、代码实现映射与改进提案；**评估中，未生效**，以 15 秒样片为转正条件（2026-11-14）
-
-### 2.5 资料与交付
-
+- [版式系统.md](版式系统.md)：页面模板、区域与 DesignSystem
+- [知识视频质量基准.md](知识视频质量基准.md)：什么叫好：内容/视觉/交付三层与 L1–L3
+- [第三方依赖准入规范.md](第三方依赖准入规范.md)：复用优先、准入检查与依赖登记
+- [视觉设计层.md](视觉设计层.md)：镜头级视觉设计、blocking 与三关键帧
+- [课件制作总指导.md](课件制作总指导.md)：内容层四阶段与 slides / lecture_notes 契约
+- [课程交付清单模板.md](课程交付清单模板.md)：人工可读的交付清单模板
+- [课程生产交付物规范.md](课程生产交付物规范.md)：deliver/ 交付包与 build/<slug>/ 目录纪律
+- [课程视觉风格指南.md](课程视觉风格指南.md)：字体、颜色、间距的落地取值
+- [课程质量模型.md](课程质量模型.md)：一集课怎么验收：八个维度与人工/程序边界
+- [课程页面系统.md](课程页面系统.md)：页面类型、固定网格与教学链
 - [资料采集与预处理.md](资料采集与预处理.md)：PDF / YouTube → 本机 Docling 区
-- [KnowledgeStudio.md](KnowledgeStudio.md)：拆页、检索、claim 引用
-- [课程生产交付物规范.md](课程生产交付物规范.md)、[课程交付清单模板.md](课程交付清单模板.md)
-- [第三方依赖准入规范.md](第三方依赖准入规范.md)：复用优先、口碑与活跃度校核、依赖登记
-- [../ReviewRunner/README.md](../ReviewRunner/README.md)：独立只读第二意见
+- [运镜与剪辑.md](运镜与剪辑.md)：静帧慢推、MotionPolicy 与剪辑节奏
+- [配色规范.md](配色规范.md)：Color Token、语义色与禁止项
+- [锁定与失效.md](锁定与失效.md)：Picture / Dialogue Lock 快照与失效规则
+- [镜头表-ShotSheet.md](镜头表-ShotSheet.md)：storyboard v2 设计字段、连续性与编译复核
+- [音乐资产盘点.md](音乐资产盘点.md)：曲目、许可与电平
 
-## 3. 收敛后的生产标准（2026-11-10）
+**以下不是现行规范，不要照做：**
 
-- [stabilization/PRODUCTION_CONTRACT.md](stabilization/PRODUCTION_CONTRACT.md)：两种生产模式、单一权威、导演/build 接入
-- [stabilization/CONFIGURATION_STANDARD.md](stabilization/CONFIGURATION_STANDARD.md)：配置权威、继承与快照
-- [stabilization/TASK_EXECUTION_STANDARD.md](stabilization/TASK_EXECUTION_STANDARD.md)：状态、检查点、resume、超时、并发
-- [stabilization/QUALITY_STANDARD.md](stabilization/QUALITY_STANDARD.md)：四层结论、WARN 分类、字幕 QC、裁决
-- [stabilization/QUALITY_STATE_MACHINE.md](stabilization/QUALITY_STATE_MACHINE.md)：BUILD/VERIFY/QUALITY/REVIEW/RELEASE 状态与签核
-- [stabilization/VISUAL_STANDARD.md](stabilization/VISUAL_STANDARD.md)：品牌、2D/3D、镜头分类、新闻密度
-- [stabilization/ANIMATION_QUALITY_MODEL.md](stabilization/ANIMATION_QUALITY_MODEL.md)：结构/像素/人工三分（D-071）
-- [stabilization/ASSET_GOVERNANCE.md](stabilization/ASSET_GOVERNANCE.md)：资产寻址、证据处置、vendor
-- [stabilization/DELIVERY_CONTRACT.md](stabilization/DELIVERY_CONTRACT.md)：`package` / `package-verify`、哈希与缺项失败
-- [stabilization/DOCUMENTATION_STANDARD.md](stabilization/DOCUMENTATION_STANDARD.md)：文档层级、状态标记、数字来源
-- [audit/evidence-decisions.yaml](audit/evidence-decisions.yaml)：缺失证据的处置清单
+- [WORKFLOW.md](WORKFLOW.md)：旧的端到端工作流叙述；命令链以生产流水线为准（已取代 → 生产流水线-阶段与中间交付物.md）
+- [v2/工业化生产流程V2.0-建议稿.md](v2/工业化生产流程V2.0-建议稿.md)：2026-11-13 的 V2 工业化建议稿；现行以生产方向与流水线为准（已取代 → v2/生产方向-00-总览.md、生产流水线-阶段与中间交付物.md）
+- [工业化动画工作流.md](工业化动画工作流.md)：旧的 3B1B 式动画流程；85 分线已废止，以动画视觉导演规范为准（已取代 → 动画视觉导演规范.md、生产合同.md）
+- [生产路线.md](生产路线.md)：Slide-first / Motion-enhanced 路线建议；已由生产方向总览取代（已取代 → v2/生产方向-00-总览.md）
 
-## 4. 状态与验收
+## 5. 记录（不是指令）
 
-- [PROJECT_STATUS.md](PROJECT_STATUS.md)：当前状态与 PRD 盘点
-- [ACCEPTANCE.md](ACCEPTANCE.md)：验收规则、命令与证据
-- 生产线路标：[v2/工业化生产流程V2.0-建议稿.md](v2/工业化生产流程V2.0-建议稿.md)（D-089）
-- 基线审计：[v2/P0-基线审计.md](v2/P0-基线审计.md)
-- 全链路试点（已归档）：`<内容根>/archive/docs-2026-11/v2/P5-全链路验证.md`
-- 工业化完成度评估（已归档）：`<内容根>/archive/docs-2026-11/v2/V2-工业化完成度评估.md`
-- M0 架构审计：[v2/m0/README.md](v2/m0/README.md)（2026-11-13；V2 产品升级六份草案，未生效）
-- 五态映射：[五态映射表.md](五态映射表.md)（建议稿的五个 VERIFIED 名称 → 代码状态）
 
-## 5. 评估与雷达
+**以下不是现行规范，不要照做：**
 
-- [evaluations/课程复刻差距与稳定工作流.md](evaluations/课程复刻差距与稳定工作流.md)
-- [evaluations/样片-注意力-3B1B差距与路线.md](evaluations/样片-注意力-3B1B差距与路线.md)
-- [evaluations/复盘-T1-01视觉生产.md](evaluations/复盘-T1-01视觉生产.md)：v1 拒收根因、九条整改规则、30 秒视觉样片门槛与临时文件路径纪律（2026-11-15）
-- [evaluations/配色方案-学科适配.md](evaluations/配色方案-学科适配.md)
-- [evaluations/评估-Blender写实渲染能力.md](evaluations/评估-Blender写实渲染能力.md)
+- [PROJECT_STATUS.md](PROJECT_STATUS.md)：项目状态盘点与历史增量（记录）
+- [audit/content-changes-2026-11-16.md](audit/content-changes-2026-11-16.md)：本轮内容根移动、归档、删除与未解决项清单（记录）
+- [audit/handoff-2026-11-16.md](audit/handoff-2026-11-16.md)：2026-11-16 文档与目录整理的交接包与 Codex 只读审查条件（记录）
+- [evaluations/复盘-T1-01视觉生产.md](evaluations/复盘-T1-01视觉生产.md)：T1-01 v1 拒收根因与九条整改规则（记录）
+- [evaluations/新闻故事风格代码参考.md](evaluations/新闻故事风格代码参考.md)：新闻故事风格的代码参考（评估中）（记录）
+- [evaluations/样片-注意力-3B1B差距与路线.md](evaluations/样片-注意力-3B1B差距与路线.md)：注意力样片差距评估（记录）
+- [evaluations/科学图形与图表接入评估.md](evaluations/科学图形与图表接入评估.md)：科学图形与图表接入评估（记录）
+- [evaluations/评估-Blender写实渲染能力.md](evaluations/评估-Blender写实渲染能力.md)：Blender 写实渲染能力评估（记录）
+- [evaluations/课程复刻差距与稳定工作流.md](evaluations/课程复刻差距与稳定工作流.md)：课程复刻差距评估（记录）
+- [evaluations/配色方案-学科适配.md](evaluations/配色方案-学科适配.md)：按学科适配的配色方案评估（记录）
+- [stabilization/ANIMATION_QUALITY_MODEL.md](stabilization/ANIMATION_QUALITY_MODEL.md)：2026-11-10 动画质量三分模型（基线记录）（记录）
+- [stabilization/ASSET_GOVERNANCE.md](stabilization/ASSET_GOVERNANCE.md)：2026-11-10 资产寻址与证据处置（基线记录）（记录）
+- [stabilization/CONFIGURATION_STANDARD.md](stabilization/CONFIGURATION_STANDARD.md)：2026-11-10 配置权威与快照（基线记录）（记录）
+- [stabilization/DELIVERY_CONTRACT.md](stabilization/DELIVERY_CONTRACT.md)：2026-11-10 交付包与哈希（基线记录）（记录）
+- [stabilization/DOCUMENTATION_STANDARD.md](stabilization/DOCUMENTATION_STANDARD.md)：2026-11-10 文档层级与状态标记（基线记录）（记录）
+- [stabilization/PRODUCTION_CONTRACT.md](stabilization/PRODUCTION_CONTRACT.md)：2026-11-10 两种生产模式与单一权威（基线记录）（记录）
+- [stabilization/QUALITY_STANDARD.md](stabilization/QUALITY_STANDARD.md)：2026-11-10 四层结论与字幕 QC（基线记录）（记录）
+- [stabilization/QUALITY_STATE_MACHINE.md](stabilization/QUALITY_STATE_MACHINE.md)：2026-11-10 BUILD/VERIFY/QUALITY/REVIEW/RELEASE 状态机（基线记录）（记录）
+- [stabilization/TASK_EXECUTION_STANDARD.md](stabilization/TASK_EXECUTION_STANDARD.md)：2026-11-10 状态、检查点与 resume（基线记录）（记录）
+- [stabilization/VISUAL_STANDARD.md](stabilization/VISUAL_STANDARD.md)：2026-11-10 品牌与视觉密度（基线记录）（记录）
+- [v2/P0-基线审计.md](v2/P0-基线审计.md)：V2 起点的基线审计（记录）
+- [v2/Three.js-技术借鉴清单.md](v2/Three.js-技术借鉴清单.md)：可借鉴的 Three.js 技术清单（未纳入）（记录）
+- [v2/W3-T1-01-交付工单.md](v2/W3-T1-01-交付工单.md)：W3 T1-01 整集交付工单（记录）
+- [v2/m0/ARCHITECTURE_V2.md](v2/m0/ARCHITECTURE_V2.md)：V2 架构草案（未生效）（草案）
+- [v2/m0/DATA_CONTRACTS_V2.md](v2/m0/DATA_CONTRACTS_V2.md)：V2 数据契约草案（未生效）（草案）
+- [v2/m0/EXECUTION_PLAN.md](v2/m0/EXECUTION_PLAN.md)：V2 执行计划草案（未生效）（草案）
+- [v2/m0/MIGRATION_PLAN_V2.md](v2/m0/MIGRATION_PLAN_V2.md)：V2 迁移计划草案（未生效）（草案）
+- [v2/m0/PRODUCTION_WORKFLOW_V2.md](v2/m0/PRODUCTION_WORKFLOW_V2.md)：V2 生产工作流草案（未生效）（草案）
+- [v2/m0/PRODUCT_SPEC_V2.md](v2/m0/PRODUCT_SPEC_V2.md)：V2 产品规格草案（未生效）（草案）
+- [v2/m0/QUALITY_SPEC_V2.md](v2/m0/QUALITY_SPEC_V2.md)：V2 质量标准草案（未生效）（草案）
+- [v2/m0/README.md](v2/m0/README.md)：2026-11-13 V2 架构草案索引（未生效）（草案）
+- [v2/任务书-风水AB测试.md](v2/任务书-风水AB测试.md)：风水第一期 A/B/C 视觉压力测试任务书（记录）
+- [v2/生产管线v0.2-P0交付记录.md](v2/生产管线v0.2-P0交付记录.md)：P0 可复现构建的交付记录（记录）
+- [v2/生产管线v0.2-P1交付记录.md](v2/生产管线v0.2-P1交付记录.md)：P1 Environment + Linking 的交付记录（记录）
+- [v2/生产管线v0.2-P2交付记录.md](v2/生产管线v0.2-P2交付记录.md)：P2 Shot Review Package 的交付记录（记录）
+- [v2/生产管线v0.2-P3交付记录.md](v2/生产管线v0.2-P3交付记录.md)：P3 Visual Grammar 的交付记录（记录）
+- [v2/生产管线v0.2-P4交付记录.md](v2/生产管线v0.2-P4交付记录.md)：P4 成片与 Review Package 的交付记录（记录）
+- [v2/生产管线v0.2-P5视觉升级记录.md](v2/生产管线v0.2-P5视觉升级记录.md)：P5 视觉复刻与前后对比记录（记录）
+- [v2/生产管线v0.2-实施任务书.md](v2/生产管线v0.2-实施任务书.md)：v0.1 盘点后的 P0–P3 工程任务书（记录）
+- [v2/证据-画面关联-设计记录.md](v2/证据-画面关联-设计记录.md)：P4 claim/evidence 关联的设计记录（记录）
+- [五态映射表.md](五态映射表.md)：建议稿五个状态名与代码状态的对应（记录）
+- [生产复杂度审计.md](生产复杂度审计.md)：模块规模、调用链与瘦身停止条件（只读审计）（记录）
 
-## 6. 许可与贡献
+## 6. 写新文档的规则
 
-- [LICENSE](../LICENSE)：AGPL-3.0-or-later
-- [NOTICE](../NOTICE)：第三方许可
-- [CONTRIBUTING.md](../CONTRIBUTING.md)：贡献与 CLA
-
-## 7. 项目材料与归档（不入远程）
-
-历史记录与项目材料都在**内容根**下：
-
-- `<内容根>/projects/<系列>/`：生产方向、分集方案、研究、评审；索引 `<内容根>/projects/README.md`；知识系列总纲在 `<内容根>/projects/knowledge-series/`
-- `<内容根>/archive/`：历史归档——E6/E6.5/R1/Primer 证据、`records-2026-11/`、`stabilization-evidence/`、`docs-2026-11/`（本次收敛移出的已结束文档，含索引 README）
-- 归档原件不参与任何检查，也不作为指令；写新规范时只提炼结论，不搬文件。
+1. 先在本文件对应的 `文档地图.yaml` 登记它的唯一职责；写不出“只回答一个问题”，就不要新建。
+2. 与现有文档重叠时，在开头写明“补充/取代了哪一份”，把旧文件标为 `superseded`，并指向新文件。
+3. 一次性记录（审计、评估、复盘、交付记录）放记录层，不进入现行契约或指南。
+4. 改动后跑 `uv run --project CourseControl python scripts/check_docs.py --write`，再跑检查。

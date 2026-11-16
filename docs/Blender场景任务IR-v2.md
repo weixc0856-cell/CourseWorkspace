@@ -1,7 +1,7 @@
 # Blender 场景任务 IR v2
 
 > 适用版本：Blender 5.2.3 LTS / CourseControl 0.1.0
-> 契约实现：`CourseControl/src/course_control/blender_scene.py`（外部 Pydantic）与 `BlenderStudio/scripts/scene_system/task_schema.py`（Blender 内置 Python，无第三方依赖）
+> 契约实现：`CourseControl/src/course_control/rendering/blender_scene.py`（外部 Pydantic）与 `BlenderStudio/scripts/scene_system/task_schema.py`（Blender 内置 Python，无第三方依赖）
 > JSON Schema：[shared/schemas/blender-scene-task.schema.json](../shared/schemas/blender-scene-task.schema.json)
 
 任务 IR v2 是 AI / 编排层与 Blender 执行层之间的唯一结构化接口。AI 只产出 JSON，Blender 只执行白名单字段；不执行任意 Python 代码。

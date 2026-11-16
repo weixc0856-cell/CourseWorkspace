@@ -375,7 +375,7 @@ def run_review(
         return RunOutcome(EXIT_CONTRACT, None, None, str(exc))
 
     content = content_root(repo)
-    output_root = options.output_root or (content / "build" / "reviews")
+    output_root = options.output_root or (content / "build" / "_shared" / "reviews")
     review_dir = _review_dir(output_root, options.review_type, resolution.review_rev, moment)
     review_dir.mkdir(parents=True, exist_ok=True)
     try:

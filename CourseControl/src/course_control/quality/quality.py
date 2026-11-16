@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from course_control.content.paths import LessonPaths
+from course_control.quality.certificate import quality_content_sha256
 
 PASS = "PASS"
 WARN = "WARN"
@@ -200,10 +201,23 @@ def _q4(paths: LessonPaths) -> dict:
             "evidence": ["build/<slug>/final/build-report.json"],
             "stages": stages,
         }
-    status = PASS if not skipped else WARN
+    if verdict != "pass":
+        return {
+            "status": INCOMPLETE,
+            "reason": f"build report verdict={verdict or 'unknown'}",
+            "evidence": ["build/<slug>/final/build-report.json"],
+            "stages": stages,
+        }
+    if skipped:
+        return {
+            "status": INCOMPLETE,
+            "reason": "build report has skipped stages: " + ", ".join(skipped),
+            "evidence": ["build/<slug>/final/build-report.json"],
+            "stages": stages,
+        }
     return {
-        "status": status,
-        "reason": "build report verdict=pass" + (f"; skipped stages: {', '.join(skipped)}" if skipped else ""),
+        "status": PASS,
+        "reason": "build report verdict=pass",
         "evidence": ["build/<slug>/final/build-report.json"],
         "stages": stages,
     }
@@ -360,7 +374,17 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
             if item["status"] in {WARN, BLOCKED, INCOMPLETE}
         ],
     }
+    report["content_sha256"] = quality_content_sha256(report)
     target = paths.build_root / "quality" / "quality-report.json"
+    existing = _load(target)
+    if existing and existing.get("generated_at"):
+        same = {
+            key: value for key, value in existing.items() if key != "generated_at"
+        } == {
+            key: value for key, value in report.items() if key != "generated_at"
+        }
+        if same:
+            report["generated_at"] = existing["generated_at"]
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

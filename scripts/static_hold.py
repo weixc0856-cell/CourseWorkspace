@@ -134,7 +134,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.selftest:
-        return selftest(Path(args.dir) if args.dir else Path.cwd() / "build")
+        return selftest(Path(args.dir) if args.dir else Path.cwd() / "build" / "_shared")
 
     source = "audit-render"
     expected = None

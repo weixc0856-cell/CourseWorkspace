@@ -1,5 +1,7 @@
 # 配置标准（CONFIGURATION_STANDARD）
 
+> **状态：2026-11-10 基线记录，不是现行契约。** 现行命令链见 [../生产流水线-阶段与中间交付物.md](../生产流水线-阶段与中间交付物.md)。
+
 - 日期：2026-11-10
 - 关联：C-24、C-29、C-08；`CourseControl/src/course_control/config_resolve.py`
 - 状态：已实现；05/06/01/nvda 已实跑

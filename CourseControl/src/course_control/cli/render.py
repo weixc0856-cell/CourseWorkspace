@@ -78,6 +78,14 @@ def narrate_command(
     )
 
     workspace = workspace.resolve()
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        sign_paths = LessonPaths.load(workspace, _lesson_path(workspace, None, lesson))
+        assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     config = load_local_paths(workspace)
     tts = config.get("tts") or {}
     ai_root = Path(config.get("ai_root") or "").resolve()
@@ -739,6 +747,13 @@ def burn_subs_command(
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     if encoder not in ("auto", "qsv", "libx264"):
         typer.echo("--encoder must be auto, qsv or libx264", err=True)
         raise typer.Exit(2)
@@ -836,6 +851,13 @@ def audio_mix_command(
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     result = mix_lesson(workspace.resolve(), paths)
     typer.echo(f"status: {result.status.value}")
     if result.output is not None:

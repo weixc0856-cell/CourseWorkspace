@@ -22,6 +22,17 @@ render_app = typer.Typer(
 app.add_typer(render_app, name="render")
 
 
+def _require_signoff(paths) -> None:
+    """The storyboard gate applies to every motion render of a lesson."""
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
+
+
 def _mode(value: str):
     from course_control.preview.profile import RenderMode
 
@@ -87,6 +98,9 @@ def render_shot(
     render_mode = _mode(mode)
     try:
         paths = _paths(workspace, lesson, lesson_dir)
+        _require_signoff(paths)
+    except typer.Exit:
+        raise
     except Exception as exc:  # noqa: BLE001 - contract errors are user-facing
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
@@ -128,6 +142,9 @@ def render_segment(
     render_mode = _mode(mode)
     try:
         paths = _paths(workspace, lesson, lesson_dir)
+        _require_signoff(paths)
+    except typer.Exit:
+        raise
     except Exception as exc:  # noqa: BLE001
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
@@ -192,6 +209,7 @@ def render_project(
             except Exception as exc:  # noqa: BLE001
                 typer.echo(str(exc), err=True)
                 raise typer.Exit(1)
+            _require_signoff(paths)
             if render_mode.value == "release":
                 payload = release_build(paths)
                 if as_json:
@@ -263,6 +281,7 @@ def render_project(
     except Exception as exc:  # noqa: BLE001
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+    _require_signoff(paths)
     if render_mode.value == "release":
         payload = release_build(paths)
         if as_json:
@@ -336,6 +355,7 @@ def preview_pilot(
         except Exception as exc:  # noqa: BLE001
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
+        _require_signoff(paths)
         profile = _profile(paths, RenderMode.PREVIEW, PreviewLevel.SHOT, short_edge)
         try:
             payload = run_pilot(paths, profile=profile, force=force)
@@ -542,6 +562,21 @@ def episode_build_command(
     except Exception as exc:  # noqa: BLE001
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+        from course_control.release.check import content_exception_for
+
+        exception = content_exception_for(paths.build_root, paths.slug)
+        if exception is not None:
+            raise RuntimeError(
+                "open content exception: "
+                + str(exception.get("reason") or exception.get("detail") or "see queue")
+            )
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     film = (video or (paths.build_root / "final" / "course-video.mp4")).resolve()
     subtitled = (captioned or (paths.build_root / "final" / "course-video-captioned.mp4")).resolve()
     track = (narration or (paths.build_root / "narration" / "narration.resequenced.wav")).resolve()
@@ -565,4 +600,4 @@ def episode_build_command(
         for stage in report.stages:
             typer.echo(f"  [{stage.status.value}] {stage.name}")
         typer.echo(f"report: {target}")
-    raise typer.Exit(1 if report.verdict == "fail" else 0)
+    raise typer.Exit(0 if report.verdict == "pass" else 1)

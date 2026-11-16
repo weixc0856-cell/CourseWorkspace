@@ -47,6 +47,9 @@ def build(
     only: set[str] | None = None,
     force: bool = False,
 ) -> dict:
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
     build_root = paths.build_root
     out = build_root / "animatic"
     segments_dir = out / "cache" / "segments"

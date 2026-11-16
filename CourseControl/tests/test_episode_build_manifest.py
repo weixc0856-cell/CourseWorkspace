@@ -29,6 +29,7 @@ class EpisodeBuildManifestTest(unittest.TestCase):
         self.workspace = root
         self.paths = SimpleNamespace(
             slug="demo",
+            workspace=root,
             lesson_dir=lesson,
             build_root=build,
             subtitles_path=lambda: lesson / "subtitles.srt",
@@ -93,6 +94,31 @@ class EpisodeBuildManifestTest(unittest.TestCase):
         freshness = check_freshness(self.paths, self.video)
         self.assertFalse(freshness.fresh)
         self.assertIn("timing.json", freshness.reason)
+
+    def test_forced_manifest_is_not_publishable(self):
+        write_manifest(self.paths, self.workspace, self.video, allow_older=True)
+        freshness = check_freshness(self.paths, self.video)
+        self.assertFalse(freshness.fresh)
+        self.assertIn("force", freshness.reason or "")
+
+    def test_changed_input_path_is_stale(self):
+        payload = write_manifest(self.paths, self.workspace, self.video)
+        other = self._write(self.lesson / "authoring" / "other.json", "{}")
+        for entry in payload["inputs"]:
+            if entry["name"] == "episode_spec":
+                entry["path"] = str(other)
+        (self.build / "manifest.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+        freshness = check_freshness(self.paths, self.video)
+        self.assertFalse(freshness.fresh)
+        self.assertIn("episode_spec", freshness.reason or "")
+
+    def test_missing_required_input_is_stale(self):
+        write_manifest(self.paths, self.workspace, self.video)
+        (self.lesson / "lesson.yaml").unlink()
+        freshness = check_freshness(self.paths, self.video)
+        self.assertFalse(freshness.fresh)
 
     def test_missing_manifest_falls_back_to_mtime_and_says_weak(self):
         freshness = check_freshness(self.paths, self.video)

@@ -209,6 +209,13 @@ def narration_build_command(
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        assert_storyboard_signed(root, paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     script_relative = (
         paths.lesson.authoring.script
         if paths.lesson.authoring and paths.lesson.authoring.script
@@ -257,6 +264,139 @@ def narration_build_command(
         typer.echo(f"sample: {paths.build_root / 'narration' / 'sample' / 'sample.wav'}")
     else:
         typer.echo(f"meta: {paths.build_root / 'narration' / 'narration.meta.json'}")
+
+
+@app.command("storyboard-page")
+def storyboard_page_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Build the static, motion-free storyboard page used for sign-off."""
+    from course_control.authoring.storyboard_page import build
+    from course_control.platform.workspace_layout import build_root_for
+
+    root = _lesson_path(workspace, lesson_dir, lesson)
+    try:
+        paths = LessonPaths.load(workspace.resolve(), root)
+        manifest = build(
+            root.name,
+            root,
+            build_root_for(workspace.resolve(), root.name),
+            storyboard_path=paths.storyboard_source,
+            storyboard_data=paths.storyboard,
+        )
+    except (OSError, ValueError) as exc:
+        typer.echo(f"storyboard-page failed: {exc}", err=True)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(json.dumps(manifest, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"pages: {manifest['pages']}  shots: {manifest['shots']}")
+        typer.echo(f"page: {manifest['html']}")
+        if manifest["missing_captures"]:
+            typer.echo(f"NOT READY: missing slide captures: {manifest['missing_captures']}")
+            typer.echo("capture the slides, rebuild this page, then review it")
+            raise typer.Exit(1)
+        typer.echo("next: course-control storyboard-review "
+                   f"--lesson {root.name} --approve 1,2,..., then course-control "
+                   f"author-accept --lesson {root.name} --kind storyboard-page")
+
+
+@app.command("storyboard-review")
+def storyboard_review_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    approve: str = typer.Option("", "--approve", help="Comma-separated page numbers"),
+    reject: str = typer.Option("", "--reject", help="Comma-separated page numbers"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Record approve/reject decisions for individual storyboard pages."""
+    from course_control.platform.workspace_layout import build_root_for
+
+    root = _lesson_path(workspace, lesson_dir, lesson)
+    page_dir = build_root_for(workspace.resolve(), root.name) / "storyboard"
+    manifest_path = page_dir / "manifest.json"
+    if not manifest_path.is_file():
+        typer.echo("storyboard page missing; run storyboard-page first", err=True)
+        raise typer.Exit(1)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    pages = manifest.get("pages_detail") or []
+    total = int(manifest.get("pages") or len(pages))
+
+    def _numbers(value: str) -> set[int]:
+        result = set()
+        for part in value.replace(" ", "").split(","):
+            if not part:
+                continue
+            try:
+                result.add(int(part))
+            except ValueError:
+                typer.echo(f"not a page number: {part}", err=True)
+                raise typer.Exit(2)
+        return result
+
+    approved = _numbers(approve)
+    rejected = _numbers(reject)
+    overlap = approved & rejected
+    if overlap:
+        typer.echo(f"page(s) both approved and rejected: {sorted(overlap)}", err=True)
+        raise typer.Exit(2)
+    unknown = (approved | rejected) - set(range(1, total + 1))
+    if unknown:
+        typer.echo(f"page(s) out of range 1..{total}: {sorted(unknown)}", err=True)
+        raise typer.Exit(2)
+
+    if len(pages) != total or sorted(int(row["page"]) for row in pages) != list(range(1, total + 1)):
+        typer.echo("manifest pages_detail does not cover every page; rebuild the page", err=True)
+        raise typer.Exit(1)
+
+    decisions_path = page_dir / "decisions.json"
+    previous: dict[int, str] = {}
+    if decisions_path.is_file():
+        try:
+            prior = json.loads(decisions_path.read_text(encoding="utf-8"))
+            # A decision only applies to the page it was made on.  If either
+            # hash changed, every old approval is void and starts pending.
+            if (
+                prior.get("storyboard_sha256") == manifest.get("storyboard_sha256")
+                and prior.get("html_sha256") == manifest.get("html_sha256")
+                and len(prior.get("pages") or []) == total
+            ):
+                previous = {
+                    int(item["page"]): str(item.get("decision") or "pending")
+                    for item in prior.get("pages") or []
+                }
+        except (OSError, ValueError, KeyError, TypeError):
+            previous = {}
+    rows = []
+    for item in pages:
+        number = int(item["page"])
+        decision = "approve" if number in approved else (
+            "reject" if number in rejected else previous.get(number, "pending")
+        )
+        rows.append({**item, "decision": decision})
+    decisions_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "lesson": root.name,
+                "storyboard_sha256": manifest.get("storyboard_sha256"),
+                "html_sha256": manifest.get("html_sha256"),
+                "pages": rows,
+                "approved": sum(1 for row in rows if row["decision"] == "approve"),
+                "rejected": sum(1 for row in rows if row["decision"] == "reject"),
+                "pending": sum(1 for row in rows if row["decision"] == "pending"),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    typer.echo(f"decisions: {decisions_path}")
+    typer.echo(f"approved: {sum(1 for row in rows if row['decision'] == 'approve')} / {total}")
 
 
 @app.command("shot-sheet")

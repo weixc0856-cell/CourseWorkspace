@@ -275,7 +275,7 @@ Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output
 - `ArtifactRegistry`（`platform/artifacts.py`）：`<内容根>/runtime/artifacts/<project>/registry.json`，按 sha256 登记 build 内产物，可由目录重建；不替代交付 manifest。
 - `RunRecord`（`platform/run_record.py`）：`<内容根>/runtime/runs/<run-id>/run.json`，八阶段历史内联，原子写。
 - 以上三个契约当前不被构建流水线读取。CLI：`project-validate`、`project-show`、`artifact-index`、`run-start`、`run-status`。
-- 知识侧：`KnowledgeStudio/knowledge_ir.py`（概念、先修、claim、证据、冲突）与 `CurriculumPlan`（覆盖、先修顺序、集数窗口）；Schema 为 `shared/schemas/knowledge-ir.schema.json` 与 `curriculum.schema.json`。这些契约不改变现有页级证据模型。
+- 知识侧：`KnowledgeStudio/src/knowledge_studio/knowledge_ir.py`（概念、先修、claim、证据、冲突）与 `CurriculumPlan`（覆盖、先修顺序、集数窗口）；Schema 为 `shared/schemas/knowledge-ir.schema.json` 与 `curriculum.schema.json`。这些契约不改变现有页级证据模型。
 - 质量侧：`quality/defect.py`（统一缺陷，`build/<slug>/quality/defects.json`）、`quality/repair.py`（归因→策略→重跑范围）、`quality/regression.py`（fixed / still_open / introduced）。CLI：`quality-diagnose`、`quality-repair-plan`、`quality-regression`、`quality-certificate`。证书写入 `build/<slug>/quality/certificate.json`，verdict 由缺陷、质量门与报告哈希共同决定。修复执行器尚未接入。
 
 ---

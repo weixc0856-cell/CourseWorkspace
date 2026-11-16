@@ -13,7 +13,7 @@
 // Rules: text inside the 5% title-safe area, no clipped text, WCAG contrast
 // (4.5 normal / 3.0 large, docs/配色规范.md), and no subtitle box covering an
 // element marked data-evidence. Failures carry frame, selector and a PNG in
-// <content_root>/build/frame-audit/frames/.
+// <content_root>/build/_shared/frame-audit/frames/.
 
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
@@ -520,8 +520,8 @@ async function main() {
   const frames = args.map(Number).filter((value) => Number.isFinite(value) && value >= 0);
   const root = contentRoot();
   const outIndex = args.indexOf('--out');
-  const outDir = outIndex >= 0 ? resolve(args[outIndex + 1]) : resolve(root, 'build', 'frame-audit');
-  const bundleDir = resolve(root, 'build', 'audit-bundle');
+  const outDir = outIndex >= 0 ? resolve(args[outIndex + 1]) : resolve(root, 'build', '_shared', 'frame-audit');
+  const bundleDir = resolve(root, 'build', '_shared', 'audit-bundle');
   const bundleIndex = resolve(bundleDir, 'index.html');
   mkdirSync(resolve(outDir, 'frames'), { recursive: true });
 

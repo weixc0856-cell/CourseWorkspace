@@ -9,7 +9,7 @@
         "car"
       ],
       "max_seconds": 30,
-      "golden": "build/golden/chapter-750.png",
+      "golden": "build/_shared/golden/chapter-750.png",
       "qc": [
         "flow direction matches the car heading",
         "body proportions readable",
@@ -27,7 +27,7 @@
         "rightNote"
       ],
       "max_seconds": 40,
-      "golden": "build/golden/chapter-1800.png",
+      "golden": "build/_shared/golden/chapter-1800.png",
       "qc": [
         "the mechanism is shown, not only the result",
         "labels match the formulas",
@@ -49,7 +49,7 @@
         "footnote"
       ],
       "max_seconds": 35,
-      "golden": "build/golden/chapter-3000.png",
+      "golden": "build/_shared/golden/chapter-3000.png",
       "qc": [
         "the book figure stays legible",
         "annotations point at real data",
@@ -71,7 +71,7 @@
         "footer"
       ],
       "max_seconds": 20,
-      "golden": "build/golden/chapter-150.png",
+      "golden": "build/_shared/golden/chapter-150.png",
       "qc": [
         "caption and source visible",
         "photo not cropped through the subject",
@@ -87,7 +87,7 @@
         "opacity"
       ],
       "max_seconds": 15,
-      "golden": "build/golden/chapter-4050.png",
+      "golden": "build/_shared/golden/chapter-4050.png",
       "qc": [
         "KaTeX renders without overflow",
         "one formula per line",
