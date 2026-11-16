@@ -266,6 +266,35 @@ class EpisodeSpecTests(unittest.TestCase):
         status, _actual, _expected, _evidence = _narration_measured(EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build"))
         self.assertEqual(status, "fail")
 
+    def test_beat_plan_must_carry_every_must_teach_claim(self):
+        from types import SimpleNamespace
+        from course_control.production.checks import EvalContext, _beat_plan_coverage
+
+        authoring = self.root / "authoring"
+        authoring.mkdir(parents=True, exist_ok=True)
+        (authoring / "beat-segments.yaml").write_text(
+            yaml.safe_dump({
+                "beats": [
+                    {"id": "B1", "type": "question", "claims": ["C01"]},
+                    {"id": "B2", "type": "case", "claims": ["C01"]},
+                    {"id": "B3", "type": "mechanism", "claims": ["C01"]},
+                    {"id": "B4", "type": "derivation", "claims": ["C01"]},
+                    {"id": "B5", "type": "evidence", "claims": ["C01"]},
+                    {"id": "B6", "type": "conclusion", "claims": ["C01"]},
+                ]
+            }, sort_keys=False),
+            encoding="utf-8",
+        )
+        spec = SimpleNamespace(claims=[
+            SimpleNamespace(id="C01", status="must_teach"),
+            SimpleNamespace(id="C02", status="must_teach"),
+        ])
+        status, actual, _expected, _evidence = _beat_plan_coverage(
+            EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build")
+        )
+        self.assertEqual(status, "fail")
+        self.assertEqual(actual["missing_claims"], ["C02"])
+
 
 if __name__ == "__main__":
     unittest.main()

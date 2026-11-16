@@ -123,6 +123,32 @@ def _drivaer(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
     return ("fail" if bad else "pass"), bad or "ok", "render_only", "authoring/episode.spec.yaml"
 
 
+def _beat_plan_coverage(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
+    path = ctx.lesson_dir / "authoring" / "beat-segments.yaml"
+    if not path.is_file():
+        return "not_run", None, "beat-segments.yaml", str(path)
+    try:
+        import yaml
+
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001
+        return "fail", str(exc), "readable beat-segments.yaml", str(path)
+    beats = data.get("beats") or []
+    if not beats:
+        return "fail", 0, ">=1 beat", str(path)
+    spec_claims = {
+        claim.id for claim in getattr(ctx.spec, "claims", []) if getattr(claim, "status", "") == "must_teach"
+    }
+    plan_claims = {str(item) for beat in beats for item in (beat.get("claims") or [])}
+    missing = sorted(spec_claims - plan_claims)
+    six = {"question", "case", "mechanism", "derivation", "evidence", "conclusion"}
+    types = {str(beat.get("type")) for beat in beats}
+    missing_types = sorted(six - types)
+    if missing or missing_types:
+        return "fail", {"missing_claims": missing, "missing_types": missing_types}, "spec claims and six beat types", str(path)
+    return "pass", len(beats), len(beats), str(path)
+
+
 def _beat_coverage(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
     beats = getattr(ctx.spec, "beats", None)
     claims = getattr(ctx.spec, "claims", None)
@@ -212,6 +238,7 @@ def _audio(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
 
 AUTO_RULES: dict[str, Callable[[EvalContext], tuple[Status, Any, Any, str]]] = {
     "beat_coverage": _beat_coverage,
+    "beat_plan_coverage": _beat_plan_coverage,
     "timeline_assets": _timeline_assets,
     "narration_measured": _narration_measured,
     "claim_source_coverage": _claim_source,
