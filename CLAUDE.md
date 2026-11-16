@@ -103,6 +103,7 @@
 - 新闻与调查报道标准（新闻类唯一编辑标准：证据矩阵/六幕/视觉语法/四层声音/100 分制）：[docs/新闻与调查报道标准.md](docs/新闻与调查报道标准.md)
 - 新闻视频生产流程（Type-C 可复现步骤）：[docs/新闻视频生产流程.md](docs/新闻视频生产流程.md)
 - 独立代码审核（只读第二意见）：[ReviewRunner/README.md](ReviewRunner/README.md)、[scripts/review.ps1](scripts/review.ps1)
+- 双会话协作（作者/验证/统筹、交接三样证据、门的三条要求）：[docs/协作协议-双会话流水线.md](docs/协作协议-双会话流水线.md)
 - Attention 两分钟样片与 3B1B 差距：[docs/evaluations/样片-注意力-3B1B差距与路线.md](docs/evaluations/样片-注意力-3B1B差距与路线.md)
 - V1 收敛与问题台账：`<内容根>/archive/docs-2026-11/stabilization/MASTER_REMEDIATION.md`、`<内容根>/archive/docs-2026-11/stabilization/FINAL_ACCEPTANCE_REPORT.md`
 - 收敛标准（配置/任务/质量/视觉/资产/文档）：[docs/stabilization/](docs/stabilization/)
