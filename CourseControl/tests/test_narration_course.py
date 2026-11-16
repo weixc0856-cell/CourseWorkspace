@@ -67,3 +67,23 @@ class ExtractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TtsOverrideContractTest(unittest.TestCase):
+    def test_short_tts_override_is_rejected(self):
+        from pydantic import ValidationError
+        from course_control.authoring.models import ScriptSegment
+
+        with self.assertRaises(ValidationError):
+            ScriptSegment(
+                id='s003-p1',
+                text='Speed is where the arithmetic turns nasty. ' * 6,
+                tts_text='Force grows with v squared.',
+            )
+
+    def test_full_length_tts_override_is_accepted(self):
+        from course_control.authoring.models import ScriptSegment
+
+        text = 'Speed is where the arithmetic turns nasty. ' * 3
+        segment = ScriptSegment(id='s003-p1', text=text, tts_text=text.replace('nasty', 'ugly'))
+        self.assertTrue(segment.tts_text)

@@ -23,12 +23,29 @@ const REQUIRED: Record<string, string[]> = {
   PointsCard: ['eyebrow', 'title', 'points'],
 };
 
+// Figures are evidence: a mechanism or flow scene must either sit on an
+// original book figure (base_image under staging/ref_figs) or declare why it
+// is built from scratch. Assembly refuses anything else (CLAUDE.md §2.12).
+const FIGURE_COMPONENTS = new Set(['MechanismDiagram', 'CarFlowScene']);
+const CUSTOM_BUILD_REASONS = new Set(['formula_animation', 'summary_card', 'no_book_figure']);
+
 const collectMissingProps = (beatId: string, index: number, instance: Instance, into: string[]) => {
   const props = (instance.props ?? {}) as Record<string, unknown>;
   for (const key of REQUIRED[instance.component] ?? []) {
     const value = props[key];
     if (value === undefined || value === null || value === '') {
       into.push(`${beatId}#${index} ${instance.component}.${key}`);
+    }
+  }
+  if (FIGURE_COMPONENTS.has(instance.component)) {
+    const base = props.base_image;
+    const reason = props.custom_build_reason;
+    const hasBase = typeof base === 'string' && base.startsWith('staging/ref_figs/');
+    const hasReason = typeof reason === 'string' && CUSTOM_BUILD_REASONS.has(reason);
+    if (!hasBase && !hasReason) {
+      into.push(
+        `${beatId}#${index} ${instance.component}: ${instance.component} requires base_image from ref_figs (CLAUDE.md §2.12)`,
+      );
     }
   }
 };

@@ -114,10 +114,25 @@ class Outline(StrictModel):
 class ScriptSegment(StrictModel):
     id: str = Field(pattern=r"^[a-z0-9][a-z0-9_-]{1,63}$")
     text: str = Field(min_length=1)
+    # On-screen form and spoken form are separate: the screen may show ~32x
+    # while the voice says "about thirty-two times". Both fall back to text.
+    display_text: str | None = None
+    tts_text: str | None = None
     style: str | None = None
     pause_after_ms: int = Field(default=400, ge=0, le=5000)
     emphasis: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _tts_override_does_not_truncate(self):
+        # tts_text replaces the whole spoken line. A short value silently cuts
+        # most of the segment (B3 lost 80% this way), so a large drop fails.
+        if self.tts_text and len(self.tts_text) < 0.6 * len(self.text):
+            raise ValueError(
+                f"segment {self.id}: tts_text is {len(self.tts_text)} chars vs "
+                f"text {len(self.text)}; a spoken override must not truncate the line"
+            )
+        return self
 
     @field_validator("style")
     @classmethod

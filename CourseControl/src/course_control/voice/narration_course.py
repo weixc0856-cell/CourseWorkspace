@@ -313,7 +313,12 @@ def synthesize_course(
                     continue
                 style = segment.style if (style_enabled and mode == "reference_only") else None
                 style = style or (style_default if style_enabled else None)
-                application = assets.apply(segment.text)
+                if segment.tts_text:
+                    print(
+                        f"tts_override: {segment.id} "
+                        f"(text {len(segment.text)} -> tts {len(segment.tts_text)} chars)"
+                    )
+                application = assets.apply(segment.tts_text or segment.text)
                 spoken = application.text
                 key = segment_cache_key(
                     spoken,

@@ -7,6 +7,7 @@ import {C, DISPLAY, FONT} from '../chapter/theme';
 export type FormulaBlockProps = {
   tex: string;
   title?: string;
+  note?: string;
   eyebrow?: string;
   footer?: string;
   size?: number;
@@ -25,7 +26,8 @@ export type FormulaBlockProps = {
 export const FormulaBlock: React.FC<FormulaBlockProps> = ({
   tex,
   title,
-  eyebrow = 'T1-01 · 04 / THE DERIVATION',
+  note,
+  eyebrow = 'T1-01 · 03 / THE DERIVATION',
   footer = 'WHY A CAR NEEDS AERODYNAMICS',
   size = 104,
   color = C.paper,
@@ -97,6 +99,13 @@ export const FormulaBlock: React.FC<FormulaBlockProps> = ({
         />
         <Formula tex={tex} size={size} color={color} />
       </div>
+
+      {note ? (
+        <div style={{position: 'absolute', left: 96, right: 96, top: 716, textAlign: 'center'}}>
+          <div style={{height: 2, background: 'rgba(244,241,234,0.14)', marginBottom: 18}} />
+          <div style={{color: 'rgba(244,241,234,0.75)', fontSize: 28}}>{note}</div>
+        </div>
+      ) : null}
 
       <div
         style={{

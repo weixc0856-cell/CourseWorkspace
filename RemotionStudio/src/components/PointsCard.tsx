@@ -8,6 +8,7 @@ export type PointsCardProps = {
   eyebrow?: string;
   points?: string[];
   footer?: string;
+  note?: string;
   duration?: number;
 };
 
@@ -24,9 +25,10 @@ const DEFAULT_POINTS = [
 // things to keep" showed the 2× speed derivation instead of the five points.
 export const PointsCard: React.FC<PointsCardProps> = ({
   title = 'Five ideas to keep',
-  eyebrow = 'T1-01 · 06 / WHAT TO KEEP',
+  eyebrow = 'T1-01 · 09 / WHAT TO KEEP',
   points = DEFAULT_POINTS,
   footer = 'WHY A CAR NEEDS AERODYNAMICS',
+  note = 'one compromise · five consequences',
   duration = 24,
 }) => {
   const frame = useCurrentFrame();
@@ -84,7 +86,7 @@ export const PointsCard: React.FC<PointsCardProps> = ({
         }}
       >
         {points.map((point, index) => {
-          const appear = Math.min(1, Math.max(0, (progress * 5 - index) * 3));
+          const appear = Math.min(1, Math.max(0, (progress * 9 - index) * 3));
           return (
             <div
               key={point}
@@ -111,6 +113,11 @@ export const PointsCard: React.FC<PointsCardProps> = ({
             </div>
           );
         })}
+      </div>
+
+      <div style={{position: 'absolute', left: 96, top: 716, width: 1500}}>
+        <div style={{height: 2, background: 'rgba(244,241,234,0.14)', marginBottom: 16}} />
+        <div style={{color: 'rgba(244,241,234,0.75)', fontSize: 24}}>{note}</div>
       </div>
 
       <div

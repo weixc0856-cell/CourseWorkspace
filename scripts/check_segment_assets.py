@@ -44,8 +44,13 @@ REQUIRED = {
     "MechanismDiagram": ["eyebrow", "title"],
     "CarFlowScene": ["eyebrow", "headline"],
     "FormulaBlock": ["tex", "title"],
-    "PointsCard": ["eyebrow", "title", "items"],
+    "PointsCard": ["eyebrow", "title", "points"],
 }
+
+# CLAUDE.md §2.12: evidence stays evidence. A mechanism or flow figure must
+# sit on an original book figure or declare why it is built from scratch.
+FIGURE_COMPONENTS = {"MechanismDiagram", "CarFlowScene"}
+CUSTOM_BUILD_REASONS = {"formula_animation", "summary_card", "no_book_figure"}
 
 
 def load_beats(lesson_dir: Path) -> list[dict]:
@@ -82,6 +87,15 @@ def main() -> int:
             for key in REQUIRED.get(name, []):
                 if props.get(key) in (None, ""):
                     missing.append(f"{where}.{key}")
+            if name in FIGURE_COMPONENTS:
+                base = props.get("base_image")
+                reason = props.get("custom_build_reason")
+                has_base = isinstance(base, str) and base.startswith("staging/ref_figs/")
+                if not has_base and reason not in CUSTOM_BUILD_REASONS:
+                    missing.append(
+                        f"{where}: {name} requires base_image from ref_figs "
+                        "(CLAUDE.md §2.12) or a custom_build_reason"
+                    )
             if props.get("image"):
                 images[str(props["image"])].append(where)
             if props.get("eyebrow"):
