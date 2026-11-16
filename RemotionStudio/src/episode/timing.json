@@ -80,42 +80,48 @@
           "component": "FormulaBlock",
           "duration": 21.138,
           "props": {
-            "tex": "F \\propto v^2"
+            "tex": "F \\propto v^2",
+            "title": "1/6 · Why drag rises with speed"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 21.138,
           "props": {
-            "tex": "P \\propto v^3"
+            "tex": "P \\propto v^3",
+            "title": "2/6 · Why power rises faster"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 21.139,
           "props": {
-            "tex": "60 \\to 190\\,km/h \\approx 10\\times"
+            "tex": "60 \\to 190\\,km/h \\approx 10\\times",
+            "title": "3/6 · The same ratio in real numbers"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 22.244,
           "props": {
-            "tex": "c_D = \\frac{F}{\\tfrac{1}{2}\\rho A v^2}"
+            "tex": "c_D = \\frac{F}{\\tfrac{1}{2}\\rho A v^2}",
+            "title": "4/6 · The drag coefficient, defined"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 22.244,
           "props": {
-            "tex": "c_D\\,\\text{same},\\; A\\,\\text{different}"
+            "tex": "c_D\\,\\text{same},\\; A\\,\\text{different}",
+            "title": "5/6 · One coefficient, two cars"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 22.244,
           "props": {
-            "tex": "c_D A"
+            "tex": "c_D A",
+            "title": "6/6 · The product that sets drag"
           }
         }
       ]

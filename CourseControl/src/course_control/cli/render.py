@@ -492,6 +492,157 @@ def subtitles_rewrap_command(
     raise typer.Exit(0)
 
 
+@app.command("subtitles-rebuild")
+def subtitles_rebuild_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    timing: Path = typer.Option(
+        Path("RemotionStudio/src/episode/timing.json"),
+        "--timing",
+        help="episode timing.json: narration order and total duration",
+    ),
+    meta: Path | None = typer.Option(None, "--meta", help="narration.resequenced.meta.json"),
+    draft: Path | None = typer.Option(None, "--draft", help="accepted bilingual draft"),
+    output: Path | None = typer.Option(None, "--output", help="SRT target"),
+    strict: bool = typer.Option(True, "--strict/--no-strict"),
+) -> None:
+    """Rebuild the bilingual SRT from the resequenced narration timeline.
+
+    The audio is the concatenation of the narration segments in episode order,
+    so the old slide-ordered SRT is void.  Cue text and translation come from
+    the accepted draft; timings are rebuilt from the measured segment durations.
+    """
+    from course_control.authoring.models import NarrationScript
+    from course_control.platform.media import sha256_file
+    from course_control.voice.subtitles import (
+        CuePolicy,
+        SubtitleError,
+        rebuild_on_timeline,
+        write_srt,
+    )
+
+    workspace = workspace.resolve()
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    script_relative = (
+        paths.lesson.authoring.script
+        if paths.lesson.authoring and paths.lesson.authoring.script
+        else "authoring/narration.script.json"
+    )
+    script_path = paths.lesson_dir / script_relative
+    meta_path = meta or paths.build_root / "narration" / "narration.resequenced.meta.json"
+    draft_path = draft or paths.build_root / "subtitles" / "bilingual.draft.json"
+    timing_path = timing if timing.is_absolute() else workspace / timing
+    for label, path in (
+        ("script", script_path),
+        ("narration meta", meta_path),
+        ("bilingual draft", draft_path),
+        ("episode timing", timing_path),
+    ):
+        if not path.is_file():
+            typer.echo(f"{label} not found: {path}", err=True)
+            raise typer.Exit(1)
+    target = output or paths.subtitles_path()
+    if target is None:
+        typer.echo("lesson.yaml does not declare content.subtitles", err=True)
+        raise typer.Exit(1)
+
+    script = NarrationScript.model_validate(
+        json.loads(script_path.read_text(encoding="utf-8"))
+    )
+    meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
+    timing_payload = json.loads(timing_path.read_text(encoding="utf-8"))
+    draft_payload = json.loads(draft_path.read_text(encoding="utf-8"))
+    try:
+        cues, rebuild = rebuild_on_timeline(
+            script,
+            meta_payload,
+            timing_payload,
+            list(draft_payload.get("cues") or []),
+            CuePolicy(),
+            float(paths.lesson.outputs.fps),
+        )
+    except SubtitleError as exc:
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+
+    audio_path = meta_path.parent / "narration.resequenced.wav"
+    audio_seconds = None
+    if audio_path.is_file():
+        import wave
+
+        with wave.open(str(audio_path), "rb") as handle:
+            audio_seconds = handle.getnframes() / float(handle.getframerate())
+    rebuild["audio_seconds"] = round(audio_seconds, 3) if audio_seconds else None
+    drift = None
+    if audio_seconds:
+        drift = max(
+            abs(rebuild["total_ms"] / 1000.0 - audio_seconds),
+            abs((rebuild["last_end_ms"] or 0) / 1000.0 - audio_seconds),
+            abs(rebuild["first_start_ms"] or 0) / 1000.0,
+        )
+    rebuild["audio_drift_s"] = round(drift, 3) if drift is not None else None
+    rebuild["sources"] = {
+        label: {"path": str(path), "sha256": sha256_file(path)}
+        for label, path in (
+            ("script", script_path),
+            ("narration_meta", meta_path),
+            ("draft", draft_path),
+            ("timing", timing_path),
+        )
+    }
+
+    if drift is not None and drift > 0.2:
+        typer.echo(f"failed: subtitles drift {drift:.3f}s from {audio_path.name}", err=True)
+        raise typer.Exit(1)
+    problems = rebuild["problems"]
+    typer.echo(f"segments: {len(rebuild['segments'])}")
+    typer.echo(
+        f"cues: {rebuild['cues']} ({rebuild['repaired_midword_breaks']} mid-word breaks repaired)"
+    )
+    typer.echo(
+        f"span: {rebuild['first_start_ms'] / 1000:.3f}s - {rebuild['last_end_ms'] / 1000:.3f}s "
+        f"of {rebuild['total_ms'] / 1000:.3f}s"
+        + (f" (audio {audio_seconds:.3f}s, drift {drift:.3f}s)" if audio_seconds else "")
+    )
+    if problems:
+        typer.echo(f"cue policy: {len(problems)} problem(s)", err=True)
+        for problem in problems[:8]:
+            typer.echo(f"  [problem] {problem}", err=True)
+        if strict:
+            raise typer.Exit(1)
+
+    write_srt(cues, target)
+    typer.echo(f"wrote: {target}")
+    report_path = paths.build_root / "subtitles" / "rebuild.report.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps(rebuild, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    typer.echo(f"report: {report_path}")
+
+    from course_control.voice.subtitles_qc import check_srt
+
+    qc = check_srt(
+        target,
+        bilingual=paths.lesson.subtitles.bilingual,
+        glossary_path=paths.lesson_dir / "authoring" / "glossary.yaml",
+    )
+    qc["source"] = {"path": str(target), "sha256": sha256_file(target)}
+    qc_path = paths.build_root / "quality" / "subtitles-qc.json"
+    qc_path.parent.mkdir(parents=True, exist_ok=True)
+    qc_path.write_text(json.dumps(qc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    typer.echo(f"qc: {qc['status']} ({qc_path})")
+    for item in (qc.get("errors") or [])[:6]:
+        typer.echo(f"  [error] {item}", err=True)
+    if qc["status"] == "FAIL":
+        raise typer.Exit(1)
+
+
 @app.command("subtitles-accept")
 def subtitles_accept_command(
     lesson: str = typer.Option(..., "--lesson"),

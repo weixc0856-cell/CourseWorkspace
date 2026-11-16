@@ -223,16 +223,23 @@ def _wrap_zh(text: str, max_chars: int, max_lines: int) -> list[str]:
         cut = _adjust_zh_cut(remaining, cut)
         lines.append(remaining[:cut])
         remaining = remaining[cut:]
-    if max_lines > 0 and len(lines) > max_lines:
+    orphan_punctuation = len(lines) > 1 and all(
+        char in "，；：、。！？" for line in lines[1:] for char in line
+    )
+    if orphan_punctuation or (max_lines > 0 and len(lines) > max_lines):
         # The normal pass prefers punctuation and can produce one line too
-        # many.  Re-distribute evenly so the cue respects the line limit.
+        # many, or leave a punctuation mark alone on the second line.
+        # Re-distribute evenly so the cue respects the line limit.
+        slots = max_lines if max_lines > 0 else len(lines)
+        if orphan_punctuation:
+            slots = min(slots, 2)
         lines = []
         remaining = text
-        for slots in range(max_lines, 0, -1):
-            if slots == 1 or len(remaining) <= max_chars:
+        for slot in range(slots, 0, -1):
+            if slot == 1 or len(remaining) <= max_chars:
                 lines.append(remaining)
                 break
-            target = math.ceil(len(remaining) / slots)
+            target = math.ceil(len(remaining) / slot)
             cut = _adjust_zh_cut(remaining, min(target, max_chars))
             lines.append(remaining[:cut])
             remaining = remaining[cut:]
@@ -252,14 +259,19 @@ def _best_split_en(text: str) -> int:
     words = text.split()
     if len(words) < 4:
         return max(1, len(text) // 2)
+    # Split only at a word boundary. Seeding the search with the raw midpoint
+    # made every word boundary lose the distance comparison, so long cues were
+    # cut mid-word ("removin" + "g").
+    boundaries = []
     cursor = 0
-    best = len(text) // 2
     for word in words[:-1]:
         cursor += len(word)
-        if abs(cursor - midpoint) < abs(best - midpoint):
-            best = cursor
+        if lower <= cursor <= upper:
+            boundaries.append(cursor)
         cursor += 1
-    return max(1, min(len(text) - 1, best))
+    if boundaries:
+        return min(boundaries, key=lambda index: abs(index - midpoint))
+    return max(1, min(len(text) - 1, len(text) // 2))
 
 
 def _best_split_zh(text: str, ratio: float) -> int:
@@ -938,6 +950,164 @@ def rewrap_draft(draft: BilingualDraft, policy: CuePolicy, fps: float) -> Biling
             "counts": counts,
         }
     )
+
+
+def _repair_midword_cues(items: list[dict], text: str) -> tuple[list[dict], int]:
+    """Join cues whose English boundary falls inside a word.
+
+    The accepted draft was cut at fixed character offsets, so some cues end
+    mid-word ("removin" + "g").  A merged pair keeps both translations; the
+    English is joined without a space when the break was inside a word.
+    """
+    positions = [index for index, char in enumerate(text) if not char.isspace()]
+    stripped = "".join(text[index] for index in positions)
+    cues = [dict(item) for item in items]
+    repaired = 0
+    while len(cues) > 1:
+        joined = "".join(cue["en"] for cue in cues).replace(" ", "")
+        if joined != stripped:
+            raise SubtitleError("cue text does not reconstruct the segment script")
+        merged = False
+        offset = 0
+        for index, cue in enumerate(cues[:-1]):
+            offset += len(cue["en"].replace(" ", ""))
+            if positions[offset] != positions[offset - 1] + 1:
+                continue
+            left, right = cues[index], cues[index + 1]
+            merged = dict(left)
+            merged["en"] = left["en"] + right["en"]
+            merged["zh"] = left["zh"].rstrip() + right["zh"].lstrip()
+            if "end_ms" in right:
+                merged["end_ms"] = right["end_ms"]
+            cues[index : index + 2] = [merged]
+            repaired += 1
+            merged = True
+            break
+        if not merged:
+            break
+    return cues, repaired
+
+
+def rebuild_on_timeline(
+    script,
+    meta: dict,
+    timing: dict,
+    draft_cues: list[dict],
+    policy: CuePolicy,
+    fps: float,
+) -> tuple[list[dict], dict]:
+    """Re-time the accepted bilingual cues onto the resequenced episode.
+
+    The audio is the concatenation of the narration segments in the order the
+    episode timeline places them, not the order the slides appear in the
+    script.  ``narration.resequenced.meta.json`` carries the measured
+    durations; its ``start_s`` values follow slide order and are not used.
+    Cue text and translation are kept, mid-word cuts are repaired, and only
+    the timings are rebuilt from the measured segment durations.
+    """
+    durations = {
+        str(item["segment_id"]): float(item.get("duration_s") or 0.0)
+        for item in meta.get("segments", [])
+    }
+    script_segments = {
+        segment.id: {"slide": page.slide, "text": segment.text}
+        for page in script.pages
+        for segment in page.segments
+    }
+    order = [
+        str(segment_id)
+        for beat in timing.get("beats", [])
+        for segment_id in (beat.get("segments") or [])
+    ]
+    if not order:
+        raise SubtitleError("episode timing declares no narration segments")
+    if len(order) != len(set(order)):
+        raise SubtitleError("episode timing repeats a narration segment")
+    missing = sorted(set(script_segments) - set(order))
+    unknown = sorted(set(order) - set(script_segments))
+    if missing or unknown:
+        raise SubtitleError(
+            f"episode timing does not match the script: missing={missing} unknown={unknown}"
+        )
+    absent = sorted(segment_id for segment_id in order if durations.get(segment_id, 0) <= 0)
+    if absent:
+        raise SubtitleError(f"narration meta has no duration for: {absent}")
+
+    windows: dict[str, tuple[float, float]] = {}
+    cursor = 0.0
+    for beat in timing.get("beats", []):
+        segments = [str(item) for item in beat.get("segments") or []]
+        measured = sum(durations[segment_id] for segment_id in segments)
+        declared = float(beat.get("seconds") or 0.0)
+        if abs(measured - declared) > 0.01:
+            raise SubtitleError(
+                f"beat {beat.get('id')}: segments measure {measured:.3f}s but the episode "
+                f"timeline declares {declared:.3f}s"
+            )
+        for segment_id in segments:
+            windows[segment_id] = (cursor, cursor + durations[segment_id])
+            cursor += durations[segment_id]
+    total_seconds = float(timing.get("total_seconds") or cursor)
+    if abs(cursor - total_seconds) > 0.05:
+        raise SubtitleError(
+            f"segments measure {cursor:.3f}s but the episode is {total_seconds:.3f}s"
+        )
+
+    groups: dict[str, list[dict]] = {}
+    for cue in draft_cues:
+        segment_id = str(cue.get("segment_id") or "")
+        if segment_id not in windows:
+            raise SubtitleError(f"draft cue {cue.get('index')} has an unknown segment {segment_id}")
+        groups.setdefault(segment_id, []).append(cue)
+
+    cues: list[dict] = []
+    repaired_total = 0
+    for segment_id in order:
+        items = groups.get(segment_id) or []
+        if not items:
+            raise SubtitleError(f"draft has no cues for {segment_id}")
+        items, repaired = _repair_midword_cues(items, script_segments[segment_id]["text"])
+        repaired_total += repaired
+        start_s, end_s = windows[segment_id]
+        span = end_s - start_s
+        weights = [max(1, len(str(item["en"]))) for item in items]
+        total_weight = sum(weights)
+        cursor_s = start_s
+        for item, weight in zip(items, weights):
+            allocated = span * weight / total_weight
+            end = max(cursor_s + allocated - policy.gap_ms(fps) / 1000.0, cursor_s + 0.3)
+            cues.append(
+                {
+                    "index": 0,
+                    "slide": item["slide"],
+                    "segment_id": segment_id,
+                    "start_ms": int(round(cursor_s * 1000)),
+                    "end_ms": int(round(end * 1000)),
+                    "en": str(item["en"]).strip(),
+                    "zh": str(item["zh"]).strip(),
+                }
+            )
+            cursor_s += allocated
+    cues = merge_short_cues(cues, policy, fps)
+    cues = enforce_limits(cues, policy, fps)
+    problems = validate_cues(cues, policy, fps, int(round(total_seconds * 1000)))
+    report = {
+        "segments": [
+            {
+                "segment_id": segment_id,
+                "start_ms": int(round(windows[segment_id][0] * 1000)),
+                "end_ms": int(round(windows[segment_id][1] * 1000)),
+            }
+            for segment_id in order
+        ],
+        "cues": len(cues),
+        "repaired_midword_breaks": repaired_total,
+        "total_ms": int(round(total_seconds * 1000)),
+        "first_start_ms": cues[0]["start_ms"] if cues else None,
+        "last_end_ms": cues[-1]["end_ms"] if cues else None,
+        "problems": problems,
+    }
+    return cues, report
 
 
 def accept_subtitles(workspace: Path, paths: LessonPaths) -> Path:

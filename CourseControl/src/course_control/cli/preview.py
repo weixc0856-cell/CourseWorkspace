@@ -437,3 +437,80 @@ def release_check(
         0 if payload["status"] in {PASS, PASS_WITH_EXEMPTION}
         else (3 if payload["status"] == INCOMPLETE else 1)
     )
+
+
+@app.command("build-manifest")
+def build_manifest_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    video: Path | None = typer.Option(None, "--video", help="rendered film; defaults to the final video"),
+    timing: Path | None = typer.Option(None, "--timing", help="episode timing.json"),
+    meta: Path | None = typer.Option(None, "--meta", help="narration.resequenced.meta.json"),
+    check: bool = typer.Option(False, "--check", help="verify the existing manifest only"),
+    force: bool = typer.Option(False, "--force", help="fingerprint even if the film is older than an input"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Fingerprint a rendered film and the inputs it was built from.
+
+    Writes build/<slug>/manifest.json with a content hash for every input and
+    for the film, plus a build id. release-check compares these hashes before
+    it falls back to mtimes.
+    """
+    from course_control.release.build_manifest import (
+        BuildManifestError,
+        check_freshness,
+        manifest_path,
+        write_manifest,
+    )
+    from course_control.release.check import _final_video
+
+    workspace = workspace.resolve()
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if check:
+        target = video or _final_video(paths)
+        if target is None:
+            typer.echo("no final video; pass --video", err=True)
+            raise typer.Exit(1)
+        freshness = check_freshness(paths, target)
+        if as_json:
+            typer.echo(json.dumps(freshness.as_dict(), ensure_ascii=False, indent=2))
+        else:
+            typer.echo(f"fresh: {freshness.fresh}")
+            typer.echo(f"stale_by: {freshness.stale_by}")
+            if freshness.build_id:
+                typer.echo(f"build: {freshness.build_id}")
+            if freshness.reason:
+                typer.echo(f"reason: {freshness.reason}")
+        raise typer.Exit(0 if freshness.fresh else 1)
+    target = video or _final_video(paths)
+    if target is None:
+        typer.echo("no final video; pass --video", err=True)
+        raise typer.Exit(1)
+    try:
+        payload = write_manifest(
+            paths,
+            workspace,
+            target,
+            timing=timing,
+            meta=meta,
+            render={"fps": paths.lesson.outputs.fps, "resolution": paths.lesson.outputs.resolution},
+            allow_older=force,
+        )
+    except BuildManifestError as exc:
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"build: {payload['build_id']}")
+        for entry in payload["inputs"]:
+            typer.echo(f"  {entry['name']}: {entry['sha256'][:16]}… {entry['path']}")
+        typer.echo(
+            f"  output: {payload['output']['sha256'][:16]}… {payload['output']['path']}"
+        )
+        typer.echo(f"wrote: {manifest_path(paths)}")

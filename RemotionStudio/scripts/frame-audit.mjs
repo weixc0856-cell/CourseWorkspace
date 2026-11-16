@@ -3,6 +3,12 @@
 // The audit bundles src/audit/index.tsx, a standalone Remotion Player page that
 // accepts ?frame=N, then loads it at 1920x1080 and reads the box model.
 //   node scripts/frame-audit.mjs [frame ...] [--no-bundle] [--selftest]
+//   node scripts/frame-audit.mjs --entry src/audit/episode.tsx \
+//     --timing src/episode/timing.json [--samples mid|start,end] --out <dir>
+//
+// Frames come from the arguments, from a timing.json instance list, or from
+// the fixed default.  --timing samples inside each instance (mid by default),
+// so a changed duration moves the sample instead of leaving it behind.
 //
 // Rules: text inside the 5% title-safe area, no clipped text, WCAG contrast
 // (4.5 normal / 3.0 large, docs/配色规范.md), and no subtitle box covering an
@@ -323,6 +329,31 @@ function frameUrl(baseUrl, frame) {
   return baseUrl + '/index.html?frame=' + frame;
 }
 
+// Sample inside each component instance rather than at fixed frame numbers:
+// the episode is assembled from instances, so a fixed list goes stale as soon
+// as one instance duration changes.
+function framesFromTiming(path, samples) {
+  const data = JSON.parse(readFileSync(path, 'utf8'));
+  const fps = Number(data.fps) || 30;
+  const totalFrames = Math.round((Number(data.total_seconds) || 0) * fps);
+  const frames = [];
+  let cursor = 0;
+  for (const beat of data.beats || []) {
+    for (const instance of beat.instances || []) {
+      const duration = Number(instance.duration) || 0;
+      for (const sample of samples) {
+        let offset = duration / 2;
+        if (sample === 'start') offset = Math.min(0.1, duration / 4);
+        else if (sample === 'end') offset = Math.max(0, duration - 0.2);
+        const frame = Math.max(0, Math.min(totalFrames - 1, cursor + Math.round(offset * fps)));
+        frames.push(frame);
+      }
+      cursor += Math.round(duration * fps);
+    }
+  }
+  return [...new Set(frames)].sort((a, b) => a - b);
+}
+
 async function openFrame(page, baseUrl, frame) {
   await page.goto(frameUrl(baseUrl, frame), { waitUntil: 'networkidle' });
   await page.waitForFunction(() => window.remotion_renderReady === true, null, { timeout: 45000 });
@@ -342,9 +373,14 @@ async function main() {
   const from = Number(args[args.indexOf('--from') + 1] ?? 0);
   const to = Number(args[args.indexOf('--to') + 1] ?? 4590);
   const step = Number(args[args.indexOf('--step') + 1] ?? 15);
+  const timingIndex = args.indexOf('--timing');
+  const timingPath = timingIndex >= 0 ? resolve(args[timingIndex + 1]) : null;
+  const samplesIndex = args.indexOf('--samples');
+  const samples = samplesIndex >= 0 ? args[samplesIndex + 1].split(',') : ['mid'];
   const frames = args.map(Number).filter((value) => Number.isFinite(value) && value >= 0);
   const root = contentRoot();
-  const outDir = resolve(root, 'build', 'frame-audit');
+  const outIndex = args.indexOf('--out');
+  const outDir = outIndex >= 0 ? resolve(args[outIndex + 1]) : resolve(root, 'build', 'frame-audit');
   const bundleDir = resolve(root, 'build', 'audit-bundle');
   const bundleIndex = resolve(bundleDir, 'index.html');
   mkdirSync(resolve(outDir, 'frames'), { recursive: true });
@@ -562,7 +598,11 @@ async function main() {
       return;
     }
 
-    const list = frames.length ? frames : DEFAULT_FRAMES;
+    const list = frames.length
+      ? frames
+      : timingPath
+        ? framesFromTiming(timingPath, samples)
+        : DEFAULT_FRAMES;
     const results = [];
     for (const frame of list) {
       await openFrame(page, baseUrl, frame);
@@ -586,7 +626,16 @@ async function main() {
       }
     }
     const skipped = results.reduce((total, entry) => total + entry.skipped_symbolic, 0);
-    const report = { schema_version: 1, composition: COMPOSITION, frames: list, skipped_symbolic: skipped, results };
+    const report = {
+      schema_version: 1,
+      composition: COMPOSITION,
+      composition_id: compositionId,
+      entry,
+      frame_source: timingPath ? {timing: timingPath, samples} : 'fixed',
+      frames: list,
+      skipped_symbolic: skipped,
+      results,
+    };
     writeFileSync(resolve(outDir, 'report.json'), JSON.stringify(report, null, 2) + '\n', 'utf8');
     const exceptions = results.flatMap((entry) =>
       entry.issues.map((issue) => ({ frame: entry.frame, ...issue })),

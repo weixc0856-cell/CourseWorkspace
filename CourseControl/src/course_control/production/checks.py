@@ -265,6 +265,12 @@ AUTO_RULES: dict[str, Callable[[EvalContext], tuple[Status, Any, Any, str]]] = {
     "audio_present": _audio,
 }
 
+# News-side rules live next to their own contract (production/checks_news.py)
+# and share this executor; the course rules above stay untouched.
+from course_control.production.checks_news import NEWS_RULES  # noqa: E402
+
+AUTO_RULES.update(NEWS_RULES)
+
 
 @dataclass
 class CheckReport:

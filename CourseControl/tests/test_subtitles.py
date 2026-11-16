@@ -216,3 +216,104 @@ class AsrRetimeTest(unittest.TestCase):
         meta = {"segments": [{"segment_id": "seg_1", "start_s": 0.0, "duration_s": 10.0}]}
         updated = retime_draft(self.draft(), meta, CuePolicy(), 30.0)
         self.assertLess(updated.cues[1].start_ms, 7000)
+
+
+class RebuildOnTimelineTest(unittest.TestCase):
+    """The episode audio is in beat order; the SRT must follow the audio."""
+
+    def _script(self):
+        # Slide order is a, b, c; the episode plays a, c, b.
+        return SimpleNamespace(
+            pages=[
+                Page(1, [Segment("a", "First slide speaks here.")]),
+                Page(2, [Segment("b", "Second slide speaks here.")]),
+                Page(3, [Segment("c", "Third slide speaks here.")]),
+            ]
+        )
+
+    def _timing(self):
+        return {
+            "total_seconds": 15.0,
+            "beats": [
+                {"id": "B1", "seconds": 5.0, "segments": ["a"]},
+                {"id": "B2", "seconds": 5.0, "segments": ["c"]},
+                {"id": "B3", "seconds": 5.0, "segments": ["b"]},
+            ],
+        }
+
+    def _meta(self, durations):
+        return {
+            "segments": [
+                {"segment_id": key, "start_s": 0.0, "duration_s": value}
+                for key, value in durations.items()
+            ]
+        }
+
+    def _draft(self):
+        def cue(index, segment, slide, text, zh):
+            return {"index": index, "slide": slide, "segment_id": segment, "en": text, "zh": zh}
+
+        return [
+            cue(1, "a", 1, "First slide speaks here.", "第一张。"),
+            cue(2, "b", 2, "Second slide speaks here.", "第二张。"),
+            cue(3, "c", 3, "Third slide speaks here.", "第三张。"),
+        ]
+
+    def test_cues_follow_the_episode_order_not_the_slide_order(self):
+        from course_control.voice.subtitles import rebuild_on_timeline
+
+        cues, report = rebuild_on_timeline(
+            self._script(),
+            self._meta({"a": 5.0, "b": 5.0, "c": 5.0}),
+            self._timing(),
+            self._draft(),
+            CuePolicy(),
+            30.0,
+        )
+        self.assertEqual([cue["segment_id"] for cue in cues], ["a", "c", "b"])
+        by_segment = {cue["segment_id"]: cue for cue in cues}
+        self.assertEqual(by_segment["c"]["start_ms"], 5000)
+        self.assertEqual(by_segment["b"]["start_ms"], 10000)
+        self.assertEqual(report["first_start_ms"], 0)
+        self.assertLessEqual(report["last_end_ms"], 15000)
+
+    def test_mid_word_break_is_repaired_and_keeps_both_translations(self):
+        from course_control.voice.subtitles import rebuild_on_timeline
+
+        script = SimpleNamespace(pages=[Page(1, [Segment("a", "The fuel bill is removing one kilogram.")])])
+        timing = {"total_seconds": 12.0, "beats": [{"id": "B1", "seconds": 12.0, "segments": ["a"]}]}
+        draft = [
+            {"index": 1, "slide": 1, "segment_id": "a", "en": "The fuel bill is removin", "zh": "油费相当于"},
+            {"index": 2, "slide": 1, "segment_id": "a", "en": "g one kilogram.", "zh": "一公斤。"},
+        ]
+        cues, report = rebuild_on_timeline(
+            script, self._meta({"a": 12.0}), timing, draft, CuePolicy(), 30.0
+        )
+        self.assertEqual(report["repaired_midword_breaks"], 1)
+        english = " ".join(cue["en"] for cue in cues)
+        chinese = "".join(cue["zh"] for cue in cues)
+        self.assertEqual(english, "The fuel bill is removing one kilogram.")
+        self.assertEqual(chinese, "油费相当于一公斤。")
+        self.assertFalse(any(cue["en"].startswith("g ") for cue in cues))
+
+    def test_beat_total_mismatch_is_rejected(self):
+        from course_control.voice.subtitles import SubtitleError, rebuild_on_timeline
+
+        with self.assertRaises(SubtitleError):
+            rebuild_on_timeline(
+                self._script(),
+                self._meta({"a": 5.0, "b": 5.0, "c": 4.0}),
+                self._timing(),
+                self._draft(),
+                CuePolicy(),
+                30.0,
+            )
+
+    def test_english_split_never_cuts_a_word(self):
+        from course_control.voice.subtitles import _best_split_en
+
+        text = "is worth about the same fuel as removing one hundred and twenty-nine kilograms."
+        cut = _best_split_en(text)
+        self.assertGreater(cut, 0)
+        self.assertLess(cut, len(text))
+        self.assertFalse(text[cut - 1].isalnum() and text[cut].isalnum())

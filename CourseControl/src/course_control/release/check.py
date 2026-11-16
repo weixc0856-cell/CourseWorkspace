@@ -54,25 +54,15 @@ def _overall(steps: list[Step]) -> str:
 
 
 def _stale_reason(paths: LessonPaths, video: Path) -> str | None:
-    """The final video must be newer than every input it claims to encode."""
-    inputs = [
-        paths.lesson_dir / "lesson.yaml",
-        paths.lesson_dir / "authoring" / "episode.spec.yaml",
-        paths.lesson_dir / "authoring" / "quality.rubric.yaml",
-        paths.build_root / "contracts" / "timeline.spec.json",
-        paths.build_root / "narration" / "narration.meta.json",
-        paths.build_root / "subtitles.srt",
-    ]
-    video_time = video.stat().st_mtime
-    for item in inputs:
-        if not item.is_file():
-            continue
-        if item.stat().st_mtime > video_time:
-            return (
-                f"stale: {video} (mtime {video_time:.0f}) is older than "
-                f"{item} (mtime {item.stat().st_mtime:.0f})"
-            )
-    return None
+    """The final video must match the inputs it claims to encode.
+
+    Content hashes from build/<slug>/manifest.json decide when it exists;
+    mtimes are only the documented fallback for a build that predates it.
+    """
+    from course_control.release.build_manifest import check_freshness
+
+    freshness = check_freshness(paths, video)
+    return None if freshness.fresh else (freshness.reason or "stale")
 
 
 def _final_video(paths: LessonPaths) -> Path | None:
@@ -114,11 +104,27 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
             Step("final_video", INCOMPLETE, "no final/course-video*.mp4; build first")
         )
         return steps
-    stale = _stale_reason(paths, video)
-    if stale:
-        steps.append(Step("final_video", FAIL, stale))
+    from course_control.release.build_manifest import check_freshness
+
+    freshness = check_freshness(paths, video)
+    if not freshness.fresh:
+        steps.append(
+            Step(
+                "final_video",
+                FAIL,
+                freshness.reason or "stale",
+                data={"stale_by": freshness.stale_by, "build_id": freshness.build_id},
+            )
+        )
         return steps
-    steps.append(Step("final_video", PASS, str(video)))
+    steps.append(
+        Step(
+            "final_video",
+            PASS,
+            f"{video} [stale_by: {freshness.stale_by}]",
+            data={"stale_by": freshness.stale_by, "build_id": freshness.build_id},
+        )
+    )
 
     media, media_path = run_media_qc(workspace, paths, video_path=video)
     media_status = PASS if media.get("status") in {"PASS", "WARN"} else (

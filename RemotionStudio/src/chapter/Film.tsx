@@ -10,11 +10,6 @@ const FPS = 30;
 
 export const Chapter: React.FC = () => (
   <AbsoluteFill style={{background: '#05070A'}}>
-    <style>{`
-      .katex-display { margin: 0 !important; text-align: left !important; }
-      .katex { text-align: left !important; }
-    `}</style>
-
     <Sequence from={0} durationInFrames={18 * FPS}>
       <PhotoScene />
     </Sequence>

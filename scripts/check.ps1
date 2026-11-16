@@ -269,10 +269,19 @@ try {
     }
 
     # The audit renders the chapter composition and reads the DOM; it needs the
-    # staged assets, so it only runs where a content root exists.
+    # staged assets, so it only runs where a content root exists.  The episode
+    # is the composition that ships, so it is audited too, at a frame inside
+    # every instance (not at a fixed frame list that goes stale).
     if (-not $CleanClone -and $content -ne $root) {
         Invoke-Checked "frame audit" {
             node RemotionStudio/scripts/frame-audit.mjs
+        }
+        Invoke-Checked "frame audit episode" {
+            node RemotionStudio/scripts/frame-audit.mjs `
+                --entry src/audit/episode.tsx `
+                --timing RemotionStudio/src/episode/timing.json `
+                --samples "mid" `
+                --out (Join-Path $content "build/frame-audit/episode")
         }
     }
     else {
