@@ -624,6 +624,7 @@ def subtitles_rebuild_command(
     from course_control.voice.subtitles import (
         BilingualCue,
         BilingualDraft,
+        ass_cue_lines,
         write_ass,
         write_vtt,
     )
@@ -653,7 +654,7 @@ def subtitles_rebuild_command(
         ass_path = paths.build_root / "subtitles.ass"
         width, height = paths.lesson.outputs.resolution
         write_ass(
-            cues,
+            ass_cue_lines(cues),
             ass_path,
             width,
             height,
@@ -664,6 +665,17 @@ def subtitles_rebuild_command(
         )
         rebuild["ass"] = {"path": str(ass_path), "sha256": sha256_file(ass_path)}
         typer.echo(f"ass: {ass_path}")
+        from course_control.voice.subtitle_bands import check_ass_band
+
+        band = check_ass_band(
+            ass_path, workspace / "shared" / "design-tokens" / "episode-bands.yaml"
+        )
+        rebuild["bands"] = band
+        typer.echo(f"band: {band['status']} ({band.get('detail')})")
+        if band["status"] != "PASS":
+            for item in band.get("violations") or []:
+                typer.echo(f"  [band] {item}", err=True)
+            raise typer.Exit(1)
 
     report_path = paths.build_root / "subtitles" / "rebuild.report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)

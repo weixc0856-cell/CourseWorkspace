@@ -767,7 +767,7 @@
           "maximum": 6,
           "minimum": 0,
           "title": "Outline Width",
-          "type": "integer"
+          "type": "number"
         }
       },
       "title": "Subtitles",
@@ -852,7 +852,7 @@
         "bottom_margin": 190,
         "text_color": "#111111",
         "outline_color": "#FBFAF7",
-        "outline_width": 0
+        "outline_width": 0.0
       }
     },
     "acceptance": {

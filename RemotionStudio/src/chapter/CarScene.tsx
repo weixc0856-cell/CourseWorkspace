@@ -52,7 +52,7 @@ export const CarScene: React.FC<CarFlowSceneProps> = ({
         {headline}
       </div>
 
-      <div style={{position: 'absolute', left: 96, bottom: 96, opacity: path, color: 'rgba(244,241,234,0.58)', fontSize: 20, letterSpacing: '0.12em', fontFamily: FONT}}>
+      <div style={{position: 'absolute', left: 96, bottom: 130, opacity: path, color: 'rgba(244,241,234,0.58)', fontSize: 20, letterSpacing: '0.12em', fontFamily: FONT}}>
         {pathLabel}
       </div>
 

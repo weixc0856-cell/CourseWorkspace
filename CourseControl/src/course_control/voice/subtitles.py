@@ -597,7 +597,32 @@ def _ass_color(value: str) -> str:
     return f"&H00{blue}{green}{red}".upper()
 
 
-def write_ass(cues: list[dict], path: Path, width: int, height: int, bottom_margin: int = 190, text_color: str = "#111111", outline_color: str = "#FBFAF7", outline_width: int = 0) -> None:
+ASS_EN_MAX_CHARS = 80
+ASS_ZH_MAX_CHARS = 30
+# Burned CJK readability (docs/生产合同.md §9). A 1.4 outline at 30 px closes
+# the strokes of dense characters and reads like a double line; 34 px with a
+# 0.9 outline keeps them open. The Latin line stays at the style's 34 / 1.4.
+ASS_ZH_FONT_SIZE = 34
+ASS_ZH_OUTLINE = 0.9
+
+
+def ass_cue_lines(cues: list[dict]) -> list[dict]:
+    """Re-wrap cues for the burned track.
+
+    Burned captions get one line per language, so a cue stays inside the
+    reserved subtitle band even when the English is long.  The SRT keeps the
+    narrower 42/15 wrap that players expect.
+    """
+    result = []
+    for cue in cues:
+        item = dict(cue)
+        item["en_lines"] = _wrap(item["en"], ASS_EN_MAX_CHARS, 2)
+        item["zh_lines"] = _wrap_zh(item["zh"], ASS_ZH_MAX_CHARS, 2)
+        result.append(item)
+    return result
+
+
+def write_ass(cues: list[dict], path: Path, width: int, height: int, bottom_margin: int = 190, text_color: str = "#111111", outline_color: str = "#FBFAF7", outline_width: float = 0) -> None:
     primary = _ass_color(text_color)
     outline = _ass_color(outline_color)
     header = f"""[Script Info]
@@ -620,7 +645,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         zh = "\\N".join(_ass_escape(line) for line in cue["zh_lines"])
         text = (
             f"{{\\an2\\pos({width // 2},{height - bottom_margin})}}"
-            f"{en}\\N{{\\fnMicrosoft YaHei\\fs30}}{zh}"
+            f"{en}\\N{{\\fnMicrosoft YaHei\\fs{ASS_ZH_FONT_SIZE}\\bord{ASS_ZH_OUTLINE}}}{zh}"
         )
         lines.append(
             f"Dialogue: 0,{_ts_ass(cue['start_ms'])},{_ts_ass(cue['end_ms'])},Bilingual,,0,0,0,,{text}"

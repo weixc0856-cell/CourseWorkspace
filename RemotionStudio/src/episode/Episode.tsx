@@ -6,6 +6,7 @@ import {CarScene} from '../chapter/CarScene';
 import {MechanismScene} from '../chapter/MechanismScene';
 import {EvidenceScene} from '../chapter/EvidenceScene';
 import {FormulaBlock} from '../components/FormulaBlock';
+import {PointsCard} from '../components/PointsCard';
 import timing from './timing.json';
 
 const COMPONENTS: Record<string, React.FC<any>> = {
@@ -14,6 +15,7 @@ const COMPONENTS: Record<string, React.FC<any>> = {
   MechanismDiagram: MechanismScene,
   ChartOverlay: EvidenceScene,
   FormulaBlock: FormulaBlock,
+  PointsCard: PointsCard,
 };
 
 type Instance = {component: string; duration: number; props?: Record<string, unknown>};

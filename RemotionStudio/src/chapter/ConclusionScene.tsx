@@ -55,7 +55,7 @@ export const ConclusionScene: React.FC<{duration?: number}> = ({duration}) => {
         c<sub>D</sub> 0.30 → 0.26: about <b>0.6 l/100 km</b> at a constant 140 km/h.
       </div>
 
-      <div style={{position: 'absolute', left: 96, bottom: 96, opacity: src, color: 'rgba(244,241,234,0.35)', fontSize: 13, letterSpacing: '0.1em'}}>
+      <div style={{position: 'absolute', left: 96, bottom: 130, opacity: src, color: 'rgba(244,241,234,0.35)', fontSize: 13, letterSpacing: '0.1em'}}>
         SYNTHESIS · Ch. 3 §3.1–3.2.6 · Fig. 3.25, p. 187 · MODEL CALCULATION AT 120 km/h
       </div>
     </SceneFrame>

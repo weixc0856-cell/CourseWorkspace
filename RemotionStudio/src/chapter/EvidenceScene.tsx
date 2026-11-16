@@ -76,7 +76,7 @@ export const EvidenceScene: React.FC<ChartOverlayProps> = ({
         {footnote}
       </div>
 
-      <div style={{position: 'absolute', left: 96, bottom: 96, color: 'rgba(244,241,234,0.35)', fontSize: 14, letterSpacing: '0.1em'}}>
+      <div style={{position: 'absolute', left: 96, bottom: 130, color: 'rgba(244,241,234,0.35)', fontSize: 14, letterSpacing: '0.1em'}}>
         BOOK FIGURE · B-CLASS · TABLE 3.1 · §3.2.6
       </div>
     </SceneFrame>

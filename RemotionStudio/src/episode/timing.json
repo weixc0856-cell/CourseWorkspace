@@ -293,10 +293,17 @@
           "duration": 24.292
         },
         {
-          "component": "MechanismDiagram",
+          "component": "PointsCard",
           "duration": 24.293,
           "props": {
-            "title": "Five things to keep"
+            "title": "Five ideas to keep",
+            "points": [
+              "Above ~60 km/h, air becomes the largest road load.",
+              "Drag grows with v²; the power to beat it grows with v³.",
+              "Most drag is pressure, and most of it happens at the rear.",
+              "Shape sets cD; frontal area multiplies it.",
+              "The shape is a compromise with people, safety, cooling and design."
+            ]
           }
         },
         {

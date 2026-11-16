@@ -89,7 +89,7 @@ export const PhotoScene: React.FC<PhotoInsertProps> = ({
         </div>
       </div>
 
-      <div style={{position: 'absolute', left: 120, bottom: 96, opacity: src, color: 'rgba(244,241,234,0.4)', fontSize: 16, letterSpacing: '0.08em'}}>
+      <div style={{position: 'absolute', left: 120, bottom: 130, opacity: src, color: 'rgba(244,241,234,0.4)', fontSize: 16, letterSpacing: '0.08em'}}>
         {footer}
       </div>
     </SceneFrame>

@@ -169,6 +169,41 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     else:
         steps.append(Step("subtitles_qc", PASS, "subtitles disabled; not applicable"))
 
+    # Burned subtitles are invisible to frame-audit, which reads the Remotion
+    # composition. The ASS itself is the only place to prove the subtitle band
+    # does not sit on a footer or a conclusion line.
+    if paths.lesson.subtitles.enabled and paths.lesson.subtitles.render == "burn_in":
+        from course_control.platform.media import sha256_file
+        from course_control.voice.subtitle_bands import BandError, check_ass_band
+
+        ass = paths.build_root / "subtitles.ass"
+        target = paths.build_root / "quality" / "subtitle-bands.json"
+        if not ass.is_file():
+            steps.append(Step("subtitle_bands", INCOMPLETE, f"ASS missing: {ass}"))
+        else:
+            try:
+                report = check_ass_band(
+                    ass, workspace / "shared" / "design-tokens" / "episode-bands.yaml"
+                )
+            except BandError as exc:
+                report = {"status": "FAIL", "detail": str(exc), "violations": []}
+            report["source"] = {"path": str(ass), "sha256": sha256_file(ass)}
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
+            steps.append(
+                Step(
+                    "subtitle_bands",
+                    PASS if report.get("status") == "PASS" else FAIL,
+                    str(report.get("detail") or ""),
+                    str(target),
+                    data={"violations": report.get("violations") or []},
+                )
+            )
+    else:
+        steps.append(Step("subtitle_bands", PASS, "subtitles not burned in; not applicable"))
+
     quality, quality_path = build_quality_report(workspace, paths)
     quality_status = PASS
     for item in quality.get("dimensions") or []:

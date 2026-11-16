@@ -12,8 +12,8 @@ const BAND = {
   title: {top: 0, bottom: 200},
   mechanism: {top: 200, bottom: 560},
   formula: {top: 560, bottom: 840},
-  conclusion: {top: 840, bottom: 950},
-  footer: {top: 950, bottom: 1080},
+  conclusion: {top: 840, bottom: 920},
+  footer: {top: 920, bottom: 950},
 } as const;
 
 const Parcels: React.FC<{t: number; fast: boolean}> = ({t, fast}) => {

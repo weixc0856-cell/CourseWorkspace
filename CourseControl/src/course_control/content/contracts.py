@@ -102,7 +102,9 @@ class Subtitles(StrictModel):
     # dark text for paper slides.
     text_color: str = "#111111"
     outline_color: str = "#FBFAF7"
-    outline_width: int = Field(default=0, ge=0, le=6)
+    # ASS accepts fractional outlines; 1.4 is the calibrated value for CJK at
+    # 30 px, where an integer 2 reads as a double edge.
+    outline_width: float = Field(default=0, ge=0, le=6)
 
 
 class DurationPolicy(StrictModel):

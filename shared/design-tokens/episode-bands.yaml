@@ -1,0 +1,22 @@
+schema_version: 1
+# Vertical bands of the 1920x1080 episode canvas.
+#
+# The picture owns the top; burned subtitles own the bottom band. Nothing that
+# is drawn into the frame may enter the subtitle band, and every subtitle cue
+# must stay inside it. The ASS checker reads this file; the Remotion scenes
+# place their footers at or above picture_max_bottom.
+canvas: [1920, 1080]
+picture_bands:
+  title: [0, 200]
+  mechanism: [200, 560]
+  formula: [560, 840]
+  conclusion: [840, 920]
+  footer: [920, 950]
+subtitle_band: [960, 1060]
+# Readability floor for burned captions (docs/生产合同.md §9). Position alone
+# does not make a caption readable: a CJK line at 30 px with a 1.4 outline
+# closes its strokes. The ASS checker enforces these.
+readability:
+  min_font_size: 30
+  max_outline: 1.4
+  max_outline_cjk: 1.0

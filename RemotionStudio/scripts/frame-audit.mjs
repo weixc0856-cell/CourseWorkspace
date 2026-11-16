@@ -25,8 +25,14 @@ import { contentRoot, workspace } from './content-root.mjs';
 
 const COMPOSITION = { width: 1920, height: 1080 };
 const DEFAULT_FRAMES = [15, 270, 555, 990, 1455, 2040, 2655, 3165, 3705, 4140];
+// Burned subtitles own this band (shared/design-tokens/episode-bands.yaml).
+// frame-audit cannot see them, but it can prove no drawn text enters it.
+const RESERVED_BAND = [960, 1060];
 
-const auditInPage = () => {
+// page.evaluate serializes this function, so anything it needs from Node
+// scope must be passed as an argument (a module constant would be undefined
+// inside the page).
+const auditInPage = (reservedBand) => {
   const SAFE = 96;
   const scale = window.innerWidth / 1920;
   // The bundle page also carries studio chrome; audit only the composition.
@@ -173,6 +179,17 @@ const auditInPage = () => {
         text: direct.slice(0, 80),
         rect: composed,
         overflow_px: Math.round(overflow),
+      });
+    }
+    // Picture text must stay out of the subtitle band; burned subtitles sit
+    // there and would draw over anything the composition places in it.
+    if (composed.y + composed.h > reservedBand[0] && composed.y < reservedBand[1]) {
+      issues.push({
+        rule: 'reserved_band',
+        selector: selectorOf(element),
+        text: direct.slice(0, 80),
+        rect: composed,
+        band: reservedBand,
       });
     }
     const clips = [style.overflowX, style.overflowY].some((value) =>
@@ -461,7 +478,7 @@ async function main() {
         process.exitCode = 1;
         return;
       }
-      const overlapping = await page.evaluate(auditInPage);
+      const overlapping = await page.evaluate(auditInPage, RESERVED_BAND);
       const caught = overlapping.issues.some(
         (item) => item.rule === 'subtitle_covers_evidence' && item.selector === 'subtitle:selftest-subtitle',
       );
@@ -469,7 +486,7 @@ async function main() {
         const subtitle = document.querySelector('[data-subtitle="selftest-subtitle"]');
         if (subtitle) Object.assign(subtitle.style, { left: '0px', top: '0px' });
       });
-      const separated = await page.evaluate(auditInPage);
+      const separated = await page.evaluate(auditInPage, RESERVED_BAND);
       const falsePositive = separated.issues.some(
         (item) => item.rule === 'subtitle_covers_evidence' && item.selector === 'subtitle:selftest-subtitle',
       );
@@ -489,7 +506,7 @@ async function main() {
         player.appendChild(figure);
         return { injected: true };
       });
-      const sourceMissing = await page.evaluate(auditInPage);
+      const sourceMissing = await page.evaluate(auditInPage, RESERVED_BAND);
       const sourceCaught = sourceMissing.issues.some(
         (item) => item.rule === 'figure_source_missing' && item.figure === 'selftest-figure',
       );
@@ -508,7 +525,7 @@ async function main() {
         });
         figure.appendChild(line);
       });
-      const sourceFixed = await page.evaluate(auditInPage);
+      const sourceFixed = await page.evaluate(auditInPage, RESERVED_BAND);
       const sourceFixedFalsePositive = sourceFixed.issues.some(
         (item) => item.rule === 'figure_source_missing' && item.figure === 'selftest-figure',
       );
@@ -536,7 +553,7 @@ async function main() {
         host.append(make(1400, 1000, 'OVERLAP A'), make(1420, 1020, 'OVERLAP B'));
         player.appendChild(host);
       });
-      const overlapAudit = await page.evaluate(auditInPage);
+      const overlapAudit = await page.evaluate(auditInPage, RESERVED_BAND);
       const overlapCaught = overlapAudit.issues.some((item) => item.rule === 'text_overlap');
       await page.evaluate(() => {
         const target = [...document.querySelectorAll('[data-audit-selftest]')].find(
@@ -544,7 +561,7 @@ async function main() {
         );
         if (target) { target.style.left = '900px'; target.style.top = '1000px'; }
       });
-      const overlapSeparated = await page.evaluate(auditInPage);
+      const overlapSeparated = await page.evaluate(auditInPage, RESERVED_BAND);
       const overlapFalsePositive = overlapSeparated.issues.some((item) => item.rule === 'text_overlap');
       await page.evaluate(() => {
         const player = document.querySelector('.__remotion-player');
@@ -572,7 +589,7 @@ async function main() {
         hidden.appendChild(child);
         player.appendChild(hidden);
       });
-      const hiddenAudit = await page.evaluate(auditInPage);
+      const hiddenAudit = await page.evaluate(auditInPage, RESERVED_BAND);
       const hiddenChildCounted = hiddenAudit.issues.some(
         (item) => (item.text || '').includes('HIDDEN CHILD') || (item.other_text || '').includes('HIDDEN CHILD'),
       );
@@ -608,7 +625,7 @@ async function main() {
     const results = [];
     for (const frame of list) {
       await openFrame(page, baseUrl, frame);
-      const result = await page.evaluate(auditInPage);
+      const result = await page.evaluate(auditInPage, RESERVED_BAND);
       const entry = {
         frame,
         issues: result.issues || [],
