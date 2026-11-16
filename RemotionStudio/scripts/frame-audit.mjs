@@ -115,7 +115,20 @@ const auditInPage = () => {
       .trim();
     if (!direct) continue;
     const style = getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) continue;
+    let visible = true;
+    let ancestorOpacity = 1;
+    for (let node = element; node && node !== document.body; node = node.parentElement) {
+      const computed = getComputedStyle(node);
+      if (computed.display === 'none' || computed.visibility === 'hidden') {
+        visible = false;
+        break;
+      }
+      ancestorOpacity *= parseFloat(computed.opacity);
+    }
+    // Opacity lives on the animated wrapper; children keep opacity 1. Hidden
+    // subtrees must not count as visible text, or every fade-in looks like an
+    // overlap before it has started.
+    if (!visible || ancestorOpacity <= 0.01) continue;
     const rect = element.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
     // Icons and decorative glyphs are not text for layout or contrast purposes.
@@ -308,6 +321,10 @@ async function main() {
   const args = process.argv.slice(2);
   const selftestMode = args.includes('--selftest');
   const noBundle = args.includes('--no-bundle');
+  const entryIndex = args.indexOf('--entry');
+  const compositionIndex = args.indexOf('--composition');
+  const entry = entryIndex >= 0 ? args[entryIndex + 1] : 'src/audit/index.tsx';
+  const compositionId = compositionIndex >= 0 ? args[compositionIndex + 1] : 'Chapter';
   const dumpIndex = args.indexOf('--dump');
   const dumpDir = dumpIndex >= 0 ? args[dumpIndex + 1] : null;
   const from = Number(args[args.indexOf('--from') + 1] ?? 0);
@@ -324,7 +341,7 @@ async function main() {
     const studio = resolve(workspace, 'RemotionStudio');
     const result = spawnSync(
       process.execPath,
-      [resolve(studio, 'node_modules', '@remotion', 'cli', 'remotion-cli.js'), 'bundle', 'src/audit/index.tsx', '--out-dir', bundleDir],
+      [resolve(studio, 'node_modules', '@remotion', 'cli', 'remotion-cli.js'), 'bundle', entry, '--out-dir', bundleDir],
       { cwd: studio, stdio: 'inherit' },
     );
     if (result.status !== 0) {
@@ -479,6 +496,36 @@ async function main() {
       });
       const overlapSeparated = await page.evaluate(auditInPage);
       const overlapFalsePositive = overlapSeparated.issues.some((item) => item.rule === 'text_overlap');
+      await page.evaluate(() => {
+        const player = document.querySelector('.__remotion-player');
+        if (!player) return;
+        const hidden = document.createElement('div');
+        Object.assign(hidden.style, {
+          position: 'absolute',
+          left: '0px',
+          top: '0px',
+          width: '1920px',
+          height: '1080px',
+          opacity: '0',
+        });
+        const child = document.createElement('div');
+        child.textContent = 'HIDDEN CHILD';
+        Object.assign(child.style, {
+          position: 'absolute',
+          left: '100px',
+          top: '100px',
+          width: '400px',
+          height: '80px',
+          color: 'white',
+          background: 'black',
+        });
+        hidden.appendChild(child);
+        player.appendChild(hidden);
+      });
+      const hiddenAudit = await page.evaluate(auditInPage);
+      const hiddenChildCounted = hiddenAudit.issues.some(
+        (item) => (item.text || '').includes('HIDDEN CHILD') || (item.other_text || '').includes('HIDDEN CHILD'),
+      );
       console.log(
         'evidence_found: ' + setup.evidence_found +
           '  subtitles: ' + setup.subtitle_found +
@@ -487,7 +534,8 @@ async function main() {
           '  text_overlap_caught: ' + overlapCaught +
           '  text_overlap_separated: ' + overlapFalsePositive +
           '  source_missing_caught: ' + sourceCaught +
-          '  source_fixed: ' + sourceFixedFalsePositive,
+          '  source_fixed: ' + sourceFixedFalsePositive +
+          '  hidden_child_counted: ' + hiddenChildCounted,
       );
       const ok =
         caught &&
@@ -495,7 +543,8 @@ async function main() {
         overlapCaught &&
         !overlapFalsePositive &&
         sourceCaught &&
-        !sourceFixedFalsePositive;
+        !sourceFixedFalsePositive &&
+        !hiddenChildCounted;
       console.log('selftest: ' + (ok ? 'PASS' : 'FAIL'));
       process.exitCode = ok ? 0 : 1;
       return;
