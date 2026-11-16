@@ -713,6 +713,7 @@ def subtitles_rebuild_command(
 @app.command("subtitles-accept")
 def subtitles_accept_command(
     lesson: str = typer.Option(..., "--lesson"),
+    by: str = typer.Option(..., "--by", help="the person accepting"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
@@ -723,7 +724,7 @@ def subtitles_accept_command(
     root = _lesson_path(workspace, lesson_dir, lesson)
     try:
         paths = LessonPaths.load(workspace, root)
-        target = accept_subtitles(workspace, paths)
+        target = accept_subtitles(workspace, paths, by)
     except (ContractError, SubtitleError, Exception) as exc:  # noqa: BLE001
         typer.echo(f"accept failed: {exc}", err=True)
         raise typer.Exit(1)

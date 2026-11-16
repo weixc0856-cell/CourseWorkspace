@@ -133,15 +133,18 @@ FR-42。用试点课程的两份临时副本（正常 / 故意写坏）验证，
 ## 0.9 2026-11-16 静态分镜闸门
 
 - **产物**：`build/<slug>/storyboard/index.html` 与 `manifest.json`，一页一张幻灯片，附镜头字段与三问自查；无动效、无音频。
-- **命令**：`course-control storyboard-page --lesson <slug>`；逐页看后在 `course-control storyboard-review --lesson <slug> --approve 1,2,... [--reject N]` 记录，全部页 `approve` 后才能 `course-control author-accept --lesson <slug> --kind storyboard-page`，写 `lessons/<slug>/authoring/storyboard-review.json`，并把审核页复制为 `authoring/storyboard-review.html`。
+- **命令**：`course-control storyboard-page --lesson <slug>`；逐页看后在 `course-control storyboard-review --lesson <slug> --approve 1,2,... [--reject N] --by <name>` 记录，全部页 `approve` 后才能 `course-control author-accept --lesson <slug> --kind storyboard-page --by <name>`，写 `lessons/<slug>/authoring/storyboard-review.json`，并把审核页复制为 `authoring/storyboard-review.html`。
 - **有效源**：页面与签字都读 `LessonPaths.storyboard_source`；课程声明 `production: authoring/production.yaml` 时签的是 production，而不是空的 `storyboard.yaml`。
 - **绑定**：复核文件记录有效 storyboard、`slides.md`、审核页与页面内嵌截图的 sha256；审核页改动、故事板改动或 review 被改都会失效。`approval.json` 同时钉住 review 文件本身。
 - **覆盖**：`run_build`、`animatic`、`narration-build`、`render shot|segment|project`、`preview-pilot`、`brand-render`、`narrate`、`burn-subs`、`audio-mix`、`session-run --record`、带 `lesson` 的 `scene-run`、`release-check`、`quality-certificate`、`release-approve`、`episode-build` 都校验，未签或已失效返回退出码 3（blocked）。
 - **页面就绪**：`storyboard-page` 在没有幻灯片截图时退出 1，`author-accept` 拒绝签字；有截图才能逐页 approve。
-- **交付安装**：`package` 只有在 typed 证书 pass、Q1–Q5 完整、review/release 具名批准（三者绑定当前 `build-report`、成片与 `quality-report`）且分镜签字时写 `pass` 并替换 `deliver/<slug>/`；否则写 `incomplete`/`fail`，保留旧交付，把本次尝试放在 `deliver/<slug>.attempt/`，命令退出 1。包内复制 `evidence/certificate.json`、`quality-report.json`、两份 approval 与分镜签字材料。
-- **包复核**：`package-verify` 不只重算哈希，还校验 manifest schema、必需文件集、证书与 Q1–Q5、两份 approval 的三个绑定哈希和仓库内路径，拒绝 `../`、绝对路径与 symlink 逃逸。
+- **生产入口**：`release-check`、`release-approve`、`package` 拒绝 dev 模式，并要求显式生产内容根（`COURSEWORKSPACE_CONTENT_ROOT` 或 `config/local-paths.yaml`）；`package` 只写 `<内容根>/deliver/<slug>`，没有 `--out`。
+- **交付顺序**：S8 `release-check`（自动全链）→ `release-approve`（具名，先跑同一全链）→ `package` → `package-verify`。`package` 在 release 批准之前只能是 `incomplete`。
+- **schema 2**：`quality-report`、`certificate`、approval 与 package manifest 都是 schema 2；schema 1 是历史记录，需要重新生成报告/重新签核/重新打包，不能被新校验当成通过。
+- **交付安装**：`package` 只有在 typed 证书 pass、Q1–Q5 封闭且完整、review/release 两份具名审批（`lesson`、`stage` 与 `build-report`、成片、`quality-report` 内容哈希三方绑定）成立、分镜签字齐全且无开放内容异常时写 `pass` 并替换 `deliver/<slug>/`；否则写 `incomplete`/`fail`，保留旧交付，把本次尝试放在 `deliver/<slug>.attempt/`，命令退出 1。包 schema 为 2；包内复制 `evidence/certificate.json`、`quality-report.json`、两份 approval 与分镜签字材料。
+- **包复核**：`package-verify` 重算证据，不信任 manifest 自报：schema 必须是整数 2；必需文件集包含分镜证据（`storyboard_required` 必须为布尔）；每个 `present` 条目必须有 64 位 sha256 并与文件一致；证书必须 pin 当前 `quality-report` 的内容哈希；两份 approval 必须同 lesson、同 stage 槽、具名且绑定当前哈希；拒绝 `../`、绝对路径、symlink/junction 及其祖先。
 - **主题视频**：`render project --mode release` 先渲染到 `build/<project>/release/`；只有 `release-approve --project <project.yaml> --by <name>` 写出绑定候选哈希的 approval 后才安装到 `deliver/`。未批准返回 `incomplete` 且不改旧交付。
-- **内容异常队列**：`build/_shared/frame-audit/episode/content-exceptions.json` 里的条目带 `lesson`、`owner`、`clear_when`；`release-check`、`package`、`quality-certificate`、`release-approve`、`episode-build` 命中当前 lesson 时返回 `incomplete` 或退出 3。队列不存在表示没有已知异常；清除条件写在该条目的 `clear_when`。
+- **内容异常队列**：每课 `build/<slug>/quality/content-exceptions.json`；`course-control checks` 的 `build/<slug>/quality/exceptions.json` 是检查报告，不是异常队列。共享索引是 `build/_shared/exceptions/index.json`。条目带 `lesson`、`owner`、`reason`、`clear_when`；`cleared` 必须带具名 `cleared_by`、`cleared_at`、`rechecked_at`（带时区、不倒序、不未来）；`resolved` 只表示自动检查未再看到问题，并记录 `resolved_at`、`resolved_by_check`、`resolved_run`。队列不存在且索引未列出该课，表示没有已知异常；队列、索引或 legacy 文件损坏一律阻断。`release-check`、`package`、`quality-certificate`、`release-approve`、`episode-build` 命中当前 lesson 时返回 `incomplete` 或退出 3。
 - **新鲜度**：`check_freshness` 逐项比对当前路径与哈希并重算 digest；manifest 缺新输入、同名校验、mtime 回退缺关键输入、或 `build-manifest --force`（`publishable=false`）都判 stale。
 - **负例**：`CourseControl/tests/test_storyboard_page.py` 覆盖“未签阻断”“改了 storyboard 后阻断”“页面过期拒绝签字”三条；`scripts/check_docs.py --selftest` 覆盖文档地图的四类红灯。
 - **文档**：命令顺序与中间交付物见 `docs/生产流水线-阶段与中间交付物.md`。

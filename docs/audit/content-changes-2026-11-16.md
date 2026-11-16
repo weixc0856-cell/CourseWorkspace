@@ -12,7 +12,7 @@
 | `build/audit-bundle/` | `build/_shared/audit-bundle/` | 83 (cache) | — | cache |
 | `build/contract-negative/` | `build/_shared/contract-negative/` | 3 | 3754 | `3f482ff181ff23ad` |
 | `build/fixtures/` | `build/_shared/fixtures/` | 2 (cache) | — | cache |
-| `build/frame-audit/` | `build/_shared/frame-audit/` | 34 (cache) | — | cache |
+| `build/frame-audit/` | `build/_shared/frame-audit/` | 33 (cache; excludes `episode/content-exceptions.json`) | — | cache |
 | `build/golden/` | `build/_shared/golden/` | 5 | 7211265 | `72ee35ce4db06fa6` |
 | `build/reviews/` | `build/_shared/reviews/` | 130 | 11840348 | `d4e94446dd7929a4` |
 | `build/static-hold/` | `build/_shared/static-hold/` | 372 | 136502090 | `d3ce296c2698a924` |

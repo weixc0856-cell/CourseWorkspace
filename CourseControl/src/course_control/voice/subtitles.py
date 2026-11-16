@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -1135,9 +1136,17 @@ def rebuild_on_timeline(
     return cues, report
 
 
-def accept_subtitles(workspace: Path, paths: LessonPaths) -> Path:
+def accept_subtitles(
+    workspace: Path, paths: LessonPaths, approved_by: str
+) -> Path:
     from course_control.authoring.pipeline import approve
 
+    from course_control.quality.evidence import is_named_approver
+
+    if not is_named_approver(approved_by):
+        raise SubtitleError(
+            f"subtitle acceptance must name a person, not {approved_by!r}"
+        )
     draft_path = paths.build_root / "subtitles" / "bilingual.draft.json"
     if not draft_path.is_file():
         raise SubtitleError(f"subtitle draft not found: {draft_path}")
@@ -1146,7 +1155,16 @@ def accept_subtitles(workspace: Path, paths: LessonPaths) -> Path:
         raise SubtitleError("lesson.yaml content.subtitles must point to subtitles.srt")
     target = paths.content_path(paths.lesson.content.subtitles)
     target.parent.mkdir(parents=True, exist_ok=True)
-    # Rebuild SRT from the approved draft so no unlisted file is promoted.
-    write_srt([cue.model_dump() for cue in draft.cues], target)
-    approve(paths.lesson_dir, "subtitles", paths.lesson.content.subtitles)
+    # Rebuild SRT from the approved draft so no unlisted file is promoted, then
+    # swap it in only after the write succeeded.
+    temp = target.with_name(target.name + ".tmp")
+    try:
+        write_srt([cue.model_dump() for cue in draft.cues], temp)
+        os.replace(temp, target)
+    finally:
+        if temp.exists():
+            temp.unlink(missing_ok=True)
+    approve(
+        paths.lesson_dir, "subtitles", paths.lesson.content.subtitles, approved_by
+    )
     return target

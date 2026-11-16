@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -84,7 +85,7 @@ class PackageTest(unittest.TestCase):
         quality_report.write_text(
             json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "lesson": "demo",
                     "states": {
                         "VERIFY_PASS": True,
@@ -111,7 +112,7 @@ class PackageTest(unittest.TestCase):
         (build / "quality" / "certificate.json").write_text(
             json.dumps(
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
                     "project_id": "demo",
                     "generated_at": "now",
                     "verdict": "pass",
@@ -125,7 +126,7 @@ class PackageTest(unittest.TestCase):
             (build / "quality" / name).write_text(
                 json.dumps(
                     {
-                        "schema_version": 1,
+                        "schema_version": 2,
                         "lesson": "demo",
                         "decision": "approved",
                         "approved_by": "tester",
@@ -161,8 +162,9 @@ class PackageTest(unittest.TestCase):
             (build / "quality" / name).write_text(
                 json.dumps(
                     {
-                        "schema_version": 1,
+                        "schema_version": 2,
                         "lesson": "demo",
+                        "stage": name.split("-")[0],
                         "decision": "approved",
                         "approved_by": "tester",
                         "build_report_sha256": build_report_sha,
@@ -184,6 +186,7 @@ class PackageTest(unittest.TestCase):
                 {
                     "schema_version": 1,
                     "lesson": "demo",
+                    "reviewed_by": "Wei Chen",
                     "storyboard_sha256": manifest.get("storyboard_sha256"),
                     "html_sha256": manifest.get("html_sha256"),
                     "pages": [{**row, "decision": "approve"} for row in manifest["pages_detail"]],
@@ -191,7 +194,7 @@ class PackageTest(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        sign_storyboard_page(self.workspace, self.lesson_dir)
+        sign_storyboard_page(self.workspace, self.lesson_dir, "Wei Chen")
         self.paths = LessonPaths.load(self.workspace, self.lesson_dir)
 
     def tearDown(self) -> None:
@@ -266,6 +269,195 @@ class PackageTest(unittest.TestCase):
             )["files"]
         }
         self.assertEqual(before["final/master.mp4"], after["final/master.mp4"])
+
+    def _pass_package(self) -> tuple[dict, Path]:
+        manifest, root = build_package(self.paths)
+        self.assertEqual(manifest["verdict"], "pass", manifest.get("verdict_reasons"))
+        return manifest, root
+
+    def _rewrite_manifest(self, root: Path, mutate) -> dict:
+        path = root / "manifest.json"
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        mutate(payload)
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return payload
+
+    def test_verify_rejects_null_hashes(self) -> None:
+        _, root = self._pass_package()
+
+        def null_hashes(payload: dict) -> None:
+            for item in payload["files"]:
+                item["sha256"] = None
+
+        self._rewrite_manifest(root, null_hashes)
+        problems = verify_package(root)
+        self.assertTrue(any("no sha256" in item for item in problems), problems)
+
+    def test_verify_rejects_an_approval_for_another_lesson(self) -> None:
+        _, root = self._pass_package()
+        approval = root / "evidence" / "review-approval.json"
+        payload = json.loads(approval.read_text(encoding="utf-8"))
+        payload["lesson"] = "other"
+        approval.write_text(json.dumps(payload), encoding="utf-8")
+        problems = verify_package(root)
+        self.assertTrue(any("not 'demo'" in item for item in problems), problems)
+
+    def test_verify_rejects_a_wrong_stage_slot(self) -> None:
+        _, root = self._pass_package()
+        approval = root / "evidence" / "release-approval.json"
+        payload = json.loads(approval.read_text(encoding="utf-8"))
+        payload["stage"] = "review"
+        approval.write_text(json.dumps(payload), encoding="utf-8")
+        problems = verify_package(root)
+        self.assertTrue(any("stage 'review'" in item for item in problems), problems)
+
+    def test_verify_requires_storyboard_evidence(self) -> None:
+        _, root = self._pass_package()
+
+        def drop_storyboard(payload: dict) -> None:
+            payload["evidence"]["storyboard_required"] = True
+            payload["files"] = [
+                item
+                for item in payload["files"]
+                if not str(item.get("path", "")).startswith("evidence/storyboard/")
+            ]
+
+        self._rewrite_manifest(root, drop_storyboard)
+        problems = verify_package(root)
+        self.assertTrue(
+            any("evidence/storyboard/review.json" in item for item in problems),
+            problems,
+        )
+
+    def test_verify_rejects_a_schema_1_approval(self) -> None:
+        _, root = self._pass_package()
+        approval = root / "evidence" / "review-approval.json"
+        payload = json.loads(approval.read_text(encoding="utf-8"))
+        payload["schema_version"] = 1
+        approval.write_text(json.dumps(payload), encoding="utf-8")
+        problems = verify_package(root)
+        self.assertTrue(any("not 2" in item for item in problems), problems)
+
+    def test_verify_rejects_a_schema_1_quality_report(self) -> None:
+        _, root = self._pass_package()
+        report = root / "evidence" / "quality-report.json"
+        payload = json.loads(report.read_text(encoding="utf-8"))
+        payload["schema_version"] = 1
+        report.write_text(json.dumps(payload), encoding="utf-8")
+        problems = verify_package(root)
+        self.assertTrue(any("quality report schema_version" in item for item in problems), problems)
+
+    def test_verify_rejects_a_manifest_that_drops_storyboard(self) -> None:
+        _, root = self._pass_package()
+
+        def drop(payload: dict) -> None:
+            payload["evidence"]["storyboard_required"] = False
+            payload["files"] = [
+                item for item in payload["files"]
+                if not str(item.get("path", "")).startswith("evidence/storyboard/")
+            ]
+
+        self._rewrite_manifest(root, drop)
+        problems = verify_package(root)
+        self.assertTrue(
+            any("does not list required: evidence/storyboard/review.json" in item for item in problems)
+            or any("disagrees with the quality report" in item for item in problems),
+            problems,
+        )
+
+    def test_verify_rejects_an_unsigned_storyboard(self) -> None:
+        _, root = self._pass_package()
+        review = root / "evidence" / "storyboard" / "review.json"
+        payload = json.loads(review.read_text(encoding="utf-8"))
+        payload["approved_by"] = "human"
+        review.write_text(json.dumps(payload), encoding="utf-8")
+        problems = verify_package(root)
+        self.assertTrue(any("not signed by a named person" in item for item in problems), problems)
+
+    def test_verify_rejects_an_unknown_schema(self) -> None:
+        _, root = self._pass_package()
+        self._rewrite_manifest(root, lambda payload: payload.update(schema_version=1))
+        problems = verify_package(root)
+        self.assertTrue(any("not the integer 2" in item for item in problems), problems)
+
+    def test_verify_rejects_a_linked_package_file(self) -> None:
+        _, root = self._pass_package()
+        outside = self.workspace / "outside.json"
+        outside.write_text("x", encoding="utf-8")
+        target = root / "metadata.json"
+        target.unlink()
+        import subprocess
+
+        result = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(target), str(outside)],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            self.skipTest("cannot create a junction here")
+        problems = verify_package(root)
+        self.assertTrue(
+            any("linked package file" in item or "unsafe package path" in item for item in problems),
+            problems,
+        )
+
+    def test_verify_rejects_a_linked_ancestor(self) -> None:
+        _, root = self._pass_package()
+        outside = self.workspace / "outside-dir"
+        outside.mkdir()
+        (outside / "payload").write_text("x", encoding="utf-8")
+        link = root / "evidence" / "linked"
+        import subprocess
+
+        result = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(outside)],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            self.skipTest("cannot create a junction here")
+
+        def add_linked(payload: dict) -> None:
+            payload["files"].append(
+                {"path": "evidence/linked/payload", "required": True, "status": "present", "sha256": "0" * 64}
+            )
+
+        self._rewrite_manifest(root, add_linked)
+        problems = verify_package(root)
+        self.assertTrue(any("unsafe package path" in item for item in problems), problems)
+
+    def test_package_root_junction_is_refused(self) -> None:
+        outside = self.workspace / "outside-deliver"
+        outside.mkdir()
+        target = self.workspace / "deliver" / "demo"
+        target.parent.mkdir(parents=True)
+        import subprocess
+
+        result = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(target), str(outside)],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            self.skipTest("cannot create a junction here")
+        with self.assertRaises(PackageError):
+            build_package(self.paths)
+
+    def test_manifest_paths_are_relative(self) -> None:
+        manifest, _ = self._pass_package()
+        for item in manifest["files"]:
+            value = str(item.get("path") or "")
+            self.assertFalse(value.startswith("/") or (len(value) > 1 and value[1] == ":"), value)
+
+    def test_fail_verdict_does_not_replace_a_passing_delivery(self) -> None:
+        _, root = self._pass_package()
+        certificate = self.paths.build_root / "quality" / "certificate.json"
+        payload = json.loads(certificate.read_text(encoding="utf-8"))
+        payload["verdict"] = "fail"
+        certificate.write_text(json.dumps(payload), encoding="utf-8")
+        attempt, attempt_root = build_package(self.paths)
+        self.assertEqual(attempt["verdict"], "fail")
+        self.assertFalse(attempt["installed"])
+        self.assertTrue(str(attempt_root).endswith(".attempt"))
+        installed = json.loads((root / "manifest.json").read_text("utf-8"))
+        self.assertEqual(installed["verdict"], "pass")
 
     def test_tampered_package_is_detected(self) -> None:
         manifest, root = build_package(self.paths)

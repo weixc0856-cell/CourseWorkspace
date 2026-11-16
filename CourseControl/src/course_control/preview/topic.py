@@ -368,10 +368,13 @@ def release_topic(context: TopicContext) -> dict:
             approval = json.loads(approval_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             approval = None
+    from course_control.quality.evidence import is_named_approver
+
     approved = bool(
         approval
         and approval.get("decision") == "approved"
-        and str(approval.get("approved_by") or "").strip()
+        and is_named_approver(approval.get("approved_by"))
+        and approval.get("stage") == "release"
         and approval.get("output_sha256") == output_sha
         and str(approval.get("project") or "") == context.project_id
     )

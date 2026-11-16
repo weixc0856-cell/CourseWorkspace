@@ -202,6 +202,30 @@ class QualityReportTests(DemoCase):
         self.assertEqual(before, target.read_bytes())
         self.assertEqual(first["generated_at"], second["generated_at"])
 
+    def _write_full_approval(self, name: str, stage: str, content_sha: str) -> None:
+        import hashlib
+
+        build = self.paths.build_root
+        build_report_sha = hashlib.sha256(
+            (build / "final" / "build-report.json").read_bytes()
+        ).hexdigest()
+        final_sha = hashlib.sha256(
+            (build / "final" / "course-video.mp4").read_bytes()
+        ).hexdigest()
+        self._write(
+            f"quality/{name}",
+            {
+                "schema_version": 2,
+                "lesson": "demo",
+                "stage": stage,
+                "decision": "approved",
+                "approved_by": "Wei Chen",
+                "build_report_sha256": build_report_sha,
+                "final_video_sha256": final_sha,
+                "quality_report_content_sha256": content_sha,
+            },
+        )
+
     def test_verified_warns_need_review_and_release_signoff(self) -> None:
         self._write("final/build-report.json", {"verdict": "pass", "stages": [{"name": "compose", "status": "pass"}]})
         self._write("quality/media-qc.json", {"status": PASS})
@@ -217,14 +241,34 @@ class QualityReportTests(DemoCase):
         self.assertTrue(report["states"]["VERIFY_WARN"])
         self.assertFalse(report["states"]["QUALITY_VERIFIED"])
         self.assertFalse(report["states"]["REVIEW_APPROVED"])
-        self._write("quality/review-approval.json", {"decision": "approved", "approved_by": "owner"})
+        content_sha = report["content_sha256"]
+        self._write_full_approval("review-approval.json", "review", content_sha)
         report, _ = build_quality_report(self.workspace, self.paths)
         self.assertTrue(report["states"]["REVIEW_APPROVED"])
         self.assertFalse(report["states"]["RELEASE_APPROVED"])
-        self._write("quality/release-approval.json", {"decision": "approved", "approved_by": "owner"})
+        self.assertEqual(report["content_sha256"], content_sha)
+        self._write_full_approval("release-approval.json", "release", content_sha)
         report, _ = build_quality_report(self.workspace, self.paths)
         self.assertTrue(report["states"]["RELEASE_APPROVED"])
+        self.assertEqual(report["content_sha256"], content_sha)
 
+    def test_content_sha256_is_stable_across_approvals(self) -> None:
+        self._write("final/build-report.json", {"verdict": "pass", "stages": [{"name": "compose", "status": "pass"}]})
+        self._write("quality/media-qc.json", {"status": PASS})
+        final = self.paths.build_root / "final" / "course-video.mp4"
+        final.write_bytes(b"fake")
+        narration = self.paths.build_root / "narration" / "narration.wav"
+        narration.parent.mkdir(parents=True, exist_ok=True)
+        narration.write_bytes(b"fake")
+        report, _ = build_quality_report(self.workspace, self.paths)
+        hashes = [report["content_sha256"]]
+        self._write_full_approval("review-approval.json", "review", hashes[0])
+        report, _ = build_quality_report(self.workspace, self.paths)
+        hashes.append(report["content_sha256"])
+        self._write_full_approval("release-approval.json", "release", hashes[0])
+        report, _ = build_quality_report(self.workspace, self.paths)
+        hashes.append(report["content_sha256"])
+        self.assertEqual(len(set(hashes)), 1, hashes)
 
 if __name__ == "__main__":
     unittest.main()

@@ -89,26 +89,15 @@ def _final_video(paths: LessonPaths) -> Path | None:
 
 
 def content_exception_for(build_root: Path, lesson: str) -> dict | None:
-    """Return an open content exception that names this lesson, if any."""
-    queue = Path(build_root).parent / "_shared" / "frame-audit" / "episode" / "content-exceptions.json"
-    if not queue.is_file():
-        return None
-    try:
-        data = json.loads(queue.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {"status": "incomplete", "reason": f"unreadable content exception queue: {queue}"}
-    if isinstance(data, dict) and isinstance(data.get("entries"), list):
-        entries = data["entries"]
-    elif isinstance(data, list):
-        entries = data
-    else:
-        entries = [data]
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        if str(entry.get("lesson") or "") == lesson and str(entry.get("status") or "") != "cleared":
-            return entry
-    return None
+    """Return the blocking content exception for this lesson, if any.
+
+    The per-lesson queue is authoritative; the shared file is an index and a
+    legacy import.  A malformed queue or index is itself a blocking exception
+    (see ``course_control.quality.exceptions``), never "no exception".
+    """
+    from course_control.quality.exceptions import blocking_exception
+
+    return blocking_exception(build_root, lesson)
 
 
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
@@ -497,6 +486,21 @@ def _shot_review_steps(workspace: Path, shot_review_dir: Path) -> list[Step]:
     )]
 
 
+def _lesson_approval_problems(paths: LessonPaths) -> list[str]:
+    """The human gate, checked against the files it approves."""
+    from course_control.quality.evidence import evidence_problems
+
+    return evidence_problems(
+        lesson=paths.slug,
+        review_path=paths.build_root / "quality" / "review-approval.json",
+        release_path=paths.build_root / "quality" / "release-approval.json",
+        build_report=paths.build_root / "final" / "build-report.json",
+        final_video=_final_video(paths),
+        quality_report=paths.build_root / "quality" / "quality-report.json",
+        require_release=True,
+    )
+
+
 def run_release_check(
     workspace: Path,
     *,
@@ -505,9 +509,11 @@ def run_release_check(
     licences: list[dict] | None = None,
     shot_review_dir: Path | None = None,
 ) -> dict:
+    approvals: list[str] = []
     if paths is not None:
         steps = _lesson_steps(workspace.resolve(), paths)
         subject = {"kind": "lesson", "id": paths.slug}
+        approvals = _lesson_approval_problems(paths)
     elif topic_video is not None:
         steps = _topic_steps(workspace.resolve(), topic_video, licences)
         subject = {"kind": "topic_video", "id": topic_video.stem}
@@ -523,7 +529,10 @@ def run_release_check(
         "subject": subject,
         "status": status,
         "steps": [step.as_dict() for step in steps],
-        "delivery_allowed": status in {PASS, PASS_WITH_EXEMPTION},
+        "approval_problems": approvals,
+        # A pass status only says the automatic checks ran.  Delivery also
+        # needs both human approvals, bound to this build and film.
+        "delivery_allowed": status in {PASS, PASS_WITH_EXEMPTION} and not approvals,
     }
 
 

@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
 from course_control.rendering.assets import collect_referenced_assets, safe_bundle_name
-from course_control.content.paths import LessonPaths, is_under
+from course_control.content.paths import LessonPaths
 from course_control.platform.utils import probe_media
 
 REQUIRED = "required"
@@ -48,6 +50,8 @@ def _record(root: Path, path: Path, required: bool, status: str | None = None) -
 
 
 def _copy(root: Path, source: Path, relative: str) -> Path:
+    if _is_link(source):
+        raise PackageError(f"refusing to copy a link outside the build: {source}")
     target = root / relative
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
@@ -86,8 +90,24 @@ def _subtitles(paths: LessonPaths) -> list[Path]:
 
 
 
-QUALITY_IDS = {"Q1", "Q2", "Q3", "Q4", "Q5"}
-_BAD_DIMENSIONS = {"BLOCKED", "INCOMPLETE", "FAIL"}
+SCHEMA_VERSION = 2
+BASE_REQUIRED = {
+    "final/master.mp4",
+    "build-report.json",
+    "evidence/media-qc.json",
+    "evidence/certificate.json",
+    "evidence/quality-report.json",
+    "evidence/review-approval.json",
+    "evidence/release-approval.json",
+    "metadata.json",
+    "delivery-checklist.md",
+}
+STORYBOARD_EVIDENCE = (
+    "evidence/storyboard/review.json",
+    "evidence/storyboard/review.html",
+    "evidence/storyboard/decisions.json",
+)
+SHA_RE = re.compile(r"[0-9a-f]{64}")
 
 
 def _read_json(path: Path) -> dict | None:
@@ -95,43 +115,69 @@ def _read_json(path: Path) -> dict | None:
         return None
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return None
     return data if isinstance(data, dict) else None
 
 
-def _quality_problems(certificate_path: Path, quality_path: Path, lesson: str) -> list[str]:
-    """Check the typed certificate and the quality report it pins."""
-    problems: list[str] = []
-    from course_control.quality.certificate import load as load_certificate
+def _is_link(path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    checker = getattr(path, "is_junction", None)
+    if callable(checker):
+        try:
+            return bool(checker())
+        except OSError:
+            return False
+    return False
 
+
+def _link_ancestor(root: Path, path: Path) -> Path | None:
+    """The first ancestor of path, below root, that is a link."""
     try:
-        certificate = load_certificate(certificate_path)
-    except Exception:  # noqa: BLE001 - an invalid certificate is a problem
-        certificate = None
-    if certificate is None:
-        problems.append("quality certificate missing or invalid")
-    else:
-        if certificate.project_id != lesson:
-            problems.append(
-                f"certificate is for {certificate.project_id}, not {lesson}"
-            )
-        if certificate.verdict != "pass":
-            problems.append(f"quality certificate is {certificate.verdict}")
-        quality_data = _read_json(quality_path)
-        if quality_data is None:
-            problems.append("quality report missing or invalid")
-        else:
-            from course_control.quality.certificate import quality_content_sha256
+        relative = path.relative_to(root)
+    except ValueError:
+        return None
+    current = root
+    for part in relative.parts[:-1]:
+        current = current / part
+        if current.exists() and _is_link(current):
+            return current
+    return None
 
-            expected = quality_content_sha256(quality_data)
-            if certificate.quality_report_content_sha256 != expected:
-                problems.append("certificate does not pin the current quality content")
+
+def _real_file(root: Path, path: Path) -> bool:
+    return (
+        path.is_file()
+        and not _is_link(path)
+        and _link_ancestor(root, path) is None
+    )
+
+
+def _valid_sha(value: object) -> bool:
+    return isinstance(value, str) and bool(SHA_RE.fullmatch(value))
+
+
+def _quality_problems(quality_path: Path, lesson: str) -> list[str]:
+    from course_control.quality.evidence import BAD_STATES, normalize_dimensions
 
     quality = _read_json(quality_path)
     if quality is None:
-        problems.append("quality report missing or invalid")
-        return problems
+        return ["quality report missing or invalid"]
+    problems: list[str] = []
+    version = quality.get("schema_version")
+    if type(version) is not int or version != 2:
+        problems.append(
+            f"quality report schema_version is {version!r}, not 2; "
+            "re-run quality-report"
+        )
+    statuses, status_problems = normalize_dimensions(quality)
+    problems.extend(status_problems)
+    bad = sorted(
+        qid for qid, status in statuses.items() if status in BAD_STATES
+    )
+    if bad:
+        problems.append("quality dimensions not passed: " + ", ".join(bad))
     states = quality.get("states") or {}
     if not states.get("VERIFY_PASS"):
         problems.append("quality report is not VERIFY_PASS")
@@ -139,53 +185,40 @@ def _quality_problems(certificate_path: Path, quality_path: Path, lesson: str) -
         problems.append("quality report contains an incomplete or failed verification")
     if states.get("BLOCKED_WARNINGS"):
         problems.append("quality report has blocking warnings")
-    if not states.get("RELEASE_APPROVED"):
-        problems.append("quality report has no release approval")
-    dimensions = {
-        str(item.get("id")): str(item.get("status"))
-        for item in quality.get("dimensions") or []
-        if isinstance(item, dict)
-    }
-    missing = sorted(QUALITY_IDS - set(dimensions))
-    if missing:
-        problems.append("quality report is missing dimensions: " + ", ".join(missing))
-    bad = sorted(key for key, status in dimensions.items() if status in _BAD_DIMENSIONS)
-    if bad:
-        problems.append("quality dimensions not passed: " + ", ".join(bad))
     return problems
 
 
-def _approval_problems(
-    review_path: Path,
-    release_path: Path,
-    build_report: Path,
-    final_video: Path,
-    quality_path: Path,
+def _certificate_problems(
+    certificate_path: Path, quality_path: Path, lesson: str
 ) -> list[str]:
-    """Check that both approvals bind this build, film and quality report."""
-    problems: list[str] = []
-    quality = _read_json(quality_path)
-    from course_control.quality.certificate import quality_content_sha256
+    from course_control.quality.certificate import load as load_certificate
+    from course_control.quality.evidence import quality_content_sha256
 
-    expected = {
-        "build_report_sha256": _sha(build_report) if build_report.is_file() else None,
-        "final_video_sha256": _sha(final_video) if final_video.is_file() else None,
-        "quality_report_content_sha256": (
-            quality_content_sha256(quality) if quality is not None else None
-        ),
-    }
-    for label, path in (("review", review_path), ("release", release_path)):
-        approval = _read_json(path)
-        if approval is None:
-            problems.append(f"{label} approval missing or invalid")
-            continue
-        if approval.get("decision") != "approved" or not str(approval.get("approved_by") or "").strip():
-            problems.append(f"{label} approval is not a named approval")
-        for key, value in expected.items():
-            if value is None:
-                problems.append(f"{label} approval cannot be checked: {key.replace('_sha256', '')} missing")
-            elif approval.get(key) != value:
-                problems.append(f"{label} approval does not bind the current {key.replace('_sha256', '')}")
+    problems: list[str] = []
+    raw = _read_json(certificate_path)
+    if raw is None:
+        return ["quality certificate missing or invalid"]
+    version = raw.get("schema_version")
+    if type(version) is not int or version != 2:
+        return [
+            f"quality certificate schema {version!r} is historical; "
+            "re-run quality-certificate"
+        ]
+    try:
+        certificate = load_certificate(certificate_path)
+    except Exception:  # noqa: BLE001 - an invalid certificate is a problem
+        certificate = None
+    if certificate is None:
+        return ["quality certificate missing or invalid"]
+    if certificate.project_id != lesson:
+        problems.append(f"certificate is for {certificate.project_id}, not {lesson}")
+    if certificate.verdict != "pass":
+        problems.append(f"quality certificate is {certificate.verdict}")
+    quality = _read_json(quality_path)
+    if quality is None:
+        problems.append("quality report missing or invalid")
+    elif certificate.quality_report_content_sha256 != quality_content_sha256(quality):
+        problems.append("certificate does not pin the current quality content")
     return problems
 
 
@@ -193,9 +226,9 @@ def _delivery_verdict(paths: LessonPaths) -> tuple[str, list[str], dict]:
     """The package verdict must describe the evidence, not hope.
 
     A package is a copy of the build, so it can be produced at any time.  Its
-    verdict is ``pass`` only when the typed certificate, all five quality
-    dimensions, both approvals (bound to this build, film and report) and the
-    storyboard sign-off agree.  Any missing piece is ``incomplete``.
+    verdict is ``pass`` only when the typed certificate, the closed Q1-Q5
+    vocabulary, both named approvals (bound to this build, film and report),
+    the storyboard sign-off and the content-exception queue agree.
     """
     build_root = paths.build_root
     reasons: list[str] = []
@@ -208,14 +241,20 @@ def _delivery_verdict(paths: LessonPaths) -> tuple[str, list[str], dict]:
     detail["certificate"] = str(certificate_path) if certificate_path.is_file() else None
     detail["quality_report"] = str(quality_path) if quality_path.is_file() else None
 
-    reasons.extend(_quality_problems(certificate_path, quality_path, paths.slug))
+    reasons.extend(_certificate_problems(certificate_path, quality_path, paths.slug))
+    reasons.extend(_quality_problems(quality_path, paths.slug))
+
+    from course_control.quality.evidence import evidence_problems
+
     reasons.extend(
-        _approval_problems(
-            build_root / "quality" / "review-approval.json",
-            build_root / "quality" / "release-approval.json",
-            build_report,
-            final,
-            quality_path,
+        evidence_problems(
+            lesson=paths.slug,
+            review_path=build_root / "quality" / "review-approval.json",
+            release_path=build_root / "quality" / "release-approval.json",
+            build_report=build_report,
+            final_video=final,
+            quality_report=quality_path,
+            require_release=True,
         )
     )
 
@@ -231,14 +270,24 @@ def _delivery_verdict(paths: LessonPaths) -> tuple[str, list[str], dict]:
     except Exception:  # noqa: BLE001 - the verdict records missing evidence
         reasons.append("content exception queue could not be read")
 
-    try:
-        from course_control.authoring.pipeline import assert_storyboard_signed
+    storyboard_required = paths.storyboard_source is not None
+    detail["storyboard_required"] = storyboard_required
+    if storyboard_required:
+        try:
+            from course_control.authoring.pipeline import assert_storyboard_signed
 
-        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
-        detail["storyboard_signed"] = True
-    except Exception as exc:  # noqa: BLE001 - the verdict records the reason
-        detail["storyboard_signed"] = False
-        reasons.append(str(exc))
+            assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+            detail["storyboard_signed"] = True
+        except Exception as exc:  # noqa: BLE001 - the verdict records the reason
+            detail["storyboard_signed"] = False
+            reasons.append(str(exc))
+        for relative in (
+            "authoring/storyboard-review.json",
+            "authoring/storyboard-review.html",
+            "authoring/storyboard-decisions.json",
+        ):
+            if not (paths.lesson_dir / relative).is_file():
+                reasons.append(f"storyboard evidence missing: {relative}")
 
     certificate = _read_json(certificate_path)
     if str((certificate or {}).get("verdict") or "") == "fail":
@@ -246,7 +295,7 @@ def _delivery_verdict(paths: LessonPaths) -> tuple[str, list[str], dict]:
     return ("pass" if not reasons else "incomplete"), reasons, detail
 
 
-def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[dict, Path]:
+def build_package(paths: LessonPaths) -> tuple[dict, Path]:
     """Collect a delivery package and return (manifest, package_root).
 
     Raises ``PackageError`` when a required artifact is missing or unreadable.
@@ -254,17 +303,20 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     invented.
     """
     build_root = paths.build_root
-    final_root = (output_root or paths.delivery_root).resolve()
-    # Delivery lives in the content root, next to build/, not in the repository;
-    # accept either root so a content-root delivery is not rejected.
-    allowed = [paths.workspace]
-    if paths.content_base is not None:
-        allowed.append(paths.content_base)
-    if not any(is_under(base, final_root) for base in allowed):
-        raise PackageError(f"package output must stay inside the workspace: {final_root}")
+    # There is exactly one delivery location: <content_root>/deliver/<slug>.
+    # An arbitrary output path could rename and delete an unrelated directory.
+    final_root = Path(paths.delivery_root)
+    if _is_link(final_root):
+        raise PackageError(
+            f"package output is a link; refusing to write through it: {final_root}"
+        )
     # Build beside the target and swap only after the new package is complete.
     # A failed run must never destroy the last valid delivery package.
     root = final_root.with_name(final_root.name + ".tmp")
+    if _is_link(root):
+        raise PackageError(
+            f"package scratch path is a link; refusing to write through it: {root}"
+        )
     if root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True, exist_ok=True)
@@ -289,7 +341,7 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
 
     missing: list[str] = []
     for relative, source, _ in required:
-        if not source.is_file():
+        if not source.is_file() or _is_link(source):
             missing.append(relative)
     if missing:
         raise PackageError("missing required artifacts: " + ", ".join(missing))
@@ -324,7 +376,10 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         ("evidence/storyboard/review.html", paths.lesson_dir / "authoring" / "storyboard-review.html"),
         ("evidence/storyboard/decisions.json", paths.lesson_dir / "authoring" / "storyboard-decisions.json"),
     ]
-    storyboard_evidence = all(source.is_file() for _, source in storyboard_pairs)
+    storyboard_required = paths.storyboard_source is not None
+    storyboard_evidence = storyboard_required and all(
+        source.is_file() for _, source in storyboard_pairs
+    )
     for relative, source in storyboard_pairs:
         if source.is_file():
             records.append(_record(root, _copy(root, source, relative), True))
@@ -398,7 +453,7 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     if not run_id:
         run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-package"
     metadata = {
-        "schema_version": 1,
+        "schema_version": 2,
         "lesson": paths.slug,
         "title_en": paths.lesson.title_en,
         "title_zh": paths.lesson.title_zh,
@@ -427,14 +482,17 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
 
     verdict, verdict_reasons, verdict_detail = _delivery_verdict(paths)
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "lesson": paths.slug,
         "run_id": run_id,
         "generated_at": _now(),
         "verdict": verdict,
         "verdict_reasons": verdict_reasons,
         "verdict_detail": verdict_detail,
-        "evidence": {"storyboard": storyboard_evidence},
+        "evidence": {
+            "storyboard": storyboard_evidence,
+            "storyboard_required": storyboard_required,
+        },
         "files": records,
         "external_assets": external_assets,
         "referenced_assets": referenced_assets,
@@ -473,6 +531,8 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         # An incomplete or failed attempt must never displace the last passing
         # delivery.  Keep it beside the delivery for inspection and say so.
         attempt = final_root.with_name(final_root.name + ".attempt")
+        if _is_link(attempt):
+            raise PackageError(f"attempt path is a link; refusing to write: {attempt}")
         if attempt.exists():
             shutil.rmtree(attempt)
         root.rename(attempt)
@@ -484,6 +544,8 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         return manifest, attempt
 
     backup = final_root.with_name(final_root.name + ".old")
+    if _is_link(backup):
+        raise PackageError(f"backup path is a link; refusing to write: {backup}")
     if backup.exists():
         shutil.rmtree(backup)
     if final_root.exists():
@@ -504,69 +566,98 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
 
 
 def _package_path(root: Path, relative: object) -> Path | None:
-    """Resolve a manifest path without allowing absolute paths or traversal."""
+    """Resolve a manifest path lexically; no link may sit anywhere on it."""
     value = str(relative or "")
     if not value:
         return None
     candidate = Path(value)
     if candidate.is_absolute():
         return None
-    target = (root / candidate).resolve()
-    if not is_under(root, target):
+    base = Path(os.path.normpath(root))
+    target = Path(os.path.normpath(root / candidate))
+    if target == base or base not in target.parents:
+        return None
+    if _link_ancestor(base, target) is not None:
         return None
     return target
 
 
 def verify_package(root: Path) -> list[str]:
-    """Verify hashes and the evidence chain a pass package claims."""
-    root = root.resolve()
+    """Recompute the evidence a pass package claims; never trust its manifest."""
+    raw = Path(root)
+    if _is_link(raw):
+        return ["package root is a link and was not followed"]
+    root = raw.resolve()
     problems: list[str] = []
     manifest_path = root / "manifest.json"
     if not manifest_path.is_file():
         return ["manifest.json is missing"]
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        return [f"manifest.json is unreadable: {exc}"]
+    manifest = _read_json(manifest_path)
+    if manifest is None:
+        return ["manifest.json is unreadable"]
 
-    if int(manifest.get("schema_version") or 0) != 1:
-        problems.append("manifest schema_version is not 1")
+    version = manifest.get("schema_version")
+    if type(version) is not int or version != SCHEMA_VERSION:
+        hint = (
+            "; schema 1 is a historical package, repackage it before verification"
+            if version == 1
+            else ""
+        )
+        problems.append(
+            f"manifest schema_version is {version!r}, not the integer {SCHEMA_VERSION}{hint}"
+        )
     lesson = str(manifest.get("lesson") or "")
     if not lesson:
         problems.append("manifest does not name a lesson")
     if manifest.get("verdict") != "pass":
-        problems.append(f"manifest verdict is {manifest.get('verdict') or 'missing'}, not pass")
+        problems.append(
+            f"manifest verdict is {manifest.get('verdict') or 'missing'}, not pass"
+        )
 
     items = [item for item in manifest.get("files") or [] if isinstance(item, dict)]
-    by_path = {str(item.get("path") or ""): item for item in items}
-    required = {
-        "final/master.mp4",
-        "build-report.json",
-        "evidence/media-qc.json",
-        "evidence/certificate.json",
-        "evidence/quality-report.json",
-        "evidence/review-approval.json",
-        "evidence/release-approval.json",
-        "metadata.json",
-        "delivery-checklist.md",
-    }
-    storyboard_present = any(
-        (root / "evidence" / "storyboard" / name).is_file()
-        for name in ("review.json", "review.html", "decisions.json")
-    )
-    if (manifest.get("evidence") or {}).get("storyboard") or storyboard_present:
-        required.update(
-            {
-                "evidence/storyboard/review.json",
-                "evidence/storyboard/review.html",
-                "evidence/storyboard/decisions.json",
-            }
+    by_path: dict[str, dict] = {}
+    for item in items:
+        relative = str(item.get("path") or "")
+        if relative in by_path:
+            problems.append(f"manifest lists {relative} more than once")
+            continue
+        by_path[relative] = item
+
+    evidence = manifest.get("evidence") or {}
+    declared_storyboard = evidence.get("storyboard_required")
+    if not isinstance(declared_storyboard, bool):
+        problems.append("manifest evidence.storyboard_required is not a boolean")
+    # The manifest is not trusted for this: the quality report's Q5 artifact
+    # fact is part of the content hash the approvals bind.  If it is absent or
+    # unreadable, require the storyboard evidence (fail closed).
+    quality_path = root / "evidence" / "quality-report.json"
+    quality = _read_json(quality_path)
+    storyboard_required = True
+    if quality is not None:
+        dimensions = {
+            str(item.get("id")): item
+            for item in quality.get("dimensions") or []
+            if isinstance(item, dict)
+        }
+        artifacts = (dimensions.get("Q5") or {}).get("artifacts") or {}
+        signoff = artifacts.get("storyboard_signoff")
+        if isinstance(signoff, bool):
+            storyboard_required = signoff
+    if isinstance(declared_storyboard, bool) and declared_storyboard != storyboard_required:
+        problems.append(
+            "manifest storyboard_required disagrees with the quality report"
         )
+    required = set(BASE_REQUIRED)
+    if storyboard_required:
+        required.update(STORYBOARD_EVIDENCE)
     for relative in sorted(required):
-        if relative not in by_path:
+        item = by_path.get(relative)
+        if item is None:
             problems.append(f"manifest does not list required: {relative}")
-        elif by_path[relative].get("status") != "present":
+        elif item.get("status") != "present":
             problems.append(f"manifest says {relative} is not present")
+        elif not _valid_sha(item.get("sha256")):
+            problems.append(f"manifest entry for {relative} has no sha256")
 
     for item in items:
         relative = str(item.get("path") or "")
@@ -578,51 +669,102 @@ def verify_package(root: Path) -> list[str]:
             if item.get("required"):
                 problems.append(f"missing required: {relative}")
             continue
-        if not path.is_file():
-            problems.append(f"missing: {relative}")
+        if not _real_file(root, path):
+            problems.append(f"missing or linked package file: {relative}")
             continue
-        if item.get("sha256") and _sha(path) != item["sha256"]:
+        if not _valid_sha(item.get("sha256")):
+            problems.append(f"manifest entry for {relative} has no sha256")
+        elif _sha(path) != item.get("sha256"):
             problems.append(f"hash mismatch: {relative}")
 
     for item in manifest.get("external_assets") or []:
-        relative = str((item or {}).get("bundled_path") or "")
+        if not isinstance(item, dict):
+            problems.append("external asset entry is not an object")
+            continue
+        relative = str(item.get("bundled_path") or "")
         path = _package_path(root, relative)
         if path is None:
             problems.append(f"unsafe bundled asset path: {relative or item.get('asset_id')}")
             continue
-        if not path.is_file():
-            problems.append(f"missing bundled asset: {relative or item.get('asset_id')}")
+        if not _real_file(root, path):
+            problems.append(f"missing or linked bundled asset: {relative or item.get('asset_id')}")
             continue
-        if item.get("sha256") and _sha(path) != item["sha256"]:
+        if not _valid_sha(item.get("sha256")):
+            problems.append(f"bundled asset has no sha256: {relative}")
+        elif _sha(path) != item.get("sha256"):
             problems.append(f"hash mismatch: {relative}")
 
-    certificate = root / "evidence" / "certificate.json"
-    quality = root / "evidence" / "quality-report.json"
+    certificate_path = root / "evidence" / "certificate.json"
     build_report = root / "build-report.json"
     master = root / "final" / "master.mp4"
-    if certificate.is_file() or quality.is_file():
-        problems.extend(_quality_problems(certificate, quality, lesson))
-    else:
-        problems.append("evidence certificate and quality report are missing")
+
+    from course_control.quality.evidence import evidence_problems
+
+    problems.extend(_quality_problems(quality_path, lesson))
+    problems.extend(_certificate_problems(certificate_path, quality_path, lesson))
     problems.extend(
-        _approval_problems(
-            root / "evidence" / "review-approval.json",
-            root / "evidence" / "release-approval.json",
-            build_report,
-            master,
-            quality,
+        evidence_problems(
+            lesson=lesson,
+            review_path=root / "evidence" / "review-approval.json",
+            release_path=root / "evidence" / "release-approval.json",
+            build_report=build_report,
+            final_video=master,
+            quality_report=quality_path,
+            require_release=True,
         )
     )
 
-    if (manifest.get("evidence") or {}).get("storyboard") or storyboard_present:
+    if storyboard_required:
+        from course_control.quality.evidence import is_named_approver
+
         review = _read_json(root / "evidence" / "storyboard" / "review.json")
+        decisions_path = root / "evidence" / "storyboard" / "decisions.json"
         page = root / "evidence" / "storyboard" / "review.html"
-        decisions = root / "evidence" / "storyboard" / "decisions.json"
+        decisions_data = _read_json(decisions_path)
         if review is None:
             problems.append("storyboard review evidence is missing or invalid")
+        elif decisions_data is None:
+            problems.append("storyboard decisions are missing or invalid")
         else:
-            if not page.is_file() or review.get("page_sha256") != _sha(page):
+            if str(review.get("lesson") or "") != lesson:
+                problems.append("storyboard review is for another lesson")
+            if not is_named_approver(review.get("approved_by")):
+                problems.append("storyboard review was not signed by a named person")
+            if str(decisions_data.get("lesson") or "") != lesson:
+                problems.append("storyboard decisions are for another lesson")
+            if not is_named_approver(decisions_data.get("reviewed_by")):
+                problems.append("storyboard decisions were not reviewed by a named person")
+            if decisions_data.get("storyboard_sha256") != review.get("storyboard_sha256"):
+                problems.append("storyboard decisions were made against another storyboard")
+            pages = decisions_data.get("pages")
+            if not isinstance(pages, list):
+                problems.append("storyboard decisions have no page list")
+            else:
+                try:
+                    expected = list(range(1, int(review.get("pages") or 0) + 1))
+                except (TypeError, ValueError):
+                    expected = []
+                numbers = sorted(
+                    int(row.get("page") or 0)
+                    for row in pages
+                    if isinstance(row, dict)
+                )
+                if numbers != expected:
+                    problems.append(
+                        "storyboard decisions do not cover every page exactly once"
+                    )
+                if any(
+                    str(row.get("decision") or "") != "approve"
+                    for row in pages
+                    if isinstance(row, dict)
+                ):
+                    problems.append("storyboard decisions contain a non-approved page")
+            if not _real_file(root, page) or review.get("page_sha256") != _sha(page):
                 problems.append("storyboard review page is missing or changed")
-            if not decisions.is_file() or review.get("decisions_sha256") != _sha(decisions):
+            if decisions_data.get("html_sha256") != review.get("page_sha256"):
+                problems.append("storyboard decisions were made against another page")
+            if not _real_file(root, decisions_path) or review.get(
+                "decisions_sha256"
+            ) != _sha(decisions_path):
                 problems.append("storyboard decisions are missing or changed")
     return problems

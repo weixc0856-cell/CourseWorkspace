@@ -14,6 +14,7 @@ from course_control.direction.beats import Beat, BeatSheet, BeatShot, CameraMove
 from course_control.rendering.grammar import load_registry
 from course_control.quality.quality_gates import (
     decide,
+    evaluate,
     freshness_problems,
     subtitles_qc_result,
 )
@@ -258,3 +259,47 @@ class ReportFreshnessTest(unittest.TestCase):
         os.utime(build_report, (future, future))
         problems = freshness_problems(self.root)
         self.assertTrue(any(item["id"] == "freshness.quality" for item in problems))
+
+class QualityGateEvaluateTest(unittest.TestCase):
+    """The gate consumes the same closed Q vocabulary as the certificate."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "quality").mkdir()
+        (self.root / "final").mkdir()
+        self.paths = SimpleNamespace(
+            build_root=self.root,
+            lesson_dir=self.root,
+            workspace=self.root,
+            slug="demo",
+            lesson=SimpleNamespace(subtitles=SimpleNamespace(enabled=False)),
+        )
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def _report(self, dimensions: list[dict]) -> None:
+        (self.root / "quality" / "quality-report.json").write_text(
+            json.dumps({"schema_version": 2, "dimensions": dimensions}), encoding="utf-8"
+        )
+
+    def _ids(self, *statuses: str) -> list[dict]:
+        return [
+            {"id": f"Q{index}", "status": status, "name": f"Q{index}", "reason": status}
+            for index, status in enumerate(statuses, start=1)
+        ]
+
+    def test_illegal_q_status_is_not_pass(self) -> None:
+        self._report(self._ids(*(["BANANA"] * 5)))
+        self.assertNotEqual(evaluate(self.paths)["verification_status"], "pass")
+
+    def test_missing_q_dimension_is_not_pass(self) -> None:
+        self._report(self._ids("PASS", "PASS", "PASS", "PASS"))
+        self.assertNotEqual(evaluate(self.paths)["verification_status"], "pass")
+
+    def test_q5_warn_does_not_block_a_release(self) -> None:
+        dimensions = self._ids("PASS", "PASS", "PASS", "PASS", "WARN")
+        dimensions[4]["warning_class"] = None
+        self._report(dimensions)
+        self.assertEqual(evaluate(self.paths)["verification_status"], "pass")

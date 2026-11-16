@@ -69,7 +69,7 @@
   course-control validate --lesson <slug>                     # 课程校验
   course-control preflight --lesson <slug>                    # 开工前置
   course-control storyboard-page --lesson <slug>              # 静态分镜页（闸门）
-  course-control author-accept --lesson <slug> --kind storyboard-page  # 签字放行
+  course-control author-accept --lesson <slug> --kind storyboard-page --by <name>  # 签字放行
   python scripts/check_docs.py --write                        # 从 文档地图.yaml 生成 docs/README.md
   course-control checks --lesson <slug> --book-index <path>   # 类型化检查 + 异常队列
   course-control retime --lesson <slug>                       # 按实测旁白重算时间轴

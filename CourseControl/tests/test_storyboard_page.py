@@ -69,6 +69,7 @@ class StoryboardPageTest(unittest.TestCase):
                 {
                     "schema_version": 1,
                     "lesson": "demo",
+                    "reviewed_by": "Wei Chen",
                     "storyboard_sha256": manifest.get("storyboard_sha256"),
                     "html_sha256": manifest.get("html_sha256"),
                     "pages": rows,
@@ -94,7 +95,7 @@ class StoryboardPageTest(unittest.TestCase):
     def test_signoff_then_storyboard_change_blocks(self):
         build("demo", self.lesson, self.build_root)
         self._approve_all()
-        sign_storyboard_page(self.root, self.lesson)
+        sign_storyboard_page(self.root, self.lesson, "Wei Chen")
         assert_storyboard_signed(self.lesson, self.storyboard)
         review = json.loads((self.lesson / "authoring" / "storyboard-review.json").read_text("utf-8"))
         self.assertEqual(review["pages"], 2)
@@ -105,7 +106,7 @@ class StoryboardPageTest(unittest.TestCase):
     def test_reviewed_page_change_blocks(self):
         build("demo", self.lesson, self.build_root)
         self._approve_all()
-        sign_storyboard_page(self.root, self.lesson)
+        sign_storyboard_page(self.root, self.lesson, "Wei Chen")
         reviewed = self.lesson / "authoring" / "storyboard-review.html"
         reviewed.write_text(reviewed.read_text(encoding="utf-8") + "<!-- edit -->", encoding="utf-8")
         with self.assertRaises(Exception):
@@ -114,7 +115,7 @@ class StoryboardPageTest(unittest.TestCase):
     def test_missing_reviewed_page_blocks(self):
         build("demo", self.lesson, self.build_root)
         self._approve_all()
-        sign_storyboard_page(self.root, self.lesson)
+        sign_storyboard_page(self.root, self.lesson, "Wei Chen")
         (self.lesson / "authoring" / "storyboard-review.html").unlink()
         with self.assertRaises(Exception):
             assert_storyboard_signed(self.lesson, self.storyboard)
@@ -124,7 +125,7 @@ class StoryboardPageTest(unittest.TestCase):
         build("demo", self.lesson, self.build_root)
         self._approve_all()
         with self.assertRaises(Exception):
-            sign_storyboard_page(self.root, self.lesson)
+            sign_storyboard_page(self.root, self.lesson, "Wei Chen")
 
     def test_zero_byte_capture_is_missing(self):
         (self.build_root / "slides" / "slide-002.png").write_bytes(b"")
@@ -142,14 +143,16 @@ class StoryboardPageTest(unittest.TestCase):
     def test_rebuilt_page_voids_old_decisions(self):
         build("demo", self.lesson, self.build_root)
         storyboard_review_command(
-            lesson="demo", approve="1,2", reject="", lesson_dir=self.lesson, workspace=self.root
+            lesson="demo", approve="1,2", reject="", by="Wei Chen",
+            lesson_dir=self.lesson, workspace=self.root
         )
         (self.lesson / "slides.md").write_text(
             "<h1>Opening changed</h1>\n---\n<h2>Second page changed</h2>\n", encoding="utf-8"
         )
         build("demo", self.lesson, self.build_root)
         storyboard_review_command(
-            lesson="demo", approve="", reject="", lesson_dir=self.lesson, workspace=self.root
+            lesson="demo", approve="", reject="", by="Wei Chen",
+            lesson_dir=self.lesson, workspace=self.root
         )
         decisions = json.loads(
             (self.build_root / "storyboard" / "decisions.json").read_text("utf-8")
@@ -160,7 +163,7 @@ class StoryboardPageTest(unittest.TestCase):
         build("demo", self.lesson, self.build_root)
         self._approve_all(rejected={2})
         with self.assertRaises(Exception):
-            sign_storyboard_page(self.root, self.lesson)
+            sign_storyboard_page(self.root, self.lesson, "Wei Chen")
 
     def test_unsigned_gate_blocks(self):
         build("demo", self.lesson, self.build_root)
@@ -171,7 +174,7 @@ class StoryboardPageTest(unittest.TestCase):
         build("demo", self.lesson, self.build_root)
         self.storyboard.write_text(self.storyboard.read_text("utf-8") + "\n# changed\n", encoding="utf-8")
         with self.assertRaises(Exception):
-            sign_storyboard_page(self.root, self.lesson)
+            sign_storyboard_page(self.root, self.lesson, "Wei Chen")
 
 
 if __name__ == "__main__":

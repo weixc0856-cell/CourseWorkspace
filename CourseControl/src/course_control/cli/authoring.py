@@ -160,6 +160,7 @@ def content_draft_command(
 def author_accept_command(
     lesson: str = typer.Option(..., "--lesson"),
     kind: str = typer.Option(..., "--kind"),
+    by: str = typer.Option(..., "--by", help="the person accepting"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
@@ -169,9 +170,9 @@ def author_accept_command(
     root = _lesson_path(workspace, lesson_dir, lesson)
     try:
         if kind == "content":
-            written = accept_content(workspace.resolve(), root)
+            written = accept_content(workspace.resolve(), root, by)
         else:
-            written = accept_artifact(workspace.resolve(), root, kind)
+            written = accept_artifact(workspace.resolve(), root, kind, by)
     except Exception as exc:  # noqa: BLE001
         typer.echo(f"accept failed: {exc}", err=True)
         raise typer.Exit(1)
@@ -300,8 +301,9 @@ def storyboard_page_command(
             typer.echo("capture the slides, rebuild this page, then review it")
             raise typer.Exit(1)
         typer.echo("next: course-control storyboard-review "
-                   f"--lesson {root.name} --approve 1,2,..., then course-control "
-                   f"author-accept --lesson {root.name} --kind storyboard-page")
+                   f"--lesson {root.name} --approve 1,2,... --by <name>, then "
+                   "course-control "
+                   f"author-accept --lesson {root.name} --kind storyboard-page --by <name>")
 
 
 @app.command("storyboard-review")
@@ -309,6 +311,7 @@ def storyboard_review_command(
     lesson: str = typer.Option(..., "--lesson"),
     approve: str = typer.Option("", "--approve", help="Comma-separated page numbers"),
     reject: str = typer.Option("", "--reject", help="Comma-separated page numbers"),
+    by: str = typer.Option(..., "--by", help="the person reviewing"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
@@ -382,6 +385,7 @@ def storyboard_review_command(
             {
                 "schema_version": 1,
                 "lesson": root.name,
+                "reviewed_by": by.strip(),
                 "storyboard_sha256": manifest.get("storyboard_sha256"),
                 "html_sha256": manifest.get("html_sha256"),
                 "pages": rows,

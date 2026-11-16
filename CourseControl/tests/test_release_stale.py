@@ -6,6 +6,9 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
+from unittest.mock import patch
+
+from course_control.release.build_manifest import check_freshness
 from course_control.release.check import _stale_reason
 
 
@@ -66,6 +69,28 @@ class StaleFinalTest(unittest.TestCase):
         self.assertIn("stale", reason)
         self.assertIn(str(self.video), reason)
         self.assertIn(str(self.spec), reason)
+
+    def test_mtime_fallback_is_stale_when_inputs_cannot_be_enumerated(self) -> None:
+        # The old fallback list is present and older than the film.  A rename
+        # or a moved input must still read as stale, not fresh.
+        for relative in (
+            "contracts/timeline.spec.json",
+            "narration/narration.meta.json",
+            "subtitles.srt",
+        ):
+            path = self.paths.build_root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{}", encoding="utf-8")
+            self._touch(path, 1000)
+        self._touch(self.video, 2000)
+        with patch(
+            "course_control.release.build_manifest.declared_inputs",
+            side_effect=AttributeError("unreadable input set"),
+        ):
+            freshness = check_freshness(self.paths, self.video)
+        self.assertFalse(freshness.fresh)
+        self.assertIn("cannot evaluate", freshness.reason or "")
+        self.assertIn("unreadable input set", freshness.reason or "")
 
     def test_newer_video_is_current(self):
         self._touch(self.spec, 1000)

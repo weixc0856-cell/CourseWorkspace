@@ -9,6 +9,7 @@ import typer
 
 from . import app
 from course_control.cli._common import _paths
+from course_control.content.paths import ContractError
 
 
 def _defects(paths):
@@ -173,3 +174,76 @@ def quality_certificate_command(
             typer.echo(f"reason: {certificate.reason}")
         typer.echo(f"certificate: {target}")
     raise typer.Exit(0 if certificate.verdict == "pass" else 1)
+
+@app.command("exception-observe")
+def exception_observe_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    check: str = typer.Option(..., "--check"),
+    state: str = typer.Option("open", "--state", help="open or resolved"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    build_root: Path | None = typer.Option(
+        None, "--build-root", help="record against this build root (dev fixtures)"
+    ),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    run_id: str = typer.Option("", "--run-id"),
+    detail: str = typer.Option("", "--detail"),
+    owner: str = typer.Option("unassigned", "--owner"),
+    scope: str = typer.Option("", "--scope"),
+    reason: str = typer.Option("", "--reason"),
+    clear_when: str = typer.Option("", "--clear-when"),
+    release_policy: str = typer.Option("", "--release-policy"),
+    observed_at: str | None = typer.Option(None, "--observed-at"),
+) -> None:
+    """Record one automatic check observation in the per-lesson queue.
+
+    A passing check writes ``resolved`` and keeps the entry; it never writes
+    ``cleared``.  A corrupt queue, index or legacy file leaves every file
+    unchanged and exits 1.
+    """
+    from course_control.quality.exceptions import ExceptionQueueError, record_observation
+
+    if state not in {"open", "resolved"}:
+        typer.echo("state must be open or resolved", err=True)
+        raise typer.Exit(2)
+    if build_root is not None:
+        from course_control.platform.workspace_layout import content_root
+
+        allowed = content_root(workspace.resolve()).resolve()
+        candidate = build_root.resolve()
+        try:
+            candidate.relative_to(allowed)
+        except ValueError:
+            typer.echo(
+                f"build root must stay inside the content root: {candidate}", err=True
+            )
+            raise typer.Exit(2)
+        target_root = candidate
+        target_lesson = lesson
+    else:
+        try:
+            paths = _paths(workspace, lesson, lesson_dir)
+        except ContractError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        target_root = paths.build_root
+        target_lesson = paths.slug
+    try:
+        result = record_observation(
+            target_root,
+            target_lesson,
+            check,
+            resolved=state == "resolved",
+            observed_at=observed_at,
+            run_id=run_id,
+            detail=detail,
+            owner=owner,
+            scope=scope,
+            reason=reason,
+            clear_when=clear_when,
+            release_policy=release_policy,
+        )
+    except ExceptionQueueError as exc:
+        typer.echo(f"exception queue unchanged: {exc}", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"{result['check']}: {result['status']} ({result['lesson']})")
+

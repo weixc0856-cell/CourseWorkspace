@@ -15,23 +15,13 @@ from pathlib import Path
 from typing import Literal
 
 from course_control.content.contracts import StrictModel
+from course_control.quality.evidence import (
+    BAD_STATES,
+    normalize_dimensions,
+    quality_content_sha256,
+)
 from course_control.platform.artifacts import sha256_file
 from course_control.platform.atomic import write_json_atomic
-
-
-QUALITY_IDS = {"Q1", "Q2", "Q3", "Q4", "Q5"}
-_BAD = {"BLOCKED", "INCOMPLETE", "FAIL"}
-
-
-def quality_content_sha256(quality: dict) -> str:
-    """Hash the decision content, excluding approval states and timestamps."""
-    payload = {
-        "dimensions": quality.get("dimensions") or [],
-        "risks": quality.get("risks") or [],
-    }
-    return hashlib.sha256(
-        json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
-    ).hexdigest()
 
 
 def _now() -> str:
@@ -49,7 +39,7 @@ def _read(path: Path) -> dict | None:
 
 
 class QualityCertificate(StrictModel):
-    schema_version: Literal[1] = 1
+    schema_version: Literal[2] = 2
     project_id: str
     generated_at: str
     verdict: Literal["pass", "fail", "incomplete"]
@@ -75,11 +65,7 @@ def issue(
         if isinstance(item, dict)
         and str(item.get("status") or "open") in {"open", "repairing"}
     ]
-    dimensions = {
-        str(item.get("id")): str(item.get("status"))
-        for item in (quality or {}).get("dimensions") or []
-        if isinstance(item, dict)
-    }
+    dimensions, status_problems = normalize_dimensions(quality)
 
     if defects is None:
         verdict, reason = "incomplete", "no defects.json; run quality-diagnose"
@@ -93,18 +79,23 @@ def issue(
         verdict, reason = "incomplete", "quality gate did not pass"
     elif quality is None:
         verdict, reason = "incomplete", "quality report missing"
+    elif type(quality.get("schema_version")) is not int or quality.get("schema_version") != 2:
+        verdict, reason = (
+            "incomplete",
+            f"quality report schema_version is {quality.get('schema_version')!r}, "
+            "not 2; re-run quality-report",
+        )
+    elif status_problems:
+        verdict, reason = "incomplete", "; ".join(status_problems)
     else:
-        dimensions = {
-            str(item.get("id")): str(item.get("status"))
-            for item in quality.get("dimensions") or []
-            if isinstance(item, dict)
-        }
-        missing = sorted(QUALITY_IDS - set(dimensions))
-        bad = sorted(key for key, status in dimensions.items() if status in _BAD)
-        if missing:
-            verdict, reason = "incomplete", "quality report missing dimensions: " + ", ".join(missing)
-        elif bad:
-            verdict, reason = "incomplete", "quality dimensions not passed: " + ", ".join(bad)
+        bad = sorted(
+            qid for qid, status in dimensions.items() if status in BAD_STATES
+        )
+        if bad:
+            verdict, reason = (
+                "incomplete",
+                "quality dimensions not passed: " + ", ".join(bad),
+            )
         else:
             verdict, reason = "pass", None
 

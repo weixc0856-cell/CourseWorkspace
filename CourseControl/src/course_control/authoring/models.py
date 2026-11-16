@@ -196,7 +196,7 @@ class ApprovalEntry(StrictModel):
     kind: Literal["digest", "brief", "outline", "script", "content", "subtitles", "storyboard-page"]
     path: str
     sha256: str = Field(min_length=64, max_length=64)
-    approved_by: str = "human"
+    approved_by: str
     approved_at: str
     task_id: str | None = None
 

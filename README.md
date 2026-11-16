@@ -1,7 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
 
-> **2026-11-13 状态**：CourseControl 605 用例通过 / 7 跳过，KnowledgeStudio 38 通过，`check.ps1` = `check ok`。仓库只保留工具、测试夹具与规范，课程与项目材料在内容根。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补、项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层已落地；M2 真实 P5 暂缓（见 `docs/v2/m0/EXECUTION_PLAN.md`）。
+> **2026-11-17 状态**：CourseControl 892 用例通过 / 52 跳过（其中 41 个是未配置本地课程的真实内容测试，开发回归显式跳过）；`check.ps1` 在隔离的开发内容根运行并打印 `check ok`。生产检查（`release-check`、`release-approve`、`package`、`package-verify`）必须显式指定生产内容根。仓库只保留工具、测试夹具与规范，课程与项目材料在内容根。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补、项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层已落地；M2 真实 P5 暂缓（见 `docs/v2/m0/EXECUTION_PLAN.md`）。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
@@ -117,6 +117,8 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 | `docs/` | 权威文档；`<内容根>/archive/` 为历史 | — | — |
 
 ## 快速开始
+
+> **开发回归 vs 生产检查**：`check.ps1` 只在 `%TEMP%/CourseWorkspace/run-*` 的隔离内容根运行代码、夹具与合成课程全链测试，不读取也不写入生产内容根；成功后删除运行根，日志留在 `%TEMP%/CourseWorkspace/state/last-check.log`。`release-check`、`release-approve`、`package`、`package-verify` 是生产命令，必须显式指定生产内容根（`COURSEWORKSPACE_CONTENT_ROOT` 或 `config/local-paths.yaml`），dev 模式直接拒绝。
 
 本地预览入口：`http://localhost:8081/?lesson=<slug>`；根目录 `index.html` 会重定向到 `CourseSlides/template/`。
 
