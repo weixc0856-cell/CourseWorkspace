@@ -325,6 +325,14 @@ try {
         Write-Host "skip frame audit (no content root)"
     }
 
+    # CLAUDE.md §16: temporary output lives in build/<slug>/. Isolation runs
+    # and preview folders otherwise pile up at the top level until nobody can
+    # tell which narration folder is current.
+    Invoke-Checked "build layout" -Quiet {
+        uv run --project CourseControl python scripts/check_build_layout.py `
+            (Join-Path $content "build") (Join-Path $content "lessons")
+    }
+
     Invoke-Checked "remotion typecheck" -Quiet {
         & (Join-Path $root "RemotionStudio/node_modules/.bin/tsc.cmd") `
             --noEmit -p (Join-Path $root "RemotionStudio/tsconfig.json")
