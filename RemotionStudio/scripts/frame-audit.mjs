@@ -343,7 +343,9 @@ function framesFromTiming(path, samples) {
       const duration = Number(instance.duration) || 0;
       for (const sample of samples) {
         let offset = duration / 2;
-        if (sample === 'start') offset = Math.min(0.1, duration / 4);
+        // The 15th frame after the cut (0.5 s at 30 fps): long enough for the
+        // incoming transition to settle, short enough to still be the cut.
+        if (sample === 'start') offset = Math.min(0.5, duration / 4);
         else if (sample === 'end') offset = Math.max(0, duration - 0.2);
         const frame = Math.max(0, Math.min(totalFrames - 1, cursor + Math.round(offset * fps)));
         frames.push(frame);

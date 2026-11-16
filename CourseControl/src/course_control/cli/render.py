@@ -618,6 +618,53 @@ def subtitles_rebuild_command(
 
     write_srt(cues, target)
     typer.echo(f"wrote: {target}")
+
+    # Downstream steps (burn-in ASS, collect) read the draft, not the SRT.
+    # Leaving the draft on the old timings would burn yesterday's clock.
+    from course_control.voice.subtitles import (
+        BilingualCue,
+        BilingualDraft,
+        write_ass,
+        write_vtt,
+    )
+
+    draft_payload["cues"] = [
+        BilingualCue(**cue).model_dump(mode="json") for cue in cues
+    ]
+    counts = dict(draft_payload.get("counts") or {})
+    counts["cues"] = len(cues)
+    counts["problems"] = len(problems)
+    draft_payload["counts"] = counts
+    draft_model = BilingualDraft.model_validate(draft_payload)
+    draft_target = paths.build_root / "subtitles" / "bilingual.draft.json"
+    draft_target.write_text(
+        json.dumps(draft_model.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    write_srt(cues, draft_target.with_suffix(".srt"))
+    write_vtt(
+        [cue.model_dump(mode="json") for cue in draft_model.cues],
+        draft_target.with_suffix(".vtt"),
+    )
+    typer.echo(f"draft: {draft_target}")
+
+    rebuild["draft"] = {"path": str(draft_target), "sha256": sha256_file(draft_target)}
+    if paths.lesson.subtitles.render == "burn_in":
+        ass_path = paths.build_root / "subtitles.ass"
+        width, height = paths.lesson.outputs.resolution
+        write_ass(
+            cues,
+            ass_path,
+            width,
+            height,
+            paths.lesson.subtitles.bottom_margin,
+            paths.lesson.subtitles.text_color,
+            paths.lesson.subtitles.outline_color,
+            paths.lesson.subtitles.outline_width,
+        )
+        rebuild["ass"] = {"path": str(ass_path), "sha256": sha256_file(ass_path)}
+        typer.echo(f"ass: {ass_path}")
+
     report_path = paths.build_root / "subtitles" / "rebuild.report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(

@@ -94,7 +94,12 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     """
     build_root = paths.build_root
     final_root = (output_root or paths.delivery_root).resolve()
-    if not is_under(paths.workspace, final_root):
+    # Delivery lives in the content root, next to build/, not in the repository;
+    # accept either root so a content-root delivery is not rejected.
+    allowed = [paths.workspace]
+    if paths.content_base is not None:
+        allowed.append(paths.content_base)
+    if not any(is_under(base, final_root) for base in allowed):
         raise PackageError(f"package output must stay inside the workspace: {final_root}")
     # Build beside the target and swap only after the new package is complete.
     # A failed run must never destroy the last valid delivery package.
@@ -105,7 +110,12 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
 
     build_report = build_root / "final" / "build-report.json"
     media_qc = build_root / "quality" / "media-qc.json"
-    narration_meta = build_root / "narration" / "narration.meta.json"
+    # The resequenced meta is the measured clock the film and SRT were built
+    # from; the per-slide meta is the pre-resequencing source and only stands
+    # in when no resequenced track exists.
+    narration_meta = build_root / "narration" / "narration.resequenced.meta.json"
+    if not narration_meta.is_file():
+        narration_meta = build_root / "narration" / "narration.meta.json"
     final = _final_video(paths)
 
     required: list[tuple[str, Path, Path | None]] = [
@@ -114,7 +124,7 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         ("evidence/media-qc.json", media_qc, media_qc),
     ]
     if paths.lesson.narration.enabled:
-        required.append(("narration.meta.json", narration_meta, narration_meta))
+        required.append((narration_meta.name, narration_meta, narration_meta))
 
     missing: list[str] = []
     for relative, source, _ in required:

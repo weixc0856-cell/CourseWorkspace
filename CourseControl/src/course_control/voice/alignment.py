@@ -163,9 +163,13 @@ def align_cues(
 
 
 def _audio_source(paths: LessonPaths) -> tuple[Path | None, str | None]:
-    narration = paths.build_root / "narration" / "narration.wav"
-    if narration.is_file():
-        return narration, None
+    # Prefer the resequenced track: it is the one the published SRT is timed
+    # against. Falling back to the per-slide narration.wav compares the new
+    # subtitle clock with yesterday's audio and reports false mismatches.
+    for name in ("narration.resequenced.wav", "narration.wav"):
+        narration = paths.build_root / "narration" / name
+        if narration.is_file():
+            return narration, None
     final = paths.build_root / "final" / "course-video-mixed.mp4"
     if not final.is_file():
         final = paths.build_root / "final" / "course-video.mp4"

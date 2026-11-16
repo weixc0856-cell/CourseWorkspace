@@ -13,6 +13,7 @@ from .client import OnlineClient, OnlineError
 from .config import ReviewConfig, load_config, resolve_api_key
 from .contracts import Finding, ModelReply, ReviewReport, ReviewTask
 from .splitter import Chunk, plan_chunks, pair_pages
+from .workspace_layout import build_root_for
 
 SYSTEM_PROMPT = """你是课程内容审查助手。你的输出只是候选意见，不是最终结论。
 
@@ -141,7 +142,7 @@ def run_review(
     workspace = workspace.resolve()
     lesson_dir = lesson_dir.resolve()
     lesson = lesson_dir.name
-    review_dir = workspace / "build" / lesson / "review"
+    review_dir = build_root_for(workspace, lesson) / "review"
     report_path = review_dir / "review.json"
     run_id = (
         datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -300,7 +301,7 @@ def _finish(report: ReviewReport, report_path: Path) -> None:
 
 
 def load_report(workspace: Path, lesson: str) -> ReviewReport | None:
-    path = workspace / "build" / lesson / "review" / "review.json"
+    path = build_root_for(workspace, lesson) / "review" / "review.json"
     if not path.is_file():
         return None
     return ReviewReport.model_validate(json.loads(path.read_text(encoding="utf-8")))

@@ -514,3 +514,55 @@ def build_manifest_command(
             f"  output: {payload['output']['sha256'][:16]}… {payload['output']['path']}"
         )
         typer.echo(f"wrote: {manifest_path(paths)}")
+
+
+@app.command("episode-build")
+def episode_build_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    video: Path | None = typer.Option(None, "--video", help="episode film with narration"),
+    captioned: Path | None = typer.Option(None, "--captioned", help="subtitled master"),
+    narration: Path | None = typer.Option(None, "--narration", help="narration track muxed into the film"),
+    timing: Path | None = typer.Option(None, "--timing", help="episode timing.json"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Record the episode render as final/build-report.json.
+
+    Episode-based lessons do not run the deck build, so the quality gate had no
+    report of its own and read the old deck report as stale.  This command
+    records the film that exists: every artifact is hashed, every media file is
+    probed, and the checks compare the film with the episode timeline.
+    """
+    from course_control.release.episode_build import EpisodeBuildError, record_episode_build
+
+    workspace = workspace.resolve()
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except Exception as exc:  # noqa: BLE001
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    film = (video or (paths.build_root / "final" / "course-video.mp4")).resolve()
+    subtitled = (captioned or (paths.build_root / "final" / "course-video-captioned.mp4")).resolve()
+    track = (narration or (paths.build_root / "narration" / "narration.resequenced.wav")).resolve()
+    try:
+        report, target = record_episode_build(
+            paths,
+            video=film,
+            narration=track if track.is_file() else None,
+            captioned=subtitled if subtitled.is_file() else None,
+            timing=timing,
+        )
+    except EpisodeBuildError as exc:
+        typer.echo(f"failed: {exc}", err=True)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"verdict: {report.verdict}")
+        for item in report.checks:
+            typer.echo(f"  [{item.status.value}] {item.id}: {item.actual} (expected {item.expected})")
+        for stage in report.stages:
+            typer.echo(f"  [{stage.status.value}] {stage.name}")
+        typer.echo(f"report: {target}")
+    raise typer.Exit(1 if report.verdict == "fail" else 0)

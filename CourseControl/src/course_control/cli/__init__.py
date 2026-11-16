@@ -55,7 +55,7 @@ for _panel, _names in {
         "package package-verify release-approve review-status review-decide vendor-check "
         "vendor-sync stats config-resolve project-validate project-show artifact-index "
         "run-start run-status quality-diagnose quality-repair-plan quality-regression "
-        "quality-certificate release-check build-manifest lock lock-status"
+        "quality-certificate release-check build-manifest episode-build lock lock-status"
     ),
     "Render & audio": (
         "tts-status narrate narration-assets subtitles-build subtitles-rebuild subtitles-retime subtitles-rewrap "
