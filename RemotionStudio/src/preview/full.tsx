@@ -17,7 +17,7 @@ const fig = (id: string) => `ref_figs/fig-${id}.png`;
 
 const Film: React.FC = () => (
   <AbsoluteFill style={{background: '#05070A'}}>
-    <Audio src={staticFile('preview-full.wav')} />
+    <Audio src={staticFile('staging/audio/preview-full.wav')} />
 
     {/* B1 0.000-36.502 */}
     <Sequence from={0} durationInFrames={f(18)}>

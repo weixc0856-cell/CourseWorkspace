@@ -12,12 +12,12 @@ const f = (seconds: number) => Math.round(seconds * FPS);
 
 const B123: React.FC = () => (
   <AbsoluteFill style={{background: '#05070A'}}>
-    <Audio src={staticFile('preview-b123.wav')} />
+    <Audio src={staticFile('staging/audio/preview-b123.wav')} />
 
     {/* B1 0.000-40.585 */}
     <Sequence from={0} durationInFrames={f(27) - 0}>
       <AnnotatedFigure
-        image="ref_figs/fig-1.67.png"
+        image="staging/ref_figs/fig-1.67.png"
         imageWidth={717}
         imageHeight={229}
         eyebrow="T1-01 · 01 / THE QUESTION"
@@ -37,7 +37,7 @@ const B123: React.FC = () => (
     {/* B2 41.185-77.883 */}
     <Sequence from={f(41.185)} durationInFrames={f(64) - f(41.185)}>
       <AnnotatedFigure
-        image="ref_figs/fig-1.77.png"
+        image="staging/ref_figs/fig-1.77.png"
         imageWidth={830}
         imageHeight={570}
         eyebrow="T1-01 · 02 / WHERE DRAG LIVES"
@@ -53,7 +53,7 @@ const B123: React.FC = () => (
     </Sequence>
     <Sequence from={f(64)} durationInFrames={f(77.883) - f(64)}>
       <AnnotatedFigure
-        image="ref_figs/fig-1.73.png"
+        image="staging/ref_figs/fig-1.73.png"
         imageWidth={577}
         imageHeight={209}
         eyebrow="T1-01 · 02 / WHERE DRAG LIVES"
