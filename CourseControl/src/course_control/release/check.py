@@ -89,26 +89,15 @@ def _final_video(paths: LessonPaths) -> Path | None:
 
 
 def content_exception_for(build_root: Path, lesson: str) -> dict | None:
-    """Return an open content exception that names this lesson, if any."""
-    queue = Path(build_root).parent / "_shared" / "frame-audit" / "episode" / "content-exceptions.json"
-    if not queue.is_file():
-        return None
-    try:
-        data = json.loads(queue.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {"status": "incomplete", "reason": f"unreadable content exception queue: {queue}"}
-    if isinstance(data, dict) and isinstance(data.get("entries"), list):
-        entries = data["entries"]
-    elif isinstance(data, list):
-        entries = data
-    else:
-        entries = [data]
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        if str(entry.get("lesson") or "") == lesson and str(entry.get("status") or "") != "cleared":
-            return entry
-    return None
+    """Return the blocking content exception for this lesson, if any.
+
+    The per-lesson queue is authoritative; the shared file is an index and a
+    legacy import.  A malformed queue or index is itself a blocking exception
+    (see ``course_control.quality.exceptions``), never "no exception".
+    """
+    from course_control.quality.exceptions import blocking_exception
+
+    return blocking_exception(build_root, lesson)
 
 
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:

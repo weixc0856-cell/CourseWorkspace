@@ -15,7 +15,9 @@ listed so it can be migrated under build/<slug>/tmp/ in the next round.
 """
 from __future__ import annotations
 
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -33,6 +35,35 @@ LESSON_DIRS = {
     "tools", "blueprint", "retime", "_review", "static-hold", "sample-frames",
     "pilot",
 }
+
+
+def is_link(path: Path) -> bool:
+    """True for a symlink or a Windows junction; never follow it."""
+    if path.is_symlink():
+        return True
+    checker = getattr(path, "is_junction", None)
+    if callable(checker):
+        try:
+            return bool(checker())
+        except OSError:
+            return False
+    return False
+
+
+def tree_size(path: Path) -> int:
+    """Bytes under a directory, without following links or junctions."""
+    total = 0
+    for current, dirnames, filenames in os.walk(path, followlinks=False):
+        base = Path(current)
+        for name in list(dirnames):
+            if is_link(base / name):
+                dirnames.remove(name)
+        for name in filenames:
+            item = base / name
+            if is_link(item):
+                continue
+            total += item.stat().st_size
+    return total
 
 
 def project_ids(projects: Path | None) -> set[str]:
@@ -70,6 +101,13 @@ def audit(
     advice: list[str] = []
     seen_lessons = 0
     for entry in sorted(build.iterdir()):
+        if is_link(entry):
+            # A junction at the top level can make an outside tree look like a
+            # build area, and a size walk through it would count other data.
+            errors.append(
+                f"{entry.name} is a junction or symlink, not a real directory"
+            )
+            continue
         if entry.is_dir():
             if (
                 entry.name in SHARED
@@ -80,10 +118,14 @@ def audit(
                 if entry.name in slugs:
                     seen_lessons += 1
                     for child in sorted(entry.iterdir()):
-                        if child.is_dir() and child.name not in LESSON_DIRS:
+                        if is_link(child):
+                            advice.append(
+                                f"{entry.name}/{child.name}/ is a link and was not followed"
+                            )
+                        elif child.is_dir() and child.name not in LESSON_DIRS:
                             advice.append(f"{entry.name}/{child.name}/")
                 continue
-            size = sum(f.stat().st_size for f in entry.rglob("*") if f.is_file()) / 1e6
+            size = tree_size(entry) / 1e6
             errors.append(
                 f"{entry.name}/  ({size:.1f} MB) is neither a lesson slug, a project id "
                 "nor a shared area"
@@ -125,6 +167,15 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _make_junction(link: Path, target: Path) -> bool:
+    result = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and is_link(link)
+
+
 def selftest() -> int:
     """A check that cannot go red is not a check."""
     root = Path(tempfile.mkdtemp(prefix="build-layout-"))
@@ -156,6 +207,48 @@ def selftest() -> int:
         if len(errors) != 2 or not any("stray-run" in e for e in errors) or not any("loose.log" in e for e in errors):
             print(f"selftest FAIL: expected a stray directory and a loose file, got {errors}")
             return 1
+        (build / "stray-run").rmdir()
+        (build / "loose.log").unlink()
+
+        outside = root / "outside"
+        outside.mkdir()
+        (outside / "payload.bin").write_bytes(b"payload")
+        top_link = build / "linked"
+        inner_link = build / "demo" / "linked-inner"
+        made_top = _make_junction(top_link, outside) if os.name == "nt" else False
+        made_inner = _make_junction(inner_link, outside) if os.name == "nt" else False
+        try:
+            if made_top:
+                errors, _, _ = audit(build, root / "lessons", root / "lessons", projects)
+                if not any("linked" in e and "junction" in e for e in errors):
+                    print(f"selftest FAIL: a top-level junction was accepted: {errors}")
+                    return 1
+            else:
+                print(
+                    "selftest FAIL: the top-level junction case could not run; "
+                    "the junction safety proof is unavailable"
+                )
+                return 1
+            if is_link(top_link):
+                os.rmdir(top_link)
+            if made_inner:
+                errors, advice, _ = audit(build, root / "lessons", root / "lessons", projects)
+                if errors or not any("demo/linked-inner" in item for item in advice):
+                    print(
+                        "selftest FAIL: a junction inside a lesson was followed: "
+                        f"errors={errors} advice={advice}"
+                    )
+                    return 1
+            else:
+                print(
+                    "selftest FAIL: the lesson junction case could not run; "
+                    "the junction safety proof is unavailable"
+                )
+                return 1
+        finally:
+            for link in (top_link, inner_link):
+                if is_link(link):
+                    os.rmdir(link)
         print("build layout selftest PASS")
         return 0
     finally:

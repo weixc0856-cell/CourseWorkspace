@@ -39,10 +39,10 @@
 
 补充事实（影响任务边界）：
 
-- 内容根为 `D:/CourseContent`（`config/local-paths.yaml`），当前清单复核器对真实清单返回 `content manifest ok`。
+- 内容根由 `config/local-paths.yaml` 的 `content_root` 决定；当前清单复核器对真实清单返回 `content manifest ok`。
 - `deliver/` 下已有 17 个包；本轮不改它们，但严格化后的 `package-verify` 会让旧包报出新问题（§8 决策 6）。
 - 现有签字与审批记录里 `approved_by` 全是字面量 `"human"`（`authoring/models.py:199`、`authoring/pipeline.py:461,575`），`author-accept` 与 `storyboard-review` 都没有 `--by`。这是"机器自动生成 human"的直接证据。
-- 内容异常队列中的 `owner` 是占位符 `"owner"`（`D:/CourseContent/build/_shared/frame-audit/episode/content-exceptions.json`）。
+- 内容异常队列中的 `owner` 是占位符 `"owner"`（`<内容根>/build/_shared/frame-audit/episode/content-exceptions.json`）。
 
 ---
 
@@ -262,7 +262,7 @@ S8 release-check（自动，全链）
 
 - **失败测试**：selftest 三例——`archived_from_exists`（`from` 文件仍在 → 期望报错，当前 exit 0）、`cache_target_is_file`（cache 目标是文件 → 期望报错，当前 exit 0）、`cache_nested_junction`（B1 用例，期望报错）。
 - **最小实现**：`archived` 增加 `from` 必须不存在、`to` 必须是文件、`bytes` 与 `sha256` 必须匹配；`moves` 的 `cache` 分支要求 `to` 是目录、`files`/`bytes` 与 `walk_tree` 一致；非 cache 分支增加 `bytes` 比较。任一声明字段缺失视为格式错误。
-- **验证命令**：`uv run --project CourseControl python scripts/verify_content_manifest.py --selftest ; uv run --project CourseControl python scripts/verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root D:/CourseContent`
+- **验证命令**：`uv run --project CourseControl python scripts/verify_content_manifest.py --selftest ; uv run --project CourseControl python scripts/verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root <内容根>`
 - **预期输出**：selftest PASS；`content manifest ok`。
 
 #### B3 · 清单格式 fail-closed
@@ -289,8 +289,8 @@ S8 release-check（自动，全链）
 #### B6 · 清单字段补齐与回归接入
 
 - **失败测试**：B2 落地后对现有清单运行复核 → `cache ... missing bytes`、`archived ... missing kind`，退出码 1。
-- **最小实现**：用 `walk_tree` 只读统计 `D:/CourseContent` 现有目标，补齐 `moves[*].bytes`、`archived[*].kind`；`scripts/check.ps1` 增加两项 `Invoke-Checked`：`verify content manifest --selftest`、真实清单复核（内容根存在时）。
-- **验证命令**：`uv run --project CourseControl python scripts/verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root D:/CourseContent`
+- **最小实现**：用 `walk_tree` 只读统计 `<内容根>` 现有目标，补齐 `moves[*].bytes`、`archived[*].kind`；`scripts/check.ps1` 增加两项 `Invoke-Checked`：`verify content manifest --selftest`、真实清单复核（内容根存在时）。
+- **验证命令**：`uv run --project CourseControl python scripts/verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root <内容根>`
 - **预期输出**：`content manifest ok`；`check.ps1` 中两项均不打印 `FAILED`。
 
 ### C · 课程就绪与发布证据
@@ -398,7 +398,7 @@ S8 release-check（自动，全链）
 | 3 | 阶段表与命令注册表一致 | A | 同上（默认解析） | `pipeline ok (10 stages)` |
 | 4 | 验收矩阵完整 | A | 同上 | `acceptance matrix ok (N rows)` |
 | 5 | 清单复核器能红 | B | `... scripts/verify_content_manifest.py --selftest` | `verify content manifest selftest PASS` |
-| 6 | 真实清单复核通过 | B | `... scripts/verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root D:/CourseContent` | `content manifest ok`，exit 0 |
+| 6 | 真实清单复核通过 | B | `... scripts/verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root <内容根>` | `content manifest ok`，exit 0 |
 | 7 | junction 不被跟随 | B | selftest 内 `cache_junction` 用例 | 声明 `files: 1` 时通过；声明 3 时失败 |
 | 8 | 异常队列绑定四要素 | B | `python -m unittest ... -p "test_content_exceptions.py"` | `OK` |
 | 9 | Q 状态封闭、缺失/非法即 INCOMPLETE | C | `-p "test_evidence.py"`、`-p "test_certificate.py"`、`-p "test_quality_gates.py"` | 三组 `OK` |
@@ -424,7 +424,7 @@ fail-closed 负例清单（每项必须有测试）：非法 Q 状态、缺 Q �
 | 2 | S9 顺序 | 文档写 package → package-verify → release-approve | 改为 release-approve → package → package-verify | A5、C6 |
 | 3 | `release-approve` 是否允许重写 build 证据 | 现在会重写 `quality-report.json` | 允许写入 `build/<slug>/quality/`，但审批文件写入后 content hash 必须不变；不接受则改为"先跑 release-check、批准时只读校验" | C6 |
 | 4 | `session-run` 门禁范围 | 无条件 | 只对 `<内容根>/lessons/` 下的课程强制分镜签字；fixture 只校验身份 | C9 |
-| 5 | 异常队列位置与 owner | 单一共享文件；`owner` 是占位符 `"owner"` | 每课 `build/<slug>/quality/exceptions.json`，共享文件降为导入；`owner` 必须是真人姓名，否则该条目按 INCOMPLETE 处理 | B5、t1-01 当前会被挡 |
+| 5 | 异常队列位置与 owner | 单一共享文件；`owner` 是占位符 `"owner"` | 每课 `build/<slug>/quality/content-exceptions.json`，共享文件降为导入；`owner` 必须是真人姓名，否则该条目按 INCOMPLETE 处理 | B5、t1-01 当前会被挡 |
 | 6 | package manifest 版本 | `schema_version: 1`，旧包 17 个 | 保持 1 并严格化（旧包可能报问题），或升 2 并明确拒绝 1。建议升 2，旧包作为历史记录不再验证 | C7 |
 | 7 | `docs/superpowers/` 的登记策略 | 未登记；check_docs 会报 | 每个计划文件在 `文档地图.yaml` 登记为 `record`（推荐）；或给 `superpowers/` 加排除规则 | A1 |
 | 8 | Q5 是否保留为质量维度 | 当前 Q5 同时表达产物与审批 | 保留 Q5 名称，只放产物事实；审批移到 `approvals` | C2、C4 |
@@ -435,7 +435,7 @@ fail-closed 负例清单（每项必须有测试）：非法 Q 状态、缺 Q �
 
 1. **本文件未登记**：写入后 `check_docs.py` 会报 1 条未登记文档，`check.ps1` 因此不绿。A1 是它的失败测试；执行 A 的第一步就是修掉。
 2. **基线复核**：每个子项目开工前先跑 `.\scripts\check.ps1`，确认从 `check ok` 出发；若变红，先停并报告，不带红基线开工。
-3. **内容根**：B6 只读 `D:/CourseContent`；不改课程、证据与 `deliver/`。清单字段补齐只改 `docs/audit/` 下的两个文件。
+3. **内容根**：B6 只读 `<内容根>`；不改课程、证据与 `deliver/`。清单字段补齐只改 `docs/audit/` 下的两个文件。
 4. **夹具与 Docker**：`session-run` 的端到端验收依赖 Docker；不可用时单元测试覆盖门禁判定，脚本级验收记为 `not_run`，不得写成通过。
 5. **提交边界**：不 push、不 reset、不重写历史；每个子项目完成后等 owner 指定下一个子项目。
 
@@ -467,3 +467,76 @@ docs map ok (105 documents)
 $ uv run --project CourseControl python scripts/check_docs.py --selftest
 docs map selftest PASS
 ```
+
+### B · 内容根与 build 布局（2026-11-16）
+
+owner 口径：**每课异常队列、共享索引、具名 owner**。
+
+| 任务 | 状态 | 证据 |
+| --- | --- | --- |
+| B1 junction 安全遍历 | **完成** | `walk_tree` 用 `os.walk(followlinks=False)` + symlink/junction 检测；`--selftest` 的 `cache junction` 用例证明计数不再进入根外（声明 1 个文件时通过） |
+| B2 归档旧源、目标类型与计数 | **完成** | `archived.from` 必须消失、`to` 必须是普通文件、`kind=file`、字节与哈希匹配；move 支持目录与单文件；cache 要求真实目录、文件数与 junction 报告 |
+| B3 清单格式 fail-closed | **完成** | `schema_version` 必须为 1；各 section 必须是列表；条目缺字段、路径越界、JSON 不可解析均报错退出 |
+| B4 build 布局拒绝 junction | **完成** | 顶层 junction 记为 error；课内 junction 记入 advice 且不参与大小统计；`--selftest` 覆盖两类反例 |
+| B5 异常队列 schema | **完成** | 新增 `quality/exceptions.py`：`ContentException` 强类型；`cleared` 必须带具名 `cleared_by`、`cleared_at`、`rechecked_at`；`lesson="*"`、占位 owner、缺 `clear_when` 一律阻断；`test_content_exceptions.py` 13 个用例 |
+| B6 清单字段与回归接入 | **完成** | frame-audit 缓存改为 `files: 33` + `exclude: episode/content-exceptions.json`；`check.ps1` 接入 verifier selftest，并改为写每课队列与共享索引 |
+
+**实现时的口径修正**（比计划更准确）：
+
+1. **cache 只验类型、文件数与 junction，不验字节数。** 缓存每次回归都会重写，字节随内部时间戳变化；强验字节会让历史清单每次回归后都变红。非 cache 的 move 仍验 files/bytes/tree_sha256/symlinks。
+2. **共享索引迁出缓存目录**：索引写在 `<内容根>/build/_shared/exceptions/index.json`；旧的 `frame-audit/episode/content-exceptions.json` 只作 legacy 导入，迁移后写成空 entries，并从 frame-audit 缓存的计数中排除。
+3. **check.ps1 不发明人名**：新条目 `owner: "unassigned"`，由校验器判为“不是具名的人”并阻断；`t1-01` 在 owner 改成真人姓名前保持 INCOMPLETE。这正是“具名 owner”的执行方式。
+4. **live manifest 不作为常驻闸门**：只把 verifier 的 selftest 接入 `check.ps1`；真实清单复核是审阅时的手工命令（缓存会被回归重写）。
+5. **计划文件自身的绝对路径改成 `<内容根>`**：A 的计划在 A 回归时还未跟踪，B 回归开始扫描它，`path check` 因此首先变红；替换后 `path check ok`。
+
+**B 的验收输出**：
+
+```
+check summary: checks=53 failed=0 content_exceptions=1
+check ok
+content exceptions: 1 (queued at <内容根>/build/t1-01-why-aerodynamics/quality/content-exceptions.json)
+
+$ ... verify_content_manifest.py --selftest
+verify content manifest selftest PASS
+$ ... verify_content_manifest.py --manifest docs/audit/content-changes-2026-11-16.json --content-root <内容根>
+content manifest ok
+$ ... check_build_layout.py --selftest
+build layout selftest PASS
+$ ... -p "test_content_exceptions.py"
+Ran 13 tests ... OK
+```
+
+### B 收口（2026-11-16，第三方复核 FAIL 后）
+
+owner 批准的两条口径：`cleared` 只在新的失败观测晚于 `rechecked_at` 时重开；检查通过写 `resolved` 并保留 entry。
+
+| 复核项 | 处置 | 证据 |
+| --- | --- | --- |
+| 队列与 `course-control checks` 冲突 | **修复** | 队列改为 `build/<slug>/quality/content-exceptions.json`；`checks` 的 `quality/exceptions.json` 不读不写；旧文件由写入器迁移后释放 |
+| 写入器丢数据 / 误关闭 | **修复** | 写入器移到 Python：先校验再原子替换；损坏的 queue/index/legacy 一律拒绝且原文件字节不变；损坏或他课条目直接失败 |
+| `cleared` 历史被覆盖 | **修复** | 重开时把旧的人工清除写入 `observations` 再改为 `incomplete`；早于 `rechecked_at` 的失败保留 `cleared` |
+| 成功检查删除记录 | **修复** | 成功写 `status: resolved` + `resolved_at` + `resolved_by_check` + `resolved_run`，entry 与历史保留；不伪造 `cleared` |
+| verifier 多个 fail-open | **修复** | 五个 section 必须齐全且为列表；`schema_version` 必须是整数 1；`cache` 必须严格布尔；`exclude` 只收安全的相对路径；逐级拒绝祖先 junction；junction 用例跑不了时 selftest 返回非零 |
+| reader 对损坏输入不严 | **修复** | 缺/`null` `entries`、非 UTF-8、非法索引项、无时区/未来/倒序时间、非法 observation 一律阻断 |
+| 写入器没有测试 | **修复** | `test_content_exceptions.py` 39 个用例：重开、旧失败不重开、损坏不覆盖、成功留痕、legacy 多条目、checks 互操作、他课条目拒绝 |
+| 文档仍指旧路径 | **修复** | `ACCEPTANCE.md` 改为每课 `content-exceptions.json` + 共享索引；历史 handoff 保持原样（记录层） |
+
+**实现口径**：
+
+- `cleared` 只能由人写入；`exception-observe` 只接受 `open` / `resolved`，没有 `cleared` 参数。
+- 时间必须是带时区的 ISO 8601；缺失、无时区、未来（允许 5 分钟时钟偏差）或倒序一律 fail-closed。
+- 写入器保留人工填写的 `owner`/`scope`/`reason`/`clear_when`，回归只追加观测。
+- 共享索引由队列派生：有阻塞条目则列出该课，全部 `cleared`/`resolved` 则移除。
+
+**B 收口的最终回归**：
+
+```
+check log: <内容根>/runtime/logs/check-20261116-233638.log
+check summary: checks=53 failed=0 content_exceptions=1
+check ok
+
+CourseControl: Ran 845 tests ... OK (skipped=9)
+ModelingStudio 33 · ai_runtime 50 · ContentQA 25 · ManimSandbox 18 · KnowledgeStudio 40
+```
+
+仍未关闭：`t1-01` 的内容异常仍是 `incomplete`，原因是 `owner = "unassigned"` 不是具名的人；这需要 owner 本人把队列里的 `owner` 改成姓名，不是 B 的代码缺陷。旧共享队列文件保留为空 entries 的 legacy 记录（已排除出 frame-audit 缓存计数）。B 未提交。
