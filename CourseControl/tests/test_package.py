@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -72,7 +73,40 @@ class PackageTest(unittest.TestCase):
         (build / "logs").mkdir(parents=True)
         (build / "narration" / "narration.wav").write_bytes(b"RIFF")
         (build / "narration" / "narration.meta.json").write_text("{}", encoding="utf-8")
+        (build / "slides").mkdir()
+        (build / "slides" / "slide-001.png").write_bytes(b"\x89PNG\r\n")
         (build / "quality" / "media-qc.json").write_text('{"status": "PASS"}', encoding="utf-8")
+        quality_report = build / "quality" / "quality-report.json"
+        quality_report.write_text(
+            json.dumps({"schema_version": 1, "lesson": "demo", "states": {"RELEASE_APPROVED": True}}),
+            encoding="utf-8",
+        )
+        report_sha = hashlib.sha256(quality_report.read_bytes()).hexdigest()
+        (build / "quality" / "certificate.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "project_id": "demo",
+                    "generated_at": "now",
+                    "verdict": "pass",
+                    "quality_report_sha256": report_sha,
+                }
+            ),
+            encoding="utf-8",
+        )
+        for name in ("review-approval.json", "release-approval.json"):
+            (build / "quality" / name).write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "lesson": "demo",
+                        "decision": "approved",
+                        "approved_by": "tester",
+                        "quality_report_sha256": report_sha,
+                    }
+                ),
+                encoding="utf-8",
+            )
         (build / "review" / "review.json").write_text('{"status": "completed"}', encoding="utf-8")
         (build / "logs" / "build.log").write_text("ok\n", encoding="utf-8")
         (build / "final" / "build-report.json").write_text(
@@ -88,6 +122,24 @@ class PackageTest(unittest.TestCase):
             check=True,
             creationflags=NO_CONSOLE,
         )
+        from course_control.authoring.pipeline import sign_storyboard_page
+        from course_control.authoring.storyboard_page import build as build_page
+
+        build_page("demo", self.lesson_dir, build, storyboard_path=self.lesson_dir / "storyboard.yaml")
+        manifest = json.loads((build / "storyboard" / "manifest.json").read_text("utf-8"))
+        (build / "storyboard" / "decisions.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "lesson": "demo",
+                    "storyboard_sha256": manifest.get("storyboard_sha256"),
+                    "html_sha256": manifest.get("html_sha256"),
+                    "pages": [{**row, "decision": "approve"} for row in manifest["pages_detail"]],
+                }
+            ),
+            encoding="utf-8",
+        )
+        sign_storyboard_page(self.workspace, self.lesson_dir)
         self.paths = LessonPaths.load(self.workspace, self.lesson_dir)
 
     def tearDown(self) -> None:
@@ -105,6 +157,23 @@ class PackageTest(unittest.TestCase):
         self.assertTrue((root / "metadata.json").is_file())
         self.assertTrue((root / "delivery-checklist.md").is_file())
         self.assertEqual(verify_package(root), [])
+
+    def test_verdict_is_incomplete_without_certificate(self) -> None:
+        (self.paths.build_root / "quality" / "certificate.json").unlink()
+        manifest, _ = build_package(self.paths)
+        self.assertEqual(manifest["verdict"], "incomplete")
+        self.assertTrue(any("certificate" in reason for reason in manifest["verdict_reasons"]))
+
+    def test_incomplete_attempt_does_not_replace_delivery(self) -> None:
+        manifest, root = build_package(self.paths)
+        self.assertEqual(manifest["verdict"], "pass")
+        (self.paths.build_root / "quality" / "certificate.json").unlink()
+        attempt, attempt_root = build_package(self.paths)
+        self.assertEqual(attempt["verdict"], "incomplete")
+        self.assertFalse(attempt["installed"])
+        self.assertTrue(str(attempt_root).endswith(".attempt"))
+        installed = json.loads((root / "manifest.json").read_text("utf-8"))
+        self.assertEqual(installed["verdict"], "pass")
 
     def test_missing_master_fails(self) -> None:
         (self.paths.build_root / "final" / "course-video.mp4").unlink()

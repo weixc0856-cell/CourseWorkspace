@@ -10,6 +10,7 @@ from course_control.content.validators import validate
 from course_control.quality.verify import verify
 
 from . import app
+from course_control.platform.workspace_layout import build_root_for
 from course_control.cli._common import _lesson_root
 
 
@@ -67,6 +68,17 @@ def session_run_command(
     if not spec.is_file():
         typer.echo(f"session spec not found: {spec}", err=True)
         raise typer.Exit(1)
+    if record:
+        from course_control.authoring.pipeline import assert_storyboard_signed
+        from course_control.content.paths import ContractError, LessonPaths
+
+        if (lesson_dir / "lesson.yaml").is_file():
+            try:
+                sign_paths = LessonPaths.load(workspace.resolve(), lesson_dir)
+                assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
+            except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+                typer.echo(f"blocked: {exc}", err=True)
+                raise typer.Exit(3)
     try:
         result, manifest, recording = run_session(
             workspace.resolve(), spec, lesson_dir, record=record
@@ -82,7 +94,7 @@ def session_run_command(
             typer.echo(f"[{command.id}/{assertion.name}] {status}: {assertion.detail}")
     lesson = json.loads(spec.read_text(encoding="utf-8")).get("lesson", "")
     validation_path = (
-        workspace.resolve() / "build" / lesson / "code" / manifest.shot_id / "validation.json"
+        build_root_for(workspace.resolve(), lesson) / "code" / manifest.shot_id / "validation.json"
     )
     if validation_path.is_file():
         validation = json.loads(validation_path.read_text(encoding="utf-8"))
@@ -120,9 +132,7 @@ def session_evidence_v1_command(
         raise typer.Exit(1)
     session = load_session_spec(spec)
     target = output or (
-        workspace
-        / "build"
-        / session.lesson
+        build_root_for(workspace, session.lesson)
         / "code"
         / session.shot_id
         / "evidence.v1.json"

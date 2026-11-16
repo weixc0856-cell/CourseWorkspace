@@ -88,6 +88,29 @@ def _final_video(paths: LessonPaths) -> Path | None:
     return None
 
 
+def content_exception_for(build_root: Path, lesson: str) -> dict | None:
+    """Return an open content exception that names this lesson, if any."""
+    queue = Path(build_root).parent / "_shared" / "frame-audit" / "episode" / "content-exceptions.json"
+    if not queue.is_file():
+        return None
+    try:
+        data = json.loads(queue.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"status": "incomplete", "reason": f"unreadable content exception queue: {queue}"}
+    if isinstance(data, dict) and isinstance(data.get("entries"), list):
+        entries = data["entries"]
+    elif isinstance(data, list):
+        entries = data
+    else:
+        entries = [data]
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if str(entry.get("lesson") or "") == lesson and str(entry.get("status") or "") != "cleared":
+            return entry
+    return None
+
+
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     from course_control.quality.certificate import issue, save as save_certificate
     from course_control.quality.defect import collect as collect_defects
@@ -98,6 +121,24 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     from course_control.voice.subtitles_qc import check_srt
 
     steps: list[Step] = []
+    exception = content_exception_for(paths.build_root, paths.slug)
+    if exception is not None:
+        steps.append(
+            Step(
+                "content_exception",
+                INCOMPLETE,
+                str(exception.get("reason") or exception.get("detail") or "open content exception"),
+                data=exception,
+            )
+        )
+    try:
+        from course_control.authoring.pipeline import assert_storyboard_signed
+
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+        steps.append(Step("storyboard_signoff", PASS, "signed against the current storyboard"))
+    except Exception as exc:  # noqa: BLE001 - missing evidence is INCOMPLETE
+        steps.append(Step("storyboard_signoff", INCOMPLETE, str(exc)))
+
     video = _final_video(paths)
     if video is None:
         steps.append(

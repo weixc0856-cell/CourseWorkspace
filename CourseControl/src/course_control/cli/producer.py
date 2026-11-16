@@ -229,9 +229,14 @@ def package_command(
         raise typer.Exit(1)
     typer.echo(f"package: {root}")
     typer.echo(f"run_id: {manifest.get('run_id') or 'unknown'}")
+    typer.echo(f"verdict: {manifest.get('verdict')}")
+    for reason in manifest.get("verdict_reasons") or []:
+        typer.echo(f"  reason: {reason}")
+    if not manifest.get("installed", True):
+        typer.echo(f"not installed: kept previous delivery; attempt at {manifest.get('attempt_path')}")
     for item in manifest["files"]:
         typer.echo(f"  {item['status']:>13}  {item['path']}")
-    raise typer.Exit(0)
+    raise typer.Exit(0 if manifest.get("verdict") == "pass" else 1)
 
 
 @app.command("package-verify")
@@ -242,6 +247,14 @@ def package_verify_command(
     from course_control.delivery.package import verify_package
 
     problems = verify_package(package)
+    manifest_path = package / "manifest.json"
+    verdict = None
+    try:
+        verdict = json.loads(manifest_path.read_text(encoding="utf-8")).get("verdict")
+    except (OSError, json.JSONDecodeError):
+        pass
+    if verdict != "pass":
+        problems.append(f"manifest verdict is {verdict or 'missing'}, not pass")
     if problems:
         for problem in problems:
             typer.echo(problem, err=True)
@@ -285,6 +298,22 @@ def release_approve_command(
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
 
+    if decision == "approved":
+        from course_control.authoring.pipeline import assert_storyboard_signed
+
+        try:
+            assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+            from course_control.release.check import content_exception_for
+
+            exception = content_exception_for(paths.build_root, paths.slug)
+            if exception is not None:
+                raise RuntimeError(
+                    "open content exception: "
+                    + str(exception.get("reason") or exception.get("detail") or "see queue")
+                )
+        except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+            typer.echo(f"blocked: {exc}", err=True)
+            raise typer.Exit(3)
     report, quality_path = build_quality_report(workspace.resolve(), paths)
     states = report["states"]
     if decision == "approved" and not states["VERIFY_PASS"]:

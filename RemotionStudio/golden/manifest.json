@@ -12,21 +12,21 @@
       "name": "photo",
       "component": "PhotoInsert",
       "frame": 150,
-      "golden": "build/golden/chapter-150.png",
+      "golden": "build/_shared/golden/chapter-150.png",
       "threshold": 0.01
     },
     {
       "name": "carflow",
       "component": "CarFlow",
       "frame": 750,
-      "golden": "build/golden/chapter-750.png",
+      "golden": "build/_shared/golden/chapter-750.png",
       "threshold": 0.03
     },
     {
       "name": "mechanism",
       "component": "MechanismDiagram",
       "frame": 1800,
-      "golden": "build/golden/chapter-1800.png",
+      "golden": "build/_shared/golden/chapter-1800.png",
       "threshold": 0.03,
       "provisional": true
     },
@@ -34,14 +34,14 @@
       "name": "chart",
       "component": "ChartOverlay",
       "frame": 3000,
-      "golden": "build/golden/chapter-3000.png",
+      "golden": "build/_shared/golden/chapter-3000.png",
       "threshold": 0.01
     },
     {
       "name": "formula",
       "component": "FormulaBlock",
       "frame": 4050,
-      "golden": "build/golden/chapter-4050.png",
+      "golden": "build/_shared/golden/chapter-4050.png",
       "threshold": 0.03
     }
   ]

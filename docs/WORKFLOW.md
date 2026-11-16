@@ -1,5 +1,7 @@
 # 当前真实工作流
 
+> **状态：已取代。** 命令链以 [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md) 为准；本文件只作历史记录。
+
 - **依据**：`CourseControl`、`BlenderStudio`、`RemotionStudio`、`ModelingStudio`、`ContentQA`、`shared/ai_runtime` 的实际调用关系
 - **上游**：[PRD.md](PRD.md)、[ARCHITECTURE.md](ARCHITECTURE.md)
 - 图例：`[自动]` 程序执行；`[人工]` 必须有人参与；`[可选]` 按课程或需要启用
@@ -100,7 +102,7 @@
 | --- | --- |
 | Motion 输入 | `MotionStudio/src/scenes/<lesson>/<scene>.tsx` |
 | Motion 输出 | `build/<slug>/animation/<scene-stem>.mp4` |
-| 自动部分 | `scripts/render-headless.mjs`：Vite + core Renderer + Node 帧接收器 + ffmpeg；adapter 最多重试 2 次并 ffprobe |
+| 自动部分 | `MotionStudio/scripts/render-headless.mjs`：Vite + core Renderer + Node 帧接收器 + ffmpeg；adapter 最多重试 2 次并 ffprobe |
 | Manim | `adapters/manim.py`：`uv run manim render --media_dir build/<slug>/tmp/manim-media`，复制到 `animation/` |
 | 失败 | 重试 2 次仍失败：`fail`；不得写 `skipped` / `incomplete` 冒充 |
 | 证据 | `attention-flow` 3 次哈希一致；`lesson-manual` fixture PASS；注入失败不产 MP4 |

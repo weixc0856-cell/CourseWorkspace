@@ -13,6 +13,7 @@ import yaml
 from course_control.content.duration import resolve
 from course_control.rendering.engine_router import VisualRequirement, route_engine
 from course_control.content.paths import LessonPaths
+from course_control.platform.workspace_layout import build_root_for
 from course_control.authoring.llm import AuthoringClient, AuthoringError
 from course_control.authoring.models import (
     ApprovalEntry,
@@ -44,7 +45,13 @@ def _sha(path: Path) -> str:
 
 
 def candidate_dir(workspace: Path, lesson_dir: Path) -> Path:
-    target = workspace.resolve() / "build" / lesson_dir.resolve().name / "authoring" / "candidates"
+    """Candidate drafts live in the content root, never in the program workspace.
+
+    Resolving ``workspace / "build"`` wrote authoring candidates into the
+    repository whenever the command ran from the repo root, which the
+    separation check then reported as course content leaking into the code.
+    """
+    target = build_root_for(workspace, lesson_dir.resolve().name) / "authoring" / "candidates"
     target.mkdir(parents=True, exist_ok=True)
     return target
 
@@ -471,6 +478,186 @@ def assert_approved(lesson_dir: Path, relative_path: str) -> None:
         raise AuthoringError(f"file changed after approval: {relative_path}")
 
 
+SIGNOFF_KIND = "storyboard-page"
+SIGNOFF_FILE = "authoring/storyboard-review.json"
+
+
+def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
+    """Record the owner's sign-off on the static storyboard page.
+
+    The reviewed page is copied into the lesson, so later build cleanup or a
+    replaced slide capture cannot change what was signed.  The review file pins
+    the effective storyboard, the page, the slide source and the page's own
+    hash; ``approval.json`` pins the review file itself.
+    """
+    lesson_dir = lesson_dir.resolve()
+    from course_control.content.paths import LessonPaths
+
+    paths = LessonPaths.load(Path(workspace).resolve(), lesson_dir)
+    source = paths.storyboard_source
+    if source is None:
+        raise AuthoringError("lesson has no storyboard or production source to sign")
+    source = Path(source).resolve()
+    if not source.is_file():
+        raise AuthoringError(f"storyboard source is missing: {source}")
+
+    page_dir = build_root_for(workspace, lesson_dir.name) / "storyboard"
+    manifest_path = page_dir / "manifest.json"
+    html_path = page_dir / "index.html"
+    if not manifest_path.is_file() or not html_path.is_file():
+        raise AuthoringError(
+            "storyboard page missing; run course-control storyboard-page --lesson "
+            + lesson_dir.name
+        )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("html_sha256") != _sha(html_path):
+        raise AuthoringError("storyboard page changed after it was generated; regenerate it")
+    if manifest.get("storyboard_sha256") != _sha(source):
+        raise AuthoringError(
+            "storyboard changed after the page was built; rebuild the page and review it"
+        )
+
+    decisions_path = page_dir / "decisions.json"
+    if not decisions_path.is_file():
+        raise AuthoringError(
+            "per-page decisions are missing; run course-control storyboard-review "
+            f"--lesson {lesson_dir.name} --approve 1,2,..."
+        )
+    decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+    if int(decisions.get("schema_version") or 0) != 1:
+        raise AuthoringError("decisions.json has no schema_version 1")
+    if decisions.get("storyboard_sha256") != manifest.get("storyboard_sha256"):
+        raise AuthoringError("decisions were made against a different storyboard; review again")
+    if decisions.get("html_sha256") != manifest.get("html_sha256"):
+        raise AuthoringError("decisions were made against a different page; review again")
+    rows = decisions.get("pages") or []
+    numbers = sorted(int(row.get("page") or 0) for row in rows if isinstance(row, dict))
+    if numbers != list(range(1, int(manifest.get("pages") or 0) + 1)):
+        raise AuthoringError(
+            "decisions must cover every page exactly once; got " + ", ".join(map(str, numbers))
+        )
+    pending = [str(row.get("page")) for row in rows
+               if str(row.get("decision") or "pending") != "approve"]
+    if pending:
+        raise AuthoringError(
+            "storyboard pages not approved: " + ", ".join(pending)
+        )
+    if manifest.get("missing_captures"):
+        raise AuthoringError(
+            "storyboard page has no slide captures for pages "
+            + ", ".join(map(str, manifest["missing_captures"]))
+            + "; capture the slides before signing"
+        )
+
+    reviewed = lesson_dir / "authoring" / "storyboard-review.html"
+    reviewed.parent.mkdir(parents=True, exist_ok=True)
+    reviewed.write_bytes(html_path.read_bytes())
+    reviewed_decisions = lesson_dir / "authoring" / "storyboard-decisions.json"
+    reviewed_decisions.write_bytes(decisions_path.read_bytes())
+    review = {
+        "schema_version": 1,
+        "lesson": lesson_dir.name,
+        "storyboard_path": str(source),
+        "storyboard_sha256": manifest["storyboard_sha256"],
+        "slides_md_sha256": manifest.get("slides_md_sha256"),
+        "slides": manifest.get("slides") or [],
+        "page_path": "authoring/storyboard-review.html",
+        "page_sha256": _sha(reviewed),
+        "pages": manifest.get("pages", 0),
+        "shots": manifest.get("shots", 0),
+        "pages_detail": manifest.get("pages_detail") or [],
+        "decisions": decisions.get("pages") or [],
+        "decisions_path": "authoring/storyboard-decisions.json",
+        "decisions_sha256": _sha(reviewed_decisions),
+        "missing_captures": manifest.get("missing_captures") or [],
+        "approved_by": "human",
+        "approved_at": _now(),
+    }
+    target = lesson_dir / SIGNOFF_FILE
+    target.parent.mkdir(parents=True, exist_ok=True)
+    _write_json(target, review)
+    approve(lesson_dir, SIGNOFF_KIND, SIGNOFF_FILE)
+    return [SIGNOFF_FILE, "authoring/storyboard-review.html"]
+
+
+def assert_storyboard_signed(lesson_dir: Path, storyboard_source: Path | None) -> None:
+    """The storyboard gate: motion, narration and render need a signed page.
+
+    Fail closed: a missing source, page, hash mismatch or missing approval entry
+    blocks.  The page is the durable reviewed artifact, not a build cache.
+    """
+    if storyboard_source is None:
+        return
+    lesson_dir = lesson_dir.resolve()
+    source = Path(storyboard_source).resolve()
+    if not source.is_file():
+        raise AuthoringError(f"storyboard source is missing: {source}")
+    review_path = lesson_dir / SIGNOFF_FILE
+    if not review_path.is_file():
+        raise AuthoringError(
+            "storyboard page has not been signed; run course-control storyboard-page "
+            f"--lesson {lesson_dir.name}, then course-control storyboard-review "
+            f"--lesson {lesson_dir.name} --approve 1,2,..., then course-control "
+            f"author-accept --lesson {lesson_dir.name} --kind {SIGNOFF_KIND}"
+        )
+    review = json.loads(review_path.read_text(encoding="utf-8"))
+    if review.get("storyboard_sha256") != _sha(source):
+        raise AuthoringError(
+            "storyboard changed after sign-off; rebuild the page and sign it again"
+        )
+    page_relative = str(review.get("page_path") or "")
+    if not page_relative:
+        raise AuthoringError("sign-off does not name the reviewed page")
+    page = (lesson_dir / page_relative).resolve()
+    if not page.is_file():
+        raise AuthoringError(f"reviewed storyboard page is missing: {page}")
+    if review.get("page_sha256") != _sha(page):
+        raise AuthoringError("reviewed storyboard page changed after sign-off")
+
+    decisions_relative = str(review.get("decisions_path") or "")
+    if not decisions_relative:
+        raise AuthoringError("sign-off does not name the reviewed decisions")
+    decisions_path = (lesson_dir / decisions_relative).resolve()
+    if not decisions_path.is_file():
+        raise AuthoringError(f"reviewed decisions are missing: {decisions_path}")
+    if review.get("decisions_sha256") != _sha(decisions_path):
+        raise AuthoringError("reviewed decisions changed after sign-off")
+    decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+    rows = decisions.get("pages") or []
+    numbers = sorted(int(row.get("page") or 0) for row in rows if isinstance(row, dict))
+    if numbers != list(range(1, int(review.get("pages") or 0) + 1)):
+        raise AuthoringError("reviewed decisions do not cover every page exactly once")
+    if any(str(row.get("decision") or "pending") != "approve" for row in rows):
+        raise AuthoringError("reviewed decisions contain a rejected or pending page")
+
+    lesson_file = lesson_dir / "lesson.yaml"
+    try:
+        lesson = yaml.safe_load(lesson_file.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise AuthoringError(f"cannot read lesson for the storyboard gate: {exc}") from exc
+    slides_relative = (lesson.get("content") or {}).get("slides") or "slides.md"
+    slides_path = lesson_dir / slides_relative
+    if review.get("slides_md_sha256") != _sha(slides_path):
+        raise AuthoringError("slides.md changed after sign-off; rebuild and sign the page")
+
+    build_root = lesson_dir.parents[1] / "build" / lesson_dir.name
+    slides = review.get("slides") or []
+    if int(review.get("pages") or 0) > 0 and not slides:
+        raise AuthoringError("sign-off records no slide captures; recapture and sign again")
+    for item in slides:
+        relative = str(item.get("path") or "")
+        expected = str(item.get("sha256") or "")
+        if not relative or not expected:
+            raise AuthoringError("sign-off has an incomplete slide record")
+        capture = (build_root / relative).resolve()
+        if not capture.is_file():
+            raise AuthoringError(f"signed slide capture is missing: {capture}")
+        if _sha(capture) != expected:
+            raise AuthoringError(f"signed slide capture changed: {capture}")
+
+    assert_approved(lesson_dir, SIGNOFF_FILE)
+
+
 CONTENT_TARGETS = {
     "slides": "slides.md",
     "notes": "lecture_notes.md",
@@ -480,6 +667,8 @@ CONTENT_TARGETS = {
 
 def accept_artifact(workspace: Path, lesson_dir: Path, kind: str) -> list[str]:
     """Copy a candidate artifact into lessons/<slug>/authoring and approve it."""
+    if kind == SIGNOFF_KIND:
+        return sign_storyboard_page(workspace, lesson_dir)
     source = candidate_dir(workspace, lesson_dir)
     lesson_dir = lesson_dir.resolve()
     mapping = {

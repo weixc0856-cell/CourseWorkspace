@@ -770,7 +770,7 @@ V2 增量完成条件（2026-11-13 起）：
 
 **目标**：页级证据之上，有概念、先修、主张与课程覆盖的可校验结构。
 
-- `KnowledgeStudio/knowledge_ir.py`：`Concept`、`Claim`、`EvidenceRef`、`Conflict`、`KnowledgeIR`、`CurriculumPlan`。
+- `KnowledgeStudio/src/knowledge_studio/knowledge_ir.py`：`Concept`、`Claim`、`EvidenceRef`、`Conflict`、`KnowledgeIR`、`CurriculumPlan`。
 - 规则：id 唯一、先修存在且无环；`supported` 需两个独立页或一条 derivation；`contested` 必须记录冲突；`contested_resolved` 必须写采用理由；课程必须覆盖所有概念或写明豁免理由；先修必须更早出现或声明假定已知。
 - CLI：`knowledge-studio knowledge-ir-validate`、`curriculum-validate`、`schemas`；Schema 在 `shared/schemas/`。
 - 未完成：自动研究与概念提取。

@@ -1,5 +1,7 @@
 # 质量标准（QUALITY_STANDARD）
 
+> **状态：2026-11-10 基线记录，不是现行契约。** 现行命令链见 [../生产流水线-阶段与中间交付物.md](../生产流水线-阶段与中间交付物.md)。
+
 - 日期：2026-11-10
 - 关联：C-03、C-04、C-07、C-08、C-10、C-23、C-27、C-29
 - 主要实现：`quality.py`、`quality_gates.py`、`subtitles_qc.py`、`review_decisions.py`、`verify.py`

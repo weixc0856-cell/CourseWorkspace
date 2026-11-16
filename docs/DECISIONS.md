@@ -473,7 +473,7 @@
 - 官方稳定接口是 core 的 `Renderer`、`Stage`、`PlaybackManager`；`RendererSettings` 接受 `exporter.name`，exporter 从 project plugin 的 `exporters()` 注册。
 - 官方 ImageExporter / FFmpegExporterClient 都通过 Vite HMR 发帧；FFmpeg exporter 在 3.17.2 曾出现挂起（D-039），不作为主路径。
 - 自建无头页 `MotionStudio/headless.html` + `src/headless.js`：`bootstrap` 构造 project，注册自定义 exporter，把每帧 PNG POST 到 Node 帧接收器；Node 端 ffmpeg 编码。
-- `scripts/render-headless.mjs` 启动 Vite（4173）、帧接收器（4174）、Playwright/Chrome，等待页面完成，ffprobe 验证并写 meta。
+- `MotionStudio/scripts/render-headless.mjs` 启动 Vite（4173）、帧接收器（4174）、Playwright/Chrome，等待页面完成，ffprobe 验证并写 meta。
 - 实测 `attention-flow` 1920×1080/30fps/142 帧；连续 3 次 SHA256 完全一致；第 30 帧注入异常时不产 MP4、meta 为 `failed_as_injected`。
 
 **决策**：Motion Canvas 的生产导出改为无头自动路径；`adapters/motion_canvas.py` 自动调用、最多重试 2 次、ffprobe 校验分辨率/帧率/帧数。失败即 `fail`，不再写 `skipped + incomplete`。编辑器只用于制作/预览；合法旧人工导出可作为缓存复用。端口 4173/4174 专用于无头导出，不占用 5173 编辑器端口。

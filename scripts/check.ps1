@@ -25,6 +25,8 @@ if ($missing.Count -gt 0) {
 $content = Get-ContentRoot -Workspace $root
 $script:failed = $false
 $script:checksRun = 0
+$script:contentExceptions = 0
+$script:contentExceptionPath = $null
 
 # One full regression per workspace. Two sessions sharing the workspace must not
 # run check.ps1 at the same time: they would race for ports and temp files and
@@ -258,7 +260,7 @@ try {
         Write-Host "skip book index (source material not present)"
     }
 
-    $goldenRoot = Join-Path $content "build/golden"
+    $goldenRoot = Join-Path $content "build/_shared/golden"
     if (-not $CleanClone -and (Test-Path $goldenRoot)) {
         Invoke-Checked "golden set" {
             uv run --project CourseControl python scripts/golden_check.py --workspace .
@@ -284,12 +286,41 @@ try {
             --entry src/audit/episode.tsx `
             --timing RemotionStudio/src/episode/timing.json `
             --samples "mid" `
-            --out (Join-Path $content "build/frame-audit/episode") 2>&1
+            --out (Join-Path $content "build/_shared/frame-audit/episode") 2>&1
         if ($episodeOut -match 'episode assembly:') {
-            Write-Host "skip frame audit episode (segment binding incomplete)"
+            # This is a content gap, not a program failure.  It goes to an
+            # explicit exception queue and is counted in the summary; it is
+            # never called a skip and never passed silently.
+            $queueDir = Join-Path $content "build/_shared/frame-audit/episode"
+            New-Item -ItemType Directory -Force -Path $queueDir | Out-Null
+            $script:contentExceptionPath = Join-Path $queueDir "content-exceptions.json"
+            $detail = ($episodeOut | Select-String -Pattern 'episode assembly:|^  ' |
+                Select-Object -First 12 | ForEach-Object { $_.Line.Trim() }) -join "`n"
+            $entry = [ordered]@{
+                schema_version = 1
+                check = "episode assembly"
+                lesson = "t1-01-why-aerodynamics"
+                owner = "owner"
+                scope = "RemotionStudio/src/episode/timing.json"
+                status = "incomplete"
+                reason = "43 required component props are not set, so the episode would fall back to the sample card"
+                clear_when = "timing.json sets every required prop and check.ps1 no longer reports this entry"
+                release_policy = "release-check and package must return incomplete for this lesson until cleared"
+                captured = (Get-Date).ToUniversalTime().ToString("o")
+                detail = $detail
+                next = "uv run --project CourseControl python scripts/check_segment_assets.py --lesson-dir <lesson>"
+            }
+            $payload = [ordered]@{ schema_version = 1; entries = @($entry) }
+            $json = $payload | ConvertTo-Json -Depth 5
+            [System.IO.File]::WriteAllText(
+                $script:contentExceptionPath,
+                $json,
+                (New-Object System.Text.UTF8Encoding($false))
+            )
+            $script:contentExceptions += 1
+            Write-Host "content exception: episode assembly incomplete (queued at $script:contentExceptionPath)"
             $episodeOut | Select-String -Pattern 'episode assembly:|^  ' | Select-Object -First 6 |
                 ForEach-Object { Write-Host "  $_" }
-            Write-Host "  run: uv run --project CourseControl python scripts/check_segment_assets.py --lesson-dir <lesson>"
         }
         elseif ($LASTEXITCODE -ne 0) {
             $episodeOut | ForEach-Object { Write-Host $_ }
@@ -304,7 +335,7 @@ try {
         Write-Host "frame audit catches render errors (must be rejected)"
         $throwOut = & node RemotionStudio/scripts/frame-audit.mjs 30 `
             --entry src/audit/throwing.tsx `
-            --out (Join-Path $content "build/frame-audit/throwing-fixture") 2>&1
+            --out (Join-Path $content "build/_shared/frame-audit/throwing-fixture") 2>&1
         if ($LASTEXITCODE -eq 0 -or -not (($throwOut | Out-String) -match 'deliberate render error')) {
             Write-Host "FAILED: frame audit did not report the render error"
             $script:failed = $true
@@ -314,8 +345,8 @@ try {
         Write-Host "frame audit catches blank frames (must be rejected)"
         $blankOut = & node RemotionStudio/scripts/frame-audit.mjs 30 `
             --entry src/audit/blank.tsx `
-            --out (Join-Path $content "build/frame-audit/blank-fixture") 2>&1
-        $blankExceptions = Join-Path $content "build/frame-audit/blank-fixture/exceptions.json"
+            --out (Join-Path $content "build/_shared/frame-audit/blank-fixture") 2>&1
+        $blankExceptions = Join-Path $content "build/_shared/frame-audit/blank-fixture/exceptions.json"
         if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $blankExceptions -Pattern '"blank_frame"' -Quiet)) {
             Write-Host "FAILED: frame audit did not report the blank frame"
             $script:failed = $true
@@ -330,7 +361,25 @@ try {
     # tell which narration folder is current.
     Invoke-Checked "build layout" -Quiet {
         uv run --project CourseControl python scripts/check_build_layout.py `
-            (Join-Path $content "build") (Join-Path $content "lessons")
+            (Join-Path $content "build") (Join-Path $content "lessons") `
+            (Join-Path $root "CourseControl/tests/fixtures") `
+            (Join-Path $content "projects")
+    }
+
+    # The layout check must be able to go red; the selftest proves it does.
+    Invoke-Checked "build layout selftest" -Quiet {
+        uv run --project CourseControl python scripts/check_build_layout.py --selftest
+    }
+
+    # One map owns which document answers which question.  The check fails on
+    # an unlisted document, a broken link, an unknown subcommand or a command
+    # path that does not exist, so the map cannot drift into a second truth.
+    Invoke-Checked "docs map" -Quiet {
+        uv run --project CourseControl python scripts/check_docs.py --workspace .
+    }
+
+    Invoke-Checked "docs map selftest" -Quiet {
+        uv run --project CourseControl python scripts/check_docs.py --selftest
     }
 
     Invoke-Checked "remotion typecheck" -Quiet {
@@ -451,7 +500,7 @@ try {
     }
 
     if ($script:failed) {
-        Write-Host "check summary: checks=$script:checksRun failed=1"
+        Write-Host "check summary: checks=$script:checksRun failed=1 content_exceptions=$script:contentExceptions"
         Write-Host "check log: $logPath"
         Write-Host "check failed"
         exit 1
@@ -459,9 +508,12 @@ try {
     if ($script:testCounts.Count -gt 0) {
         $script:testCounts | ConvertTo-Json | Set-Content -LiteralPath $countsPath -Encoding utf8
     }
-    Write-Host "check summary: checks=$script:checksRun failed=0"
+    Write-Host "check summary: checks=$script:checksRun failed=0 content_exceptions=$script:contentExceptions"
     Write-Host "check log: $logPath"
     Write-Host "check ok"
+    if ($script:contentExceptions -gt 0) {
+        Write-Host "content exceptions: $script:contentExceptions (queued at $script:contentExceptionPath)"
+    }
     exit 0
 }
 finally {

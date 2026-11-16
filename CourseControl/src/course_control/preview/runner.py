@@ -178,12 +178,17 @@ def run_preview(
     selection: set[str] | None = None,
     force: bool = False,
     output_root: Path | None = None,
+    require_signoff: bool = True,
 ) -> dict:
     """Render a preview and write ``preview/report.json``.
 
     A failed unit is reported, not hidden.  The run is ``ok`` only when every
     selected unit exists and rendered (or was reused from a matching cache).
     """
+    if require_signoff:
+        from course_control.authoring.pipeline import assert_storyboard_signed
+
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
     level = PreviewLevel(level)
     started = time.monotonic()
     units = plan_lesson_units(paths, level, selection)

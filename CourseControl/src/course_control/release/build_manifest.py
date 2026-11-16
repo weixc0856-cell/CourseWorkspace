@@ -59,10 +59,35 @@ def declared_inputs(
         ("lesson", paths.lesson_dir / "lesson.yaml"),
         ("episode_spec", paths.lesson_dir / "authoring" / "episode.spec.yaml"),
         ("quality_rubric", paths.lesson_dir / "authoring" / "quality.rubric.yaml"),
+        ("storyboard", getattr(paths, "storyboard_source", None)),
+        ("production", getattr(paths, "production_source", None)),
+        (
+            "slides",
+            paths.lesson_dir / getattr(getattr(paths, "lesson", None), "content", None).slides
+            if getattr(getattr(getattr(paths, "lesson", None), "content", None), "slides", None)
+            else None,
+        ),
         ("timing", Path(timing_path)),
         ("narration_meta", Path(meta_path)),
         ("subtitles", Path(subtitles) if subtitles is not None else None),
     ]
+    # The sign-off exists only after the storyboard gate; include it when it is
+    # there so a later sign-off, page edit or review edit changes the build id.
+    for name, relative in (
+        ("storyboard_review", "authoring/storyboard-review.json"),
+        ("storyboard_review_page", "authoring/storyboard-review.html"),
+        ("storyboard_decisions", "authoring/storyboard-decisions.json"),
+    ):
+        candidate = paths.lesson_dir / relative
+        if candidate.is_file():
+            entries.append((name, candidate))
+    design = paths.build_root / "design" / "visual_design.json"
+    if design.is_file():
+        entries.append(("visual_design", design))
+    slides_dir = paths.build_root / "slides"
+    if slides_dir.is_dir():
+        for capture in sorted(slides_dir.glob("*.png")):
+            entries.append((f"slide_capture:{capture.name}", capture))
     return [(name, path) for name, path in entries if path is not None]
 
 
@@ -170,15 +195,18 @@ class Freshness:
 
 
 def _mtime_freshness(paths: LessonPaths, video: Path) -> Freshness:
-    """Weak fallback: the film must be newer than every input file."""
-    inputs = [
-        paths.lesson_dir / "lesson.yaml",
-        paths.lesson_dir / "authoring" / "episode.spec.yaml",
-        paths.lesson_dir / "authoring" / "quality.rubric.yaml",
-        paths.build_root / "contracts" / "timeline.spec.json",
-        paths.build_root / "narration" / "narration.meta.json",
-        paths.build_root / "subtitles.srt",
-    ]
+    """Weak fallback: the film must be newer than every current input file."""
+    try:
+        inputs = [path for _, path in declared_inputs(paths, paths.workspace)]
+    except (AttributeError, OSError):
+        inputs = [
+            paths.lesson_dir / "lesson.yaml",
+            paths.lesson_dir / "authoring" / "episode.spec.yaml",
+            paths.lesson_dir / "authoring" / "quality.rubric.yaml",
+            paths.build_root / "contracts" / "timeline.spec.json",
+            paths.build_root / "narration" / "narration.meta.json",
+            paths.build_root / "subtitles.srt",
+        ]
     video_time = video.stat().st_mtime
     for item in inputs:
         if not item.is_file():
@@ -205,6 +233,16 @@ def check_freshness(paths: LessonPaths, video: Path) -> Freshness:
     except (OSError, json.JSONDecodeError) as exc:
         return Freshness(False, MANIFEST_WEAK, reason=f"unreadable build manifest: {exc}")
     build_id = str(manifest.get("build_id") or "")
+    declared_names = {str(entry.get("name") or "") for entry in manifest.get("inputs") or []}
+    required = declared_inputs(paths, paths.workspace)
+    missing = [name for name, _ in required if name not in declared_names]
+    if missing:
+        return Freshness(
+            False,
+            FINGERPRINT,
+            build_id,
+            "stale: build manifest predates required inputs: " + ", ".join(missing),
+        )
     for entry in manifest.get("inputs") or []:
         declared = Path(str(entry.get("path") or ""))
         if not declared.is_file():

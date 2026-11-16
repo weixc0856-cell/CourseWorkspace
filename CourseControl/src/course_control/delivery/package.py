@@ -85,6 +85,93 @@ def _subtitles(paths: LessonPaths) -> list[Path]:
     return unique
 
 
+def _delivery_verdict(paths: LessonPaths) -> tuple[str, list[str], dict]:
+    """The package verdict must describe the evidence, not hope.
+
+    A package is a copy of the build, so it can be produced at any time.  Its
+    verdict is ``pass`` only when the quality certificate passed, the quality
+    report says release was approved, and the storyboard page was signed.  Any
+    missing piece is ``incomplete``; an open defect or failed certificate is
+    ``fail``.
+    """
+    build_root = paths.build_root
+    reasons: list[str] = []
+    detail: dict = {}
+
+    certificate_path = build_root / "quality" / "certificate.json"
+    certificate = None
+    if certificate_path.is_file():
+        try:
+            certificate = json.loads(certificate_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            certificate = None
+    detail["certificate"] = str(certificate_path) if certificate_path.is_file() else None
+    cert_verdict = str((certificate or {}).get("verdict") or "")
+    if certificate is None:
+        reasons.append("quality certificate missing")
+    elif cert_verdict != "pass":
+        reasons.append(f"quality certificate is {cert_verdict or 'unknown'}")
+
+    quality_path = build_root / "quality" / "quality-report.json"
+    quality = None
+    if quality_path.is_file():
+        try:
+            quality = json.loads(quality_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            quality = None
+    detail["quality_report"] = str(quality_path) if quality_path.is_file() else None
+    quality_sha = _sha(quality_path) if quality_path.is_file() else None
+    states = (quality or {}).get("states") or {}
+    detail["release_approved"] = bool(states.get("RELEASE_APPROVED"))
+    if quality is None:
+        reasons.append("quality report missing")
+    elif certificate is not None:
+        bound = str(certificate.get("quality_report_sha256") or "")
+        if bound and bound != quality_sha:
+            reasons.append("certificate is stale (quality report changed)")
+    if quality is not None:
+        for name in ("review-approval.json", "release-approval.json"):
+            approval_path = build_root / "quality" / name
+            approval = None
+            if approval_path.is_file():
+                try:
+                    approval = json.loads(approval_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    approval = None
+            if approval is None:
+                reasons.append(f"{name} missing")
+                continue
+            if approval.get("decision") != "approved" or not str(approval.get("approved_by") or "").strip():
+                reasons.append(f"{name} is not a named approval")
+            if approval.get("quality_report_sha256") != quality_sha:
+                reasons.append(f"{name} was signed against a different quality report")
+
+    try:
+        from course_control.release.check import content_exception_for
+
+        exception = content_exception_for(build_root, paths.slug)
+        if exception is not None:
+            reasons.append(
+                "open content exception: "
+                + str(exception.get("reason") or exception.get("detail") or "see queue")
+            )
+    except Exception:  # noqa: BLE001 - the verdict records missing evidence
+        pass
+
+    try:
+        from course_control.authoring.pipeline import assert_storyboard_signed
+
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+        detail["storyboard_signed"] = True
+    except Exception as exc:  # noqa: BLE001 - the verdict records the reason
+        detail["storyboard_signed"] = False
+        reasons.append(str(exc))
+
+    if cert_verdict == "fail":
+        return "fail", reasons, detail
+    return ("pass" if not reasons else "incomplete"), reasons, detail
+
+
 def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[dict, Path]:
     """Collect a delivery package and return (manifest, package_root).
 
@@ -238,12 +325,15 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     )
     records.append(_record(root, root / "metadata.json", True))
 
+    verdict, verdict_reasons, verdict_detail = _delivery_verdict(paths)
     manifest = {
         "schema_version": 1,
         "lesson": paths.slug,
         "run_id": run_id,
         "generated_at": _now(),
-        "verdict": "pass",
+        "verdict": verdict,
+        "verdict_reasons": verdict_reasons,
+        "verdict_detail": verdict_detail,
         "files": records,
         "external_assets": external_assets,
         "referenced_assets": referenced_assets,
@@ -260,6 +350,8 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         f"- run_id: `{run_id or 'unknown'}`",
         f"- generated_at: {manifest['generated_at']}",
         f"- master: `final/master.mp4` ({probe.get('duration')} s, {probe.get('width')}x{probe.get('height')})",
+        f"- verdict: `{verdict}`",
+        *([f"- reason: {reason}" for reason in verdict_reasons] if verdict_reasons else []),
         "",
         "| file | required | status | sha256 |",
         "| --- | --- | --- | --- |",
@@ -272,6 +364,20 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     (root / "delivery-checklist.md").write_text(
         "\n".join(checklist) + "\n", encoding="utf-8"
     )
+    if verdict != "pass":
+        # An incomplete or failed attempt must never displace the last passing
+        # delivery.  Keep it beside the delivery for inspection and say so.
+        attempt = final_root.with_name(final_root.name + ".attempt")
+        if attempt.exists():
+            shutil.rmtree(attempt)
+        root.rename(attempt)
+        manifest["installed"] = False
+        manifest["attempt_path"] = str(attempt)
+        (attempt / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+        )
+        return manifest, attempt
+
     backup = final_root.with_name(final_root.name + ".old")
     if backup.exists():
         shutil.rmtree(backup)
@@ -285,6 +391,10 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
         raise
     if backup.exists():
         shutil.rmtree(backup)
+    manifest["installed"] = True
+    (final_root / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    )
     return manifest, final_root
 
 

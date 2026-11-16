@@ -130,6 +130,21 @@ def quality_certificate_command(
     from course_control.quality.certificate import issue, save
 
     paths = _paths(workspace, lesson, lesson_dir)
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    try:
+        assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
+        from course_control.release.check import content_exception_for
+
+        exception = content_exception_for(paths.build_root, paths.slug)
+        if exception is not None:
+            raise RuntimeError(
+                "open content exception: "
+                + str(exception.get("reason") or exception.get("detail") or "see queue")
+            )
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     if refresh:
         from course_control.quality.defect import collect
         from course_control.quality.quality_gates import evaluate

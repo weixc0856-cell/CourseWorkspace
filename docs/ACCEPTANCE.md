@@ -130,6 +130,21 @@ FR-42。用试点课程的两份临时副本（正常 / 故意写坏）验证，
 
 未执行：完整 20 分钟课程的 P5、真实 build/渲染/TTS（所有者明确先跳过具体课程）。
 
+## 0.9 2026-11-16 静态分镜闸门
+
+- **产物**：`build/<slug>/storyboard/index.html` 与 `manifest.json`，一页一张幻灯片，附镜头字段与三问自查；无动效、无音频。
+- **命令**：`course-control storyboard-page --lesson <slug>`；逐页看后在 `course-control storyboard-review --lesson <slug> --approve 1,2,... [--reject N]` 记录，全部页 `approve` 后才能 `course-control author-accept --lesson <slug> --kind storyboard-page`，写 `lessons/<slug>/authoring/storyboard-review.json`，并把审核页复制为 `authoring/storyboard-review.html`。
+- **有效源**：页面与签字都读 `LessonPaths.storyboard_source`；课程声明 `production: authoring/production.yaml` 时签的是 production，而不是空的 `storyboard.yaml`。
+- **绑定**：复核文件记录有效 storyboard、`slides.md`、审核页与页面内嵌截图的 sha256；审核页改动、故事板改动或 review 被改都会失效。`approval.json` 同时钉住 review 文件本身。
+- **覆盖**：`run_build`、`animatic`、`narration-build`、`render shot|segment|project`、`preview-pilot`、`brand-render`、`narrate`、`burn-subs`、`audio-mix`、`session-run --record`、带 `lesson` 的 `scene-run`、`release-check`、`quality-certificate`、`release-approve`、`episode-build` 都校验，未签或已失效返回退出码 3（blocked）。
+- **页面就绪**：`storyboard-page` 在没有幻灯片截图时退出 1，`author-accept` 拒绝签字；有截图才能逐页 approve。
+- **交付安装**：`package` 只有在证书 pass、review/release 具名批准且分镜签字时写 `pass` 并替换 `deliver/<slug>/`；否则写 `incomplete`/`fail`，保留旧交付，把本次尝试放在 `deliver/<slug>.attempt/`，命令退出 1。
+- **内容异常队列**：`build/_shared/frame-audit/episode/content-exceptions.json` 里的条目带 `lesson`、`owner`、`clear_when`；`release-check`、`package`、`quality-certificate`、`release-approve`、`episode-build` 命中当前 lesson 时返回 `incomplete` 或退出 3。清除条件写在该条目的 `clear_when`。
+- **负例**：`CourseControl/tests/test_storyboard_page.py` 覆盖“未签阻断”“改了 storyboard 后阻断”“页面过期拒绝签字”三条；`scripts/check_docs.py --selftest` 覆盖文档地图的四类红灯。
+- **文档**：命令顺序与中间交付物见 `docs/生产流水线-阶段与中间交付物.md`。
+
+---
+
 ## 1. 一键回归
 
 ```powershell

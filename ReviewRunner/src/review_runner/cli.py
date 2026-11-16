@@ -44,7 +44,7 @@ def run_command(
     ),
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
-    """Run one independent review and archive the evidence under build/reviews/."""
+    """Run one independent review and archive the evidence under build/_shared/reviews/."""
     options = RunOptions(
         review_type=review_type,
         commit=commit,

@@ -41,6 +41,10 @@ DISPOSITIONS = {
 def referenced_paths(root: Path) -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
     for doc in sorted((root / "docs").rglob("*.md")):
+        # A handoff or change log deliberately names the old and new paths of
+        # the files it moved.  It is not claiming those paths are evidence.
+        if doc.name.startswith(("handoff-", "content-changes-")):
+            continue
         text = doc.read_text(encoding="utf-8", errors="replace")
         for match in PATH_RE.finditer(text):
             value = match.group(0).rstrip(".,;:)】")
@@ -101,7 +105,7 @@ def main() -> int:
             "referenced_by": sorted(set(missing[path])),
         }
 
-    report = content / "build" / ".audit" / "missing-evidence.txt"
+    report = content / "build" / "_shared" / "evidence-audit" / "missing-evidence.txt"
     report.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         f"referenced build paths: {len(found)}",
@@ -120,7 +124,7 @@ def main() -> int:
         lines.append(f"{path}\tUNCLASSIFIED\t\t{', '.join(sorted(set(missing[path]))[:3])}")
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    json_report = content / "build" / ".audit" / "evidence-classification.json"
+    json_report = content / "build" / "_shared" / "evidence-audit" / "evidence-classification.json"
     json_report.write_text(
         json.dumps(
             {

@@ -29,6 +29,7 @@ class EpisodeBuildManifestTest(unittest.TestCase):
         self.workspace = root
         self.paths = SimpleNamespace(
             slug="demo",
+            workspace=root,
             lesson_dir=lesson,
             build_root=build,
             subtitles_path=lambda: lesson / "subtitles.srt",

@@ -208,6 +208,9 @@ def synthesize_course(
     sample: bool = False,
     page_limit: int | None = None,
 ) -> dict:
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
     workspace = workspace.resolve()
     lesson = paths.lesson
     notes_path = paths.content_path(lesson.content.notes)

@@ -193,7 +193,7 @@ class NarrationScript(StrictModel):
 
 
 class ApprovalEntry(StrictModel):
-    kind: Literal["digest", "brief", "outline", "script", "content", "subtitles"]
+    kind: Literal["digest", "brief", "outline", "script", "content", "subtitles", "storyboard-page"]
     path: str
     sha256: str = Field(min_length=64, max_length=64)
     approved_by: str = "human"

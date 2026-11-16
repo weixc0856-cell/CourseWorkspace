@@ -1,5 +1,7 @@
 # 视觉标准（VISUAL_STANDARD）
 
+> **状态：2026-11-10 基线记录，不是现行契约。** 现行命令链见 [../生产流水线-阶段与中间交付物.md](../生产流水线-阶段与中间交付物.md)。
+
 - 日期：2026-11-10
 - 关联：C-09、C-16、C-24（多配置源之外的视觉部分）、C-26
 - 现行依据：`shared/design-tokens/tokens.json`、`shared/design-tokens/brand.json`、`docs/配色规范.md`、`docs/版式系统.md`、`docs/课程视觉风格指南.md`

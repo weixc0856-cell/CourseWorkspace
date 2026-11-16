@@ -288,7 +288,7 @@ class AuthoringClient:
             timeout_s=self.config.lock_timeout_s,
             stale_after_s=self.config.stale_after_s,
         )
-        log_path = build_root_for(self.config.workspace, "authoring") / "llama-server.log"
+        log_path = build_root_for(self.config.workspace, "_shared") / "authoring" / "llama-server.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             self.route = self._stack.enter_context(

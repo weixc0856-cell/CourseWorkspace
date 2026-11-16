@@ -362,6 +362,9 @@ def render_segment(
 
 
 def render_segments(paths: LessonPaths, plan: BrandPlan, *, force: bool = False) -> list[dict[str, Any]]:
+    from course_control.authoring.pipeline import assert_storyboard_signed
+
+    assert_storyboard_signed(paths.lesson_dir, paths.storyboard_source)
     return [render_segment(paths, plan, segment, force=force) for segment in plan.segments]
 
 

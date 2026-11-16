@@ -19,7 +19,7 @@
 | FR-10 任务状态 | `shared/ai_runtime/src/ai_runtime/tasks.py`；`ModelingStudio/src/modeling_studio/job.py` | `test_runtime.py`、`ModelingStudio/tests/test_job_state.py` |
 | FR-11 上下文预算 | `shared/ai_runtime/src/ai_runtime/budget.py`；`ModelingStudio/src/modeling_studio/config.py`、`llm.py` | `test_runtime.py`、`ModelingStudio/tests/test_budget.py`、`ContentQA/tests/test_content_qa.py` |
 | FR-12 内容审查 | `ContentQA/src/content_qa/` | `ContentQA/tests/test_content_qa.py`、`test_schemas.py`、`test_model_policy.py`、`test_env_overrides.py` |
-| FR-13 报告 | `CourseControl/src/course_control/delivery/report.py`、`rendering/blender_runner.py`、`shared/ai_runtime/tasks.py`、`ContentQA/src/content_qa/review.py` | 各报告结构断言 |
+| FR-13 报告 | `CourseControl/src/course_control/delivery/report.py`、`rendering/blender_runner.py`、`shared/ai_runtime/src/ai_runtime/tasks.py`、`ContentQA/src/content_qa/review.py` | 各报告结构断言 |
 | FR-14 一键回归 | `scripts/check.ps1`、`scripts/check-scene-system.ps1`、`scripts/check_paths.py` | 自身执行 |
 | FR-15 输入摄取/摘要 | `CourseControl/src/course_control/authoring/ingest.py`、`digest.py` | `test_authoring_ingest.py` |
 | FR-16 课程草稿/批准门 | `authoring/llm.py`、`pipeline.py`、`CourseControl/prompts/` | `test_authoring_gate.py`、`test_authoring_ingest.py` |
@@ -29,9 +29,9 @@
 | FR-20 代码驱动镜头 | `CourseControl/src/course_control/rendering/adapters/code_video.py`、`quality/code_video_qc.py`、`rendering/engine_router.py`、`platform/vendor.py`、`platform/workspace_layout.py`（`engine_roots`）、`CodeVideoStudio/` | `test_code_video_adapter.py`、`test_code_video_qc.py`、`test_engine_router.py`、30 秒真实 Canvas 镜头 + 900/900 帧哈希一致 + QC/contact sheet |
 | FR-21 技术雷达 | `docs/evaluations/技术雷达-视频生产.md`、`docs/evaluations/评估-Code2Video接入.md` | HyperFrames/VideoZero POC 记录；许可证核查 |
 | FR-22 交付包/QC/归档 | `docs/课程生产交付物规范.md`、`delivery/report.py`、`quality/verify.py`、`quality/code_video_qc.py` | 交付清单、`build-report.json`、镜头 QC 证据 |
-| FR-23 Claude Code 默认后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`CourseControl/authoring/llm.py`、`ContentQA/client.py`、`ModelingStudio/server.py`、`config/claude-code.example.yaml` | `test_claude_code.py`、`test_authoring_claude_code.py`、ContentQA/ModelingStudio 后端测试、四后端对比真实验证 |
-| FR-24 Scene-first 合成 | `CourseControl/collect.py`、`RemotionStudio/src/compositions/ScenePage.tsx`、`lesson.yaml.compose.mode` | scene 模式 collect 单测；汽车空气动力学 scene 版真实构建 |
-| FR-25 公式质量模块 | `CourseControl/src/course_control/rendering/formulas.py`、`RemotionStudio/src/components/Formula.tsx`、`scripts/formula-render.mjs`、`ManimSandbox/00-formula-smoke/` | `test_formulas.py`、KaTeX PNG、Remotion FormulaProbe、Manim FormulaSmoke |
+| FR-23 Claude Code 默认后端 | `shared/ai_runtime/src/ai_runtime/claude_code.py`、`CourseControl/src/course_control/authoring/llm.py`、`ContentQA/src/content_qa/client.py`、`ModelingStudio/server.py`、`config/claude-code.example.yaml` | `test_claude_code.py`、`test_authoring_claude_code.py`、ContentQA/ModelingStudio 后端测试、四后端对比真实验证 |
+| FR-24 Scene-first 合成 | `CourseControl/src/course_control/content/collect.py`、`RemotionStudio/src/compositions/ScenePage.tsx`、`lesson.yaml.compose.mode` | scene 模式 collect 单测；汽车空气动力学 scene 版真实构建 |
+| FR-25 公式质量模块 | `CourseControl/src/course_control/rendering/formulas.py`、`RemotionStudio/src/components/Formula.tsx`、`RemotionStudio/scripts/formula-render.mjs`、`ManimSandbox/00-formula-smoke/` | `test_formulas.py`、KaTeX PNG、Remotion FormulaProbe、Manim FormulaSmoke |
 | FR-26 科学图形资产 | `ScientificFigures/figures/continuity_figure.py`、`ScientificFigures/pyproject.toml` | 真实 SymPy LaTeX + Matplotlib/SciencePlots SVG/PDF/PNG |
 | FR-27 动画视觉导演层 | `CourseControl/src/course_control/direction/animation_direction.py`、`ManimSandbox/03-vector-intro/direction-addition-v2.json`、`vector_addition.py`、`vector_direction.py` | `test_animation_direction.py`、81.6 秒技术竖切片、90 秒五概念切片 |
 | FR-28 导演层 | `CourseControl/src/course_control/direction/`、`docs/导演层.md` | `test_director.py`、`<slug>` `director_plan.json`（12 镜头/1200 s/12 ready）、5 个真实渲染镜头 |

@@ -302,7 +302,8 @@ class ReleaseCheckTest(unittest.TestCase):
             payload = run_release_check(WORKSPACE, paths=paths)
             self.assertEqual(payload["status"], INCOMPLETE)
             self.assertFalse(payload["delivery_allowed"])
-            self.assertEqual(payload["steps"][0]["id"], "final_video")
+            final = next(step for step in payload["steps"] if step["id"] == "final_video")
+        self.assertEqual(final["status"], INCOMPLETE)
 
 
 class PreviewRunTest(unittest.TestCase):
@@ -319,6 +320,7 @@ class PreviewRunTest(unittest.TestCase):
                     level=PreviewLevel.SHOT,
                     profile=profile,
                     selection={"missing"},
+                    require_signoff=False,
                 )
 
 
