@@ -32,7 +32,8 @@ const RESERVED_BAND = [960, 1060];
 // page.evaluate serializes this function, so anything it needs from Node
 // scope must be passed as an argument (a module constant would be undefined
 // inside the page).
-const auditInPage = (reservedBand) => {
+// Playwright passes exactly one argument; both values travel in an object.
+const auditInPage = ({reservedBand, expectation}) => {
   const SAFE = 96;
   const scale = window.innerWidth / 1920;
   // The bundle page also carries studio chrome; audit only the composition.
@@ -307,8 +308,128 @@ const auditInPage = (reservedBand) => {
     }
   }
 
+  // A render error left in the DOM is never a passing frame.
+  // The Player keeps its error overlay in the DOM on every frame; only a
+  // visible one means something failed. Hidden containers are not failures.
+  const isVisible = (element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return (
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      parseFloat(style.opacity || '1') > 0.05 &&
+      rect.width > 0 &&
+      rect.height > 0
+    );
+  };
+  const candidates = [
+    document.querySelector('#remotion-error-overlay'),
+    ...document.querySelectorAll('.remotion-error, [data-error], [data-audit-error]'),
+  ].filter(Boolean);
+  const errorNode = candidates.find(isVisible);
+  if (errorNode) {
+    issues.push({
+      rule: 'error_node',
+      selector: selectorOf(errorNode),
+      text: (errorNode.textContent || '').trim().slice(0, 300),
+    });
+  }
+
+  // Positive assertion: the frame must hold the instance the timeline says.
+  if (expectation) {
+    const nodes = [...scope.querySelectorAll('[data-beat-id]')];
+    if (nodes.length === 0) {
+      issues.push({ rule: 'beat_id_missing', expected: expectation.beatId });
+    } else if (nodes.length > 1) {
+      issues.push({
+        rule: 'instance_count',
+        count: nodes.length,
+        beats: nodes.map((node) => node.getAttribute('data-beat-id')),
+      });
+    } else {
+      const node = nodes[0];
+      const beatId = node.getAttribute('data-beat-id');
+      const asset = node.getAttribute('data-asset-src') || '';
+      if (beatId !== expectation.beatId) {
+        issues.push({ rule: 'beat_id_mismatch', expected: expectation.beatId, actual: beatId });
+      }
+      if (asset !== expectation.asset) {
+        issues.push({
+          rule: 'asset_mismatch',
+          expected: expectation.asset,
+          actual: asset,
+          component: expectation.component,
+        });
+      }
+    }
+  }
+
   return { issues, notes, text_count: textElements.length, skipped_symbolic: skippedSymbolic };
 };
+
+// Mirrors ASSET_KEYS in src/episode/Episode.tsx. The audit compares this
+// string with the instance's data-asset-src, so both sides must agree.
+const ASSET_KEYS = ['asset', 'image', 'figure', 'src'];
+function assetOf(props) {
+  for (const key of ASSET_KEYS) {
+    const value = props ? props[key] : undefined;
+    if (typeof value === 'string' && value) return value;
+  }
+  return '';
+}
+
+// The instance the timeline places at this frame, or null outside the film.
+function expectationAt(timing, frame) {
+  const fps = Number(timing.fps) || 30;
+  let cursor = 0;
+  for (const beat of timing.beats || []) {
+    for (const [index, instance] of (beat.instances || []).entries()) {
+      const frames = Math.round(Number(instance.duration) * fps);
+      if (frame >= cursor && frame < cursor + frames) {
+        return {
+          beatId: beat.id,
+          index,
+          component: instance.component,
+          asset: assetOf(instance.props),
+        };
+      }
+      cursor += frames;
+    }
+  }
+  return null;
+}
+
+// Positive assertion: a frame that is almost entirely background is not a
+// frame, whatever the negative checks say. Sampled every 4th pixel.
+async function nonBackgroundRatio(page) {
+  const shot = await page.screenshot();
+  const url = 'data:image/png;base64,' + shot.toString('base64');
+  return page.evaluate(async (dataUrl) => {
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = reject;
+      image.src = dataUrl;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d', {willReadFrequently: true});
+    context.drawImage(image, 0, 0);
+    const {data} = context.getImageData(0, 0, canvas.width, canvas.height);
+    let nonBackground = 0;
+    let total = 0;
+    for (let index = 0; index < data.length; index += 16) {
+      total += 1;
+      const distance =
+        Math.abs(data[index] - 5) +
+        Math.abs(data[index + 1] - 7) +
+        Math.abs(data[index + 2] - 10);
+      if (distance > 24) nonBackground += 1;
+    }
+    return total ? nonBackground / total : 0;
+  }, url);
+}
 
 function startServer(root) {
   const types = {
@@ -426,6 +547,18 @@ async function main() {
   });
   try {
     const page = await browser.newPage({ viewport: { width: COMPOSITION.width, height: COMPOSITION.height } });
+    // @remotion/player swallows a component exception and paints an empty
+    // frame. The browser still reports it, so the audit listens at the source.
+    const pageErrors = [];
+    page.on('pageerror', (error) => {
+      pageErrors.push(String((error && error.message) || error));
+    });
+    page.on('console', (message) => {
+      if (message.type() !== 'error') return;
+      const text = message.text();
+      if (/favicon\.ico/.test(text)) return;
+      pageErrors.push(text);
+    });
 
     if (dumpDir) {
       mkdirSync(dumpDir, { recursive: true });
@@ -478,7 +611,7 @@ async function main() {
         process.exitCode = 1;
         return;
       }
-      const overlapping = await page.evaluate(auditInPage, RESERVED_BAND);
+      const overlapping = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const caught = overlapping.issues.some(
         (item) => item.rule === 'subtitle_covers_evidence' && item.selector === 'subtitle:selftest-subtitle',
       );
@@ -486,7 +619,7 @@ async function main() {
         const subtitle = document.querySelector('[data-subtitle="selftest-subtitle"]');
         if (subtitle) Object.assign(subtitle.style, { left: '0px', top: '0px' });
       });
-      const separated = await page.evaluate(auditInPage, RESERVED_BAND);
+      const separated = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const falsePositive = separated.issues.some(
         (item) => item.rule === 'subtitle_covers_evidence' && item.selector === 'subtitle:selftest-subtitle',
       );
@@ -506,7 +639,7 @@ async function main() {
         player.appendChild(figure);
         return { injected: true };
       });
-      const sourceMissing = await page.evaluate(auditInPage, RESERVED_BAND);
+      const sourceMissing = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const sourceCaught = sourceMissing.issues.some(
         (item) => item.rule === 'figure_source_missing' && item.figure === 'selftest-figure',
       );
@@ -525,7 +658,7 @@ async function main() {
         });
         figure.appendChild(line);
       });
-      const sourceFixed = await page.evaluate(auditInPage, RESERVED_BAND);
+      const sourceFixed = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const sourceFixedFalsePositive = sourceFixed.issues.some(
         (item) => item.rule === 'figure_source_missing' && item.figure === 'selftest-figure',
       );
@@ -553,7 +686,7 @@ async function main() {
         host.append(make(1400, 1000, 'OVERLAP A'), make(1420, 1020, 'OVERLAP B'));
         player.appendChild(host);
       });
-      const overlapAudit = await page.evaluate(auditInPage, RESERVED_BAND);
+      const overlapAudit = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const overlapCaught = overlapAudit.issues.some((item) => item.rule === 'text_overlap');
       await page.evaluate(() => {
         const target = [...document.querySelectorAll('[data-audit-selftest]')].find(
@@ -561,7 +694,7 @@ async function main() {
         );
         if (target) { target.style.left = '900px'; target.style.top = '1000px'; }
       });
-      const overlapSeparated = await page.evaluate(auditInPage, RESERVED_BAND);
+      const overlapSeparated = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const overlapFalsePositive = overlapSeparated.issues.some((item) => item.rule === 'text_overlap');
       await page.evaluate(() => {
         const player = document.querySelector('.__remotion-player');
@@ -589,7 +722,7 @@ async function main() {
         hidden.appendChild(child);
         player.appendChild(hidden);
       });
-      const hiddenAudit = await page.evaluate(auditInPage, RESERVED_BAND);
+      const hiddenAudit = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation: null});
       const hiddenChildCounted = hiddenAudit.issues.some(
         (item) => (item.text || '').includes('HIDDEN CHILD') || (item.other_text || '').includes('HIDDEN CHILD'),
       );
@@ -622,22 +755,45 @@ async function main() {
       : timingPath
         ? framesFromTiming(timingPath, samples)
         : DEFAULT_FRAMES;
+    const episodeTiming = timingPath ? JSON.parse(readFileSync(timingPath, 'utf8')) : null;
     const results = [];
     for (const frame of list) {
+      pageErrors.length = 0;
       await openFrame(page, baseUrl, frame);
-      const result = await page.evaluate(auditInPage, RESERVED_BAND);
+      const expectation = episodeTiming ? expectationAt(episodeTiming, frame) : null;
+      const result = await page.evaluate(auditInPage, {reservedBand: RESERVED_BAND, expectation});
+      const issues = result.issues || [];
+      if (expectation === null && episodeTiming) {
+        issues.push({rule: 'instance_missing', frame, detail: 'frame is outside every instance'});
+      }
+      if (result.error) {
+        issues.push({rule: 'audit_error', detail: String(result.error)});
+      }
+      for (const error of pageErrors.slice(0, 5)) {
+        issues.push({rule: 'page_error', detail: error});
+      }
+      const ratio = await nonBackgroundRatio(page);
+      if (ratio < 0.05) {
+        issues.push({rule: 'blank_frame', ratio: Math.round(ratio * 10000) / 10000});
+      }
       const entry = {
         frame,
-        issues: result.issues || [],
+        issues,
         notes: (result.notes || []).length,
         skipped_symbolic: result.skipped_symbolic || 0,
+        non_background_ratio: Math.round(ratio * 10000) / 10000,
         error: result.error || null,
+        expectation,
       };
       results.push(entry);
       console.log(
-        `  frame ${frame}: ${entry.issues.length} issue(s), ${entry.skipped_symbolic} symbolic skipped` +
+        `  frame ${frame}: ${entry.issues.length} issue(s), ${entry.skipped_symbolic} symbolic skipped, ` +
+          `${(entry.non_background_ratio * 100).toFixed(1)}% non-bg` +
           (entry.error ? ' ERROR ' + entry.error : ''),
       );
+      if (pageErrors.length) {
+        console.log('    page error: ' + String(pageErrors[0]).slice(0, 300).replace(/\s+/g, ' '));
+      }
       if (entry.issues.length) {
         const shot = resolve(outDir, 'frames', `frame-${frame}.png`);
         await page.screenshot({ path: shot });
