@@ -181,6 +181,6 @@ uv run --project ContentQA content-qa review --lesson <slug>
 - Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - 本机配置：`config/tools.yaml`、`config/local-paths.yaml`（含 `docling_root`、`source_libraries`、TTS）、`ModelingStudio/config/workflow.yaml`、`config/content-qa.yaml`，均不进仓库。
 - 端口：8080 本地模型（唯一实例）、8081 课件预览、5173 Motion Canvas、3000 Remotion、50000 VoxCPM2 TTS。8082 不存在。
-- **教材原图与索引在 Docling 产线，不在本仓库**：`DOCLING_OUTPUT_ROOT`（本机 `D:/Project/Docling/output/`），按书分目录，如 `hucho-en-5e/{assets/,document.json,bookmarks.json}`。Hucho 英文第 5 版已提取 **~1200 张原书图**，`document.json` 含 `caption` 与 `page_no`，可按页/图注检索。**在 `staging/` 或课程 `assets/fig/` 里找不到图时，先查这里，不要据此判断"没有素材"、更不要编造素材。** 上游仓库与本仓库不共享运行时，路径契约只以本条为准。
+- **教材原图与索引统一由 Docling 产线提供，不在本仓库**：根目录 `DOCLING_OUTPUT_ROOT`（本机 `D:/Project/Docling/output/`），**每本书一个目录 `<source_id>/`**，内含 `assets/`（逐图 PNG，文件名即内容哈希）、`document.json`（每张图带 `caption` 与 `page_no`）、`bookmarks.json`、`manifest.json`；根目录 `catalog.json` 是全部来源的清单（书、网页、视频），按它发现可用 `source_id`。任何书都按同一契约取图：**新书接入 = 在 Docling 产线跑一遍 → `<root>/<source_id>/` 出现 → 课程按 `source_id` 检索**，不允许为某本书写专属路径或专属脚本。在 `staging/` 或课程 `assets/fig/` 找不到图时先查这里；**不得据此判断"没有素材"，更不得编造素材**。上游仓库与本仓库不共享运行时，路径契约只以本条为准。
 - 课程内容在**内容根**下：`<content_root>/lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/`、`audio/`（声音资产）、`projects/`（各系列项目材料）、`references/`（参考库与 Golden Sample）、`archive/`（历史记录）。默认等于工作区，取值见 `config/local-paths.yaml` 的 `content_root`；`course-control content-root` 可查询。
 - `build/<slug>/` 是临时区，可删除重建；`deliver/<slug>/` 是最终交付区，不随 `build/` 清理。两者都不入库。
