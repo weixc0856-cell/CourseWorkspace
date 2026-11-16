@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -91,6 +92,68 @@ class SessionContractTest(unittest.TestCase):
         third = cache_key(spec, {"hello.sh": sha256_text("a")}, "sha256:2")
         self.assertNotEqual(first, second)
         self.assertNotEqual(first, third)
+
+
+class StoryboardGateScopeTest(unittest.TestCase):
+    """Only lessons under <content_root>/lessons need the storyboard sign-off."""
+
+    def test_fixture_is_not_a_course_lesson(self) -> None:
+        from course_control.platform.workspace_layout import is_course_lesson
+
+        self.assertFalse(is_course_lesson(WORKSPACE, LESSON_DIR))
+
+    def test_junction_under_lessons_still_requires_the_gate(self) -> None:
+        import os
+        import subprocess
+        from unittest.mock import patch
+
+        from course_control.platform.workspace_layout import is_course_lesson
+
+        with tempfile.TemporaryDirectory() as tmp:
+            content = Path(tmp)
+            outside = content / "outside"
+            outside.mkdir()
+            (content / "lessons").mkdir()
+            link = content / "lessons" / "demo"
+            made = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(link), str(outside)],
+                capture_output=True,
+            )
+            if made.returncode != 0:
+                self.skipTest("junctions are not available here")
+            with patch.dict(
+                os.environ,
+                {
+                    "COURSEWORKSPACE_MODE": "dev",
+                    "COURSEWORKSPACE_DEV_WORKSPACE": str(WORKSPACE),
+                    "COURSEWORKSPACE_DEV_ROOT": str(content),
+                },
+                clear=False,
+            ):
+                os.environ.pop("COURSEWORKSPACE_CONTENT_ROOT", None)
+                self.assertTrue(is_course_lesson(WORKSPACE, link))
+
+    def test_content_root_lesson_is_gated(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        from course_control.platform.workspace_layout import is_course_lesson
+
+        with tempfile.TemporaryDirectory() as tmp:
+            content = Path(tmp)
+            lesson = content / "lessons" / "demo"
+            lesson.mkdir(parents=True)
+            with patch.dict(
+                os.environ,
+                {
+                    "COURSEWORKSPACE_MODE": "dev",
+                    "COURSEWORKSPACE_DEV_WORKSPACE": str(WORKSPACE),
+                    "COURSEWORKSPACE_DEV_ROOT": str(content),
+                },
+                clear=False,
+            ):
+                os.environ.pop("COURSEWORKSPACE_CONTENT_ROOT", None)
+                self.assertTrue(is_course_lesson(WORKSPACE, lesson))
 
 
 def _docker_available() -> bool:

@@ -212,18 +212,19 @@ def package_command(
     lesson: str = typer.Option(..., "--lesson"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
-    out: Path | None = typer.Option(None, "--out"),
 ) -> None:
     """Collect a standard delivery package with SHA-256 for every file."""
     from course_control.delivery.package import PackageError, build_package
+    from course_control.platform.workspace_layout import production_content_root
 
     try:
+        production_content_root(workspace.resolve())
         paths = _paths(workspace, lesson, lesson_dir)
-    except ContractError as exc:
+    except (ContractError, RuntimeError) as exc:
         typer.echo(str(exc), err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(2)
     try:
-        manifest, root = build_package(paths, out)
+        manifest, root = build_package(paths)
     except PackageError as exc:
         typer.echo(f"package failed: {exc}", err=True)
         raise typer.Exit(1)
@@ -293,9 +294,17 @@ def release_approve_command(
     if decision not in {"approved", "rejected"}:
         typer.echo("decision must be approved or rejected", err=True)
         raise typer.Exit(1)
-    if not approved_by.strip():
-        typer.echo("--by must name the approver", err=True)
+    from course_control.quality.evidence import is_named_approver
+    from course_control.platform.workspace_layout import production_content_root
+
+    if not is_named_approver(approved_by):
+        typer.echo("--by must name a person, not a role or a machine", err=True)
         raise typer.Exit(1)
+    try:
+        production_content_root(workspace.resolve())
+    except RuntimeError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2)
     if project is not None:
         import hashlib
         from datetime import datetime, timezone
@@ -308,6 +317,9 @@ def release_approve_command(
         except Exception as exc:  # noqa: BLE001
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)
+        if stage != "release":
+            typer.echo("topic releases only have a release stage", err=True)
+            raise typer.Exit(2)
         candidate = context.build_root / "release" / context.output_name
         if not candidate.is_file():
             typer.echo(f"release candidate missing: {candidate}", err=True)
@@ -327,8 +339,9 @@ def release_approve_command(
             for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                 digest.update(chunk)
         payload = {
-            "schema_version": 1,
+            "schema_version": 2,
             "project": context.project_id,
+            "stage": "release",
             "decision": decision,
             "approved_by": approved_by.strip(),
             "approved_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -364,43 +377,6 @@ def release_approve_command(
         except Exception as exc:  # noqa: BLE001 - the gate is user-facing
             typer.echo(f"blocked: {exc}", err=True)
             raise typer.Exit(3)
-    report, quality_path = build_quality_report(workspace.resolve(), paths)
-    states = report["states"]
-    if decision == "approved" and not states["VERIFY_PASS"]:
-        typer.echo("automatic verification is not pass; refusing approval", err=True)
-        typer.echo(f"VERIFY_INCOMPLETE={states['VERIFY_INCOMPLETE']} VERIFY_FAIL={states['VERIFY_FAIL']}", err=True)
-        raise typer.Exit(2)
-    blocking = [item for item in states.get("BLOCKED_WARNINGS") or [] if item != "Q5"]
-    if decision == "approved" and blocking:
-        typer.echo("blocking warnings remain: " + ", ".join(blocking), err=True)
-        raise typer.Exit(2)
-    gate = None
-    gate_path = paths.build_root / "quality" / "gate.json"
-    if gate_path.is_file():
-        try:
-            gate = json.loads(gate_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            gate = None
-    if decision == "approved" and (gate is None or gate.get("verification_status") != "pass"):
-        typer.echo("quality gate is not pass; refusing approval", err=True)
-        raise typer.Exit(2)
-    if stage == "release" and decision == "approved":
-        review_path = paths.build_root / "quality" / "review-approval.json"
-        review = None
-        if review_path.is_file():
-            try:
-                review = json.loads(review_path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
-                review = None
-        quality_content = str(report.get("content_sha256") or "")
-        if (
-            review is None
-            or review.get("decision") != "approved"
-            or review.get("quality_report_content_sha256") != quality_content
-        ):
-            typer.echo("human review is not approved for this quality report; refusing release sign-off", err=True)
-            raise typer.Exit(2)
-
     build_report = paths.build_root / "final" / "build-report.json"
     final = paths.build_root / "final" / "course-video-mixed.mp4"
     if not final.is_file():
@@ -408,6 +384,45 @@ def release_approve_command(
     if not build_report.is_file() or not final.is_file():
         typer.echo("build-report.json and final video are required", err=True)
         raise typer.Exit(2)
+
+    if decision == "approved":
+        from course_control.quality.evidence import evidence_problems
+        from course_control.release.check import run_release_check
+
+        # The same chain release-check runs, not a subset of its conclusions.
+        check = run_release_check(workspace.resolve(), paths=paths)
+        if check["status"] not in {"pass", "pass_with_exemption"}:
+            typer.echo("release check is not pass; refusing approval", err=True)
+            typer.echo(f"status: {check['status']}", err=True)
+            for step in check["steps"]:
+                if step["status"] not in {"pass", "pass_with_exemption"}:
+                    typer.echo(
+                        f"  [{step['status']}] {step['id']}: {step['detail']}",
+                        err=True,
+                    )
+            raise typer.Exit(2)
+        if stage == "release":
+            review_problems = evidence_problems(
+                lesson=paths.slug,
+                review_path=paths.build_root / "quality" / "review-approval.json",
+                release_path=None,
+                build_report=build_report,
+                final_video=final,
+                quality_report=paths.build_root / "quality" / "quality-report.json",
+                require_release=False,
+            )
+            if review_problems:
+                typer.echo(
+                    "human review is not valid for this evidence; refusing "
+                    "release sign-off",
+                    err=True,
+                )
+                for problem in review_problems:
+                    typer.echo(f"  - {problem}", err=True)
+                raise typer.Exit(2)
+
+    report, quality_path = build_quality_report(workspace.resolve(), paths)
+    content_sha = str(report.get("content_sha256") or "")
 
     def sha(path: Path) -> str:
         digest = hashlib.sha256()
@@ -417,7 +432,7 @@ def release_approve_command(
         return digest.hexdigest()
 
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "lesson": paths.slug,
         "stage": stage,
         "decision": decision,
@@ -426,12 +441,21 @@ def release_approve_command(
         "note": note,
         "build_report_sha256": sha(build_report),
         "final_video_sha256": sha(final),
-        "quality_report_sha256": sha(quality_path),
-        "quality_report_content_sha256": report.get("content_sha256"),
+        "quality_report_content_sha256": content_sha,
     }
     target = paths.build_root / "quality" / f"{stage}-approval.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8")
+    if decision == "approved":
+        # Writing an approval is not allowed to change what was approved.
+        after, _ = build_quality_report(workspace.resolve(), paths)
+        if str(after.get("content_sha256") or "") != content_sha:
+            target.unlink(missing_ok=True)
+            typer.echo(
+                "the quality content changed while approving; the approval was not kept",
+                err=True,
+            )
+            raise typer.Exit(2)
     typer.echo(f"{stage} decision: {decision} by {payload['approved_by']}")
     typer.echo(f"record: {target}")
     raise typer.Exit(0)

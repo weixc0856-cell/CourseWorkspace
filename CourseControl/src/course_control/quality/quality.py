@@ -14,7 +14,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from course_control.content.paths import LessonPaths
-from course_control.quality.certificate import quality_content_sha256
+from course_control.quality.evidence import (
+    approval_problems,
+    file_sha256,
+    normalize_dimensions,
+    quality_content_sha256,
+)
 
 PASS = "PASS"
 WARN = "WARN"
@@ -224,6 +229,12 @@ def _q4(paths: LessonPaths) -> dict:
 
 
 def _q5(paths: LessonPaths) -> dict:
+    """Release-artifact facts only; approvals live outside Q5.
+
+    The earlier version mixed "the deliverables exist" with "a human approved
+    the release", so the content hash changed whenever an approval was written.
+    Q5 answers one question: are the deliverables present?
+    """
     build_root = paths.build_root
     subtitles_artifact = paths.subtitles_path()
     if (
@@ -243,48 +254,32 @@ def _q5(paths: LessonPaths) -> dict:
     if not final.is_file():
         final = build_root / "final" / "course-video.mp4"
     required["final_video"] = final
-    missing = [name for name, path in required.items() if path is None or not path.is_file()]
-    review = _load(build_root / "quality" / "review-approval.json")
-    release = _load(build_root / "quality" / "release-approval.json")
-    review_ok = bool(
-        review
-        and review.get("decision") == "approved"
-        and str(review.get("approved_by") or "").strip()
-    )
-    release_ok = bool(
-        release
-        and release.get("decision") == "approved"
-        and str(release.get("approved_by") or "").strip()
-    )
+    missing = [
+        name for name, path in required.items() if path is None or not path.is_file()
+    ]
+    artifacts: dict = {
+        name: path is not None and path.is_file() for name, path in required.items()
+    }
+    storyboard = paths.lesson_dir / "authoring" / "storyboard-review.json"
+    artifacts["storyboard_signoff"] = storyboard.is_file()
+    if storyboard.is_file():
+        artifacts["storyboard_review_sha256"] = file_sha256(storyboard)
     if missing:
         return {
             "status": BLOCKED,
             "reason": "missing release artifacts: " + ", ".join(missing),
             "evidence": [],
             "missing": missing,
-        }
-    if not review_ok:
-        return {
-            "status": WARN,
-            "reason": "all release artifacts present; human review approval is pending",
-            "evidence": ["build/<slug>/quality/review-approval.json"],
-        }
-    if not release_ok:
-        return {
-            "status": WARN,
-            "reason": "human review approved; release sign-off is pending",
-            "evidence": [
-                "build/<slug>/quality/review-approval.json",
-                "build/<slug>/quality/release-approval.json",
-            ],
+            "artifacts": artifacts,
         }
     return {
         "status": PASS,
-        "reason": "all release artifacts present, reviewed and release-approved",
+        "reason": "every release artifact is present",
         "evidence": [
-            "build/<slug>/quality/review-approval.json",
-            "build/<slug>/quality/release-approval.json",
+            "build/<slug>/quality/media-qc.json",
+            "build/<slug>/final/build-report.json",
         ],
+        "artifacts": artifacts,
     }
 
 
@@ -293,9 +288,9 @@ WARNING_CLASS = {
     "Q1": "human_review",
     "Q2": "human_review",
     "Q3": "human_review",
-    # Skipped stages and missing approvals block a release.
+    # Skipped stages block a release.  Q5 has no approval-derived warning: its
+    # content is PASS or BLOCKED, and approvals are a separate state.
     "Q4": "blocking",
-    "Q5": "blocking",
 }
 
 
@@ -306,6 +301,19 @@ def _classify(dimensions: list[dict]) -> list[dict]:
         else:
             item["warning_class"] = None
     return dimensions
+
+
+def _approval_state(data: dict | None) -> dict:
+    if not isinstance(data, dict):
+        return {"present": False}
+    return {
+        "present": True,
+        "decision": data.get("decision"),
+        "approved_by": data.get("approved_by"),
+        "approved_at": data.get("approved_at"),
+        "lesson": data.get("lesson"),
+        "stage": data.get("stage"),
+    }
 
 
 def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Path]:
@@ -319,41 +327,67 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
             {"id": "Q5", "name": "最终交付", "engine": "Release QA", **_q5(paths)},
         ]
     )
-    statuses = {item["status"] for item in dimensions}
-    build_pass = dimensions[3]["status"] in {PASS, WARN}
-    verify_fail = (not build_pass) or BLOCKED in statuses
-    verify_incomplete = INCOMPLETE in statuses
+    statuses, status_problems = normalize_dimensions({"dimensions": dimensions})
+    for item in dimensions:
+        item["status"] = statuses.get(item["id"], "INCOMPLETE")
+    # A missing or illegal dimension is already INCOMPLETE; never infer a pass.
+    build_pass = statuses.get("Q4") in {PASS, WARN}
+    verify_fail = "BLOCKED" in statuses.values() or "FAIL" in statuses.values()
+    verify_incomplete = bool(status_problems) or not build_pass
+    verify_incomplete = verify_incomplete or "INCOMPLETE" in statuses.values()
     verify_pass = not verify_fail and not verify_incomplete
-    verify_warn = verify_pass and WARN in statuses
-    quality_verified = verify_pass and statuses == {PASS}
+    verify_warn = verify_pass and "WARN" in statuses.values()
+    quality_verified = verify_pass and set(statuses.values()) == {PASS}
     needs_human_review = any(
         item.get("warning_class") == "human_review" for item in dimensions
     )
     blocking_warnings = [
-        item["id"]
-        for item in dimensions
-        if item.get("warning_class") == "blocking"
+        item["id"] for item in dimensions if item.get("warning_class") == "blocking"
     ]
-    review_approval = _load(paths.build_root / "quality" / "review-approval.json")
-    release_approval = _load(paths.build_root / "quality" / "release-approval.json")
-    review_approved = bool(
-        verify_pass
-        and review_approval
-        and review_approval.get("decision") == "approved"
-        and str(review_approval.get("approved_by") or "").strip()
+    risks = [
+        f"{item['id']} {item['name']}: {item['reason']}"
+        for item in dimensions
+        if item["status"] in {WARN, BLOCKED, INCOMPLETE}
+    ]
+    content_sha = quality_content_sha256({"dimensions": dimensions, "risks": risks})
+
+    review = _load(paths.build_root / "quality" / "review-approval.json")
+    release = _load(paths.build_root / "quality" / "release-approval.json")
+    build_report_sha = file_sha256(paths.build_root / "final" / "build-report.json")
+    final = paths.build_root / "final" / "course-video-mixed.mp4"
+    if not final.is_file():
+        final = paths.build_root / "final" / "course-video.mp4"
+    final_sha = file_sha256(final)
+    review_problems = approval_problems(
+        lesson=paths.slug,
+        review=review,
+        release=None,
+        build_report_sha256=build_report_sha,
+        final_video_sha256=final_sha,
+        quality_content_sha256=content_sha,
+        require_release=False,
     )
-    release_approved = bool(
-        review_approved
-        and release_approval
-        and release_approval.get("decision") == "approved"
-        and str(release_approval.get("approved_by") or "").strip()
+    release_problems = approval_problems(
+        lesson=paths.slug,
+        review=review,
+        release=release,
+        build_report_sha256=build_report_sha,
+        final_video_sha256=final_sha,
+        quality_content_sha256=content_sha,
+        require_release=True,
     )
+    review_approved = bool(verify_pass and not review_problems)
+    release_approved = bool(verify_pass and not release_problems)
 
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "lesson": paths.slug,
         "generated_at": _now(),
         "dimensions": dimensions,
+        "approvals": {
+            "review": _approval_state(review),
+            "release": _approval_state(release),
+        },
         "states": {
             "BUILD_PASS": build_pass,
             "VERIFY_PASS": verify_pass,
@@ -367,12 +401,10 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
             "BLOCKED_WARNINGS": blocking_warnings,
             "REVIEW_APPROVED": review_approved,
             "RELEASE_APPROVED": release_approved,
+            "APPROVAL_PROBLEMS": review_problems + release_problems,
+            "STATUS_PROBLEMS": status_problems,
         },
-        "risks": [
-            f"{item['id']} {item['name']}: {item['reason']}"
-            for item in dimensions
-            if item["status"] in {WARN, BLOCKED, INCOMPLETE}
-        ],
+        "risks": risks,
     }
     report["content_sha256"] = quality_content_sha256(report)
     target = paths.build_root / "quality" / "quality-report.json"

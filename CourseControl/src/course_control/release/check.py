@@ -486,6 +486,21 @@ def _shot_review_steps(workspace: Path, shot_review_dir: Path) -> list[Step]:
     )]
 
 
+def _lesson_approval_problems(paths: LessonPaths) -> list[str]:
+    """The human gate, checked against the files it approves."""
+    from course_control.quality.evidence import evidence_problems
+
+    return evidence_problems(
+        lesson=paths.slug,
+        review_path=paths.build_root / "quality" / "review-approval.json",
+        release_path=paths.build_root / "quality" / "release-approval.json",
+        build_report=paths.build_root / "final" / "build-report.json",
+        final_video=_final_video(paths),
+        quality_report=paths.build_root / "quality" / "quality-report.json",
+        require_release=True,
+    )
+
+
 def run_release_check(
     workspace: Path,
     *,
@@ -494,9 +509,11 @@ def run_release_check(
     licences: list[dict] | None = None,
     shot_review_dir: Path | None = None,
 ) -> dict:
+    approvals: list[str] = []
     if paths is not None:
         steps = _lesson_steps(workspace.resolve(), paths)
         subject = {"kind": "lesson", "id": paths.slug}
+        approvals = _lesson_approval_problems(paths)
     elif topic_video is not None:
         steps = _topic_steps(workspace.resolve(), topic_video, licences)
         subject = {"kind": "topic_video", "id": topic_video.stem}
@@ -512,7 +529,10 @@ def run_release_check(
         "subject": subject,
         "status": status,
         "steps": [step.as_dict() for step in steps],
-        "delivery_allowed": status in {PASS, PASS_WITH_EXEMPTION},
+        "approval_problems": approvals,
+        # A pass status only says the automatic checks ran.  Delivery also
+        # needs both human approvals, bound to this build and film.
+        "delivery_allowed": status in {PASS, PASS_WITH_EXEMPTION} and not approvals,
     }
 
 

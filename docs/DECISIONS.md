@@ -1245,3 +1245,43 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 7. **只做 vertical slice**：风水 e01 的 ridge / valley / water 三个环境 + a1/a2/a3 三个镜头，先 blockout/animatic，再只推进两个 hero 镜头；不先建通用平台。
 
 **后果**：环境改一次，所有引用镜头复用；镜头可独立调相机与输出；AI 产物可校验、可复现。旧的单文件 `scenes/*.json` 仍兼容 `--recipe`，但新场景写 environment + shot。发布门禁仍是最终交付质量，Schema 只保证可构建与资产存在。
+
+## D-105 内容哈希只覆盖可复算事实，审批状态单独存放
+
+**背景**：`quality-report.json` 的 `content_sha256` 曾包含 Q5 的审批派生状态与理由，review 批准写入后哈希改变，release 批准又要求 review 绑定当前哈希，形成 review/release 互锁；package 读取的 `RELEASE_APPROVED` 又是批准前写入的旧值。
+
+**决策**：
+
+1. **内容投影**只含 Q1–Q4 的状态与理由、Q5 的产物事实、由这些事实派生的 risks；Q5 的审批字段不参与哈希。
+2. **审批状态**（review/release 是否具名批准、时间、绑定哈希）单独存放；报告里的派生布尔值读取时复算，不作为证据。
+3. **证书、门禁、release-check、release-approve、package、package-verify 共用** `course_control.quality.evidence` 的封闭 Q 枚举与 `evidence_problems`，不再各自复制判断。
+4. **具名审批**：`human`、`owner`、`system`、`claude` 等角色/机器名一律拒绝；审批必须带 `lesson`、`stage` 与三方哈希。
+5. **schema 2**：`quality-report`、`certificate` 与 approval 升到 schema 2；schema 1 是历史记录，读取端要求重新生成或重签，不静默兼容。
+
+**后果**：review → release 路径上内容哈希恒定；批准不会让被批准的内容失效；旧 `"human"` 记录不再被接受，已有课程再次发布前需具名重签。
+
+## D-106 交付顺序：release-approve → package → package-verify
+
+**背景**：原文档把 package 排在 release-approve 之前，而 package 只有在 release 已批准时才能是 pass，于是交付包永远停在 incomplete；`release-approve` 又只读已有报告，没有跑完整链。
+
+**决策**：
+
+1. **顺序**：`release-check`（自动全链）→ `release-approve`（具名，内部先跑同一全链）→ `package`（全部检查与审批成立才 pass）→ `package-verify`（重算证据）。
+2. **写审批不改内容**：批准文件写入后复算内容哈希，必须与批准时一致，否则删除该批准并退出 2。
+3. **包 schema 升到 2**：凡是 `present` 的条目必须有有效 sha256；分镜要求从质量报告的 Q5 产物事实推导并完整复算签字链；包内路径拒绝 symlink/junction 与其祖先；旧 schema 1 包作为历史记录不再验证，`package-verify` 明确提示重新打包。
+4. **非 pass 不覆盖**：`incomplete` 与 `fail` 都写在 `deliver/<slug>.attempt/`，已安装的 pass 包与清单保持不变。
+
+**后果**：交付包不再依赖人工重跑报告；schema 1 旧包需要重新打包才能通过 `package-verify`。
+
+## D-107 开发回归与生产检查分开，路径边界先于修复
+
+**背景**：`check.ps1` 过去直接对生产内容根做 frame audit、写真实异常队列与生产日志；测试与开发证据因此可能混进课程内容根。
+
+**决策**：
+
+1. **开发回归**：`check.ps1` 创建 `%TEMP%/CourseWorkspace/run-<id>` 隔离内容根，设置 `COURSEWORKSPACE_MODE=dev`、`COURSEWORKSPACE_DEV_ROOT`、`COURSEWORKSPACE_DEV_WORKSPACE`；单元测试、夹具、合成课程全链测试只读写该根；成功后删除运行根，日志留在 `%TEMP%/CourseWorkspace/state/last-check.log`。
+2. **生产检查**：`release-check`、`release-approve`、`package`、`package-verify` 必须显式指定生产内容根（`COURSEWORKSPACE_CONTENT_ROOT` 或 `config/local-paths.yaml`），dev 模式直接拒绝；`package` 只写 `<内容根>/deliver/<slug>`，不开放任意 `--out`。
+3. **路径**：源码在仓库；开发临时在 `%TEMP%/CourseWorkspace/`；生产临时在 `<内容根>/build/`；最终交付在 `<内容根>/deliver/`；开发回归日志不写 `<内容根>/runtime/logs/`。
+4. **测试**：`review → release → package → package-verify` 的全链测试在合成课程中构造；junction 用例在 Windows 上不能创建时直接失败，不静默 skip。
+
+**后果**：开发回归不再产生或修改任何生产内容；生产证据只由生产命令写入。真实内容根的 41 个本地课程测试在 dev 模式显式跳过，并计入跳过数。

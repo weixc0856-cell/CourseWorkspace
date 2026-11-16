@@ -44,7 +44,7 @@ uv run course-control producer-rebuild --lesson <slug> --workspace ..
 # 旁白 / 字幕
 uv run course-control narration-build --lesson <slug> --workspace ..
 uv run course-control subtitles-build --lesson <slug> --workspace ..
-uv run course-control subtitles-accept --lesson <slug> --workspace ..
+uv run course-control subtitles-accept --lesson <slug> --by <name> --workspace ..
 uv run course-control burn-subs --lesson <slug> --workspace ..
 
 # 音频策略
@@ -175,7 +175,7 @@ build/<slug>/animation/<scene-stem>.mp4
 - 合成时 `collect` 探测音频时长，Remotion 混音，`verify` 用 V-15 检查音画差。
 - 字幕是可选输入：`lessons/<slug>/subtitles.srt`，由 `subtitles.enabled` 打开；`collect` 复制到 `build/<slug>/subtitles.srt`。
 - 配音走本地 VoxCPM2（50000，唯一实例，谁启动谁停止）；合成与运行时接入见 [本地模型与配音工作流](../docs/本地模型与配音工作流.md)。
-- 本层不做 ASR / 词级对齐；字幕由实测旁白时间轴生成，人工 `subtitles-accept` 后才进入正式字幕。
+- 本层不做 ASR / 词级对齐；字幕由实测旁白时间轴生成，人工 `subtitles-accept --by <name>` 后才进入正式字幕。
 
 ## 报告与日志
 

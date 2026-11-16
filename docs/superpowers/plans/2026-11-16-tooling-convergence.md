@@ -540,3 +540,107 @@ ModelingStudio 33 · ai_runtime 50 · ContentQA 25 · ManimSandbox 18 · Knowled
 ```
 
 仍未关闭：`t1-01` 的内容异常仍是 `incomplete`，原因是 `owner = "unassigned"` 不是具名的人；这需要 owner 本人把队列里的 `owner` 改成姓名，不是 B 的代码缺陷。旧共享队列文件保留为空 entries 的 legacy 记录（已排除出 frame-audit 缓存计数）。B 未提交。
+
+### C · 课程就绪与发布证据（2026-11-16）
+
+按 §8 的默认决策执行：旧 `"human"` 审批不再接受；S9 顺序改为 release-approve → package → package-verify；批准时允许写 build 证据但内容哈希必须不变；会话门禁只对内容根课程强制；package schema 升到 2；Q5 拆成产物事实与审批状态。
+
+| 任务 | 状态 | 证据 |
+| --- | --- | --- |
+| C1 统一证据模块 | **完成** | 新增 `quality/evidence.py`：封闭 Q 枚举、内容投影、`approval_problems`、`evidence_problems`；9 个 `test_evidence` 用例 |
+| C2 报告内容/审批分离 | **完成** | Q5 只放产物事实；审批进 `approvals`；`content_sha256` 在 review→release 前后恒定；`test_quality` 覆盖 |
+| C3 证书封闭枚举 | **完成** | 缺/重复/非法 Q 一律 `INCOMPLETE`；证书 pin 内容哈希 |
+| C4 门禁封闭枚举 | **完成** | 未知 Q 计入 incomplete；Q5 审批派生 WARN 不再阻断；3 个 `evaluate` 负例 |
+| C5 release-check 共同证据 | **完成** | 返回 `approval_problems` 与 `delivery_allowed`；CLI 在未批准时退出 3 并打印原因 |
+| C6 release-approve 全链 | **完成** | 先跑 `run_release_check`；审批写 `lesson`/`stage`/三方哈希；写后复算内容哈希，变化即删除并退出 2；5 个 `test_release_approve` 用例 |
+| C7 package/verify 重算 | **完成** | schema 2；`present` 条目必须 64 位 sha256；审批按 lesson/stage/具名/哈希校验；分镜按 `storyboard_required`；证书 pin 内容；`test_package` 18 个用例 |
+| C8 具名审批 | **完成** | `author-accept --by`、`storyboard-review --by`、`subtitles-accept --by`；`ApprovalEntry.approved_by` 无默认值；decisions 记录 `reviewed_by`；`assert_storyboard_signed` 拒绝机器名 |
+| C9 会话门禁范围 | **完成** | `is_course_lesson`：只对 `<内容根>/lessons/` 下的课程要求分镜签字；fixture 只校验身份；`scene-run` 本就只解析内容根课程 |
+| C10 mtime 回退 | **完成** | 输入集无法枚举即 stale，不再使用写死的旧列表 |
+| C11 包隔离 | **完成** | 输出根、临时/备份/attempt 目录不得是链接；源文件与包内条目拒绝 symlink/junction 及祖先；`delivery_root_for` 不再 resolve；失败与 `fail` 都不覆盖已安装包 |
+| A5 契约与记录同步 | **完成** | 生产流水线 S9 与机读表改为 approve→package→verify；ACCEPTANCE 更新交付顺序与包复核；DECISIONS 新增 D-105（内容/审批分离）与 D-106（交付顺序与 schema 2） |
+
+**实现口径**：
+
+- `release-check` 的 `status` 只表示自动检查；`delivery_allowed` 还要求两份具名审批成立。CLI 在 `status=pass` 但未批准时退出 3 并打印 `delivery: not allowed`。
+- `release-approve` 的 review 阶段不要求 release 审批；release 阶段要求 review 审批已绑定当前内容。
+- `package` 的 `pass` 需要证书 pass、Q1–Q5 封闭完整、两份审批、分镜签字与无开放内容异常；`incomplete` 与 `fail` 都写 `.attempt`。
+- 旧 schema 1 包不再通过 `package-verify`，作为历史记录保留。
+
+**C 的定向结果**：
+
+```
+CourseControl: Ran 877 tests ... OK (skipped=9)
+docs map ok (105 documents)
+pipeline ok (10 stages)
+path check ok
+```
+
+**C 的最终回归**：
+
+```
+check log: <内容根>/runtime/logs/check-20261116-235607.log
+check summary: checks=53 failed=0 content_exceptions=1
+check ok
+
+CourseControl: Ran 877 tests ... OK (skipped=9)
+ModelingStudio 33 · ai_runtime 50 · ContentQA 25 · ManimSandbox 18 · KnowledgeStudio 40
+```
+
+第一次回归失败的原因是把 `_release_exit` 插在 `@app.command("release-check")` 与 `release_check` 之间，Typer 把 `dict` 参数当成命令参数，所有 CLI 命令注册失败；装饰器移回后第二次回归全绿。这个错误由 `course-control --help` 与五个受影响命令的冒烟检查在回归前本可发现，后续插入辅助函数时先跑一次 CLI 注册检查。
+
+### C 收口与开发/生产边界（2026-11-17）
+
+第三方复核的 10 条全部核实为真（P0 输出根、主题片审批、`assert_approved`、写入顺序、分镜门禁链接、`package-verify` 分镜自报、`quality_report_sha256` 过期、异常队列 legacy/时序/链接、exclude 前缀）。按 owner 决定：先冻结开发/生产边界，再修 P0/P1；旧包标记历史；质量相关 schema 升 2；删除 `quality_report_sha256`。
+
+**路径边界（D-107）**
+
+| 入口 | 行为 |
+| --- | --- |
+| `check.ps1` | 建 `%TEMP%/CourseWorkspace/run-<id>` 隔离根；`COURSEWORKSPACE_MODE=dev` + 开发根/开发 workspace；单元测试、夹具、frame audit、异常队列、日志全在该根；成功删除运行根，日志留在 `%TEMP%/CourseWorkspace/state/last-check.log` |
+| Python dev 模式 | 仓库 workspace → 开发根；临时 workspace → 自身或显式临时根；解析到生产根的配置直接拒绝；不读生产 config/env |
+| 生产命令 | `release-check`、`release-approve`、`package` 拒绝 dev 模式，要求显式生产内容根；`package` 只写 `<内容根>/deliver/<slug>`，无 `--out` |
+| 证明 | 最终 dev 回归前后，生产内容根的目录/队列/日志/audit 缓存时间戳与大小完全一致 |
+
+**P0/P1 修复**
+
+| 项 | 修复 |
+| --- | --- |
+| P0 输出根删除任意目录 | `build_package` 只接受 `paths.delivery_root`；移除 CLI `--out`；输出/临时/备份/attempt 路径拒绝链接 |
+| P1 主题片审批 | 写入与读取两端都用 `is_named_approver`，要求 `stage=release`；`owner` 与 `review` 阶段都被拒绝 |
+| P1 旧机器审批 | `assert_approved` 读取时拒绝非具名 `approved_by`；旧 `"human"` 授权不再生效 |
+| P1 先写后拒 | `accept_content`/`accept_artifact`/`accept_subtitles` 先验证审批人，再用临时文件 + `os.replace` 写入 |
+| P1 分镜门禁链接 | `is_course_lesson` 改词法包含；`lessons/<slug>` 为 junction 时仍要求签字 |
+| P1 分镜证据自报 | 要求从质量报告 Q5 的 `storyboard_signoff` 事实推导；复算具名签字人、lesson、逐页 approve、页面/决策哈希与 schema |
+| P1 过期哈希 | 从 approval payload 删除 `quality_report_sha256`；内容哈希是唯一稳定绑定 |
+| P1 异常队列 | 选择条目前合并 legacy 同 check 条目；保留 owner/reason/clear_when；写后验 observation 顺序；读取/写入拒绝链接；唯一临时文件；跨进程锁 |
+| P2 exclude 前缀 | 按路径组件边界匹配；先检测链接再排除 |
+
+**schema 2 与全链**
+
+- `quality-report`、`certificate`、approval 与 package manifest 都是 schema 2；schema 1 明确报“历史记录，需重新生成/重签/重打包”。
+- 合成课程的真实全链测试：`run_release_check`（真实 media QC/字幕 QC/gate/证书）→ `release-approve` review → release → `package` → `package-verify`，全部在临时内容根中完成，`verify_package == []`。
+- junction 用例在 Windows 上创建失败时直接失败，不再 skip。
+
+**最终 dev 回归**
+
+```
+check log: %TEMP%/CourseWorkspace/state/last-check.log
+check summary: checks=50 failed=0 content_exceptions=1
+check ok
+
+CourseControl: Ran 892 tests ... OK (skipped=52; 41 are local-course tests not configured in dev)
+ModelingStudio 33 · ai_runtime 50 · ContentQA 25 · ManimSandbox 18 · KnowledgeStudio 40
+git diff --check HEAD -> clean
+production content root -> unchanged (directories, queues, logs, audit cache)
+```
+
+`checks=50` 而非 53：`evidence paths` 是生产证据检查，在 dev 根无证据可核；`book index`/`golden` 依赖真实内容根，在 dev 根不存在。三项都打印为 skip，不写成通过。
+
+**仍未关闭**
+
+- `t1-01` 生产内容根的异常仍为 `incomplete`，owner 未具名；dev 回归的异常只写开发根。
+- `deliver/` 旧包（10 个 schema 1、2 个无 schema、5 个无 manifest）是历史记录，需单独重打包才能通过新 `package-verify`；本轮未迁移、未改动。
+- 旧 `"human"` 审批需具名重签后才能再次发布。
+- `check.ps1` 的 50 项检查中，真实内容相关项在 dev 模式显式跳过；生产检查需单独执行。
+- C 与边界修复均未提交，等复核。

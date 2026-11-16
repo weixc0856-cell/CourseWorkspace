@@ -89,12 +89,17 @@ def session_run_command(
             err=True,
         )
         raise typer.Exit(3)
-    try:
-        sign_paths = LessonPaths.load(workspace.resolve(), lesson_dir)
-        assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
-    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
-        typer.echo(f"blocked: {exc}", err=True)
-        raise typer.Exit(3)
+    from course_control.platform.workspace_layout import is_course_lesson
+
+    if is_course_lesson(workspace.resolve(), lesson_dir):
+        # The sign-off gate protects course production.  Repository fixtures
+        # still prove their lesson identity above, but they are not courses.
+        try:
+            sign_paths = LessonPaths.load(workspace.resolve(), lesson_dir)
+            assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
+        except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+            typer.echo(f"blocked: {exc}", err=True)
+            raise typer.Exit(3)
     try:
         result, manifest, recording = run_session(
             workspace.resolve(), spec, lesson_dir, record=record

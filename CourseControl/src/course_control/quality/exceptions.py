@@ -34,6 +34,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import tempfile
+import time
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
@@ -148,7 +151,34 @@ def legacy_shared_path(build_root: Path) -> Path:
     return Path(build_root).parent / LEGACY_SHARED_REL
 
 
+def _is_link(path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    checker = getattr(path, "is_junction", None)
+    if callable(checker):
+        try:
+            return bool(checker())
+        except OSError:
+            return False
+    return False
+
+
+def _link_on_path(path: Path, levels: int = 3) -> Path | None:
+    """A link at the file or one of its nearest ancestors; never follow it."""
+    current = path
+    for _ in range(levels + 1):
+        if _is_link(current):
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+    return None
+
+
 def _read(path: Path) -> tuple[dict | None, str | None]:
+    linked = _link_on_path(path)
+    if linked is not None:
+        return None, f"path passes through a link and was not followed: {linked}"
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -487,16 +517,64 @@ def _now() -> str:
 
 
 def _write_atomic(path: Path, data: dict) -> None:
+    linked = _link_on_path(path)
+    if linked is not None:
+        raise ExceptionQueueError(
+            f"refusing to write through a link: {linked}"
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_name(path.name + ".tmp")
-    temp.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    fd, name = tempfile.mkstemp(
+        prefix=path.name + ".", suffix=".tmp", dir=str(path.parent)
     )
-    os.replace(temp, path)
+    os.close(fd)
+    temp = Path(name)
+    try:
+        temp.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2) + chr(10),
+            encoding="utf-8",
+        )
+        os.replace(temp, path)
+    finally:
+        if temp.exists():
+            temp.unlink(missing_ok=True)
 
 
-def _read_queue_for_write(build_root: Path) -> tuple[list[dict], bool]:
-    """Return (entries, migrated_from_legacy); raise on anything corrupt."""
+@contextmanager
+def _queue_lock(build_root: Path, timeout_s: float = 30.0):
+    """Serialize observers; a crash leaves a lock that times out, not a hang."""
+    lock = queue_path(build_root).parent / ".exceptions.lock"
+    linked = _link_on_path(lock)
+    if linked is not None:
+        raise ExceptionQueueError(f"queue lock path is a link: {linked}")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.monotonic() + timeout_s
+    handle = None
+    while handle is None:
+        try:
+            handle = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            if time.monotonic() > deadline:
+                raise ExceptionQueueError(f"exception queue is locked: {lock}")
+            time.sleep(0.1)
+    try:
+        os.write(handle, str(os.getpid()).encode("ascii"))
+        os.close(handle)
+        handle = None
+        yield
+    finally:
+        if handle is not None:
+            os.close(handle)
+        lock.unlink(missing_ok=True)
+
+
+def _read_queue_for_write(
+    build_root: Path, lesson: str, check: str
+) -> tuple[list[dict], bool, set[str], bool]:
+    """Merge the per-lesson queue, the legacy lesson queue and the shared queue.
+
+    Returns (entries, migrated_lesson, migrated_checks, index_lists_lesson).
+    Nothing is written; a corrupt or linked file raises.
+    """
     path = queue_path(build_root)
     legacy = legacy_queue_path(build_root)
     if path.is_file() and legacy.is_file():
@@ -506,24 +584,78 @@ def _read_queue_for_write(build_root: Path) -> tuple[list[dict], bool]:
                 "both quality/content-exceptions.json and the legacy "
                 "quality/exceptions.json hold a queue; resolve the legacy import first"
             )
+    entries: list[dict] = []
+    migrated_lesson = False
     if path.is_file():
         entries, problems = _entries(path, f"lesson queue {path.name}")
         if problems:
             raise ExceptionQueueError("; ".join(problems))
-        return entries, False
-    if legacy.is_file():
+    elif legacy.is_file():
         data, problem = _read(legacy)
         if problem:
             raise ExceptionQueueError(f"legacy lesson queue: {problem}")
-        if "results" in data:
-            return [], False
-        if data.get("entries") is None:
-            return [], False
-        entries, problems = _entries(legacy, "legacy lesson queue")
-        if problems:
-            raise ExceptionQueueError("; ".join(problems))
-        return entries, True
-    return [], False
+        if "results" not in data and data.get("entries") is not None:
+            entries, problems = _entries(legacy, "legacy lesson queue")
+            if problems:
+                raise ExceptionQueueError("; ".join(problems))
+            migrated_lesson = True
+
+    migrated_checks: set[str] = set()
+    shared = legacy_shared_path(build_root)
+    if shared.is_file():
+        data, problem = _read(shared)
+        if problem:
+            raise ExceptionQueueError(f"shared queue: {problem}")
+        version = _schema_version_problem(data, "shared queue")
+        if version:
+            raise ExceptionQueueError(version)
+        raw = data.get("entries")
+        if raw is not None and not isinstance(raw, list):
+            raise ExceptionQueueError("shared queue: entries is not a list")
+        existing = {
+            str(item.get("check") or "")
+            for item in entries
+            if isinstance(item, dict)
+        }
+        for index, item in enumerate(raw or []):
+            try:
+                entry = ContentException.model_validate(item)
+            except Exception as exc:  # noqa: BLE001
+                raise ExceptionQueueError(
+                    f"invalid shared entry #{index + 1}: {exc}"
+                ) from exc
+            if entry.lesson != lesson or entry.check != check:
+                continue
+            if entry.check in existing:
+                continue
+            problems = _time_problems(entry) + _observation_problems(entry)
+            if problems:
+                raise ExceptionQueueError("; ".join(problems))
+            entries.append(item)
+            existing.add(entry.check)
+            migrated_checks.add(entry.check)
+
+    index_lists_lesson = False
+    index_path = shared_path(build_root)
+    if index_path.is_file():
+        data, problem = _read(index_path)
+        if problem:
+            raise ExceptionQueueError(f"shared index: {problem}")
+        version = _schema_version_problem(data, "shared index")
+        if version:
+            raise ExceptionQueueError(version)
+        listed = data.get("lessons_with_open_exceptions")
+        if not isinstance(listed, list):
+            raise ExceptionQueueError(
+                "shared index: lessons_with_open_exceptions is not a list"
+            )
+        for item in listed:
+            if not isinstance(item, str) or not SLUG_RE.fullmatch(item):
+                raise ExceptionQueueError(
+                    f"shared index has an invalid lesson id: {item!r}"
+                )
+        index_lists_lesson = lesson in listed
+    return entries, migrated_lesson, migrated_checks, index_lists_lesson
 
 
 def _validated_entries(entries: list, lesson: str) -> list[ContentException]:
@@ -603,7 +735,49 @@ def record_observation(
         raise ExceptionQueueError(str(exc)) from exc
     stamp = at.isoformat(timespec="seconds")
     try:
-        raw_entries, migrated = _read_queue_for_write(build_root)
+        with _queue_lock(build_root):
+            return _record_locked(
+                build_root,
+                lesson,
+                text,
+                at=at,
+                stamp=stamp,
+                resolved=resolved,
+                run_id=run_id,
+                detail=detail,
+                owner=owner,
+                scope=scope,
+                reason=reason,
+                clear_when=clear_when,
+                release_policy=release_policy,
+            )
+    except ExceptionQueueError:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        raise ExceptionQueueError(str(exc)) from exc
+
+
+
+def _record_locked(
+    build_root: Path,
+    lesson: str,
+    text: str,
+    *,
+    at,
+    stamp: str,
+    resolved: bool,
+    run_id: str,
+    detail: str,
+    owner: str,
+    scope: str,
+    reason: str,
+    clear_when: str,
+    release_policy: str,
+) -> dict:
+    try:
+        raw_entries, migrated, migrated_checks, index_lists_lesson = (
+            _read_queue_for_write(build_root, lesson, text)
+        )
         entries = _validated_entries(raw_entries, lesson)
     except ExceptionQueueError:
         raise
@@ -616,35 +790,60 @@ def record_observation(
     )
     if entry is None:
         if resolved:
-            # A passing check with no record is not an exception; do not
-            # invent history.
-            return {"check": text, "lesson": lesson, "status": "none"}
-        entry = ContentException(
-            check=text,
-            lesson=lesson,
-            owner=owner,
-            scope=scope,
-            status="incomplete",
-            reason=reason or text,
-            clear_when=clear_when or "the check no longer reports this problem",
-            release_policy=release_policy,
-            captured=stamp,
-            detail=detail or None,
-            observations=[
-                Observation(
-                    at=stamp,
-                    status="incomplete",
-                    by=text,
-                    run=run_id,
-                    detail=detail,
-                )
-            ],
-        )
-        entries.append(entry)
+            if not migrated_checks and not index_lists_lesson:
+                # A passing check with no record and no open signal is not an
+                # exception; do not invent history.
+                return {"check": text, "lesson": lesson, "status": "none"}
+            entry = ContentException(
+                check=text,
+                lesson=lesson,
+                owner=owner,
+                scope=scope,
+                status="resolved",
+                reason=reason or text,
+                clear_when=clear_when or "the check no longer reports this problem",
+                release_policy=release_policy,
+                captured=stamp,
+                resolved_at=stamp,
+                resolved_by_check=text,
+                resolved_run=run_id or f"check:{stamp}",
+                observations=[
+                    Observation(
+                        at=stamp,
+                        status="resolved",
+                        by=text,
+                        run=run_id or f"check:{stamp}",
+                        detail=detail,
+                    )
+                ],
+            )
+            entries.append(entry)
+        else:
+            entry = ContentException(
+                check=text,
+                lesson=lesson,
+                owner=owner,
+                scope=scope,
+                status="incomplete",
+                reason=reason or text,
+                clear_when=clear_when or "the check no longer reports this problem",
+                release_policy=release_policy,
+                captured=stamp,
+                detail=detail or None,
+                observations=[
+                    Observation(
+                        at=stamp,
+                        status="incomplete",
+                        by=text,
+                        run=run_id,
+                        detail=detail,
+                    )
+                ],
+            )
+            entries.append(entry)
     else:
         if resolved:
             if entry.status == "cleared":
-                # A passing check never overrides a human clear.
                 entry.observations.append(
                     Observation(
                         at=stamp,
@@ -709,8 +908,6 @@ def record_observation(
                 )
             if detail:
                 entry.detail = detail
-            # Fill what a human has not set yet; never overwrite their owner,
-            # scope, reason or clear condition from a regression.
             if not str(entry.owner or "").strip() and owner:
                 entry.owner = owner
             if not str(entry.scope or "").strip() and scope:
@@ -722,9 +919,9 @@ def record_observation(
             if not str(entry.release_policy or "").strip() and release_policy:
                 entry.release_policy = release_policy
 
-    # Validate the result before touching the files.
+    # Validate the result, including the observation history, before writing.
     for item in entries:
-        problems = _time_problems(item)
+        problems = _time_problems(item) + _observation_problems(item)
         if problems:
             raise ExceptionQueueError("; ".join(problems))
 
@@ -746,9 +943,7 @@ def record_observation(
             raise ExceptionQueueError(f"shared index has an invalid lesson id: {item!r}")
         if item not in lessons:
             lessons.append(item)
-    blocking_here = any(
-        item.status in BLOCKING_STATUSES for item in entries
-    )
+    blocking_here = any(item.status in BLOCKING_STATUSES for item in entries)
     if blocking_here and lesson not in lessons:
         lessons.append(lesson)
     if not blocking_here:
@@ -777,21 +972,19 @@ def record_observation(
         {"schema_version": 1, "lessons_with_open_exceptions": lessons},
     )
     if legacy_data is not None and isinstance(legacy_data.get("entries"), list):
+        drop = set(migrated_checks) | {text}
         kept = [
             item
             for item in legacy_data["entries"]
             if not (
                 isinstance(item, dict)
                 and item.get("lesson") == lesson
-                and item.get("check") == text
+                and item.get("check") in drop
             )
         ]
         if len(kept) != len(legacy_data["entries"]):
-            _write_atomic(
-                legacy_path, {"schema_version": 1, "entries": kept}
-            )
+            _write_atomic(legacy_path, {"schema_version": 1, "entries": kept})
     if migrated:
-        # The old per-lesson file is now free for ``course-control checks``.
         old = legacy_queue_path(build_root)
         data, _ = _read(old)
         if data is not None and "results" not in data and data.get("entries") is not None:

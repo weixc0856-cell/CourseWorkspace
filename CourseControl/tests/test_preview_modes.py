@@ -252,10 +252,11 @@ class TopicProjectTest(unittest.TestCase):
                 (context.build_root / "release" / "approval.json").write_text(
                     json.dumps(
                         {
-                            "schema_version": 1,
+                            "schema_version": 2,
                             "project": "demo-topic",
+                            "stage": "release",
                             "decision": "approved",
-                            "approved_by": "owner",
+                            "approved_by": "Wei Chen",
                             "output_sha256": digest,
                         }
                     ),
@@ -264,6 +265,76 @@ class TopicProjectTest(unittest.TestCase):
                 second = release_topic(context)
                 self.assertEqual(second["verdict"], "pass")
                 self.assertTrue((context.delivery_dir / "demo.mp4").is_file())
+
+    def test_topic_approval_needs_a_named_person_and_the_release_stage(self) -> None:
+        from course_control.preview import topic as topic_module
+        from course_control.preview.topic import load_topic, release_topic
+
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            project_dir = workspace / "projects" / "demo"
+            project_dir.mkdir(parents=True)
+            (project_dir / "project.yaml").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "project": {
+                            "id": "demo-topic",
+                            "mode": "topic_video",
+                            "title": "Demo",
+                            "language": "en",
+                        },
+                        "input": {"topic": "demo"},
+                        "production": {
+                            "topic_video": {
+                                "target_seconds": 20,
+                                "entry": "src/demo/index.ts",
+                                "composition": "Demo",
+                                "output": "demo.mp4",
+                                "delivery_dir": "deliver/demo",
+                                "segments": [{"id": "part", "start_s": 0, "end_s": 20}],
+                                "licences": [],
+                            }
+                        },
+                        "media": {"resolution": "1080x1920", "frame_rate": 30},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            context = load_topic(workspace, project_dir / "project.yaml")
+
+            def fake_render(**kwargs):
+                output = Path(kwargs["output"])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_bytes(b"rendered")
+                return SimpleNamespace(status="ok", path=output, detail="")
+
+            with patch.object(topic_module, "render_window", fake_render):
+                release_topic(context)
+                candidate = context.build_root / "release" / "demo.mp4"
+                digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+                for payload in (
+                    {
+                        "schema_version": 1,
+                        "project": "demo-topic",
+                        "stage": "release",
+                        "decision": "approved",
+                        "approved_by": "owner",
+                        "output_sha256": digest,
+                    },
+                    {
+                        "schema_version": 1,
+                        "project": "demo-topic",
+                        "decision": "approved",
+                        "approved_by": "Wei Chen",
+                        "output_sha256": digest,
+                    },
+                ):
+                    (context.build_root / "release" / "approval.json").write_text(
+                        json.dumps(payload), encoding="utf-8"
+                    )
+                    result = release_topic(context)
+                    self.assertEqual(result["verdict"], "incomplete", payload)
 
     def test_unknown_licence_is_not_a_pass(self) -> None:
         from course_control.release.check import _topic_steps

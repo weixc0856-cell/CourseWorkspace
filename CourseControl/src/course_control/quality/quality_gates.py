@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Iterable
 
 from course_control.direction.animation_score import score as motion_score
+from course_control.quality.evidence import normalize_dimensions
 from course_control.direction.beats import load_segments, load_sheet, validate_sheet_report
 from course_control.rendering.grammar import try_load_registry
 
@@ -339,19 +340,40 @@ def evaluate(paths, *, profile: str | None = None, waivers: Iterable[str] = ()) 
     blocking_warnings: list[str] = []
     human_review_items: list[str] = []
     if quality:
-        for dimension in quality.get("dimensions") or []:
-            status = str(dimension.get("status") or "").upper()
+        version = quality.get("schema_version")
+        if type(version) is not int or version != 2:
+            incomplete.append(
+                {
+                    "source": "quality-report",
+                    "id": "schema",
+                    "detail": f"quality report schema_version is {version!r}, not 2",
+                }
+            )
+        statuses, status_problems = normalize_dimensions(quality)
+        by_id = {
+            str(item.get("id")): item
+            for item in quality.get("dimensions") or []
+            if isinstance(item, dict)
+        }
+        for message in status_problems:
+            # Missing, duplicated and unknown dimensions are never a pass.
+            incomplete.append(
+                {"source": "quality-report", "id": "Q", "detail": message}
+            )
+        for qid, status in statuses.items():
+            dimension = by_id.get(qid, {})
             if status in {"INCOMPLETE", "BLOCKED", "FAIL"}:
                 incomplete.append(
                     {
                         "source": "quality-report",
-                        "id": dimension.get("id"),
-                        "detail": dimension.get("reason"),
+                        "id": qid,
+                        "detail": dimension.get("reason") or status,
                     }
                 )
             elif status == "WARN":
                 message = (
-                    f"{dimension.get('id')} {dimension.get('name')}: {dimension.get('reason')}"
+                    f"{qid} {dimension.get('name', '')}: "
+                    f"{dimension.get('reason', '')}"
                 )
                 quality_warnings.append(message)
                 if dimension.get("warning_class") == "blocking":

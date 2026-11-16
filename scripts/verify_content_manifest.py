@@ -74,7 +74,14 @@ def _real_dir(path: Path) -> bool:
 
 
 def _excluded(relative: str, exclude: tuple[str, ...]) -> bool:
-    return any(relative == prefix or relative.startswith(prefix) for prefix in exclude)
+    """Match whole path components: report.json must not hide report.json.old."""
+    for prefix in exclude:
+        value = str(prefix).strip("/")
+        if not value:
+            continue
+        if relative == value or relative.startswith(value + "/"):
+            return True
+    return False
 
 
 def walk_tree(root: Path, exclude: tuple[str, ...] = ()) -> dict:
@@ -114,23 +121,25 @@ def walk_tree(root: Path, exclude: tuple[str, ...] = ()) -> dict:
         for name in sorted(list(dirnames)):
             child = base / name
             relative = child.relative_to(root).as_posix()
-            if _excluded(relative, exclude):
-                dirnames.remove(name)
-                continue
+            # Links are reported before exclusion: an excluded link must not
+            # disappear from the evidence.
             if is_link(child):
                 links.append(relative)
                 if not child.is_symlink():
                     junctions.append(relative)
                 dirnames.remove(name)
+                continue
+            if _excluded(relative, exclude):
+                dirnames.remove(name)
         for name in sorted(filenames):
             item = base / name
             relative = item.relative_to(root).as_posix()
-            if _excluded(relative, exclude):
-                continue
             if is_link(item):
                 links.append(relative)
                 if not item.is_symlink():
                     junctions.append(relative)
+                continue
+            if _excluded(relative, exclude):
                 continue
             size = item.stat().st_size
             total += size
@@ -538,6 +547,16 @@ def selftest() -> int:
             "cache must be a boolean",
         ):
             return 1
+        (tree := content / "exclude-tree").mkdir()
+        (tree / "report.json").write_text("a", encoding="utf-8")
+        (tree / "report.json.old").write_text("b", encoding="utf-8")
+        walked = walk_tree(tree, ("report.json",))
+        if walked["files"] != 1:
+            print(
+                "selftest FAIL: the exclude prefix hid report.json.old: "
+                f"{walked['files']} file(s) counted"
+            )
+            return 1
         if not expect(
             "exclude leaves the target",
             manifest(moves=[move(exclude=["../outside"])]),
@@ -634,6 +653,16 @@ def selftest() -> int:
                 "the junction safety proof is unavailable"
             )
             return 1
+        if junction_ok:
+            excluded_link = content / "excluded-link"
+            _make_junction(excluded_link, outside)
+            walked = walk_tree(content, ("excluded-link",))
+            if "excluded-link" not in walked["links"]:
+                print(
+                    "selftest FAIL: an excluded junction disappeared from the links: "
+                    f"{walked['links']}"
+                )
+                return 1
         if not expect(
             "move bytes",
             manifest(moves=[move(bytes=move()["bytes"] + 1)]),

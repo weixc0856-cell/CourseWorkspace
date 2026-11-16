@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$CleanClone, [switch]$SkipUnitTests)
+param([switch]$CleanClone, [switch]$SkipUnitTests, [switch]$KeepDevRoot)
 
 # Native commands (uv) write progress to stderr. With ErrorActionPreference=Stop,
 # PowerShell 5.1 turns that into NativeCommandError and aborts the script, so the
@@ -21,8 +21,57 @@ if ($missing.Count -gt 0) {
     }
     exit 2
 }
-. (Join-Path $PSScriptRoot "_layout.ps1")
-$content = Get-ContentRoot -Workspace $root
+function Get-ConfiguredContentRoot {
+    param([string]$Workspace)
+    $config = Join-Path $Workspace "config/local-paths.yaml"
+    if (-not (Test-Path -LiteralPath $config)) { return $null }
+    foreach ($line in Get-Content -LiteralPath $config) {
+        if ($line -match '^\s*content_root\s*:\s*(.+?)\s*$') {
+            $value = $matches[1].Trim().Trim('"').Trim("'")
+            if ([System.IO.Path]::IsPathRooted($value)) { return $value }
+            return (Join-Path $Workspace $value)
+        }
+    }
+    return $null
+}
+
+# Development runs use a throwaway content root and never resolve the
+# production one.  Production checks (release-check, package,
+# package-verify) are separate commands against the real root.
+$runId = Get-Date -Format "yyyyMMdd-HHmmss"
+$devBase = Join-Path $env:TEMP "CourseWorkspace"
+$devState = Join-Path $devBase "state"
+$devRoot = Join-Path $devBase ("run-" + $runId)
+New-Item -ItemType Directory -Force -Path $devRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $devState | Out-Null
+# The dev root has no course; this stub only lets the build-layout check
+# recognise the episode-exception directory it creates.  It is not a lesson.
+New-Item -ItemType Directory -Force -Path (Join-Path $devRoot "lessons/t1-01-why-aerodynamics") | Out-Null
+
+$production = Get-ConfiguredContentRoot -Workspace $root
+if ($production) {
+    $devFull = (Resolve-Path -LiteralPath $devRoot).Path
+    $prodFull = $production
+    if (Test-Path -LiteralPath $production) {
+        $prodFull = (Resolve-Path -LiteralPath $production).Path
+    }
+    if ($devFull -eq $prodFull -or $devFull.StartsWith($prodFull + [System.IO.Path]::DirectorySeparatorChar)) {
+        Write-Host "check aborted: the dev root is inside the production content root"
+        Write-Host "  dev root:   $devFull"
+        Write-Host "  production: $prodFull"
+        exit 2
+    }
+}
+
+$env:COURSEWORKSPACE_MODE = "dev"
+$env:COURSEWORKSPACE_DEV_ROOT = $devRoot
+$env:COURSEWORKSPACE_DEV_WORKSPACE = $root
+# Do not set COURSEWORKSPACE_CONTENT_ROOT here: the unit tests that name their
+# own temporary root use it, and a global value would override them.  The
+# PowerShell helpers read COURSEWORKSPACE_DEV_ROOT in dev mode instead.
+Remove-Item Env:COURSEWORKSPACE_CONTENT_ROOT -ErrorAction SilentlyContinue
+$content = $devRoot
+Write-Host "dev content root: $devRoot"
 $script:failed = $false
 $script:checksRun = 0
 $script:contentExceptions = 0
@@ -164,12 +213,12 @@ function Expect-Failure {
     }
 }
 
-$lock = Get-RegressionLock -Root $root -Content $content
+$lock = Get-RegressionLock -Root $root -Content $devState
 if (-not $lock) {
     exit 1
 }
 
-$logDir = Join-Path $content "runtime/logs"
+$logDir = Join-Path $devRoot "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $logPath = Join-Path $logDir ("check-{0}.log" -f (Get-Date -Format "yyyyMMdd-HHmmss"))
 $script:transcript = $false
@@ -183,7 +232,7 @@ catch {
 
 # A test count that silently drops is a deleted test. Compare with the last
 # recorded count and fail on a decrease.
-$countsPath = Join-Path $logDir "test-counts.json"
+$countsPath = Join-Path $devState "test-counts.json"
 $script:previousCounts = @{}
 if (Test-Path -LiteralPath $countsPath) {
     try {
@@ -216,17 +265,10 @@ try {
         uv run --project CourseControl course-control separation --workspace .
     }
 
-    # Missing evidence is allowed only when every path has a recorded
-    # disposition in docs/audit/evidence-decisions.yaml. A clean clone has no
-    # build outputs, so this check is local-only.
-    if ($CleanClone) {
-        Write-Host "skip evidence paths (clean clone: build outputs are not present)"
-    }
-    else {
-        Invoke-Checked "evidence paths" -Quiet {
-            uv run --project CourseControl python scripts/check_evidence.py --workspace .
-        }
-    }
+    # Evidence-path dispositions describe the production content root.  The
+    # development regression has no production evidence to account for, so
+    # this check belongs to the production workflow, not here.
+    Write-Host "skip evidence paths (dev root has no production evidence)"
 
     Invoke-Checked "vendor three.js" -Quiet {
         uv run --project CourseControl course-control vendor-check --workspace .
@@ -247,6 +289,11 @@ try {
         Invoke-TestSuite "ManimSandbox" "ManimSandbox" "ManimSandbox/tests" "ManimSandbox"
         Invoke-TestSuite "KnowledgeStudio" "KnowledgeStudio" "KnowledgeStudio/tests" "KnowledgeStudio"
     }
+    # Node helpers read COURSEWORKSPACE_CONTENT_ROOT directly.  The unit tests
+    # above must run without it (their temp workspaces name their own root),
+    # so set it only for the media checks that follow.
+    $env:COURSEWORKSPACE_CONTENT_ROOT = $devRoot
+
     # Book index and episode cards live in the content root; a clean clone has
     # neither, so the gate only runs where the source material is present.
     $bookIndex = Join-Path $content "runtime/course-content/automotive-aerodynamics/book/index.json"
@@ -297,6 +344,7 @@ try {
             $runId = "check:" + (Get-Date).ToUniversalTime().ToString("o")
             & uv run --project CourseControl course-control exception-observe `
                 --lesson "t1-01-why-aerodynamics" `
+                --build-root (Join-Path $content "build/t1-01-why-aerodynamics") `
                 --check "episode assembly" `
                 --state open `
                 --owner "unassigned" `
@@ -329,6 +377,7 @@ try {
             $runId = "check:" + (Get-Date).ToUniversalTime().ToString("o")
             & uv run --project CourseControl course-control exception-observe `
                 --lesson "t1-01-why-aerodynamics" `
+                --build-root (Join-Path $content "build/t1-01-why-aerodynamics") `
                 --check "episode assembly" `
                 --state resolved `
                 --run-id $runId `
@@ -542,10 +591,16 @@ finally {
     if ($script:transcript) {
         Stop-Transcript | Out-Null
     }
-    if (Test-Path -LiteralPath $logDir) {
-        Get-ChildItem -LiteralPath $logDir -Filter "check-*.log" |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -Skip 20 |
-            Remove-Item -Force -ErrorAction SilentlyContinue
+    $persistLog = Join-Path $devState "last-check.log"
+    if ($logPath -and (Test-Path -LiteralPath $logPath)) {
+        Copy-Item -LiteralPath $logPath -Destination $persistLog -Force -ErrorAction SilentlyContinue
+    }
+    if ($script:failed -or $KeepDevRoot) {
+        Write-Host "dev root kept: $devRoot"
+    }
+    else {
+        Remove-Item -LiteralPath $devRoot -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "dev root removed: $devRoot"
+        Write-Host "last check log: $persistLog"
     }
 }

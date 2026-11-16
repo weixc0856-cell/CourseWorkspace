@@ -5,6 +5,10 @@
 function Get-ContentRoot {
     param([string]$Workspace = (Split-Path -Parent $PSScriptRoot))
 
+    if ($env:COURSEWORKSPACE_MODE -eq "dev" -and $env:COURSEWORKSPACE_DEV_ROOT) {
+        return (Resolve-Path $env:COURSEWORKSPACE_DEV_ROOT).Path
+    }
+
     if ($env:COURSEWORKSPACE_CONTENT_ROOT) {
         return (Resolve-Path $env:COURSEWORKSPACE_CONTENT_ROOT).Path
     }

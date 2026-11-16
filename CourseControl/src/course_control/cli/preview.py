@@ -376,6 +376,15 @@ def preview_pilot(
     raise typer.Exit(0 if not failed else 1)
 
 
+def _release_exit(payload: dict) -> int:
+    """0 only when delivery is allowed; 3 when blocked by a gate or approval."""
+    if payload.get("delivery_allowed"):
+        return 0
+    if payload.get("status") in {"pass", "pass_with_exemption", "incomplete"}:
+        return 3
+    return 1
+
+
 @app.command("release-check")
 def release_check(
     lesson: str = typer.Option(None, "--lesson"),
@@ -388,8 +397,15 @@ def release_check(
     """Run the delivery checks in order and print PASS / FAIL / INCOMPLETE."""
     from course_control.release.check import INCOMPLETE, PASS, PASS_WITH_EXEMPTION, run_release_check
 
+    from course_control.platform.workspace_layout import production_content_root
+
     if bool(lesson) == bool(project):
         typer.echo("give exactly one of --lesson or --project", err=True)
+        raise typer.Exit(2)
+    try:
+        production_content_root(workspace.resolve())
+    except RuntimeError as exc:
+        typer.echo(str(exc), err=True)
         raise typer.Exit(2)
     if lesson:
         try:
@@ -429,10 +445,13 @@ def release_check(
                 typer.echo(f"status: {payload['status']}")
                 for step in payload["steps"]:
                     typer.echo(f"  [{step['status']}] {step['id']}: {step['detail']}")
-            raise typer.Exit(
-                0 if payload["status"] in {PASS, PASS_WITH_EXEMPTION}
-                else (3 if payload["status"] == INCOMPLETE else 1)
-            )
+                for problem in payload.get("approval_problems") or []:
+                    typer.echo(f"  ! approval: {problem}")
+                typer.echo(
+                    "delivery: "
+                    + ("allowed" if payload.get("delivery_allowed") else "not allowed")
+                )
+            raise typer.Exit(_release_exit(payload))
         try:
             context = load_topic(workspace.resolve(), project)
         except Exception as exc:  # noqa: BLE001
@@ -453,10 +472,13 @@ def release_check(
         for step in payload["steps"]:
             for item in (step.get("data") or {}).get("hard_failures") or []:
                 typer.echo(f"  ! {item.get('id')}: {item.get('detail')}")
-    raise typer.Exit(
-        0 if payload["status"] in {PASS, PASS_WITH_EXEMPTION}
-        else (3 if payload["status"] == INCOMPLETE else 1)
-    )
+        for problem in payload.get("approval_problems") or []:
+            typer.echo(f"  ! approval: {problem}")
+        typer.echo(
+            "delivery: "
+            + ("allowed" if payload.get("delivery_allowed") else "not allowed")
+        )
+    raise typer.Exit(_release_exit(payload))
 
 
 @app.command("build-manifest")

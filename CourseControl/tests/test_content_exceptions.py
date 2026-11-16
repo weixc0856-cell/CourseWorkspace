@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -392,6 +393,56 @@ class ContentExceptionTest(unittest.TestCase):
             self.build, "demo", "episode assembly", resolved=False, owner="unassigned"
         )
         self.assertEqual(self._entries()[0]["owner"], "Wei Chen")
+
+    def test_resolved_with_only_a_legacy_entry_migrates(self) -> None:
+        self._legacy({"schema_version": 1, "entries": [ENTRY]})
+        record_observation(self.build, "demo", "episode assembly", resolved=True)
+        entry = self._entries()[0]
+        self.assertEqual(entry["status"], "resolved")
+        self.assertEqual(entry["owner"], "Wei Chen")
+        remaining = json.loads(legacy_shared_path(self.build).read_text("utf-8"))["entries"]
+        self.assertEqual(remaining, [])
+        self.assertIsNone(blocking_exception(self.build, "demo"))
+
+    def test_failure_keeps_the_legacy_owner_and_reason(self) -> None:
+        self._legacy({"schema_version": 1, "entries": [ENTRY]})
+        record_observation(self.build, "demo", "episode assembly", resolved=False)
+        entry = self._entries()[0]
+        self.assertEqual(entry["status"], "incomplete")
+        self.assertEqual(entry["owner"], "Wei Chen")
+        self.assertEqual(entry["reason"], ENTRY["reason"])
+        self.assertEqual(entry["clear_when"], ENTRY["clear_when"])
+
+    def test_observation_going_back_in_time_is_refused(self) -> None:
+        record_observation(self.build, "demo", "episode assembly", resolved=False)
+        before = queue_path(self.build).read_bytes()
+        with self.assertRaises(ExceptionQueueError):
+            record_observation(
+                self.build,
+                "demo",
+                "episode assembly",
+                resolved=False,
+                observed_at=iso(-60),
+            )
+        self.assertEqual(queue_path(self.build).read_bytes(), before)
+
+    def test_linked_queue_is_refused(self) -> None:
+        import subprocess
+
+        outside = self.content / "outside-queue.json"
+        outside.write_text('{"schema_version": 1, "entries": []}', encoding="utf-8")
+        queue_path(self.build).parent.mkdir(parents=True)
+        made = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(queue_path(self.build)), str(outside)],
+            capture_output=True,
+        )
+        if made.returncode != 0:
+            if os.name == "nt":
+                self.fail("cannot create a junction on this Windows host")
+            self.skipTest("junctions are not available here")
+        with self.assertRaises(ExceptionQueueError):
+            record_observation(self.build, "demo", "episode assembly", resolved=False)
+        self.assertEqual(outside.read_text(encoding="utf-8"), '{"schema_version": 1, "entries": []}')
 
     def test_index_tracks_the_blocking_state(self) -> None:
         record_observation(self.build, "demo", "episode assembly", resolved=False)

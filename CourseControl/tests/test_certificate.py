@@ -38,6 +38,7 @@ class QualityCertificateTest(unittest.TestCase):
         self._write(
             "quality-report.json",
             {
+                "schema_version": 2,
                 "dimensions": [
                     {"id": "Q1", "status": "PASS"},
                     {"id": "Q2", "status": "PASS"},
@@ -56,17 +57,34 @@ class QualityCertificateTest(unittest.TestCase):
     def test_partial_quality_report_is_not_pass(self) -> None:
         self._write("defects.json", {"defects": []})
         self._write("gate.json", {"verification_status": "pass"})
-        self._write("quality-report.json", {"dimensions": [{"id": "Q1", "status": "PASS"}]})
+        self._write("quality-report.json", {"schema_version": 2, "dimensions": [{"id": "Q1", "status": "PASS"}]})
         certificate = issue(self.build, "demo")
         self.assertEqual(certificate.verdict, "incomplete")
 
     def test_release_step_blocking_is_incomplete(self) -> None:
         self._write("defects.json", {"defects": []})
         self._write("gate.json", {"verification_status": "pass"})
-        self._write("quality-report.json", {"dimensions": [{"id": "Q1", "status": "PASS"}]})
+        self._write("quality-report.json", {"schema_version": 2, "dimensions": [{"id": "Q1", "status": "PASS"}]})
         certificate = issue(self.build, "demo", blocking=["storyboard_signoff"])
         self.assertEqual(certificate.verdict, "incomplete")
         self.assertIn("storyboard_signoff", certificate.reason or "")
+
+    def test_schema_1_report_is_not_pass(self) -> None:
+        self._write("defects.json", {"defects": []})
+        self._write("gate.json", {"verification_status": "pass"})
+        self._write(
+            "quality-report.json",
+            {
+                "schema_version": 1,
+                "dimensions": [
+                    {"id": qid, "status": "PASS"}
+                    for qid in ("Q1", "Q2", "Q3", "Q4", "Q5")
+                ],
+            },
+        )
+        certificate = issue(self.build, "demo")
+        self.assertEqual(certificate.verdict, "incomplete")
+        self.assertIn("schema_version", certificate.reason or "")
 
     def test_incomplete_gate_is_incomplete(self) -> None:
         self._write("defects.json", {"defects": []})

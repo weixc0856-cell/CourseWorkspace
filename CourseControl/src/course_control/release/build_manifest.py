@@ -197,23 +197,21 @@ class Freshness:
 
 
 def _mtime_freshness(paths: LessonPaths, video: Path) -> Freshness:
-    """Weak fallback: the film must be newer than every current input file."""
+    """Weak fallback: the film must be newer than every current input file.
+
+    If the current input set cannot even be enumerated, the answer is stale:
+    the old hard-coded input list let a renamed or moved input read as fresh.
+    """
     try:
-        inputs = [path for _, path in declared_inputs(paths, paths.workspace)]
-    except (AttributeError, OSError):
-        inputs = [
-            paths.lesson_dir / "lesson.yaml",
-            paths.lesson_dir / "authoring" / "episode.spec.yaml",
-            paths.lesson_dir / "authoring" / "quality.rubric.yaml",
-            paths.build_root / "contracts" / "timeline.spec.json",
-            paths.build_root / "narration" / "narration.meta.json",
-            paths.build_root / "subtitles.srt",
-        ]
+        inputs = declared_inputs(paths, paths.workspace)
+    except (AttributeError, OSError) as exc:
+        return Freshness(
+            False,
+            MTIME_WEAK,
+            reason=f"stale: cannot evaluate the declared inputs: {exc}",
+        )
     video_time = video.stat().st_mtime
-    for name, item in (
-        inputs if isinstance(inputs, list) and inputs and isinstance(inputs[0], tuple)
-        else [(f"input{i}", value) for i, value in enumerate(inputs)]
-    ):
+    for name, item in inputs:
         if not item.is_file():
             return Freshness(
                 False,

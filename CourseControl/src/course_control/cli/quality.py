@@ -181,6 +181,9 @@ def exception_observe_command(
     check: str = typer.Option(..., "--check"),
     state: str = typer.Option("open", "--state", help="open or resolved"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    build_root: Path | None = typer.Option(
+        None, "--build-root", help="record against this build root (dev fixtures)"
+    ),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     run_id: str = typer.Option("", "--run-id"),
     detail: str = typer.Option("", "--detail"),
@@ -202,15 +205,32 @@ def exception_observe_command(
     if state not in {"open", "resolved"}:
         typer.echo("state must be open or resolved", err=True)
         raise typer.Exit(2)
-    try:
-        paths = _paths(workspace, lesson, lesson_dir)
-    except ContractError as exc:
-        typer.echo(str(exc), err=True)
-        raise typer.Exit(1)
+    if build_root is not None:
+        from course_control.platform.workspace_layout import content_root
+
+        allowed = content_root(workspace.resolve()).resolve()
+        candidate = build_root.resolve()
+        try:
+            candidate.relative_to(allowed)
+        except ValueError:
+            typer.echo(
+                f"build root must stay inside the content root: {candidate}", err=True
+            )
+            raise typer.Exit(2)
+        target_root = candidate
+        target_lesson = lesson
+    else:
+        try:
+            paths = _paths(workspace, lesson, lesson_dir)
+        except ContractError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        target_root = paths.build_root
+        target_lesson = paths.slug
     try:
         result = record_observation(
-            paths.build_root,
-            paths.slug,
+            target_root,
+            target_lesson,
             check,
             resolved=state == "resolved",
             observed_at=observed_at,

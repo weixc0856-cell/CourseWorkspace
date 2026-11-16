@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -14,6 +16,7 @@ from course_control.content.duration import resolve
 from course_control.rendering.engine_router import VisualRequirement, route_engine
 from course_control.content.paths import LessonPaths
 from course_control.platform.workspace_layout import build_root_for
+from course_control.quality.evidence import is_named_approver
 from course_control.authoring.llm import AuthoringClient, AuthoringError
 from course_control.authoring.models import (
     ApprovalEntry,
@@ -449,7 +452,13 @@ def save_approval(lesson_dir: Path, approval: ApprovalFile) -> Path:
     return path
 
 
-def approve(lesson_dir: Path, kind: str, relative_path: str) -> ApprovalEntry:
+def approve(
+    lesson_dir: Path, kind: str, relative_path: str, approved_by: str
+) -> ApprovalEntry:
+    if not is_named_approver(approved_by):
+        raise AuthoringError(
+            f"approval must name a person, not {approved_by!r}"
+        )
     target = lesson_dir.resolve() / relative_path
     if not target.is_file():
         raise AuthoringError(f"cannot approve missing file: {target}")
@@ -458,7 +467,7 @@ def approve(lesson_dir: Path, kind: str, relative_path: str) -> ApprovalEntry:
         kind=kind,
         path=relative_path,
         sha256=_sha(target),
-        approved_by="human",
+        approved_by=approved_by.strip(),
         approved_at=_now(),
     )
     approval.approvals.append(entry)
@@ -474,6 +483,11 @@ def assert_approved(lesson_dir: Path, relative_path: str) -> None:
     entry = approval.find(relative_path)
     if entry is None:
         raise AuthoringError(f"file has no approval entry: {relative_path}")
+    if not is_named_approver(entry.approved_by):
+        raise AuthoringError(
+            f"file was approved by {entry.approved_by!r}, not a named person; "
+            "approve it again with --by"
+        )
     if entry.sha256 != _sha(target):
         raise AuthoringError(f"file changed after approval: {relative_path}")
 
@@ -482,7 +496,9 @@ SIGNOFF_KIND = "storyboard-page"
 SIGNOFF_FILE = "authoring/storyboard-review.json"
 
 
-def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
+def sign_storyboard_page(
+    workspace: Path, lesson_dir: Path, approved_by: str
+) -> list[str]:
     """Record the owner's sign-off on the static storyboard page.
 
     The reviewed page is copied into the lesson, so later build cleanup or a
@@ -490,6 +506,10 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
     the effective storyboard, the page, the slide source and the page's own
     hash; ``approval.json`` pins the review file itself.
     """
+    if not is_named_approver(approved_by):
+        raise AuthoringError(
+            f"storyboard sign-off must name a person, not {approved_by!r}"
+        )
     lesson_dir = lesson_dir.resolve()
     from course_control.content.paths import LessonPaths
 
@@ -522,7 +542,7 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
     if not decisions_path.is_file():
         raise AuthoringError(
             "per-page decisions are missing; run course-control storyboard-review "
-            f"--lesson {lesson_dir.name} --approve 1,2,..."
+            f"--lesson {lesson_dir.name} --approve 1,2,... --by <name>"
         )
     decisions_bytes = decisions_path.read_bytes()
     decisions = json.loads(decisions_bytes.decode("utf-8"))
@@ -532,6 +552,10 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
         raise AuthoringError("decisions were made against a different storyboard; review again")
     if decisions.get("html_sha256") != manifest.get("html_sha256"):
         raise AuthoringError("decisions were made against a different page; review again")
+    if not is_named_approver(decisions.get("reviewed_by")):
+        raise AuthoringError(
+            "per-page decisions must name the reviewer; run storyboard-review --by"
+        )
     rows = decisions.get("pages") or []
     numbers = sorted(int(row.get("page") or 0) for row in rows if isinstance(row, dict))
     if numbers != list(range(1, int(manifest.get("pages") or 0) + 1)):
@@ -572,13 +596,13 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
         "decisions_path": "authoring/storyboard-decisions.json",
         "decisions_sha256": _sha(reviewed_decisions),
         "missing_captures": manifest.get("missing_captures") or [],
-        "approved_by": "human",
+        "approved_by": approved_by.strip(),
         "approved_at": _now(),
     }
     target = lesson_dir / SIGNOFF_FILE
     target.parent.mkdir(parents=True, exist_ok=True)
     _write_json(target, review)
-    approve(lesson_dir, SIGNOFF_KIND, SIGNOFF_FILE)
+    approve(lesson_dir, SIGNOFF_KIND, SIGNOFF_FILE, approved_by)
     return [SIGNOFF_FILE, "authoring/storyboard-review.html"]
 
 
@@ -599,10 +623,15 @@ def assert_storyboard_signed(lesson_dir: Path, storyboard_source: Path | None) -
         raise AuthoringError(
             "storyboard page has not been signed; run course-control storyboard-page "
             f"--lesson {lesson_dir.name}, then course-control storyboard-review "
-            f"--lesson {lesson_dir.name} --approve 1,2,..., then course-control "
-            f"author-accept --lesson {lesson_dir.name} --kind {SIGNOFF_KIND}"
+            f"--lesson {lesson_dir.name} --approve 1,2,... --by <name>, then "
+            "course-control "
+            f"author-accept --lesson {lesson_dir.name} --kind {SIGNOFF_KIND} --by <name>"
         )
     review = json.loads(review_path.read_text(encoding="utf-8"))
+    if not is_named_approver(review.get("approved_by")):
+        raise AuthoringError(
+            "storyboard sign-off was not made by a named person; sign it again"
+        )
     if review.get("storyboard_sha256") != _sha(source):
         raise AuthoringError(
             "storyboard changed after sign-off; rebuild the page and sign it again"
@@ -667,10 +696,31 @@ CONTENT_TARGETS = {
 }
 
 
-def accept_artifact(workspace: Path, lesson_dir: Path, kind: str) -> list[str]:
+def _write_atomic_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, name = tempfile.mkstemp(
+        prefix=path.name + ".", suffix=".tmp", dir=str(path.parent)
+    )
+    os.close(fd)
+    temp = Path(name)
+    try:
+        temp.write_text(text, encoding="utf-8")
+        os.replace(temp, path)
+    finally:
+        if temp.exists():
+            temp.unlink(missing_ok=True)
+
+
+def accept_artifact(
+    workspace: Path, lesson_dir: Path, kind: str, approved_by: str
+) -> list[str]:
     """Copy a candidate artifact into lessons/<slug>/authoring and approve it."""
+    if not is_named_approver(approved_by):
+        raise AuthoringError(
+            f"approval must name a person, not {approved_by!r}"
+        )
     if kind == SIGNOFF_KIND:
-        return sign_storyboard_page(workspace, lesson_dir)
+        return sign_storyboard_page(workspace, lesson_dir, approved_by)
     source = candidate_dir(workspace, lesson_dir)
     lesson_dir = lesson_dir.resolve()
     mapping = {
@@ -703,15 +753,18 @@ def accept_artifact(workspace: Path, lesson_dir: Path, kind: str) -> list[str]:
         if not src.is_file():
             raise AuthoringError(f"candidate missing: {candidate_name}")
         dst = lesson_dir / relative
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        _write_atomic_text(dst, src.read_text(encoding="utf-8"))
         written.append(relative)
-    approve(lesson_dir, kind, primary)
+    approve(lesson_dir, kind, primary, approved_by)
     return written
 
 
-def accept_content(workspace: Path, lesson_dir: Path) -> list[str]:
+def accept_content(workspace: Path, lesson_dir: Path, approved_by: str) -> list[str]:
     """Promote approved candidate content into lessons/<slug>/."""
+    if not is_named_approver(approved_by):
+        raise AuthoringError(
+            f"approval must name a person, not {approved_by!r}"
+        )
     source = candidate_dir(workspace, lesson_dir)
     mapping = {
         "slides": (source / "slides.md", lesson_dir.resolve() / "slides.md"),
@@ -722,8 +775,8 @@ def accept_content(workspace: Path, lesson_dir: Path) -> list[str]:
     for _, (src, dst) in mapping.items():
         if not src.is_file():
             raise AuthoringError(f"candidate missing: {src}")
-        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        _write_atomic_text(dst, src.read_text(encoding="utf-8"))
         written.append(dst.relative_to(lesson_dir.resolve()).as_posix())
     for relative in written:
-        approve(lesson_dir, "content", relative)
+        approve(lesson_dir, "content", relative, approved_by)
     return written
