@@ -135,6 +135,7 @@
 - [stabilization/QUALITY_STATE_MACHINE.md](stabilization/QUALITY_STATE_MACHINE.md)：2026-11-10 BUILD/VERIFY/QUALITY/REVIEW/RELEASE 状态机（基线记录）（记录）
 - [stabilization/TASK_EXECUTION_STANDARD.md](stabilization/TASK_EXECUTION_STANDARD.md)：2026-11-10 状态、检查点与 resume（基线记录）（记录）
 - [stabilization/VISUAL_STANDARD.md](stabilization/VISUAL_STANDARD.md)：2026-11-10 品牌与视觉密度（基线记录）（记录）
+- [superpowers/plans/2026-11-16-tooling-convergence.md](superpowers/plans/2026-11-16-tooling-convergence.md)：工具链收敛的子项目、任务顺序、失败测试与验收矩阵（记录）
 - [v2/P0-基线审计.md](v2/P0-基线审计.md)：V2 起点的基线审计（记录）
 - [v2/Three.js-技术借鉴清单.md](v2/Three.js-技术借鉴清单.md)：可借鉴的 Three.js 技术清单（未纳入）（记录）
 - [v2/W3-T1-01-交付工单.md](v2/W3-T1-01-交付工单.md)：W3 T1-01 整集交付工单（记录）
