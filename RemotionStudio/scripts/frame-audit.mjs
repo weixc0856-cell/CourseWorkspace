@@ -108,12 +108,24 @@ const auditInPage = () => {
   let skippedSymbolic = 0;
   for (const element of scope.querySelectorAll('*')) {
     if (element.closest('[data-audit-ignore]')) continue;
-    const direct = Array.from(element.childNodes)
+    // KaTeX lays fractions out with nested, absolutely positioned spans whose
+    // boxes legitimately overlap (numerator over denominator). Auditing inside
+    // .katex reports "2" over "1" on every fraction, so the typesetter's own
+    // subtree is excluded; the formula's outer box is still audited.
+    const katexRoot = element.closest('.katex');
+    if (katexRoot && katexRoot !== element) continue;
+    let direct = Array.from(element.childNodes)
       .filter((node) => node.nodeType === Node.TEXT_NODE)
       .map((node) => node.textContent.trim())
       .join(' ')
       .trim();
-    if (!direct) continue;
+    if (!direct) {
+      // The typesetter's root box carries no direct text, but it still has to
+      // respect the safe area and must not sit on other text. Inner spans are
+      // skipped because KaTeX overlaps them by design (numerator/denominator).
+      if (katexRoot === element) direct = '[formula]';
+      else continue;
+    }
     const style = getComputedStyle(element);
     let visible = true;
     let ancestorOpacity = 1;

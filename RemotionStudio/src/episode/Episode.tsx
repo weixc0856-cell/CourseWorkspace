@@ -5,7 +5,7 @@ import {PhotoScene} from '../chapter/PhotoScene';
 import {CarScene} from '../chapter/CarScene';
 import {MechanismScene} from '../chapter/MechanismScene';
 import {EvidenceScene} from '../chapter/EvidenceScene';
-import {Formula} from '../chapter/Formula';
+import {FormulaBlock} from '../components/FormulaBlock';
 import timing from './timing.json';
 
 const COMPONENTS: Record<string, React.FC<any>> = {
@@ -13,7 +13,7 @@ const COMPONENTS: Record<string, React.FC<any>> = {
   CarFlowScene: CarScene,
   MechanismDiagram: MechanismScene,
   ChartOverlay: EvidenceScene,
-  FormulaBlock: (props) => <Formula tex={props.tex} size={props.size ?? 44} />,
+  FormulaBlock: FormulaBlock,
 };
 
 type Instance = {component: string; duration: number; props?: Record<string, unknown>};

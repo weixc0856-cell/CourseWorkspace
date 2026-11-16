@@ -94,21 +94,21 @@
           "component": "FormulaBlock",
           "duration": 21.139,
           "props": {
-            "tex": "60 \to 190\\,km/h \u0007pprox 10\times"
+            "tex": "60 \\to 190\\,km/h \\approx 10\\times"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 22.244,
           "props": {
-            "tex": "c_D = \frac{F}{\tfrac{1}{2}\rho A v^2}"
+            "tex": "c_D = \\frac{F}{\\tfrac{1}{2}\\rho A v^2}"
           }
         },
         {
           "component": "FormulaBlock",
           "duration": 22.244,
           "props": {
-            "tex": "c_D\\,\text{same},\\; A\\,\text{different}"
+            "tex": "c_D\\,\\text{same},\\; A\\,\\text{different}"
           }
         },
         {
@@ -291,6 +291,13 @@
           "duration": 24.293,
           "props": {
             "title": "Five things to keep"
+          }
+        },
+        {
+          "component": "ChartOverlay",
+          "duration": 18.927,
+          "props": {
+            "title": "Sources"
           }
         }
       ]
