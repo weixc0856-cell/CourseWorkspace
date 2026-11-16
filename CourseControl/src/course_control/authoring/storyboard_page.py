@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from PIL import Image
 
 STYLE_RE = re.compile(r"<style\b.*?</style>", re.DOTALL | re.IGNORECASE)
 HEADING_RE = re.compile(r"<h([12])\b[^>]*>(.*?)</h\1>", re.DOTALL | re.IGNORECASE)
@@ -51,6 +52,8 @@ def _text(fragment: str) -> str:
 def split_slides(text: str) -> list[str]:
     """Return one title per slide page. Pages are separated by a ``---`` line."""
     body = STYLE_RE.sub("", text)
+    if not body.strip():
+        return []
     titles: list[str] = []
     for index, part in enumerate(re.split(r"(?m)^---[ \t]*$", body), start=1):
         match = HEADING_RE.search(part)
@@ -60,10 +63,20 @@ def split_slides(text: str) -> list[str]:
 
 
 def _capture(slides_dir: Path, number: int) -> Path | None:
+    """Return a non-empty, decodable capture at a usable size."""
     for pattern in (f"slide-{number:03d}.png", f"page-{number:03d}.png"):
         candidate = slides_dir / pattern
-        if candidate.is_file():
-            return candidate
+        if not candidate.is_file() or candidate.stat().st_size == 0:
+            continue
+        try:
+            with Image.open(candidate) as image:
+                image.verify()
+            with Image.open(candidate) as image:
+                if image.width < 16 or image.height < 9:
+                    continue
+        except Exception:  # noqa: BLE001 - a broken image is a missing capture
+            continue
+        return candidate
     return None
 
 
@@ -129,6 +142,8 @@ def collect(
         by_slide.setdefault(slide, []).append(dict(shot))
 
     total = max([len(titles), *by_slide.keys()], default=0)
+    if total < 1:
+        raise ValueError("storyboard has no pages; add slides or shots before review")
     pages: list[Page] = []
     slide_hashes: list[dict] = []
     for number in range(1, total + 1):

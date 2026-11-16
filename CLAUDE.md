@@ -75,6 +75,8 @@
   course-control retime --lesson <slug>                       # 按实测旁白重算时间轴
   course-control subtitles-rebuild --lesson <slug>            # 字幕重建（实测对齐）
   course-control release-check --lesson <slug>                # 发布三态
+  course-control release-approve --lesson <slug> --by <name>  # 课程 review/release 签核
+  course-control release-approve --project <project.yaml> --by <name>  # 主题片候选签核
   course-control contract-validate --kind product|ledger|timeline --path <p>
   scripts/build-lesson.ps1 -Lesson <slug>                     # 完整构建
   scripts/check_segment_assets.py --lesson-dir <dir>          # 绑定扫描（缺参/复用图/禁令词）
@@ -83,6 +85,7 @@
   python scripts/static_hold.py --film <mp4>                  # 死画面检测
   python scripts/check_docs.py                                # 文档地图/链接/命令/路径
   python scripts/check_build_layout.py <build> <lessons> <fixtures>  # build 顶层布局
+  python scripts/verify_content_manifest.py --manifest <json> --content-root <root>  # 内容根变更清单复核
   ```
   其余子命令见 `course-control --help`；完整验收命令见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
 - **协作协议**：[docs/协作协议-双会话流水线.md](docs/协作协议-双会话流水线.md)（作者 / 验证 / 统筹三分，交接三样证据）。

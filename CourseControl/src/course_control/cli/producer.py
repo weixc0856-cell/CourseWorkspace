@@ -265,7 +265,8 @@ def package_verify_command(
 
 @app.command("release-approve")
 def release_approve_command(
-    lesson: str = typer.Option(..., "--lesson"),
+    lesson: str | None = typer.Option(None, "--lesson"),
+    project: Path | None = typer.Option(None, "--project", help="project.yaml for a topic video"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     stage: str = typer.Option("release", "--stage", help="review or release"),
@@ -283,6 +284,9 @@ def release_approve_command(
 
     from course_control.quality.quality import build_quality_report
 
+    if bool(lesson) == bool(project):
+        typer.echo("give exactly one of --lesson or --project", err=True)
+        raise typer.Exit(1)
     if stage not in {"review", "release"}:
         typer.echo("stage must be review or release", err=True)
         raise typer.Exit(1)
@@ -292,6 +296,52 @@ def release_approve_command(
     if not approved_by.strip():
         typer.echo("--by must name the approver", err=True)
         raise typer.Exit(1)
+    if project is not None:
+        import hashlib
+        from datetime import datetime, timezone
+
+        from course_control.preview.topic import load_topic
+        from course_control.release.check import run_release_check
+
+        try:
+            context = load_topic(workspace.resolve(), project)
+        except Exception as exc:  # noqa: BLE001
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        candidate = context.build_root / "release" / context.output_name
+        if not candidate.is_file():
+            typer.echo(f"release candidate missing: {candidate}", err=True)
+            raise typer.Exit(2)
+        if decision == "approved":
+            check = run_release_check(
+                workspace.resolve(),
+                topic_video=candidate,
+                licences=context.plan.licences,
+            )
+            if not check.get("delivery_allowed"):
+                typer.echo("release check is not pass; refusing approval", err=True)
+                typer.echo(f"status: {check.get('status')}", err=True)
+                raise typer.Exit(2)
+        digest = hashlib.sha256()
+        with candidate.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        payload = {
+            "schema_version": 1,
+            "project": context.project_id,
+            "decision": decision,
+            "approved_by": approved_by.strip(),
+            "approved_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+            "note": note,
+            "output_sha256": digest.hexdigest(),
+            "candidate": str(candidate),
+        }
+        target = context.build_root / "release" / "approval.json"
+        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8")
+        typer.echo(f"release decision: {decision} by {payload['approved_by']}")
+        typer.echo(f"record: {target}")
+        raise typer.Exit(0)
+
     try:
         paths = _paths(workspace, lesson, lesson_dir)
     except ContractError as exc:
@@ -320,9 +370,38 @@ def release_approve_command(
         typer.echo("automatic verification is not pass; refusing approval", err=True)
         typer.echo(f"VERIFY_INCOMPLETE={states['VERIFY_INCOMPLETE']} VERIFY_FAIL={states['VERIFY_FAIL']}", err=True)
         raise typer.Exit(2)
-    if stage == "release" and decision == "approved" and not states["REVIEW_APPROVED"]:
-        typer.echo("human review is not approved; refusing release sign-off", err=True)
+    if decision == "approved" and states.get("BLOCKED_WARNINGS"):
+        typer.echo(
+            "blocking warnings remain: " + ", ".join(states["BLOCKED_WARNINGS"]),
+            err=True,
+        )
         raise typer.Exit(2)
+    gate = None
+    gate_path = paths.build_root / "quality" / "gate.json"
+    if gate_path.is_file():
+        try:
+            gate = json.loads(gate_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            gate = None
+    if decision == "approved" and (gate is None or gate.get("verification_status") != "pass"):
+        typer.echo("quality gate is not pass; refusing approval", err=True)
+        raise typer.Exit(2)
+    if stage == "release" and decision == "approved":
+        review_path = paths.build_root / "quality" / "review-approval.json"
+        review = None
+        if review_path.is_file():
+            try:
+                review = json.loads(review_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                review = None
+        quality_sha = hashlib.sha256(quality_path.read_bytes()).hexdigest()
+        if (
+            review is None
+            or review.get("decision") != "approved"
+            or review.get("quality_report_sha256") != quality_sha
+        ):
+            typer.echo("human review is not approved for this quality report; refusing release sign-off", err=True)
+            raise typer.Exit(2)
 
     build_report = paths.build_root / "final" / "build-report.json"
     final = paths.build_root / "final" / "course-video-mixed.mp4"

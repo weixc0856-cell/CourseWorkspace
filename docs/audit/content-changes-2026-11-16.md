@@ -1,8 +1,8 @@
 # Content root changes · 2026-11-16
 
-- Generated: 2026-11-16T21:03:03+08:00
+- Generated: 2026-11-16T21:42:23+08:00
 - Base commit: `1ef709c92821aaa86672365209c45ab3866002a5`
-- Handoff commit: `1fc23ceedf36db796ad6b56d1f9a13c958eca9e4` on `handoff/2026-11-16-docs-and-layout`.
+- Handoff commit: **not created by the author session**; the coordinator commits this tree.
 - Machine-readable copy: `docs/audit/content-changes-2026-11-16.json`.
 
 ## Moves inside `build/`

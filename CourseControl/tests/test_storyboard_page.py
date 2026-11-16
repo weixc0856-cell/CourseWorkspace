@@ -9,7 +9,10 @@ from course_control.authoring.pipeline import (
     assert_storyboard_signed,
     sign_storyboard_page,
 )
+from PIL import Image
+
 from course_control.authoring.storyboard_page import build, split_slides
+from course_control.cli.authoring import storyboard_review_command
 
 
 class StoryboardPageTest(unittest.TestCase):
@@ -44,8 +47,12 @@ class StoryboardPageTest(unittest.TestCase):
         )
         self.build_root = self.root / "build" / "demo"
         (self.build_root / "slides").mkdir(parents=True)
-        (self.build_root / "slides" / "slide-001.png").write_bytes(b"\x89PNG\r\n")
-        (self.build_root / "slides" / "slide-002.png").write_bytes(b"\x89PNG\r\n")
+        Image.new("RGB", (64, 36), (240, 240, 240)).save(
+            self.build_root / "slides" / "slide-001.png"
+        )
+        Image.new("RGB", (64, 36), (240, 240, 240)).save(
+            self.build_root / "slides" / "slide-002.png"
+        )
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -118,6 +125,36 @@ class StoryboardPageTest(unittest.TestCase):
         self._approve_all()
         with self.assertRaises(Exception):
             sign_storyboard_page(self.root, self.lesson)
+
+    def test_zero_byte_capture_is_missing(self):
+        (self.build_root / "slides" / "slide-002.png").write_bytes(b"")
+        manifest = build("demo", self.lesson, self.build_root)
+        self.assertEqual(manifest["missing_captures"], [2])
+
+    def test_zero_page_storyboard_is_rejected(self):
+        (self.lesson / "slides.md").write_text("", encoding="utf-8")
+        (self.lesson / "storyboard.yaml").write_text(
+            "schema_version: 1\nlesson: demo\nshots: []\n", encoding="utf-8"
+        )
+        with self.assertRaises(ValueError):
+            build("demo", self.lesson, self.build_root)
+
+    def test_rebuilt_page_voids_old_decisions(self):
+        build("demo", self.lesson, self.build_root)
+        storyboard_review_command(
+            lesson="demo", approve="1,2", reject="", lesson_dir=self.lesson, workspace=self.root
+        )
+        (self.lesson / "slides.md").write_text(
+            "<h1>Opening changed</h1>\n---\n<h2>Second page changed</h2>\n", encoding="utf-8"
+        )
+        build("demo", self.lesson, self.build_root)
+        storyboard_review_command(
+            lesson="demo", approve="", reject="", lesson_dir=self.lesson, workspace=self.root
+        )
+        decisions = json.loads(
+            (self.build_root / "storyboard" / "decisions.json").read_text("utf-8")
+        )
+        self.assertTrue(all(row["decision"] == "pending" for row in decisions["pages"]))
 
     def test_rejected_page_blocks_signoff(self):
         build("demo", self.lesson, self.build_root)

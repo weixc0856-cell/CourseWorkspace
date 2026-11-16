@@ -43,7 +43,11 @@ class QualityCertificate(StrictModel):
     reason: str | None = None
 
 
-def issue(build_root: Path, project_id: str) -> QualityCertificate:
+def issue(
+    build_root: Path,
+    project_id: str,
+    blocking: list[str] | None = None,
+) -> QualityCertificate:
     defects = _read(build_root / "quality" / "defects.json")
     gate = _read(build_root / "quality" / "gate.json")
     quality = _read(build_root / "quality" / "quality-report.json")
@@ -64,6 +68,8 @@ def issue(build_root: Path, project_id: str) -> QualityCertificate:
         verdict, reason = "incomplete", "no defects.json; run quality-diagnose"
     elif open_ids:
         verdict, reason = "fail", f"{len(open_ids)} open defect(s)"
+    elif blocking:
+        verdict, reason = "incomplete", "release steps not pass: " + ", ".join(blocking)
     elif gate is None:
         verdict, reason = "incomplete", "no gate.json; run quality-gate"
     elif str(gate.get("verification_status") or "") != "pass":

@@ -353,13 +353,21 @@ def storyboard_review_command(
         raise typer.Exit(1)
 
     decisions_path = page_dir / "decisions.json"
-    previous = {}
+    previous: dict[int, str] = {}
     if decisions_path.is_file():
         try:
-            previous = {
-                int(item["page"]): str(item.get("decision") or "pending")
-                for item in json.loads(decisions_path.read_text(encoding="utf-8")).get("pages") or []
-            }
+            prior = json.loads(decisions_path.read_text(encoding="utf-8"))
+            # A decision only applies to the page it was made on.  If either
+            # hash changed, every old approval is void and starts pending.
+            if (
+                prior.get("storyboard_sha256") == manifest.get("storyboard_sha256")
+                and prior.get("html_sha256") == manifest.get("html_sha256")
+                and len(prior.get("pages") or []) == total
+            ):
+                previous = {
+                    int(item["page"]): str(item.get("decision") or "pending")
+                    for item in prior.get("pages") or []
+                }
         except (OSError, ValueError, KeyError, TypeError):
             previous = {}
     rows = []

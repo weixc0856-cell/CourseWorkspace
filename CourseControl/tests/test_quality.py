@@ -176,6 +176,23 @@ class QualityReportTests(DemoCase):
         self.assertFalse(report["states"]["QUALITY_PASS"])
         self.assertFalse(report["states"]["RELEASE_APPROVED"])
 
+    def test_skipped_build_stage_is_incomplete(self) -> None:
+        self._write(
+            "final/build-report.json",
+            {"verdict": "pass", "stages": [{"name": "render", "status": "skipped"}]},
+        )
+        report, _ = build_quality_report(self.workspace, self.paths)
+        self.assertEqual(report["dimensions"][3]["status"], Q_INCOMPLETE)
+        self.assertFalse(report["states"]["VERIFY_PASS"])
+        self.assertTrue(report["states"]["VERIFY_INCOMPLETE"])
+
+    def test_report_hash_is_stable_when_inputs_do_not_change(self) -> None:
+        first, target = build_quality_report(self.workspace, self.paths)
+        before = target.read_bytes()
+        second, _ = build_quality_report(self.workspace, self.paths)
+        self.assertEqual(before, target.read_bytes())
+        self.assertEqual(first["generated_at"], second["generated_at"])
+
     def test_verified_warns_need_review_and_release_signoff(self) -> None:
         self._write("final/build-report.json", {"verdict": "pass", "stages": [{"name": "compose", "status": "pass"}]})
         self._write("quality/media-qc.json", {"status": PASS})

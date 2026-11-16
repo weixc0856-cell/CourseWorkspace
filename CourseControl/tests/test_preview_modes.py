@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 
 from course_control.content.paths import LessonPaths
@@ -193,6 +196,74 @@ class TopicProjectTest(unittest.TestCase):
             self.assertEqual(len(_units_from(context, PreviewLevel.SHOT)), 2)
             self.assertEqual(len(_units_from(context, PreviewLevel.SEGMENT)), 1)
             self.assertEqual(len(_units_from(context, PreviewLevel.PROJECT)), 1)
+
+    def test_topic_release_requires_a_bound_approval(self) -> None:
+        import yaml
+
+        from course_control.preview import topic as topic_module
+        from course_control.preview.topic import load_topic, release_topic
+
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            project_dir = workspace / "projects" / "demo-topic"
+            project_dir.mkdir(parents=True)
+            (project_dir / "project.yaml").write_text(
+                yaml.safe_dump(
+                    {
+                        "schema_version": 1,
+                        "project": {
+                            "id": "demo-topic",
+                            "mode": "topic_video",
+                            "title": "Demo",
+                            "language": "en",
+                        },
+                        "input": {"topic": "demo"},
+                        "production": {
+                            "topic_video": {
+                                "target_seconds": 20,
+                                "entry": "src/demo/index.ts",
+                                "composition": "Demo",
+                                "output": "demo.mp4",
+                                "delivery_dir": "deliver/demo",
+                                "segments": [{"id": "part", "start_s": 0, "end_s": 20}],
+                                "licences": [],
+                            }
+                        },
+                        "media": {"resolution": "1080x1920", "frame_rate": 30},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            context = load_topic(workspace, project_dir / "project.yaml")
+
+            def fake_render(**kwargs):
+                output = Path(kwargs["output"])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_bytes(b"rendered")
+                return SimpleNamespace(status="ok", path=output, detail="")
+
+            with patch.object(topic_module, "render_window", fake_render):
+                first = release_topic(context)
+                self.assertEqual(first["verdict"], "incomplete")
+                self.assertFalse(context.delivery_dir.exists())
+
+                candidate = context.build_root / "release" / "demo.mp4"
+                digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+                (context.build_root / "release" / "approval.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": 1,
+                            "project": "demo-topic",
+                            "decision": "approved",
+                            "approved_by": "owner",
+                            "output_sha256": digest,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                second = release_topic(context)
+                self.assertEqual(second["verdict"], "pass")
+                self.assertTrue((context.delivery_dir / "demo.mp4").is_file())
 
     def test_unknown_licence_is_not_a_pass(self) -> None:
         from course_control.release.check import _topic_steps

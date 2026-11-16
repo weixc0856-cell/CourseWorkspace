@@ -600,4 +600,4 @@ def episode_build_command(
         for stage in report.stages:
             typer.echo(f"  [{stage.status.value}] {stage.name}")
         typer.echo(f"report: {target}")
-    raise typer.Exit(1 if report.verdict == "fail" else 0)
+    raise typer.Exit(0 if report.verdict == "pass" else 1)

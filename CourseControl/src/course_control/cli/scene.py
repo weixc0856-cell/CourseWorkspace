@@ -83,13 +83,18 @@ def scene_run_command(
         from course_control.platform.workspace_layout import lessons_root
 
         lesson_path = lessons_root(workspace.resolve()) / task_lesson
-        if (lesson_path / "lesson.yaml").is_file():
-            try:
-                sign_paths = LessonPaths.load(workspace.resolve(), lesson_path)
-                assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
-            except Exception as exc:  # noqa: BLE001 - the gate is user-facing
-                typer.echo(f"blocked: {exc}", err=True)
-                raise typer.Exit(3)
+        if not (lesson_path / "lesson.yaml").is_file():
+            typer.echo(
+                f"blocked: task declares lesson {task_lesson} but {lesson_path / 'lesson.yaml'} is missing",
+                err=True,
+            )
+            raise typer.Exit(3)
+        try:
+            sign_paths = LessonPaths.load(workspace.resolve(), lesson_path)
+            assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
+        except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+            typer.echo(f"blocked: {exc}", err=True)
+            raise typer.Exit(3)
 
     try:
         result = run_scene_task(workspace.resolve(), task, verify=verify)

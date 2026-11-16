@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "round": "2026-11-16-docs-and-layout",
-  "generated_at": "2026-11-16T21:03:03+08:00",
-  "content_root": "D:\\CourseContent",
+  "generated_at": "2026-11-16T21:42:23+08:00",
+  "content_root": "<content-root>",
   "git": {
     "base_sha": "1ef709c92821aaa86672365209c45ab3866002a5",
-    "handoff_sha": "1fc23ceedf36db796ad6b56d1f9a13c958eca9e4",
-    "note": "Handoff commit created on branch handoff/2026-11-16-docs-and-layout; the branch HEAD may include a later record-only commit."
+    "handoff_sha": null,
+    "note": "The author session does not commit. The coordinator creates the handoff commit; this manifest describes the tree the commit must contain."
   },
   "scope": [
     "one documentation map and a generated README; superseded documents carry a status banner",

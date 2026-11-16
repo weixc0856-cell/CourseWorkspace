@@ -300,7 +300,10 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
         )
     )
 
-    certificate = issue(paths.build_root, paths.slug)
+    blocking = [
+        step.id for step in steps if step.status not in {PASS, PASS_WITH_EXEMPTION}
+    ]
+    certificate = issue(paths.build_root, paths.slug, blocking=blocking)
     certificate_path = save_certificate(
         certificate, paths.build_root / "quality" / "certificate.json"
     )

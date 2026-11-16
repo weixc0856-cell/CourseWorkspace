@@ -510,7 +510,8 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
             + lesson_dir.name
         )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("html_sha256") != _sha(html_path):
+    html_bytes = html_path.read_bytes()
+    if manifest.get("html_sha256") != hashlib.sha256(html_bytes).hexdigest():
         raise AuthoringError("storyboard page changed after it was generated; regenerate it")
     if manifest.get("storyboard_sha256") != _sha(source):
         raise AuthoringError(
@@ -523,7 +524,8 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
             "per-page decisions are missing; run course-control storyboard-review "
             f"--lesson {lesson_dir.name} --approve 1,2,..."
         )
-    decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+    decisions_bytes = decisions_path.read_bytes()
+    decisions = json.loads(decisions_bytes.decode("utf-8"))
     if int(decisions.get("schema_version") or 0) != 1:
         raise AuthoringError("decisions.json has no schema_version 1")
     if decisions.get("storyboard_sha256") != manifest.get("storyboard_sha256"):
@@ -551,9 +553,9 @@ def sign_storyboard_page(workspace: Path, lesson_dir: Path) -> list[str]:
 
     reviewed = lesson_dir / "authoring" / "storyboard-review.html"
     reviewed.parent.mkdir(parents=True, exist_ok=True)
-    reviewed.write_bytes(html_path.read_bytes())
+    reviewed.write_bytes(html_bytes)
     reviewed_decisions = lesson_dir / "authoring" / "storyboard-decisions.json"
-    reviewed_decisions.write_bytes(decisions_path.read_bytes())
+    reviewed_decisions.write_bytes(decisions_bytes)
     review = {
         "schema_version": 1,
         "lesson": lesson_dir.name,

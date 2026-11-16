@@ -33,7 +33,7 @@ LAYER_TITLE = {
     "record": "记录（不是指令）",
 }
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
-CMD_RE = re.compile(r"course-control\s+([a-z][a-z0-9-]*)")
+CMD_RE = re.compile(r"course-control\s+([a-z][a-z0-9-]*)(?:\s+([a-z][a-z0-9-]*))?")
 # Executable paths are the command chain: they must exist.  Source-file
 # references are checked separately as advisories, because records legitimately
 # describe code that has since moved.
@@ -59,15 +59,26 @@ def markdown_files(docs: Path) -> list[str]:
     return sorted(str(p.relative_to(docs)).replace("\\", "/") for p in docs.rglob("*.md"))
 
 
-def command_names() -> set[str]:
+def command_names() -> tuple[set[str], dict[str, set[str]]]:
     from course_control.cli import app
 
     names = set()
     for command in app.registered_commands:
         names.add(command.name or (command.callback.__name__.replace("_", "-") if command.callback else ""))
+    groups: dict[str, set[str]] = {}
     for group in app.registered_groups:
-        names.add(group.name or "")
-    return {name for name in names if name}
+        if not group.name:
+            continue
+        names.add(group.name)
+        subs = set()
+        if group.typer_instance is not None:
+            for command in group.typer_instance.registered_commands:
+                subs.add(
+                    command.name
+                    or (command.callback.__name__.replace("_", "-") if command.callback else "")
+                )
+        groups[group.name] = {sub for sub in subs if sub}
+    return {name for name in names if name}, groups
 
 
 def _doc_text(docs: Path) -> dict[str, str]:
@@ -120,13 +131,22 @@ def link_errors(docs: Path) -> list[str]:
     return errors
 
 
-def command_errors(docs: Path, commands: set[str]) -> list[str]:
+def command_errors(
+    docs: Path,
+    commands: set[str],
+    groups: dict[str, set[str]] | None = None,
+) -> list[str]:
     errors: list[str] = []
+    groups = groups or {}
     for path, text in _doc_text(docs).items():
         for match in CMD_RE.finditer(text):
-            name = match.group(1)
+            name, sub = match.group(1), match.group(2)
             if name not in commands:
                 errors.append(f"{path}: unknown subcommand 'course-control {name}'")
+            elif name in groups and sub and sub not in groups[name]:
+                errors.append(
+                    f"{path}: unknown subcommand 'course-control {name} {sub}'"
+                )
     return errors
 
 
@@ -229,11 +249,16 @@ def render_readme(data: dict) -> str:
     return "\n".join(lines)
 
 
-def check(docs: Path, repo_root: Path, commands: set[str]) -> list[str]:
+def check(
+    docs: Path,
+    repo_root: Path,
+    commands: set[str],
+    groups: dict[str, set[str]] | None = None,
+) -> list[str]:
     data = load_map(docs)
     errors = map_errors(docs, data)
     errors += link_errors(docs)
-    errors += command_errors(docs, commands)
+    errors += command_errors(docs, commands, groups)
     errors += script_errors(docs, repo_root, data)
     readme = docs / README_NAME
     expected = render_readme(data)
@@ -261,7 +286,7 @@ def selftest() -> int:
         (docs / "ok.md").write_text("see [ok](ok.md)\n", encoding="utf-8")
         (docs / MAP_NAME).write_text(yaml.safe_dump(base, allow_unicode=True), encoding="utf-8")
         (docs / README_NAME).write_text(render_readme(base), encoding="utf-8")
-        if check(docs, root, {"validate"}):
+        if check(docs, root, {"validate"}, {}):
             print("selftest FAIL: a clean documentation tree was rejected")
             return 1
 
@@ -272,20 +297,20 @@ def selftest() -> int:
         (docs / "new.md").unlink()
 
         (docs / "ok.md").write_text("see [gone](gone.md)\n", encoding="utf-8")
-        if not any("broken link" in e for e in check(docs, root, {"validate"})):
+        if not any("broken link" in e for e in check(docs, root, {"validate"}, {})):
             print("selftest FAIL: a broken link was accepted")
             return 1
         (docs / "ok.md").write_text("run `course-control nope`\n", encoding="utf-8")
-        if not any("unknown subcommand" in e for e in check(docs, root, {"validate"})):
+        if not any("unknown subcommand" in e for e in check(docs, root, {"validate"}, {})):
             print("selftest FAIL: an unknown subcommand was accepted")
             return 1
         (docs / "ok.md").write_text("run `scripts/missing.py`\n", encoding="utf-8")
-        if not any("does not exist" in e for e in check(docs, root, {"validate"})):
+        if not any("does not exist" in e for e in check(docs, root, {"validate"}, {})):
             print("selftest FAIL: a missing script path was accepted")
             return 1
         (docs / "ok.md").write_text("ok\n", encoding="utf-8")
         (docs / README_NAME).write_text("stale\n", encoding="utf-8")
-        if not any("out of date" in e for e in check(docs, root, {"validate"})):
+        if not any("out of date" in e for e in check(docs, root, {"validate"}, {})):
             print("selftest FAIL: a stale README was accepted")
             return 1
         print("docs map selftest PASS")
@@ -310,7 +335,8 @@ def main(argv: list[str] | None = None) -> int:
         (docs / README_NAME).write_text(render_readme(data), encoding="utf-8")
         print(f"wrote {docs / README_NAME}")
         return 0
-    errors = check(docs, repo_root, command_names())
+    commands, groups = command_names()
+    errors = check(docs, repo_root, commands, groups)
     if errors:
         print(f"{len(errors)} documentation problem(s):")
         for error in errors:

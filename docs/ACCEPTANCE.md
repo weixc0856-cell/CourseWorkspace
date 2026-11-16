@@ -138,8 +138,11 @@ FR-42。用试点课程的两份临时副本（正常 / 故意写坏）验证，
 - **绑定**：复核文件记录有效 storyboard、`slides.md`、审核页与页面内嵌截图的 sha256；审核页改动、故事板改动或 review 被改都会失效。`approval.json` 同时钉住 review 文件本身。
 - **覆盖**：`run_build`、`animatic`、`narration-build`、`render shot|segment|project`、`preview-pilot`、`brand-render`、`narrate`、`burn-subs`、`audio-mix`、`session-run --record`、带 `lesson` 的 `scene-run`、`release-check`、`quality-certificate`、`release-approve`、`episode-build` 都校验，未签或已失效返回退出码 3（blocked）。
 - **页面就绪**：`storyboard-page` 在没有幻灯片截图时退出 1，`author-accept` 拒绝签字；有截图才能逐页 approve。
-- **交付安装**：`package` 只有在证书 pass、review/release 具名批准且分镜签字时写 `pass` 并替换 `deliver/<slug>/`；否则写 `incomplete`/`fail`，保留旧交付，把本次尝试放在 `deliver/<slug>.attempt/`，命令退出 1。
-- **内容异常队列**：`build/_shared/frame-audit/episode/content-exceptions.json` 里的条目带 `lesson`、`owner`、`clear_when`；`release-check`、`package`、`quality-certificate`、`release-approve`、`episode-build` 命中当前 lesson 时返回 `incomplete` 或退出 3。清除条件写在该条目的 `clear_when`。
+- **交付安装**：`package` 只有在 typed 证书 pass、Q1–Q5 完整、review/release 具名批准（三者绑定当前 `build-report`、成片与 `quality-report`）且分镜签字时写 `pass` 并替换 `deliver/<slug>/`；否则写 `incomplete`/`fail`，保留旧交付，把本次尝试放在 `deliver/<slug>.attempt/`，命令退出 1。包内复制 `evidence/certificate.json`、`quality-report.json`、两份 approval 与分镜签字材料。
+- **包复核**：`package-verify` 不只重算哈希，还校验 manifest schema、必需文件集、证书与 Q1–Q5、两份 approval 的三个绑定哈希和仓库内路径，拒绝 `../`、绝对路径与 symlink 逃逸。
+- **主题视频**：`render project --mode release` 先渲染到 `build/<project>/release/`；只有 `release-approve --project <project.yaml> --by <name>` 写出绑定候选哈希的 approval 后才安装到 `deliver/`。未批准返回 `incomplete` 且不改旧交付。
+- **内容异常队列**：`build/_shared/frame-audit/episode/content-exceptions.json` 里的条目带 `lesson`、`owner`、`clear_when`；`release-check`、`package`、`quality-certificate`、`release-approve`、`episode-build` 命中当前 lesson 时返回 `incomplete` 或退出 3。队列不存在表示没有已知异常；清除条件写在该条目的 `clear_when`。
+- **新鲜度**：`check_freshness` 逐项比对当前路径与哈希并重算 digest；manifest 缺新输入、同名校验、mtime 回退缺关键输入、或 `build-manifest --force`（`publishable=false`）都判 stale。
 - **负例**：`CourseControl/tests/test_storyboard_page.py` 覆盖“未签阻断”“改了 storyboard 后阻断”“页面过期拒绝签字”三条；`scripts/check_docs.py --selftest` 覆盖文档地图的四类红灯。
 - **文档**：命令顺序与中间交付物见 `docs/生产流水线-阶段与中间交付物.md`。
 

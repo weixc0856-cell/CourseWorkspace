@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from PIL import Image
+
 from course_control.delivery.package import PackageError, build_package, verify_package
 from course_control.content.paths import LessonPaths
 from course_control.platform.utils import NO_CONSOLE
@@ -74,11 +76,32 @@ class PackageTest(unittest.TestCase):
         (build / "narration" / "narration.wav").write_bytes(b"RIFF")
         (build / "narration" / "narration.meta.json").write_text("{}", encoding="utf-8")
         (build / "slides").mkdir()
-        (build / "slides" / "slide-001.png").write_bytes(b"\x89PNG\r\n")
+        Image.new("RGB", (64, 36), (240, 240, 240)).save(
+            build / "slides" / "slide-001.png"
+        )
         (build / "quality" / "media-qc.json").write_text('{"status": "PASS"}', encoding="utf-8")
         quality_report = build / "quality" / "quality-report.json"
         quality_report.write_text(
-            json.dumps({"schema_version": 1, "lesson": "demo", "states": {"RELEASE_APPROVED": True}}),
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "lesson": "demo",
+                    "states": {
+                        "VERIFY_PASS": True,
+                        "VERIFY_INCOMPLETE": False,
+                        "VERIFY_FAIL": False,
+                        "BLOCKED_WARNINGS": [],
+                        "RELEASE_APPROVED": True,
+                    },
+                    "dimensions": [
+                        {"id": "Q1", "status": "PASS"},
+                        {"id": "Q2", "status": "PASS"},
+                        {"id": "Q3", "status": "PASS"},
+                        {"id": "Q4", "status": "PASS"},
+                        {"id": "Q5", "status": "PASS"},
+                    ],
+                }
+            ),
             encoding="utf-8",
         )
         report_sha = hashlib.sha256(quality_report.read_bytes()).hexdigest()
@@ -122,6 +145,29 @@ class PackageTest(unittest.TestCase):
             check=True,
             creationflags=NO_CONSOLE,
         )
+        report_sha = hashlib.sha256(quality_report.read_bytes()).hexdigest()
+        build_report_sha = hashlib.sha256(
+            (build / "final" / "build-report.json").read_bytes()
+        ).hexdigest()
+        final_sha = hashlib.sha256(
+            (build / "final" / "course-video.mp4").read_bytes()
+        ).hexdigest()
+        for name in ("review-approval.json", "release-approval.json"):
+            (build / "quality" / name).write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "lesson": "demo",
+                        "decision": "approved",
+                        "approved_by": "tester",
+                        "build_report_sha256": build_report_sha,
+                        "final_video_sha256": final_sha,
+                        "quality_report_sha256": report_sha,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
         from course_control.authoring.pipeline import sign_storyboard_page
         from course_control.authoring.storyboard_page import build as build_page
 
@@ -163,6 +209,25 @@ class PackageTest(unittest.TestCase):
         manifest, _ = build_package(self.paths)
         self.assertEqual(manifest["verdict"], "incomplete")
         self.assertTrue(any("certificate" in reason for reason in manifest["verdict_reasons"]))
+
+    def test_verify_rejects_a_pass_manifest_without_evidence(self) -> None:
+        fake = self.workspace / "deliver" / "fake"
+        fake.mkdir(parents=True)
+        (fake / "manifest.json").write_text(
+            json.dumps({"schema_version": 1, "lesson": "demo", "verdict": "pass", "files": []}),
+            encoding="utf-8",
+        )
+        self.assertTrue(verify_package(fake))
+
+    def test_verify_rejects_path_traversal(self) -> None:
+        manifest, root = build_package(self.paths)
+        payload = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        payload["files"].append(
+            {"path": "../../escape.txt", "required": False, "status": "present", "sha256": "0" * 64}
+        )
+        (root / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
+        problems = verify_package(root)
+        self.assertTrue(any("unsafe package path" in problem for problem in problems))
 
     def test_incomplete_attempt_does_not_replace_delivery(self) -> None:
         manifest, root = build_package(self.paths)

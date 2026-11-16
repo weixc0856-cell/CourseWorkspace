@@ -168,6 +168,8 @@ def write_manifest(
             "sha256": _sha256(video),
             "bytes": video.stat().st_size,
         },
+        "forced": bool(allow_older),
+        "publishable": not allow_older,
         "render": render or {},
     }
     target = manifest_path(paths)
@@ -208,8 +210,18 @@ def _mtime_freshness(paths: LessonPaths, video: Path) -> Freshness:
             paths.build_root / "subtitles.srt",
         ]
     video_time = video.stat().st_mtime
-    for item in inputs:
+    required_names = {"lesson", "storyboard", "slides"}
+    for name, item in (
+        inputs if isinstance(inputs, list) and inputs and isinstance(inputs[0], tuple)
+        else [(f"input{i}", value) for i, value in enumerate(inputs)]
+    ):
         if not item.is_file():
+            if name in required_names:
+                return Freshness(
+                    False,
+                    MTIME_WEAK,
+                    reason=f"stale: required input is missing: {item}",
+                )
             continue
         if item.stat().st_mtime > video_time:
             return Freshness(
@@ -233,9 +245,20 @@ def check_freshness(paths: LessonPaths, video: Path) -> Freshness:
     except (OSError, json.JSONDecodeError) as exc:
         return Freshness(False, MANIFEST_WEAK, reason=f"unreadable build manifest: {exc}")
     build_id = str(manifest.get("build_id") or "")
-    declared_names = {str(entry.get("name") or "") for entry in manifest.get("inputs") or []}
-    required = declared_inputs(paths, paths.workspace)
-    missing = [name for name, _ in required if name not in declared_names]
+    if manifest.get("forced") or manifest.get("publishable") is False:
+        return Freshness(
+            False,
+            FINGERPRINT,
+            build_id,
+            "stale: manifest was written with --force and is not publishable",
+        )
+    required_entries = dict(declared_inputs(paths, paths.workspace))
+    declared = {
+        str(entry.get("name") or ""): entry
+        for entry in manifest.get("inputs") or []
+        if isinstance(entry, dict)
+    }
+    missing = [name for name in required_entries if name not in declared]
     if missing:
         return Freshness(
             False,
@@ -243,6 +266,16 @@ def check_freshness(paths: LessonPaths, video: Path) -> Freshness:
             build_id,
             "stale: build manifest predates required inputs: " + ", ".join(missing),
         )
+    for name, current_path in required_entries.items():
+        entry = declared[name]
+        declared_path = Path(str(entry.get("path") or ""))
+        if declared_path.resolve() != Path(current_path).resolve():
+            return Freshness(
+                False,
+                FINGERPRINT,
+                build_id,
+                f"stale: input {name} now points at {current_path}, not {declared_path}",
+            )
     for entry in manifest.get("inputs") or []:
         declared = Path(str(entry.get("path") or ""))
         if not declared.is_file():
@@ -259,6 +292,18 @@ def check_freshness(paths: LessonPaths, video: Path) -> Freshness:
                 build_id,
                 f"stale: {declared} changed since build {build_id}; re-render before release",
             )
+    try:
+        current = fingerprint(paths, paths.workspace)
+    except (BuildManifestError, OSError) as exc:
+        return Freshness(False, FINGERPRINT, build_id, f"stale: current inputs are incomplete: {exc}")
+    if current.get("digest") != manifest.get("digest"):
+        return Freshness(
+            False,
+            FINGERPRINT,
+            build_id,
+            "stale: the current input digest differs from the build",
+        )
+
     output = manifest.get("output") or {}
     rendered = Path(str(output.get("path") or ""))
     if not rendered.is_file():

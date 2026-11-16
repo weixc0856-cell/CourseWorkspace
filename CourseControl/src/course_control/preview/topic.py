@@ -310,8 +310,11 @@ def run_topic_pilot(
 
 
 def release_topic(context: TopicContext) -> dict:
-    """Render the whole composition at release scale into ``deliver/``."""
+    """Render to the build area, then install only after a bound approval."""
+    import shutil
+
     from course_control.preview.profile import profile_for
+    from course_control.platform.media import sha256_file
 
     _sync_public_assets(context)
     if not context.entry or not context.composition:
@@ -326,14 +329,16 @@ def release_topic(context: TopicContext) -> dict:
         height=context.height,
         fps=context.fps,
     )
-    output = context.delivery_dir / context.output_name
+    candidate_dir = context.build_root / "release"
+    candidate_dir.mkdir(parents=True, exist_ok=True)
+    candidate = candidate_dir / context.output_name
     result = render_window(
         unit_id="project",
         workspace=context.workspace,
         remotion_root=context.workspace / "RemotionStudio",
         entry=context.entry,
         composition=context.composition,
-        output=output,
+        output=candidate,
         start_frame=int(round(float(context.plan.offset_s) * context.fps)),
         end_frame=int(
             round(
@@ -346,40 +351,79 @@ def release_topic(context: TopicContext) -> dict:
         timeout_s=3600,
         log_path=context.build_root / "logs" / "release.log",
     )
-    verdict = "pass" if result.status in {"ok", "cached"} else "fail"
-    if result.path is not None and result.path.is_file():
-        try:
-            from course_control.platform.media import sha256_file
+    if result.status not in {"ok", "cached"} or result.path is None or not result.path.is_file():
+        return {
+            "verdict": "fail",
+            "output": str(result.path) if result.path else None,
+            "status": result.status,
+            "detail": result.detail,
+            "installed": False,
+        }
 
-            manifest = {
-                "schema_version": 1,
-                "kind": "topic_delivery",
-                "project": context.project_id,
-                "mode": "topic_video",
-                "composition": context.composition,
-                "entry": context.entry,
-                "generated_at": _now(),
-                "resolution": [context.width, context.height],
-                "fps": context.fps,
-                "files": [
-                    {
-                        "path": result.path.name,
-                        "bytes": result.path.stat().st_size,
-                        "sha256": sha256_file(result.path),
-                    }
-                ],
+    output_sha = sha256_file(candidate)
+    approval_path = candidate_dir / "approval.json"
+    approval = None
+    if approval_path.is_file():
+        try:
+            approval = json.loads(approval_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            approval = None
+    approved = bool(
+        approval
+        and approval.get("decision") == "approved"
+        and str(approval.get("approved_by") or "").strip()
+        and approval.get("output_sha256") == output_sha
+        and str(approval.get("project") or "") == context.project_id
+    )
+    if not approved:
+        return {
+            "verdict": "incomplete",
+            "output": str(candidate),
+            "status": result.status,
+            "detail": "release approval is missing or not bound to this output",
+            "installed": False,
+        }
+
+    delivery = context.delivery_dir
+    delivery.mkdir(parents=True, exist_ok=True)
+    target = delivery / context.output_name
+    staged = target.with_name(target.name + ".tmp")
+    shutil.copy2(candidate, staged)
+    staged.replace(target)
+    manifest = {
+        "schema_version": 1,
+        "kind": "topic_delivery",
+        "project": context.project_id,
+        "mode": "topic_video",
+        "composition": context.composition,
+        "entry": context.entry,
+        "generated_at": _now(),
+        "resolution": [context.width, context.height],
+        "fps": context.fps,
+        "verdict": "pass",
+        "approval": {
+            "approved_by": approval.get("approved_by"),
+            "approved_at": approval.get("approved_at"),
+            "output_sha256": output_sha,
+        },
+        "files": [
+            {
+                "path": target.name,
+                "bytes": target.stat().st_size,
+                "sha256": sha256_file(target),
             }
-            (context.delivery_dir / "manifest.json").write_text(
-                json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10),
-                encoding="utf-8",
-            )
-        except OSError:
-            pass
+        ],
+    }
+    (delivery / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10),
+        encoding="utf-8",
+    )
     return {
-        "verdict": verdict,
-        "output": str(result.path) if result.path else None,
+        "verdict": "pass",
+        "output": str(target),
         "status": result.status,
         "detail": result.detail,
+        "installed": True,
     }
 
 
