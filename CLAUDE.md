@@ -17,6 +17,7 @@
 
 ### A. 资产与证据
 
+0. **内容所有权。** 存量课程的 `slides.md`、`lecture_notes.md`、`outline.md`、课程 `assets/` 归用户所有，只允许格式级调整（路径、分页、主题类名）；**改语义必须先问**。系统生成的课程与视频内容由系统产出，所有者保留接受与拒收权，且必须带来源与证据链。
 1. **复用优先（全域适用）。** 组件、三维资产、教材插图、模板一律先找现成资源，能用现成的不自建；只有许可、风格、需要动效或精度不满足时才自建，并写明理由。
 2. **教材原图在 Docling 产线，不在本仓库。** 根目录 `DOCLING_OUTPUT_ROOT`（本机见 `config/local-paths.yaml` 的 `docling_root` + `/output`），每本书一个 `<source_id>/`，内含 `assets/`、`document.json`（含 caption 与 page_no）、`manifest.json`；根目录 `catalog.json` 是来源清单。**在 `staging/` 找不到图时先查这里，不得据此判断"没有素材"，更不得编造素材。** 新书接入 = Docling 跑一遍 → 目录出现 → 按 `source_id` 检索，不为任何一本书写专属路径或脚本。
 3. **原书证据零篡改。** 原图保持原始像素——**严禁反相、去白底、改线色**。统一置于暖白纸面板（实测 `#EDE7DA`）+ 细边框 + 投影 + 统一留白；只允许在其上叠加**聚光灯/高亮框、沿原图坐标的遮罩揭开、指向原图坐标的标签**。
@@ -35,6 +36,7 @@
 
 ### C. 验收与工程
 
+13. **AI 输出不等于已完成。** LLM 生成的结构化计划、脚本、审查意见都是候选结果，必须经程序校验与可定位证据验证；无法验证的内容不得交付。人工只在成品拒收复核时介入，不替代程序做逐条事实判断。
 13. **skip ≠ pass。** 未执行的阶段不得写成通过；`not_run`、`incomplete`、采样不足一律不是通过，必须显式打印并计入异常队列。
 14. **视觉审计必须有正向断言。** 不能只查"0 重叠 / 0 越界"：必须同时校验**非背景像素占比 > 5%**、**页面无未捕获异常与 ErrorBoundary 节点**、**当前帧 `data-beat-id` / `data-asset-src` 与剧本一致**。每条规则必须配一个"能红"的负例。
 15. **不伪造验收。** 不得为通过而改测试预期、跳过检查、补写内容、拿旧产物顶替；发布签核必须由具名的人签字。
@@ -58,7 +60,23 @@
 - **环境**：Python 3.12 + uv；Node 24 + npm；Blender 5.2；FFmpeg 8。
 - **配置**（均不入库）：`config/tools.yaml`、`config/local-paths.yaml`（`content_root` / `docling_root` / TTS）、`config/model-routing.yaml`。
 - **内容根**：`<content_root>/{lessons,build,deliver,runtime,knowledge,audio,projects,references,archive}`；`course-control content-root` 可查询。
-- **常用入口**：`.\scripts\check.ps1`（全量回归，必须打印 `check ok`）· `course-control --help` · `scripts/check_segment_assets.py`（绑定扫描）· `scripts/fetch_book_figures.py --source-id <id> --figure <n>`。
+- **常用命令**：
+  ```powershell
+  .\scripts\check.ps1                                        # 全量回归（必须打印 check ok）
+  course-control validate --lesson <slug>                     # 课程校验
+  course-control preflight --lesson <slug>                    # 开工前置
+  course-control checks --lesson <slug> --book-index <path>   # 类型化检查 + 异常队列
+  course-control retime --lesson <slug>                       # 按实测旁白重算时间轴
+  course-control subtitles-rebuild --lesson <slug>            # 字幕重建（实测对齐）
+  course-control release-check --lesson <slug>                # 发布三态
+  course-control contract-validate --kind product|ledger|timeline --path <p>
+  scripts/build-lesson.ps1 -Lesson <slug>                     # 完整构建
+  scripts/check_segment_assets.py --lesson-dir <dir>          # 绑定扫描（缺参/复用图/禁令词）
+  scripts/fetch_book_figures.py --source-id <id> --figure <n> # 从 Docling 取原书图
+  node RemotionStudio/scripts/frame-audit.mjs                 # 帧审计（正向断言）
+  python scripts/static_hold.py --film <mp4>                  # 死画面检测
+  ```
+  其余子命令见 `course-control --help`；完整验收命令见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
 - **协作协议**：[docs/协作协议-双会话流水线.md](docs/协作协议-双会话流水线.md)（作者 / 验证 / 统筹三分，交接三样证据）。
 
 ---
