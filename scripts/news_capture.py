@@ -108,7 +108,7 @@ def _download_pdf(url: str, out_pdf: Path) -> dict:
 def _pdf_first_page(out_pdf: Path, out_png: Path) -> bool:
     prefix = out_png.with_suffix("")
     proc = subprocess.run(
-        ["pdftoppm", "-f", "1", "-l", "1", "-png", "-r", "110", str(out_pdf), str(prefix)],
+        ["pdftoppm", "-f", "1", "-l", "1", "-png", "-r", "150", str(out_pdf), str(prefix)],
         capture_output=True, text=True,
     )
     produced = sorted(out_png.parent.glob(prefix.name + "-*.png"))
