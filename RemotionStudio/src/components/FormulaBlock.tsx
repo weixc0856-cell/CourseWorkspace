@@ -1,34 +1,40 @@
 import React from 'react';
-import {SceneFrame} from '../chapter/SceneFrame';
+import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
 import {Formula} from '../chapter/Formula';
 
 export type FormulaBlockProps = {
   tex: string;
+  title?: string;
   size?: number;
   color?: string;
   opacity?: number;
+  duration?: number;
 };
 
-// A formula on its own card. The 96 px padding is the safe area (docs/生产合同.md
-// §9): rendering the KaTeX output without a container put wide formulas past the
-// margins, which the frame audit caught as safe_area overflow.
-export const FormulaBlock: React.FC<FormulaBlockProps> = ({size = 64, ...rest}) => (
-  <SceneFrame>
-    <div
-      style={{
-        position: 'absolute',
-        left: 96,
-        right: 96,
-        top: 96,
-        bottom: 96,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <div style={{maxWidth: '100%'}}>
-        <Formula {...rest} size={size} />
+// A formula card holds one line. A very slow push (0.5% over its duration)
+// keeps a 20 s card from being a dead frame without inventing motion.
+export const FormulaBlock: React.FC<FormulaBlockProps> = ({
+  tex,
+  title,
+  size = 44,
+  color,
+  opacity = 1,
+  duration = 10,
+}) => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+  const progress = Math.min(1, frame / fps / Math.max(duration, 0.1));
+  const scale = 1 + 0.005 * progress;
+  return (
+    <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center', opacity}}>
+      <div style={{transform: `scale(${scale})`}}>
+        {title ? (
+          <div style={{fontSize: 18, letterSpacing: '0.26em', color: '#E8733B', marginBottom: 18, textAlign: 'center'}}>
+            {title}
+          </div>
+        ) : null}
+        <Formula tex={tex} size={size} color={color} />
       </div>
-    </div>
-  </SceneFrame>
-);
+    </AbsoluteFill>
+  );
+};
