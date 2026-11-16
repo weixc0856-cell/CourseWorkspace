@@ -82,6 +82,13 @@ applies the preset's `builder` block (color management, look, exposure, world
 strength defaults, lens default, shutter) and writes `<output>.look.json`.
 Explicit spec values win over grammar defaults.
 
+## Wind visualization
+
+`shot.wind.style` selects `motes` (instanced dust/snow streaks), `ribbons`
+(flow lines) or `mist` (drifting volume). It is a visual schematic, not a CFD
+result; the P5 film labels it `WIND: SCHEMATIC`. See
+`docs/3D动画生产流程.md` section 6.4.
+
 ## Shot review
 
 After a shot is rendered, build a review package:

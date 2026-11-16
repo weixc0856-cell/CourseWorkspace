@@ -29,6 +29,7 @@ import importlib.util
 import json
 import math
 import os
+import random
 import sys
 import time
 from pathlib import Path
@@ -161,7 +162,7 @@ def resolve_spec(path: Path) -> tuple[dict, dict | None]:
     merged["kind"] = "shot"
     merged["environment_spec"] = str(env_path)
     merged["shot"] = data
-    for key in ("objects", "lights", "water"):
+    for key in ("objects", "lights", "water", "wind"):
         if data.get(key) is not None:
             merged[key] = copy.deepcopy(data[key])
     merged["camera"] = copy.deepcopy(data.get("camera") or {})
@@ -325,10 +326,17 @@ def move_group(objects, offset):
 
 def surface_z(x: float, y: float) -> float:
     deps = bpy.context.evaluated_depsgraph_get()
-    hit, loc, _normal, _index, _obj, _matrix = bpy.context.scene.ray_cast(
-        deps, (x, y, 8000.0), (0, 0, -1)
-    )
-    return loc.z if hit else 0.0
+    z = 8000.0
+    for _ in range(6):
+        hit, loc, _normal, _index, obj, _matrix = bpy.context.scene.ray_cast(
+            deps, (x, y, z), (0, 0, -1)
+        )
+        if not hit:
+            return 0.0
+        if obj.name != "Atmosphere":
+            return loc.z
+        z = loc.z - 0.01
+    return 0.0
 
 
 def add_water(scene, cfg: dict):
@@ -359,6 +367,287 @@ def add_water(scene, cfg: dict):
         links.new(noise.outputs["Fac"], bump.inputs["Height"])
         links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
     plane.data.materials.append(mat)
+
+
+def _collection(scene, name: str):
+    collection = bpy.data.collections.get(name)
+    if collection is None:
+        collection = bpy.data.collections.new(name)
+    if collection.name not in scene.collection.children:
+        scene.collection.children.link(collection)
+    return collection
+
+
+def wind_material(cfg: dict, frames: int):
+    mat = bpy.data.materials.new("WindFlow")
+    mat.use_nodes = True
+    if hasattr(mat, "surface_render_method"):
+        mat.surface_render_method = "BLENDED"
+    if hasattr(mat, "blend_method"):
+        mat.blend_method = "BLEND"
+    mat.use_backface_culling = False
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputMaterial")
+    mix = nodes.new("ShaderNodeMixShader")
+    transparent = nodes.new("ShaderNodeBsdfTransparent")
+    emission = nodes.new("ShaderNodeEmission")
+    emission.inputs["Color"].default_value = tuple(cfg.get("color", [0.72, 0.88, 1.0, 1.0]))
+    emission.inputs["Strength"].default_value = float(cfg.get("strength", 2.2))
+    texcoord = nodes.new("ShaderNodeTexCoord")
+    mapping = nodes.new("ShaderNodeMapping")
+    wave = nodes.new("ShaderNodeTexWave")
+    wave.wave_type = "BANDS"
+    wave.bands_direction = "X"
+    wave.inputs["Scale"].default_value = float(cfg.get("dash_scale", 7.0))
+    wave.inputs["Distortion"].default_value = float(cfg.get("distortion", 0.5))
+    wave.inputs["Detail"].default_value = 2.0
+    ramp = nodes.new("ShaderNodeValToRGB")
+    threshold = float(cfg.get("dash_threshold", 0.42))
+    softness = float(cfg.get("dash_softness", 0.12))
+    ramp.color_ramp.elements[0].position = 0.0
+    ramp.color_ramp.elements[0].color = (0.0, 0.0, 0.0, 1.0)
+    ramp.color_ramp.elements[1].position = threshold
+    ramp.color_ramp.elements[1].color = (0.0, 0.0, 0.0, 1.0)
+    peak = ramp.color_ramp.elements.new(threshold + softness * 0.5)
+    peak.color = (1.0, 1.0, 1.0, 1.0)
+    tail = ramp.color_ramp.elements.new(threshold + softness)
+    tail.color = (0.0, 0.0, 0.0, 1.0)
+    links.new(texcoord.outputs["Generated"], mapping.inputs["Vector"])
+    links.new(mapping.outputs["Vector"], wave.inputs["Vector"])
+    links.new(wave.outputs["Fac"], ramp.inputs["Fac"])
+    links.new(ramp.outputs["Color"], mix.inputs[0])
+    links.new(transparent.outputs["BSDF"], mix.inputs[1])
+    links.new(emission.outputs["Emission"], mix.inputs[2])
+    links.new(mix.outputs["Shader"], output.inputs["Surface"])
+    # One full texture period over the shot keeps the loop seamless.
+    location = mapping.inputs["Location"]
+    location.default_value[0] = 0.0
+    location.keyframe_insert(data_path="default_value", frame=1)
+    location.default_value[0] = 1.0
+    location.keyframe_insert(data_path="default_value", frame=max(2, frames))
+    if mat.node_tree.animation_data and mat.node_tree.animation_data.action:
+        for layer in mat.node_tree.animation_data.action.layers:
+            for strip in layer.strips:
+                for bag in strip.channelbags:
+                    for curve in bag.fcurves:
+                        for key in curve.keyframe_points:
+                            key.interpolation = "LINEAR"
+    return mat
+
+
+def add_wind_mist(scene, cfg: dict, frames: int):
+    size = cfg.get("size", [6000, 4000, 1800])
+    location = cfg.get("location", [0, 0, 900])
+    bpy.ops.mesh.primitive_cube_add(size=1, location=tuple(location))
+    cube = bpy.context.active_object
+    cube.name = "WindMist"
+    cube.scale = (float(size[0]), float(size[1]), float(size[2]))
+    material = bpy.data.materials.new("WindMist")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputMaterial")
+    volume = nodes.new("ShaderNodeVolumePrincipled")
+    volume.inputs["Color"].default_value = tuple(cfg.get("color", [0.7, 0.8, 0.92, 1.0]))
+    volume.inputs["Anisotropy"].default_value = float(cfg.get("anisotropy", 0.3))
+    texcoord = nodes.new("ShaderNodeTexCoord")
+    mapping = nodes.new("ShaderNodeMapping")
+    noise = nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = float(cfg.get("noise_scale", 2.5))
+    noise.inputs["Detail"].default_value = float(cfg.get("noise_detail", 4.0))
+    noise.inputs["Roughness"].default_value = float(cfg.get("noise_roughness", 0.65))
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = float(cfg.get("patch_threshold", 0.48))
+    ramp.color_ramp.elements[0].color = (0.0, 0.0, 0.0, 1.0)
+    ramp.color_ramp.elements[1].position = float(cfg.get("patch_threshold", 0.48)) + 0.2
+    ramp.color_ramp.elements[1].color = (1.0, 1.0, 1.0, 1.0)
+    multiply = nodes.new("ShaderNodeMath")
+    multiply.operation = "MULTIPLY"
+    multiply.inputs[1].default_value = float(cfg.get("density", 0.00035))
+    links.new(texcoord.outputs["Generated"], mapping.inputs["Vector"])
+    links.new(mapping.outputs["Vector"], noise.inputs["Vector"])
+    links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+    links.new(ramp.outputs["Color"], multiply.inputs[0])
+    links.new(multiply.outputs["Value"], volume.inputs["Density"])
+    links.new(volume.outputs["Volume"], output.inputs["Volume"])
+    cube.data.materials.append(material)
+    location_socket = mapping.inputs["Location"]
+    location_socket.default_value[0] = 0.0
+    location_socket.keyframe_insert(data_path="default_value", frame=1)
+    location_socket.default_value[0] = float(cfg.get("travel", 1.0))
+    location_socket.keyframe_insert(data_path="default_value", frame=max(2, frames))
+    if material.node_tree.animation_data and material.node_tree.animation_data.action:
+        for layer in material.node_tree.animation_data.action.layers:
+            for strip in layer.strips:
+                for bag in strip.channelbags:
+                    for curve in bag.fcurves:
+                        for key in curve.keyframe_points:
+                            key.interpolation = "LINEAR"
+
+
+def add_wind_particles(scene, cfg: dict, frames: int):
+    count = int(cfg.get("count", 350))
+    # Small glowing dust motes; motion blur turns them into short wind streaks.
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=1.0, location=(0, 0, 0))
+    mote = bpy.context.active_object
+    mote.name = "WindMote"
+    mote.hide_render = False
+    mat = bpy.data.materials.new("WindMote")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = tuple(cfg.get("color", [0.72, 0.84, 0.95, 1.0]))
+    bsdf.inputs["Emission Color"].default_value = tuple(cfg.get("color", [0.72, 0.84, 0.95, 1.0]))
+    if "Emission Strength" in bsdf.inputs:
+        bsdf.inputs["Emission Strength"].default_value = float(cfg.get("strength", 1.0))
+    mote.data.materials.append(mat)
+
+    bpy.ops.mesh.primitive_plane_add(size=1, location=tuple(cfg.get("location", [-2600, 0, 1100])))
+    emitter = bpy.context.active_object
+    emitter.name = "WindEmitter"
+    emitter.rotation_euler[1] = math.radians(90)
+    emitter.scale = (float(cfg.get("height_m", 1800)), float(cfg.get("width_m", 4200)), 1.0)
+    emitter_mat = bpy.data.materials.new("WindEmitter")
+    emitter_mat.use_nodes = True
+    emitter_bsdf = emitter_mat.node_tree.nodes.get("Principled BSDF")
+    emitter_bsdf.inputs["Alpha"].default_value = 0.0
+    if hasattr(emitter_mat, "surface_render_method"):
+        emitter_mat.surface_render_method = "BLENDED"
+    emitter.data.materials.append(emitter_mat)
+    modifier = emitter.modifiers.new("WindParticles", "PARTICLE_SYSTEM")
+    psys = modifier.particle_system
+    settings = psys.settings
+    settings.count = count
+    settings.frame_start = 1 - frames
+    settings.frame_end = frames
+    settings.lifetime = frames
+    settings.emit_from = "FACE"
+    settings.use_emit_random = True
+    settings.normal_factor = float(cfg.get("speed", 2.2))
+    settings.factor_random = float(cfg.get("speed_random", 0.3))
+    settings.physics_type = "NEWTON"
+    settings.effector_weights.gravity = 0.0
+    settings.render_type = "OBJECT"
+    settings.instance_object = mote
+    settings.particle_size = float(cfg.get("particle_size", 2.0))
+    settings.size_random = float(cfg.get("size_random", 0.6))
+    settings.use_rotations = False
+    emitter.hide_render = False
+    settings.display_method = "RENDER"
+    psys.point_cache.frame_start = 1 - frames
+    psys.point_cache.frame_end = frames
+    bpy.context.scene.frame_set(1)
+    bpy.ops.ptcache.bake_all(bake=True)
+
+
+def add_wind_motes(scene, cfg: dict, frames: int):
+    count = int(cfg.get("count", 120))
+    region = cfg.get("region", [-2600, 2600, -1400, 1400])
+    xmin, xmax, ymin, ymax = (float(value) for value in region)
+    z_min = float(cfg.get("z_min", 700))
+    z_max = float(cfg.get("z_max", 1200))
+    travel = float(cfg.get("travel_m", 500))
+    rng = random.Random(int(cfg.get("seed", 7)))
+    material = bpy.data.materials.new("WindMote")
+    material.use_nodes = True
+    bsdf = material.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = tuple(cfg.get("color", [0.72, 0.84, 0.95, 1.0]))
+    bsdf.inputs["Emission Color"].default_value = tuple(cfg.get("color", [0.72, 0.84, 0.95, 1.0]))
+    if "Emission Strength" in bsdf.inputs:
+        bsdf.inputs["Emission Strength"].default_value = float(cfg.get("strength", 1.2))
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0))
+    template = bpy.context.active_object
+    template.name = "WindMoteTemplate"
+    template.data.materials.append(material)
+    template.hide_render = True
+    collection = _collection(scene, "WIND")
+    for index in range(count):
+        obj = template.copy()
+        obj.data = template.data
+        obj.hide_render = False
+        collection.objects.link(obj)
+        obj.name = f"WindMote_{index:03d}"
+        y = ymin + (ymax - ymin) * ((index + 0.5) / count) + rng.uniform(-0.03, 0.03) * (ymax - ymin)
+        x = rng.uniform(xmin, xmax)
+        z = rng.uniform(z_min, z_max)
+        obj.location = (x, y, z)
+        obj.scale = (float(cfg.get("length_m", 8.0)), float(cfg.get("width_m", 0.7)), float(cfg.get("width_m", 0.7)))
+        obj.rotation_euler[2] = rng.uniform(-0.08, 0.08)
+        obj.keyframe_insert(data_path="location", frame=1)
+        obj.location.x = min(xmax, x + travel)
+        obj.keyframe_insert(data_path="location", frame=max(2, frames))
+        if obj.animation_data and obj.animation_data.action:
+            for layer in obj.animation_data.action.layers:
+                for strip in layer.strips:
+                    for bag in strip.channelbags:
+                        for curve in bag.fcurves:
+                            for key in curve.keyframe_points:
+                                key.interpolation = "LINEAR"
+
+
+def add_wind(scene, cfg: dict, spec: dict, frames: int):
+    if not cfg:
+        return
+    style = cfg.get("style", "ribbons")
+    if style == "mist":
+        add_wind_mist(scene, cfg, frames)
+        return
+    if style == "particles":
+        add_wind_particles(scene, cfg, frames)
+        return
+    if style == "motes":
+        add_wind_motes(scene, cfg, frames)
+        return
+    count = int(cfg.get("count", 24))
+    point_count = int(cfg.get("points", 28))
+    region = cfg.get("region", [-2600, 2600, -1400, 1400])
+    xmin, xmax, ymin, ymax = (float(value) for value in region)
+    clearance = float(cfg.get("clearance_m", 90))
+    lift = float(cfg.get("lift_m", 0))
+    ridge_x = float(cfg.get("ridge_x", 0))
+    ridge_width = max(1.0, float(cfg.get("ridge_width_m", 700)))
+    wave_height = float(cfg.get("wave_height_m", 0))
+    wave_length = max(1.0, float(cfg.get("wave_length_m", 900)))
+    water_z = float((spec.get("water") or {}).get("z", (spec.get("water") or {}).get("location", [0, 0, -10000])[2]))
+    rng = random.Random(int(cfg.get("seed", 7)))
+    material = wind_material(cfg, frames)
+    collection = _collection(scene, "WIND")
+    for index in range(count):
+        base_y = ymin + (ymax - ymin) * ((index + 0.5) / count)
+        y_jitter = rng.uniform(-0.08, 0.08) * (ymax - ymin)
+        y = base_y + y_jitter
+        points = []
+        for step in range(point_count):
+            t = step / (point_count - 1)
+            x = xmin + (xmax - xmin) * t
+            z = surface_z(x, y)
+            z = max(z, water_z)
+            z += clearance
+            z += lift * math.exp(-((x - ridge_x) / ridge_width) ** 2)
+            if wave_height:
+                z += wave_height * math.sin((x / wave_length) * math.pi * 2 + index)
+            points.append((x, y, z))
+        # Low-pass the vertical path so wind reads as flow, not a terrain contour.
+        zs = [point[2] for point in points]
+        smoothed = []
+        for idx in range(len(zs)):
+            window = zs[max(0, idx - 4): min(len(zs), idx + 5)]
+            smoothed.append(sum(window) / len(window))
+        points = [(point[0], point[1], smoothed[idx]) for idx, point in enumerate(points)]
+        curve = bpy.data.curves.new(f"WindStream_{index:02d}", type="CURVE")
+        curve.dimensions = "3D"
+        curve.resolution_u = 1
+        curve.bevel_depth = float(cfg.get("thickness_m", 1.4))
+        curve.bevel_resolution = 0
+        spline = curve.splines.new("POLY")
+        spline.points.add(len(points) - 1)
+        for point, value in zip(spline.points, points):
+            point.co = (*value, 1.0)
+        obj = bpy.data.objects.new(f"WindStream_{index:02d}", curve)
+        collection.objects.link(obj)
+        curve.materials.append(material)
 
 
 def _key(frame, location, target, lens, easing):
@@ -750,6 +1039,7 @@ def main():
         scene = bpy.context.scene
         link_environment(scene, env_blend)
         frames, fps = configure_render(scene, render, temp_out, grammar)
+        add_wind(scene, spec.get("wind") or {}, spec, frames)
         camera_spec = dict(spec.get("camera") or {})
         if "lens" not in camera_spec and builder.get("lens_default") is not None:
             camera_spec["lens"] = float(builder["lens_default"])
@@ -857,6 +1147,7 @@ def main():
     bpy.context.view_layer.update()
 
     if args.build != "environment":
+        add_wind(scene, spec.get("wind") or {}, spec, frames)
         camera_spec = dict(spec.get("camera") or {})
         if "lens" not in camera_spec and builder.get("lens_default") is not None:
             camera_spec["lens"] = float(builder["lens_default"])

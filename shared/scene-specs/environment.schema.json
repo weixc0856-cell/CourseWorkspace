@@ -188,6 +188,19 @@
       "default": null,
       "title": "Water"
     },
+    "wind": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Wind"
+    },
     "camera": {
       "anyOf": [
         {

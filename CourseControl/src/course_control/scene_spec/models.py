@@ -42,6 +42,7 @@ class EnvironmentSpec(BaseModel):
     sun: dict[str, Any] | None = None
     lights: list[dict[str, Any]] = Field(default_factory=list)
     water: dict[str, Any] | None = None
+    wind: dict[str, Any] | None = None
     camera: dict[str, Any] | None = None
     render: dict[str, Any] = Field(default_factory=dict)
     notes: str = ""
@@ -131,6 +132,7 @@ class ShotSpec(BaseModel):
     objects: list[dict[str, Any]] | None = None
     lights: list[dict[str, Any]] | None = None
     water: dict[str, Any] | None = None
+    wind: dict[str, Any] | None = None
     notes: str = ""
 
 
