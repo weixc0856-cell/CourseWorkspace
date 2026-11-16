@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "note": "Only components a timeline may name belong here. Animation wrappers (DesignMotion, MotionImage) and the raw Formula primitive are internal helpers and stay unregistered on purpose: they do not carry a full screen, so a timeline that references them is a modelling error, not a missing entry.",
   "components": {
     "CarFlow": {
       "path": "RemotionStudio/src/components/CarFlow.tsx",
@@ -92,6 +93,118 @@
         "one formula per line",
         "symbols introduced on screen"
       ]
+    },
+    "MarketChart": {
+      "path": "RemotionStudio/src/components/MarketChart.tsx",
+      "props": [
+        "points",
+        "title",
+        "source",
+        "note"
+      ],
+      "max_seconds": 40,
+      "qc": [
+        "only recorded points are plotted; nothing is interpolated",
+        "the drop between points is drawn as a drop, not a trend line",
+        "source line names the exchange data and the aggregator",
+        "no point collides with the safe margin (96 px)"
+      ],
+      "provisional": true
+    },
+    "BigDate": {
+      "path": "RemotionStudio/src/components/BigDate.tsx",
+      "props": [
+        "text",
+        "eyebrow",
+        "tier",
+        "source"
+      ],
+      "max_seconds": 40,
+      "qc": [
+        "the date pair reads at phone size",
+        "no more than one date range",
+        "tier label stays legible"
+      ],
+      "provisional": true
+    },
+    "Statement": {
+      "path": "RemotionStudio/src/components/Statement.tsx",
+      "props": [
+        "text",
+        "eyebrow",
+        "tier",
+        "source"
+      ],
+      "max_seconds": 40,
+      "qc": [
+        "the statement fits two lines at 56 px",
+        "tier label matches the evidence",
+        "nothing crosses the 96 px margin"
+      ],
+      "provisional": true
+    },
+    "Chain": {
+      "path": "RemotionStudio/src/components/Chain.tsx",
+      "props": [
+        "text",
+        "eyebrow",
+        "tier",
+        "source"
+      ],
+      "max_seconds": 40,
+      "qc": [
+        "every link is a noun the viewer can see",
+        "arrows only between real links",
+        "no more than six links"
+      ],
+      "provisional": true
+    },
+    "NotClaimed": {
+      "path": "RemotionStudio/src/components/NotClaimed.tsx",
+      "props": [
+        "text",
+        "eyebrow",
+        "tier",
+        "source"
+      ],
+      "max_seconds": 40,
+      "qc": [
+        "each non-claim is a sentence, not a slogan",
+        "all items from fact-check are present"
+      ],
+      "provisional": true
+    },
+    "EndCard": {
+      "path": "RemotionStudio/src/components/EndCard.tsx",
+      "props": [
+        "text",
+        "eyebrow",
+        "tier",
+        "source"
+      ],
+      "max_seconds": 40,
+      "qc": [
+        "series name only, no self-positioning",
+        "music credit present in the package, not on the card"
+      ],
+      "provisional": true
+    },
+    "CarFlowScene": {
+      "path": "RemotionStudio/src/components/CarFlowScene.tsx",
+      "props": [
+        "eyebrow",
+        "headline",
+        "caption1",
+        "caption2",
+        "pathLabel"
+      ],
+      "max_seconds": 30,
+      "qc": [
+        "flow direction matches the car heading",
+        "both captions stay on one line pair",
+        "path label does not collide with the car"
+      ],
+      "provisional": true
     }
   }
 }
