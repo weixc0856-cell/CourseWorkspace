@@ -33,12 +33,12 @@ export const CardScene: React.FC<CardProps> = ({
         {eyebrow}
       </div>
       {tier ? (
-        <div style={{position: 'absolute', right: 96, bottom: 72, color: C.cyan, fontSize: 17, letterSpacing: '0.2em'}}>
+        <div style={{position: 'absolute', right: 96, bottom: 150, color: C.cyan, fontSize: 17, letterSpacing: '0.2em'}}>
           {tier}
         </div>
       ) : null}
       {source ? (
-        <div style={{position: 'absolute', left: 96, bottom: 72, width: 1400, color: C.muted, fontSize: 16}}>
+        <div style={{position: 'absolute', left: 96, bottom: 150, width: 1400, color: 'rgba(244,241,234,0.66)', fontSize: 16}}>
           {source}
         </div>
       ) : null}

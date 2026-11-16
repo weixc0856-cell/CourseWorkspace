@@ -32,7 +32,7 @@ export const MarketChartScene: React.FC<MarketChartProps> = ({
   points = DEFAULT_POINTS,
   title = 'Four recorded points. Not a daily series.',
   source,
-  note = '4 记录点，非逐日行情',
+  note = '4 recorded points · not a daily series',
   duration,
 }) => {
   if (!source) {
@@ -40,7 +40,9 @@ export const MarketChartScene: React.FC<MarketChartProps> = ({
   }
   const t = useSceneTime(duration);
 
-  const box = {left: 96, top: 250, width: 1728, height: 560};
+  const box = {left: 96, top: 240, width: 1728, height: 520};
+  // Keep the first and last markers clear of the 96 px safe margin once their labels are centred.
+  const inset = 150;
   const values = points.map((p) => p.value);
   const lo = Math.min(...values);
   const hi = Math.max(...values);
@@ -49,7 +51,7 @@ export const MarketChartScene: React.FC<MarketChartProps> = ({
   const yMax = hi + pad;
 
   const xAt = (i: number) =>
-    box.left + (points.length === 1 ? box.width / 2 : (box.width * i) / (points.length - 1));
+    box.left + inset + (points.length === 1 ? (box.width - 2 * inset) / 2 : ((box.width - 2 * inset) * i) / (points.length - 1));
   const yAt = (v: number) =>
     box.top + box.height - ((v - yMin) / (yMax - yMin)) * box.height;
 
@@ -107,10 +109,10 @@ export const MarketChartScene: React.FC<MarketChartProps> = ({
         })}
       </svg>
 
-      <div style={{position: 'absolute', left: 96, top: 900, color: 'rgba(244,241,234,0.55)', fontSize: 20, letterSpacing: '0.06em'}}>
+      <div style={{position: 'absolute', left: 96, top: 892, color: 'rgba(244,241,234,0.55)', fontSize: 20, letterSpacing: '0.06em'}}>
         {note}
       </div>
-      <div data-source="market" style={{position: 'absolute', left: 96, top: 968, width: 1500, color: C.muted, fontSize: 16}}>
+      <div data-source="market" style={{position: 'absolute', left: 96, top: 934, width: 1500, color: 'rgba(244,241,234,0.66)', fontSize: 15}}>
         {source}
       </div>
     </SceneFrame>

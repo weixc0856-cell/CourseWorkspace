@@ -1,0 +1,37 @@
+{
+  "fps": 30,
+  "duration_s": 30,
+  "entries": [
+    {
+      "id": "cold_open_01",
+      "kind": "card",
+      "start_s": 0,
+      "duration_s": 8,
+      "renderer": "BigDate",
+      "text": "NOV 8 → NOV 12",
+      "source": "NVIDIA release 2026-11-12 · board statement 2026-11-08",
+      "tier": "DOCUMENTED"
+    },
+    {
+      "id": "cold_open_02",
+      "kind": "clip",
+      "start_s": 8,
+      "duration_s": 12,
+      "renderer": "MarketChart",
+      "text": "OPEN −13.1% · CLOSE −4.34% · 4 recorded points",
+      "source": "Exchange close data via Reuters / Bloomberg · F12 / F13",
+      "image": null,
+      "tier": "DOCUMENTED"
+    },
+    {
+      "id": "scandal_01",
+      "kind": "clip",
+      "start_s": 20,
+      "duration_s": 15,
+      "text": "I was unfaithful to my wife.",
+      "source": "NVIDIA · A Message to Our Company · 2026-11-08",
+      "image": "staging/news-nvidia-huang-six-threads/A03.png",
+      "tier": "DOCUMENTED"
+    }
+  ]
+}

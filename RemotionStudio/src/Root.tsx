@@ -10,6 +10,7 @@ import {CourseIntro} from './brand/CourseIntro';
 import {CourseOutro} from './brand/CourseOutro';
 import {NewsOutro} from './brand/NewsOutro';
 import {ShortSignature} from './brand/ShortSignature';
+import {NewsEpisode, defaultNewsProps} from './news/NewsEpisode';
 
 // Production compositions only. Probes (R1Smoke, FormulaProbe, AccessProbe,
 // PrimerPoc/Quad, ChapterCard, BrandPreview) live in src/probes/index.ts and
@@ -60,6 +61,15 @@ const defaultTimeline: TimelineSpec = {
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="NewsEpisode"
+        component={NewsEpisode}
+        durationInFrames={Math.round(defaultNewsProps.duration_s * defaultNewsProps.fps)}
+        fps={defaultNewsProps.fps}
+        width={1920}
+        height={1080}
+        defaultProps={defaultNewsProps}
+      />
       <Composition
         id="CourseVideo"
         component={CourseVideo}
