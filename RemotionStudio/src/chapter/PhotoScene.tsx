@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, Img, staticFile} from 'remotion';
+import {SceneFrame} from './SceneFrame';
+import { Img, staticFile} from 'remotion';
 import {useSceneTime} from './timing';
 import {C, DISPLAY, FONT, ease} from './theme';
 
@@ -57,7 +58,7 @@ export const PhotoScene: React.FC<PhotoInsertProps> = ({
   const src = ease((t - 11) / 0.7);
 
   return (
-    <AbsoluteFill style={{background: 'radial-gradient(120% 90% at 65% 40%, #151C26 0%, #0B0F15 52%, #05070A 100%)', fontFamily: FONT}}>
+    <SceneFrame style={{background: 'radial-gradient(120% 90% at 65% 40%, #151C26 0%, #0B0F15 52%, #05070A 100%)', fontFamily: FONT}}>
       <div style={{position: 'absolute', left: 120, top: 96, color: C.orange, fontSize: 19, fontWeight: 600, letterSpacing: '0.26em'}}>
         {eyebrow}
       </div>
@@ -91,6 +92,6 @@ export const PhotoScene: React.FC<PhotoInsertProps> = ({
       <div style={{position: 'absolute', left: 120, bottom: 96, opacity: src, color: 'rgba(244,241,234,0.4)', fontSize: 16, letterSpacing: '0.08em'}}>
         {footer}
       </div>
-    </AbsoluteFill>
+    </SceneFrame>
   );
 };

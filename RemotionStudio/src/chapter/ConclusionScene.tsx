@@ -1,6 +1,6 @@
 import React from 'react';
+import {SceneFrame} from './SceneFrame';
 import * as THREE from 'three';
-import {AbsoluteFill} from 'remotion';
 import {useSceneTime} from './timing';
 import {ThreeCanvas} from '@remotion/three';
 import {World} from '../carflow/Scene';
@@ -17,7 +17,7 @@ export const ConclusionScene: React.FC<{duration?: number}> = ({duration}) => {
   const src = ease((t - 22) / 0.8);
 
   return (
-    <AbsoluteFill style={{background: '#05070A'}}>
+    <SceneFrame style={{background: '#05070A'}}>
       <ThreeCanvas
         width={1920}
         height={1080}
@@ -58,6 +58,6 @@ export const ConclusionScene: React.FC<{duration?: number}> = ({duration}) => {
       <div style={{position: 'absolute', left: 96, bottom: 96, opacity: src, color: 'rgba(244,241,234,0.35)', fontSize: 13, letterSpacing: '0.1em'}}>
         SYNTHESIS · Ch. 3 §3.1–3.2.6 · Fig. 3.25, p. 187 · MODEL CALCULATION AT 120 km/h
       </div>
-    </AbsoluteFill>
+    </SceneFrame>
   );
 };

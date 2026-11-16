@@ -1,5 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, Img, staticFile} from 'remotion';
+import {SceneFrame} from './SceneFrame';
+import { Img, staticFile} from 'remotion';
 import {useSceneTime} from './timing';
 import {C, DISPLAY, FONT, ease} from './theme';
 
@@ -44,7 +45,7 @@ export const EvidenceScene: React.FC<ChartOverlayProps> = ({
   const px = t < 15 ? 0 : -35 * ease((t - 15) / 9);
 
   return (
-    <AbsoluteFill style={{background: 'radial-gradient(110% 90% at 40% 40%, #111A24 0%, #080C12 60%, #05070A 100%)', fontFamily: FONT}}>
+    <SceneFrame style={{background: 'radial-gradient(110% 90% at 40% 40%, #111A24 0%, #080C12 60%, #05070A 100%)', fontFamily: FONT}}>
       <div style={{position: 'absolute', left: 96, top: 96, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em'}}>
         {eyebrow}
       </div>
@@ -78,6 +79,6 @@ export const EvidenceScene: React.FC<ChartOverlayProps> = ({
       <div style={{position: 'absolute', left: 96, bottom: 96, color: 'rgba(244,241,234,0.35)', fontSize: 14, letterSpacing: '0.1em'}}>
         BOOK FIGURE · B-CLASS · TABLE 3.1 · §3.2.6
       </div>
-    </AbsoluteFill>
+    </SceneFrame>
   );
 };

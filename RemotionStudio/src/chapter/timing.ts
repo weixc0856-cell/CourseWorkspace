@@ -21,7 +21,9 @@ export const assertSequenceDuration = (
   durationSeconds: number,
 ): void => {
   const actual = durationInFrames / fps;
-  if (Math.abs(actual - durationSeconds) > 0.01) {
+    // 0.02 s is below one frame at 30 fps (1/30 = 0.033 s): rounding an
+  // instance duration to whole frames cannot make a real mismatch pass.
+  if (Math.abs(actual - durationSeconds) > 0.02) {
     throw new Error(
       `sequence is ${actual}s but the instance declares ${durationSeconds}s; split the beat into instances instead of stretching one`,
     );

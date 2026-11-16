@@ -1,6 +1,6 @@
 import React from 'react';
+import {SceneFrame} from './SceneFrame';
 import * as THREE from 'three';
-import {AbsoluteFill} from 'remotion';
 import {useSceneTime} from './timing';
 import {ThreeCanvas} from '@remotion/three';
 import {World} from '../carflow/Scene';
@@ -33,7 +33,7 @@ export const CarScene: React.FC<CarFlowSceneProps> = ({
   const cap2 = win(t, 11.8, 20.2, 0.6);
 
   return (
-    <AbsoluteFill style={{background: '#05070A'}}>
+    <SceneFrame style={{background: '#05070A'}}>
       <ThreeCanvas
         width={1920}
         height={1080}
@@ -81,6 +81,6 @@ export const CarScene: React.FC<CarFlowSceneProps> = ({
         <div style={{fontSize: 92, fontWeight: 600, lineHeight: 0.9, letterSpacing: '-0.05em'}}>3.3<span style={{fontSize: 46}}>×</span></div>
         <div style={{fontSize: 13, letterSpacing: '0.24em', color: 'rgba(244,241,234,0.55)', marginTop: 8}}>AIR / ROLLING</div>
       </div>
-    </AbsoluteFill>
+    </SceneFrame>
   );
 };
