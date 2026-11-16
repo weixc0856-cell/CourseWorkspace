@@ -191,9 +191,23 @@ def _timeline_assets(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
 
 
 def _narration_measured(ctx: EvalContext) -> tuple[Status, Any, Any, str]:
-    path = ctx.build_root / "narration" / "narration.meta.json"
+    voice = getattr(ctx.spec, "voice", None)
+    declared = voice.get("path") if isinstance(voice, dict) else None
+    if declared:
+        candidate = Path(str(declared))
+        if not candidate.is_absolute():
+            for base in (ctx.build_root.parent.parent, ctx.build_root):
+                resolved = base / candidate
+                if resolved.is_file():
+                    candidate = resolved
+                    break
+        if not candidate.is_file():
+            return "fail", str(declared), "voice.path exists", str(candidate)
+    path = ctx.build_root / "narration" / "narration.resequenced.meta.json"
     if not path.is_file():
-        return "not_run", None, "narration.meta.json", str(path)
+        path = ctx.build_root / "narration" / "narration.meta.json"
+    if not path.is_file():
+        return "not_run", None, "narration meta", str(path)
     try:
         meta = json.loads(path.read_text(encoding="utf-8"))
         segments = meta.get("segments") or []

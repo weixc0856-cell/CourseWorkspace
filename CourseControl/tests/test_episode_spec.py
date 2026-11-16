@@ -295,6 +295,27 @@ class EpisodeSpecTests(unittest.TestCase):
         self.assertEqual(status, "fail")
         self.assertEqual(actual["missing_claims"], ["C02"])
 
+    def test_missing_voice_path_fails_narration_check(self):
+        from types import SimpleNamespace
+        from course_control.production.checks import EvalContext, _narration_measured
+
+        narration = self.root / "build" / "narration"
+        narration.mkdir(parents=True)
+        (narration / "narration.meta.json").write_text(
+            json.dumps({"segments": [{"end_s": 700.0}]}), encoding="utf-8"
+        )
+        spec = SimpleNamespace(
+            total_seconds=700,
+            min_seconds=480,
+            max_seconds=900,
+            voice={"status": "local", "path": "build/does-not-exist.wav"},
+        )
+        status, actual, _expected, _evidence = _narration_measured(
+            EvalContext(spec=spec, lesson_dir=self.root, build_root=self.root / "build")
+        )
+        self.assertEqual(status, "fail")
+        self.assertIn("does-not-exist", str(actual))
+
 
 if __name__ == "__main__":
     unittest.main()
