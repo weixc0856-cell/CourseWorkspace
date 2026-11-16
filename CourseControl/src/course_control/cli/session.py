@@ -68,33 +68,33 @@ def session_run_command(
     if not spec.is_file():
         typer.echo(f"session spec not found: {spec}", err=True)
         raise typer.Exit(1)
-    if record:
-        from course_control.authoring.pipeline import assert_storyboard_signed
-        from course_control.content.paths import ContractError, LessonPaths
+    # A session run executes commands and writes evidence even without --record.
+    from course_control.authoring.pipeline import assert_storyboard_signed
+    from course_control.content.paths import ContractError, LessonPaths
 
-        if not (lesson_dir / "lesson.yaml").is_file():
-            typer.echo(
-                f"blocked: --record requires a lesson contract under {lesson_dir}",
-                err=True,
-            )
-            raise typer.Exit(3)
-        try:
-            spec_lesson = str(json.loads(spec.read_text(encoding="utf-8")).get("lesson") or "")
-        except (OSError, json.JSONDecodeError) as exc:
-            typer.echo(f"blocked: unreadable session spec: {exc}", err=True)
-            raise typer.Exit(3)
-        if spec_lesson and spec_lesson != lesson_dir.name:
-            typer.echo(
-                f"blocked: session spec is for {spec_lesson}, lesson dir is {lesson_dir.name}",
-                err=True,
-            )
-            raise typer.Exit(3)
-        try:
-            sign_paths = LessonPaths.load(workspace.resolve(), lesson_dir)
-            assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
-        except Exception as exc:  # noqa: BLE001 - the gate is user-facing
-            typer.echo(f"blocked: {exc}", err=True)
-            raise typer.Exit(3)
+    if not (lesson_dir / "lesson.yaml").is_file():
+        typer.echo(
+            f"blocked: session-run requires a lesson contract under {lesson_dir}",
+            err=True,
+        )
+        raise typer.Exit(3)
+    try:
+        spec_lesson = str(json.loads(spec.read_text(encoding="utf-8")).get("lesson") or "")
+    except (OSError, json.JSONDecodeError) as exc:
+        typer.echo(f"blocked: unreadable session spec: {exc}", err=True)
+        raise typer.Exit(3)
+    if spec_lesson and spec_lesson != lesson_dir.name:
+        typer.echo(
+            f"blocked: session spec is for {spec_lesson}, lesson dir is {lesson_dir.name}",
+            err=True,
+        )
+        raise typer.Exit(3)
+    try:
+        sign_paths = LessonPaths.load(workspace.resolve(), lesson_dir)
+        assert_storyboard_signed(sign_paths.lesson_dir, sign_paths.storyboard_source)
+    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     try:
         result, manifest, recording = run_session(
             workspace.resolve(), spec, lesson_dir, record=record

@@ -1,6 +1,6 @@
 # Content root changes · 2026-11-16
 
-- Generated: 2026-11-16T21:42:23+08:00
+- Generated: 2026-11-16T21:59:01+08:00
 - Base commit: `1ef709c92821aaa86672365209c45ab3866002a5`
 - Handoff commit: **not created by the author session**; the coordinator commits this tree.
 - Machine-readable copy: `docs/audit/content-changes-2026-11-16.json`.
@@ -110,5 +110,5 @@
 - scripts/check_docs.py --selftest -> PASS
 - scripts/check_build_layout.py -> build layout ok
 - scripts/check_build_layout.py --selftest -> PASS
-- CourseControl unit tests -> 792 passed, 9 skipped
+- CourseControl unit tests -> 806 passed, 9 skipped
 - course-control build --lesson t1-01-why-aerodynamics (unsigned) -> exit 3 blocked

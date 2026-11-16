@@ -37,12 +37,28 @@ class QualityCertificateTest(unittest.TestCase):
         self._write("gate.json", {"verification_status": "pass"})
         self._write(
             "quality-report.json",
-            {"dimensions": [{"id": "Q1", "status": "PASS"}]},
+            {
+                "dimensions": [
+                    {"id": "Q1", "status": "PASS"},
+                    {"id": "Q2", "status": "PASS"},
+                    {"id": "Q3", "status": "PASS"},
+                    {"id": "Q4", "status": "PASS"},
+                    {"id": "Q5", "status": "PASS"},
+                ]
+            },
         )
         certificate = issue(self.build, "demo")
         self.assertEqual(certificate.verdict, "pass")
-        self.assertEqual(certificate.dimensions, {"Q1": "PASS"})
+        self.assertEqual(certificate.dimensions["Q1"], "PASS")
+        self.assertEqual(set(certificate.dimensions), {"Q1", "Q2", "Q3", "Q4", "Q5"})
         self.assertIsNotNone(certificate.quality_report_sha256)
+
+    def test_partial_quality_report_is_not_pass(self) -> None:
+        self._write("defects.json", {"defects": []})
+        self._write("gate.json", {"verification_status": "pass"})
+        self._write("quality-report.json", {"dimensions": [{"id": "Q1", "status": "PASS"}]})
+        certificate = issue(self.build, "demo")
+        self.assertEqual(certificate.verdict, "incomplete")
 
     def test_release_step_blocking_is_incomplete(self) -> None:
         self._write("defects.json", {"defects": []})

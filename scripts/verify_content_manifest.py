@@ -5,7 +5,7 @@ a reviewer does not have to re-derive the tree algorithm:
 
     python scripts/verify_content_manifest.py \
         --manifest docs/audit/content-changes-2026-11-16.json \
-        --content-root D:/CourseContent
+        --content-root <content-root>
 
 It exits 1 and names every mismatch.  Cache directories are counted, not
 hashed; the manifest says which ones.
@@ -66,6 +66,19 @@ def tree(path: Path, exclude: tuple[str, ...] = ()) -> dict:
     }
 
 
+def _within(root: Path, relative: object) -> Path | None:
+    value = str(relative or "")
+    if not value:
+        return None
+    candidate = Path(value)
+    if candidate.is_absolute():
+        return None
+    target = (root / candidate).resolve()
+    if root != target and root not in target.parents:
+        return None
+    return target
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, required=True)
@@ -75,10 +88,26 @@ def main() -> int:
     root = args.content_root.resolve()
     problems: list[str] = []
     for item in data.get("moves") or []:
-        target = root / str(item.get("to") or "")
+        target = _within(root, item.get("to"))
+        source = _within(root, item.get("from"))
+        if target is None:
+            problems.append(f"unsafe move target: {item.get('to')}")
+            continue
+        if source is None:
+            problems.append(f"unsafe move source: {item.get('from')}")
+            continue
+        if source.exists():
+            problems.append(f"move source still exists: {item.get('from')}")
         if item.get("cache"):
             if not target.exists():
                 problems.append(f"cache directory missing: {item.get('to')}")
+            elif target.is_dir():
+                count = sum(1 for f in target.rglob("*") if f.is_file())
+                if count != item.get("files"):
+                    problems.append(
+                        f"cache file count mismatch: {item.get('to')} "
+                        f"({count} != {item.get('files')})"
+                    )
             continue
         if not target.exists():
             problems.append(f"moved item missing: {item.get('to')}")
@@ -94,17 +123,39 @@ def main() -> int:
         if sorted(current["symlinks"]) != sorted(item.get("symlinks") or []):
             problems.append(f"symlink list mismatch: {item.get('to')}")
     for item in data.get("created") or []:
-        path = root / str(item.get("path") or "")
+        path = _within(root, item.get("path"))
+        if path is None:
+            problems.append(f"unsafe created path: {item.get('path')}")
+            continue
         if not path.is_file():
             problems.append(f"created file missing: {item.get('path')}")
         elif _sha(path) != item.get("sha256"):
             problems.append(f"created file changed: {item.get('path')}")
     for item in data.get("archived") or []:
-        path = root / str(item.get("to") or "")
+        path = _within(root, item.get("to"))
+        if path is None:
+            problems.append(f"unsafe archive path: {item.get('to')}")
+            continue
         if not path.is_file():
             problems.append(f"archived file missing: {item.get('to')}")
         elif _sha(path) != item.get("sha256"):
             problems.append(f"archived file changed: {item.get('to')}")
+    for item in data.get("modified") or []:
+        path = _within(root, item.get("path"))
+        if path is None:
+            problems.append(f"unsafe modified path: {item.get('path')}")
+            continue
+        if not path.is_file():
+            problems.append(f"modified file missing: {item.get('path')}")
+        elif _sha(path) != item.get("sha256"):
+            problems.append(f"modified file changed: {item.get('path')}")
+    for item in data.get("removed") or []:
+        path = _within(root, item.get("path"))
+        if path is None:
+            problems.append(f"unsafe removed path: {item.get('path')}")
+            continue
+        if path.exists():
+            problems.append(f"removed path still exists: {item.get('path')}")
     if problems:
         print(f"{len(problems)} content manifest problem(s):")
         for problem in problems:

@@ -210,19 +210,16 @@ def _mtime_freshness(paths: LessonPaths, video: Path) -> Freshness:
             paths.build_root / "subtitles.srt",
         ]
     video_time = video.stat().st_mtime
-    required_names = {"lesson", "storyboard", "slides"}
     for name, item in (
         inputs if isinstance(inputs, list) and inputs and isinstance(inputs[0], tuple)
         else [(f"input{i}", value) for i, value in enumerate(inputs)]
     ):
         if not item.is_file():
-            if name in required_names:
-                return Freshness(
-                    False,
-                    MTIME_WEAK,
-                    reason=f"stale: required input is missing: {item}",
-                )
-            continue
+            return Freshness(
+                False,
+                MTIME_WEAK,
+                reason=f"stale: declared input is missing: {name} ({item})",
+            )
         if item.stat().st_mtime > video_time:
             return Freshness(
                 False,

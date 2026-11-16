@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from course_control.content.paths import LessonPaths
+from course_control.quality.certificate import quality_content_sha256
 
 PASS = "PASS"
 WARN = "WARN"
@@ -200,6 +201,13 @@ def _q4(paths: LessonPaths) -> dict:
             "evidence": ["build/<slug>/final/build-report.json"],
             "stages": stages,
         }
+    if verdict != "pass":
+        return {
+            "status": INCOMPLETE,
+            "reason": f"build report verdict={verdict or 'unknown'}",
+            "evidence": ["build/<slug>/final/build-report.json"],
+            "stages": stages,
+        }
     if skipped:
         return {
             "status": INCOMPLETE,
@@ -366,6 +374,7 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
             if item["status"] in {WARN, BLOCKED, INCOMPLETE}
         ],
     }
+    report["content_sha256"] = quality_content_sha256(report)
     target = paths.build_root / "quality" / "quality-report.json"
     existing = _load(target)
     if existing and existing.get("generated_at"):

@@ -105,6 +105,9 @@ class PackageTest(unittest.TestCase):
             encoding="utf-8",
         )
         report_sha = hashlib.sha256(quality_report.read_bytes()).hexdigest()
+        from course_control.quality.certificate import quality_content_sha256
+
+        quality_content = quality_content_sha256(json.loads(quality_report.read_text("utf-8")))
         (build / "quality" / "certificate.json").write_text(
             json.dumps(
                 {
@@ -113,6 +116,7 @@ class PackageTest(unittest.TestCase):
                     "generated_at": "now",
                     "verdict": "pass",
                     "quality_report_sha256": report_sha,
+                    "quality_report_content_sha256": quality_content,
                 }
             ),
             encoding="utf-8",
@@ -126,6 +130,7 @@ class PackageTest(unittest.TestCase):
                         "decision": "approved",
                         "approved_by": "tester",
                         "quality_report_sha256": report_sha,
+                        "quality_report_content_sha256": quality_content,
                     }
                 ),
                 encoding="utf-8",
@@ -163,6 +168,7 @@ class PackageTest(unittest.TestCase):
                         "build_report_sha256": build_report_sha,
                         "final_video_sha256": final_sha,
                         "quality_report_sha256": report_sha,
+                        "quality_report_content_sha256": quality_content,
                     }
                 ),
                 encoding="utf-8",

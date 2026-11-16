@@ -186,6 +186,15 @@ class QualityReportTests(DemoCase):
         self.assertFalse(report["states"]["VERIFY_PASS"])
         self.assertTrue(report["states"]["VERIFY_INCOMPLETE"])
 
+    def test_incomplete_build_verdict_is_not_pass(self) -> None:
+        self._write(
+            "final/build-report.json",
+            {"verdict": "incomplete", "stages": [{"name": "render", "status": "pass"}]},
+        )
+        report, _ = build_quality_report(self.workspace, self.paths)
+        self.assertEqual(report["dimensions"][3]["status"], Q_INCOMPLETE)
+        self.assertFalse(report["states"]["VERIFY_PASS"])
+
     def test_report_hash_is_stable_when_inputs_do_not_change(self) -> None:
         first, target = build_quality_report(self.workspace, self.paths)
         before = target.read_bytes()

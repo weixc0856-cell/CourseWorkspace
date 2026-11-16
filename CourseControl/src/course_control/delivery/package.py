@@ -118,10 +118,15 @@ def _quality_problems(certificate_path: Path, quality_path: Path, lesson: str) -
             )
         if certificate.verdict != "pass":
             problems.append(f"quality certificate is {certificate.verdict}")
-        if not certificate.quality_report_sha256:
-            problems.append("certificate does not pin the quality report")
-        elif not quality_path.is_file() or certificate.quality_report_sha256 != _sha(quality_path):
-            problems.append("certificate is stale (quality report changed)")
+        quality_data = _read_json(quality_path)
+        if quality_data is None:
+            problems.append("quality report missing or invalid")
+        else:
+            from course_control.quality.certificate import quality_content_sha256
+
+            expected = quality_content_sha256(quality_data)
+            if certificate.quality_report_content_sha256 != expected:
+                problems.append("certificate does not pin the current quality content")
 
     quality = _read_json(quality_path)
     if quality is None:
@@ -159,10 +164,15 @@ def _approval_problems(
 ) -> list[str]:
     """Check that both approvals bind this build, film and quality report."""
     problems: list[str] = []
+    quality = _read_json(quality_path)
+    from course_control.quality.certificate import quality_content_sha256
+
     expected = {
         "build_report_sha256": _sha(build_report) if build_report.is_file() else None,
         "final_video_sha256": _sha(final_video) if final_video.is_file() else None,
-        "quality_report_sha256": _sha(quality_path) if quality_path.is_file() else None,
+        "quality_report_content_sha256": (
+            quality_content_sha256(quality) if quality is not None else None
+        ),
     }
     for label, path in (("review", review_path), ("release", release_path)):
         approval = _read_json(path)
@@ -455,6 +465,10 @@ def build_package(paths: LessonPaths, output_root: Path | None = None) -> tuple[
     (root / "delivery-checklist.md").write_text(
         "\n".join(checklist) + "\n", encoding="utf-8"
     )
+    records.append(_record(root, root / "delivery-checklist.md", True))
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + chr(10), encoding="utf-8"
+    )
     if verdict != "pass":
         # An incomplete or failed attempt must never displace the last passing
         # delivery.  Keep it beside the delivery for inspection and say so.
@@ -533,8 +547,14 @@ def verify_package(root: Path) -> list[str]:
         "evidence/quality-report.json",
         "evidence/review-approval.json",
         "evidence/release-approval.json",
+        "metadata.json",
+        "delivery-checklist.md",
     }
-    if (manifest.get("evidence") or {}).get("storyboard"):
+    storyboard_present = any(
+        (root / "evidence" / "storyboard" / name).is_file()
+        for name in ("review.json", "review.html", "decisions.json")
+    )
+    if (manifest.get("evidence") or {}).get("storyboard") or storyboard_present:
         required.update(
             {
                 "evidence/storyboard/review.json",
@@ -594,7 +614,7 @@ def verify_package(root: Path) -> list[str]:
         )
     )
 
-    if (manifest.get("evidence") or {}).get("storyboard"):
+    if (manifest.get("evidence") or {}).get("storyboard") or storyboard_present:
         review = _read_json(root / "evidence" / "storyboard" / "review.json")
         page = root / "evidence" / "storyboard" / "review.html"
         decisions = root / "evidence" / "storyboard" / "decisions.json"

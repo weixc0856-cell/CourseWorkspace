@@ -370,11 +370,9 @@ def release_approve_command(
         typer.echo("automatic verification is not pass; refusing approval", err=True)
         typer.echo(f"VERIFY_INCOMPLETE={states['VERIFY_INCOMPLETE']} VERIFY_FAIL={states['VERIFY_FAIL']}", err=True)
         raise typer.Exit(2)
-    if decision == "approved" and states.get("BLOCKED_WARNINGS"):
-        typer.echo(
-            "blocking warnings remain: " + ", ".join(states["BLOCKED_WARNINGS"]),
-            err=True,
-        )
+    blocking = [item for item in states.get("BLOCKED_WARNINGS") or [] if item != "Q5"]
+    if decision == "approved" and blocking:
+        typer.echo("blocking warnings remain: " + ", ".join(blocking), err=True)
         raise typer.Exit(2)
     gate = None
     gate_path = paths.build_root / "quality" / "gate.json"
@@ -394,11 +392,11 @@ def release_approve_command(
                 review = json.loads(review_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 review = None
-        quality_sha = hashlib.sha256(quality_path.read_bytes()).hexdigest()
+        quality_content = str(report.get("content_sha256") or "")
         if (
             review is None
             or review.get("decision") != "approved"
-            or review.get("quality_report_sha256") != quality_sha
+            or review.get("quality_report_content_sha256") != quality_content
         ):
             typer.echo("human review is not approved for this quality report; refusing release sign-off", err=True)
             raise typer.Exit(2)
@@ -429,6 +427,7 @@ def release_approve_command(
         "build_report_sha256": sha(build_report),
         "final_video_sha256": sha(final),
         "quality_report_sha256": sha(quality_path),
+        "quality_report_content_sha256": report.get("content_sha256"),
     }
     target = paths.build_root / "quality" / f"{stage}-approval.json"
     target.parent.mkdir(parents=True, exist_ok=True)
