@@ -182,7 +182,7 @@ course-control render shot --lesson <slug> --shot <id> --mode release
 - 是否把 Blender 变成这条线的默认引擎；
 - 是否把项目级 `visual-design` / `sound-design` 接口排进下一阶段。
 
-在结论出来前，不扩 90 集，不新增视觉模板，不把任何一版写进 `deliver/`。
+在结论出来前，不扩 90 集（90 集口径已由 D-108 取代为 180 集），不新增视觉模板，不把任何一版写进 `deliver/`。
 EOF
 
 ---
