@@ -275,8 +275,13 @@ def guard_destination(workspace: Path, base_out: Path) -> Path:
             f"refusing to write outside the workspace and its content root: {target}"
         )
 
-    # 用未解析的路径逐级检查：resolve() 会把 junction 摊平，检查就失效了。
-    for candidate in Path(os.path.abspath(base_out)).parents:
+    # 用未解析的路径检查：resolve() 会把 junction 摊平，检查就失效了。
+    # 先查 base_out 自身，再逐级查祖先——目标本身是链接时，只要它指向允许根内，
+    # 范围检查就拦不住，必须显式拒绝。
+    raw = Path(os.path.abspath(base_out))
+    if os.path.lexists(raw) and _is_reparse(raw):
+        raise PathGuardError(f"refusing to write through a link: {raw}")
+    for candidate in raw.parents:
         if candidate.exists() and _is_reparse(candidate):
             raise PathGuardError(f"refusing to write through a link: {candidate}")
 
