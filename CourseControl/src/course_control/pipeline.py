@@ -49,6 +49,10 @@ class BuildOptions:
     # Internal test/tool override.  Production callers keep the default; the
     # CLI has no flag for this, so a course build cannot silently skip the gate.
     require_storyboard_signoff: bool = True
+    # ``--capture-only`` renders slides.md so the storyboard page has images to
+    # review.  It is the one entry allowed before the page is signed, because it
+    # produces the input to that review and runs nothing else.
+    capture_only: bool = False
 
 
 def _stage(name: str, status: Status, reason: str | None = None, errors: list[str] | None = None) -> StageOutcome:
@@ -188,7 +192,7 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
                 storyboard_override=storyboard,
                 build_root_override=options.build_root,
             )
-    if options.require_storyboard_signoff:
+    if options.require_storyboard_signoff and not options.capture_only:
         from course_control.authoring.pipeline import assert_storyboard_signed
 
         assert_storyboard_signed(lesson_dir, paths.storyboard_source)
@@ -306,7 +310,7 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
         builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="scene_mode"))
     elif paths.lesson.compose.mode == "shots":
         builder.add_stage(_stage("capture_slides", Status.NOT_APPLICABLE, reason="shots_mode"))
-    elif options.skip_compose:
+    elif options.skip_compose and not options.capture_only:
         builder.add_stage(_stage("capture_slides", Status.SKIPPED, reason="skip_compose"))
     else:
         outcome = run.run(
@@ -320,6 +324,23 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
                 "upstream_failed",
             )
             return run.finish()
+
+    if options.capture_only:
+        _mark_not_run(
+            builder,
+            [
+                "render:motion_canvas",
+                "render:manim",
+                "render:blender",
+                "render:code_video",
+                "collect",
+                "compose",
+                "brand",
+                "verify",
+            ],
+            "capture_only",
+        )
+        return run.finish()
 
     skip_downstream = False
     for engine, adapter in (
