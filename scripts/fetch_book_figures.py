@@ -27,8 +27,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
+import stat
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +44,9 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 FIGURE_RE = re.compile(r"(?i)fig(?:ure)?\.?\s*([0-9]+[.\-][0-9]+)")
+
+# 写入门禁：默认根不用 Path.cwd()，避免在任意目录运行时把图写进别人的内容根。
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class SourceError(RuntimeError):
@@ -224,12 +229,77 @@ def _refs(args) -> list[str]:
     return specs
 
 
+class PathGuardError(RuntimeError):
+    """Raised when a write target is outside the allowed roots."""
+
+
+def _is_reparse(path: Path) -> bool:
+    """True for symlinks and Windows junctions (both redirect a write)."""
+    try:
+        if path.is_symlink():
+            return True
+        if hasattr(path, "is_junction") and path.is_junction():
+            return True
+        attrs = path.lstat().st_file_attributes
+        return bool(attrs & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+    except (OSError, AttributeError):
+        return False
+
+
+def _lexical_under(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def guard_destination(workspace: Path, base_out: Path) -> Path:
+    """Fail closed unless the write target sits in an allowed root.
+
+    Allowed roots are the workspace and its configured content root.  Every
+    component between the matching root and the target must be a real
+    directory: a junction or symlink anywhere on that path is refused, because
+    resolving it would write somewhere the caller never named.
+    """
+    workspace = Path(workspace).resolve()
+    roots = [workspace]
+    configured = content_root(workspace)
+    if configured.resolve() != workspace:
+        roots.append(configured.resolve())
+
+    target = Path(base_out).resolve()
+    root = next((candidate for candidate in roots if _lexical_under(target, candidate)), None)
+    if root is None:
+        raise PathGuardError(
+            f"refusing to write outside the workspace and its content root: {target}"
+        )
+
+    # 用未解析的路径逐级检查：resolve() 会把 junction 摊平，检查就失效了。
+    for candidate in Path(os.path.abspath(base_out)).parents:
+        if candidate.exists() and _is_reparse(candidate):
+            raise PathGuardError(f"refusing to write through a link: {candidate}")
+
+    if os.environ.get("COURSEWORKSPACE_MODE", "").strip().lower() == "dev":
+        dev_root = os.environ.get("COURSEWORKSPACE_DEV_ROOT")
+        if not dev_root:
+            raise PathGuardError(
+                "dev mode needs COURSEWORKSPACE_DEV_ROOT; refusing to guess a write root"
+            )
+        resolved_dev = Path(dev_root).expanduser().resolve()
+        if not _lexical_under(target, resolved_dev):
+            raise PathGuardError(
+                f"dev mode refuses to write outside {resolved_dev}: {target}"
+            )
+    return target
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--lesson", help="lesson slug; required unless --list")
     parser.add_argument("--source-id", help="Docling source id from catalog.json")
     parser.add_argument("--docling-root", type=Path, help="DOCLING_OUTPUT_ROOT (default from config)")
-    parser.add_argument("--workspace", type=Path, default=Path.cwd())
+    parser.add_argument("--workspace", type=Path, help="course workspace (required when writing)")
     parser.add_argument("--out", type=Path, help="default: lessons/<lesson>/staging/ref_figs")
     parser.add_argument("--figure", action="append", default=[])
     parser.add_argument("--page", action="append", type=int, default=[])
@@ -239,7 +309,18 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    workspace = args.workspace.resolve()
+    explicit_workspace = args.workspace is not None
+    workspace = (args.workspace or REPO_ROOT).resolve()
+
+    writing = not args.dry_run and not args.list
+    if writing and not explicit_workspace:
+        print(
+            "error: --workspace is required when writing figures; "
+            "give the course workspace explicitly, or use --dry-run",
+            file=sys.stderr,
+        )
+        return 2
+
     root = (args.docling_root or docling_root(workspace)).resolve()
     sources = load_catalog(root)
     if args.list:
@@ -277,6 +358,11 @@ def main() -> int:
     base_out = args.out or (
         content_root(workspace) / "lessons" / args.lesson / "staging" / "ref_figs"
     )
+    try:
+        base_out = guard_destination(workspace, base_out)
+    except PathGuardError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     out = base_out / args.source_id
     if not args.dry_run:
         out.mkdir(parents=True, exist_ok=True)
