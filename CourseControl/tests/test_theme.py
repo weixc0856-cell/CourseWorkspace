@@ -92,3 +92,33 @@ class ThemeContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CrossEngineConsistencyTest(unittest.TestCase):
+    def test_the_workspace_is_consistent(self):
+        from course_control.rendering.theme import consistency_problems
+
+        self.assertEqual(consistency_problems(WORKSPACE), [])
+
+    def test_a_drifted_theme_is_reported(self):
+        import shutil
+
+        from course_control.rendering.theme import consistency_problems
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tokens_dir = root / "shared" / "design-tokens"
+            tokens_dir.mkdir(parents=True)
+            for name in ("tokens.json", "themes.json"):
+                shutil.copy2(WORKSPACE / "shared" / "design-tokens" / name, tokens_dir / name)
+            manim_dir = root / "ManimSandbox" / "common"
+            manim_dir.mkdir(parents=True)
+            shutil.copy2(
+                WORKSPACE / "ManimSandbox" / "common" / "design_system.py",
+                manim_dir / "design_system.py",
+            )
+            themes = json.loads((tokens_dir / "themes.json").read_text(encoding="utf-8"))
+            themes["themes"]["editorial_science"]["colors"]["accent"] = "#000000"
+            (tokens_dir / "themes.json").write_text(json.dumps(themes), encoding="utf-8")
+            problems = consistency_problems(root)
+        self.assertTrue(any("themes.editorial_science" in item for item in problems))

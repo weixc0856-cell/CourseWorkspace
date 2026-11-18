@@ -1,0 +1,215 @@
+{
+  "$defs": {
+    "NarrationRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "exclusiveMinimum": 0,
+          "title": "End S",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_s",
+        "end_s"
+      ],
+      "title": "NarrationRef",
+      "type": "object"
+    },
+    "VisualEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "pattern": "^ve-[0-9]{3,}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "start_s": {
+          "minimum": 0,
+          "title": "Start S",
+          "type": "number"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "purpose": {
+          "enum": [
+            "explain",
+            "demonstrate",
+            "simulate",
+            "compare",
+            "narrate",
+            "emote",
+            "orient",
+            "summarize"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "visual_type": {
+          "enum": [
+            "text",
+            "static_image",
+            "chart",
+            "diagram",
+            "motion_graphic",
+            "paper_figure",
+            "video_footage",
+            "animation_2d",
+            "animation_3d",
+            "manim_scene",
+            "blender_scene"
+          ],
+          "title": "Visual Type",
+          "type": "string"
+        },
+        "renderer": {
+          "minLength": 1,
+          "title": "Renderer",
+          "type": "string"
+        },
+        "asset_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Asset Refs",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "narration_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NarrationRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "transition": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transition"
+        },
+        "layout": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layout"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "event_id",
+        "start_s",
+        "duration_s",
+        "purpose",
+        "visual_type",
+        "renderer"
+      ],
+      "title": "VisualEvent",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "lesson": {
+      "minLength": 1,
+      "title": "Lesson",
+      "type": "string"
+    },
+    "fps": {
+      "minimum": 1,
+      "title": "Fps",
+      "type": "integer"
+    },
+    "width": {
+      "minimum": 1,
+      "title": "Width",
+      "type": "integer"
+    },
+    "height": {
+      "minimum": 1,
+      "title": "Height",
+      "type": "integer"
+    },
+    "total_duration_s": {
+      "exclusiveMinimum": 0,
+      "title": "Total Duration S",
+      "type": "number"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/VisualEvent"
+      },
+      "minItems": 1,
+      "title": "Events",
+      "type": "array"
+    },
+    "sources": {
+      "additionalProperties": true,
+      "title": "Sources",
+      "type": "object"
+    }
+  },
+  "required": [
+    "lesson",
+    "fps",
+    "width",
+    "height",
+    "total_duration_s",
+    "events"
+  ],
+  "title": "VisualEventPlan",
+  "type": "object"
+}

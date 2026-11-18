@@ -111,6 +111,122 @@ def _quality_inputs(paths: LessonPaths) -> dict:
     }
 
 
+def _product_steps(paths: LessonPaths) -> list[Step]:
+    """Product tier and visual-event checks, only for lessons that opted in.
+
+    Legacy lessons stay exactly as they were: adding a step that says "not
+    declared" would either block 20 existing courses or fake a pass.  A lesson
+    that declares ``product_tier`` opts into both checks, and a missing plan is
+    INCOMPLETE, never a pass.
+    """
+    from course_control.production.episode_spec import EpisodeSpecError, load_episode_spec
+    from course_control.production.product import check_product
+    from course_control.production.visual_events import (
+        VisualEventError,
+        load_plan,
+        validate_plan,
+    )
+
+    tier = getattr(paths.lesson, "product_tier", None)
+    plan_path = paths.build_root / "contracts" / "visual-events.json"
+    if not tier and not plan_path.is_file():
+        return []
+
+    steps: list[Step] = []
+    if tier:
+        result = check_product(paths.lesson, paths.lesson_dir)
+        status = PASS if result.status == "PASS" else FAIL if result.status == "FAIL" else INCOMPLETE
+        steps.append(
+            Step(
+                "product_tier",
+                status,
+                f"{result.status}: " + (", ".join(result.errors or result.warnings) or "window, aspect and modules verified"),
+                str(paths.build_root / "product.json"),
+            )
+        )
+
+    episode = None
+    spec_path = paths.lesson_dir / "authoring" / "episode.spec.yaml"
+    if spec_path.is_file():
+        try:
+            episode = load_episode_spec(spec_path)
+        except EpisodeSpecError as exc:
+            steps.append(Step("visual_events", INCOMPLETE, f"episode spec: {exc}"))
+            return steps
+
+    if not plan_path.is_file():
+        steps.append(
+            Step("visual_events", INCOMPLETE, f"missing {plan_path}; run visual-events")
+        )
+        return steps
+    try:
+        report = validate_plan(load_plan(plan_path), build_root=paths.build_root, episode=episode)
+    except VisualEventError as exc:
+        steps.append(Step("visual_events", INCOMPLETE, str(exc)))
+        return steps
+    status = PASS if report.status == "PASS" else FAIL if report.status == "FAIL" else INCOMPLETE
+    detail = "; ".join(report.errors or report.warnings) or f"{len(report.plan.events)} events verified"
+    steps.append(Step("visual_events", status, detail, str(plan_path)))
+    return steps
+
+
+def _brand_steps(paths: LessonPaths) -> list[Step]:
+    """Branded lessons must carry a complete token-frame proof.
+
+    Unbranded lessons get no step.  A branded lesson with a missing or
+    malformed report is INCOMPLETE; a report whose frames, rows or input
+    hashes no longer match is FAIL.  The verifier never trusts a bare
+    ``status: PASS``.
+    """
+    branding = getattr(paths.lesson, "branding", None)
+    if branding is None or not getattr(branding, "enabled", False):
+        return []
+
+    from course_control.rendering.token_frames import (
+        TokenFrameError,
+        load_layout,
+        load_tokens,
+        verify_report,
+    )
+
+    report_path = paths.build_root / "brand" / "token-frames" / "report.json"
+    if not report_path.is_file():
+        return [
+            Step(
+                "brand_evidence",
+                INCOMPLETE,
+                f"branding enabled but {report_path} is missing; run token-frames-check",
+            )
+        ]
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return [Step("brand_evidence", INCOMPLETE, f"cannot read brand evidence: {exc}")]
+
+    workspace = getattr(paths, "workspace", None)
+    if workspace is None:
+        return [Step("brand_evidence", INCOMPLETE, "workspace is not available")]
+    layout_path = Path(workspace) / "shared" / "design-tokens" / "swatch-layout.json"
+    tokens_path = Path(workspace) / "shared" / "design-tokens" / "tokens.json"
+    try:
+        layout = load_layout(layout_path)
+        tokens = load_tokens(tokens_path)
+    except TokenFrameError as exc:
+        return [Step("brand_evidence", INCOMPLETE, f"cannot read brand inputs: {exc}")]
+
+    result = verify_report(
+        report,
+        layout=layout,
+        tokens=tokens,
+        layout_path=layout_path,
+        tokens_path=tokens_path,
+        report_path=report_path,
+    )
+    status = {"PASS": PASS, "FAIL": FAIL, "INCOMPLETE": INCOMPLETE}[result["status"]]
+    detail = "; ".join(result["problems"]) or "token-frame proof verified"
+    return [Step("brand_evidence", status, detail, str(report_path))]
+
+
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     from course_control.quality.certificate import issue, save as save_certificate
     from course_control.quality.defect import collect as collect_defects
@@ -337,6 +453,9 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
             str(defects_path),
         )
     )
+
+    steps.extend(_product_steps(paths))
+    steps.extend(_brand_steps(paths))
 
     blocking = [
         step.id for step in steps if step.status not in {PASS, PASS_WITH_EXEMPTION}

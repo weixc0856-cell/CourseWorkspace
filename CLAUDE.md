@@ -37,6 +37,8 @@
     - **工具冻结**：内容生产期发现组件或模板瑕疵，**记进 Todo、不许停下来改引擎**；交付后开固定窗口统一升级。做课期间改渲染管线，等于用交付换整洁。
     - **素材规格**：进流水线的图统一尺寸与底板（16:9 或 1:1、≥2K、统一纸色或暗色），录屏统一圆角边框套壳。规格不合的素材先修再进，不靠版面临时补救。
 
+**视觉强度分层（D-101 补充，2026-11-18）：** 10–20 分钟长课默认“结构化板书 ≈80% + 关键机制动画 ≈20%”；稳定页必须有证据大图、注记和来源，不是稀疏模板页；2–4 分钟短视频与 4–12 分钟新闻按各自策略。
+
 ### C. 验收与工程
 
 13. **AI 输出不等于已完成。** LLM 生成的结构化计划、脚本、审查意见都是候选结果，必须经程序校验与可定位证据验证；无法验证的内容不得交付。人工只在成品拒收复核时介入，不替代程序做逐条事实判断。
@@ -78,6 +80,11 @@
   course-control release-approve --lesson <slug> --by <name>  # 课程 review/release 签核
   course-control release-approve --project <project.yaml> --by <name>  # 主题片候选签核
   course-control contract-validate --kind product|ledger|timeline --path <p>
+  course-control product-check --lesson <slug>               # A–E 产品层窗口/纵横比/叙事模块
+  course-control visual-events --lesson <slug>              # 视觉事件计划 + 校验
+  course-control short-validate --path <json>               # 短视频 JSON 分镜校验
+  course-control theme-check --workspace .                  # 跨引擎品牌令牌一致性
+  course-control token-frames-check --a <png> --b <png> --layout <json> --tokens <json>  # Remotion/Manim 色板帧逐点比对（含期望色/几何）
   scripts/build-lesson.ps1 -Lesson <slug>                     # 完整构建
   scripts/check_segment_assets.py --lesson-dir <dir>          # 绑定扫描（缺参/复用图/禁令词）
   scripts/fetch_book_figures.py --source-id <id> --figure <n> # 从 Docling 取原书图
@@ -94,6 +101,7 @@
 
 ## 3. 索引（按需查阅，不在此堆砌）
 
+- **顶层目标**：[docs/个人IP-内容生产系统-顶层目标.md](docs/个人IP-内容生产系统-顶层目标.md)（个人 IP 定位、A–E 内容产品、完成标准） · [差距与实施计划](docs/audit/2026-11-18-个人IP系统-差距与实施计划.md)
 - **命令链与文档地图**：[docs/生产流水线-阶段与中间交付物.md](docs/生产流水线-阶段与中间交付物.md) · [docs/README.md](docs/README.md)
 - **架构与验收**：[docs/PRD.md](docs/PRD.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) · [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - **视觉与版式**：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md) · [docs/课程页面系统.md](docs/课程页面系统.md) · [docs/版式系统.md](docs/版式系统.md) · [docs/配色规范.md](docs/配色规范.md)

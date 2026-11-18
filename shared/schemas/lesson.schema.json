@@ -928,6 +928,25 @@
       "title": "Video Form",
       "type": "string"
     },
+    "product_tier": {
+      "anyOf": [
+        {
+          "enum": [
+            "micro_explainer",
+            "short_explainer",
+            "research_brief",
+            "deep_lecture",
+            "course_series"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Product Tier"
+    },
     "duration": {
       "anyOf": [
         {

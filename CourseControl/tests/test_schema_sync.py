@@ -5,6 +5,8 @@ import unittest
 from pathlib import Path
 
 from course_control.content.contracts import LessonConfig, Storyboard
+from course_control.production.visual_events import VisualEventPlan
+from course_control.production.short_storyboard import ShortStoryboard
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 
@@ -17,6 +19,14 @@ class LegacySchemaSyncTest(unittest.TestCase):
     def test_storyboard_schema_matches_model(self):
         path = WORKSPACE / "shared" / "schemas" / "storyboard.schema.json"
         self.assertEqual(json.loads(path.read_text(encoding="utf-8")), Storyboard.model_json_schema())
+
+    def test_visual_events_schema_matches_model(self):
+        path = WORKSPACE / "shared" / "schemas" / "visual-events.schema.json"
+        self.assertEqual(json.loads(path.read_text(encoding="utf-8")), VisualEventPlan.model_json_schema())
+
+    def test_short_storyboard_schema_matches_model(self):
+        path = WORKSPACE / "shared" / "schemas" / "short-storyboard.schema.json"
+        self.assertEqual(json.loads(path.read_text(encoding="utf-8")), ShortStoryboard.model_json_schema())
 
 
 if __name__ == "__main__":

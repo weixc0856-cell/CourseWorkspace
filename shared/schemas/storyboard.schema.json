@@ -542,7 +542,6 @@
       "items": {
         "$ref": "#/$defs/ShotSpec"
       },
-      "minItems": 1,
       "title": "Shots",
       "type": "array"
     },
@@ -576,8 +575,7 @@
     }
   },
   "required": [
-    "lesson",
-    "shots"
+    "lesson"
   ],
   "title": "Storyboard",
   "type": "object"

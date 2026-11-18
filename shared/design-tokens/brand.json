@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "identity": {
-    "name": "WAYNE",
-    "channel": "Wayne-CFD",
-    "tagline": "ENGINEERING & COMPUTATION",
-    "descriptor": "Physics · Simulation · Software · AI · Technology",
+    "name": "WAYNE WEI",
+    "channel": "Wayne Wei",
+    "tagline": "BUILD · EXPLAIN · CREATE",
+    "descriptor": "Engineering · AI · Business · Society",
     "thanks": "Thanks for watching.",
     "cta": "Subscribe for more deep dives."
   },
@@ -71,8 +71,15 @@
   "copy_rules": {
     "language": "en",
     "rule": "品牌画面只用英文。分类编号、中文副题、课程元数据、下一课预告不进入片头片尾。",
-    "intro": ["brand lockup", "episode title (English)"],
-    "outro": ["brand lockup", "thanks", "cta"]
+    "intro": [
+      "brand lockup",
+      "episode title (English)"
+    ],
+    "outro": [
+      "brand lockup",
+      "thanks",
+      "cta"
+    ]
   },
   "rules": {
     "news_intro_forbidden": "新闻类不播品牌动画，第一句口播即开场；栏目与日期由动态字段承担。",
