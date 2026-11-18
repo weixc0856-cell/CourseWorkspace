@@ -242,6 +242,10 @@ class Branding(StrictModel):
 class LessonConfig(StrictModel):
     schema_version: Literal[1]
     lesson_id: str
+    # Optional course binding.  When present, course-level gates are mandatory
+    # for this lesson; unbound standalone lessons keep the legacy behaviour.
+    course_id: str | None = None
+    episode_id: str | None = None
     title_en: str
     title_zh: str
     status: Literal["draft", "review", "final"]

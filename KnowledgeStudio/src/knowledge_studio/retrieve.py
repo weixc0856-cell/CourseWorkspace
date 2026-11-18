@@ -91,6 +91,9 @@ def retrieve(
     *,
     max_pages: int = 18,
     excerpt_chars: int = 700,
+    page_start: int | None = None,
+    page_end: int | None = None,
+    full_pages: bool = False,
 ) -> RetrievalResult:
     if max_pages < 1:
         raise RetrieveError("max_pages must be >= 1")
@@ -102,9 +105,18 @@ def retrieve(
         units = index_mod.units(connection)
         expression = match_expression(query)
         hits = index_mod.match_pages(connection, expression)
+        if page_start is not None or page_end is not None:
+            low = page_start or 1
+            high = page_end or total_pages
+            hits = [(page, score) for page, score in hits if low <= page <= high]
         if not hits:
+            scope = (
+                f" in pages {page_start}-{page_end}"
+                if page_start is not None or page_end is not None
+                else ""
+            )
             raise RetrieveError(
-                f"no page matches {query!r}; try a broader topic or another source"
+                f"no page matches {query!r}{scope}; try a broader topic or another source"
             )
         terms = query_terms(query)
         scored: dict[int, float] = {}
@@ -116,6 +128,10 @@ def retrieve(
         # one page of context on each side, at a discount, if the budget allows
         for page in list(scored):
             for neighbour in (page - 1, page + 1):
+                if page_start is not None and neighbour < page_start:
+                    continue
+                if page_end is not None and neighbour > page_end:
+                    continue
                 if 1 <= neighbour <= total_pages and neighbour not in scored:
                     scored[neighbour] = max(scored.get(neighbour, 0.0), scored[page] * 0.4)
                     unit_of[neighbour] = _unit_boost(units, neighbour, terms)[1]
@@ -127,7 +143,7 @@ def retrieve(
             row = index_mod.page_row(connection, page)
             if row is None:
                 continue
-            text = _excerpt(row["text"], terms, excerpt_chars)
+            text = row["text"] if full_pages else _excerpt(row["text"], terms, excerpt_chars)
             if not text:
                 continue
             printed = row["printed_page"]
@@ -225,6 +241,7 @@ def export_lesson(
     lesson_dir: Path,
     *,
     entry_id: str | None = None,
+    register: bool = False,
 ) -> dict[str, Path]:
     """Write a lesson-ready source file plus a sources.yaml fragment.
 
@@ -237,7 +254,10 @@ def export_lesson(
     name = f"KS-{result.source_id}-{result.query_id}.md"
     target = sources_dir / name
     target.write_text(_lesson_markdown(result), encoding="utf-8")
-    digest = hashlib.sha256(target.read_bytes()).hexdigest()
+    # Match CourseControl's ingest/digest convention: hash the decoded text,
+    # not the raw bytes. On Windows write_text produces CRLF, read_text
+    # normalises it to LF, so a raw-byte hash would never equal digest's.
+    digest = sha256_text(target.read_text(encoding="utf-8"))
 
     if entry_id is None:
         entry_id = _next_source_id(lesson_dir)
@@ -261,7 +281,34 @@ def export_lesson(
     fragment.write_text(
         yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), encoding="utf-8"
     )
-    return {"source": target, "fragment": fragment}
+    exported = {"source": target, "fragment": fragment}
+    if register:
+        exported["sources"] = _register_entry(lesson_dir, entry)
+    return exported
+
+
+def _register_entry(lesson_dir: Path, entry: dict) -> Path:
+    """Append or replace one entry in the lesson's authoring/sources.yaml."""
+    path = lesson_dir / "authoring" / "sources.yaml"
+    if path.is_file():
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not isinstance(data, dict):
+            raise ValueError(f"{path} is not a mapping")
+    else:
+        data = {"schema_version": 1, "lesson": lesson_dir.name, "sources": []}
+    sources = data.setdefault("sources", [])
+    if not isinstance(sources, list):
+        raise ValueError(f"{path}: sources must be a list")
+    for index, item in enumerate(sources):
+        if str(item.get("id") or "") == str(entry.get("id") or ""):
+            sources[index] = entry
+            break
+    else:
+        sources.append(entry)
+    path.write_text(
+        yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    return path
 
 
 def _next_source_id(lesson_dir: Path) -> str:
@@ -291,11 +338,11 @@ def _lesson_markdown(result: RetrievalResult) -> str:
         if heading != current:
             current = heading
             lines += ["", f"## {heading}", ""]
-        printed = excerpt.printed_page if excerpt.printed_page is not None else excerpt.pdf_page
-        lines += [
-            f"<!-- ks:page pdf={excerpt.pdf_page} printed={printed} -->",
-            "",
-            excerpt.text,
-            "",
-        ]
+        # Only record a printed page when the source actually knows it. Falling
+        # back to the PDF page here mislabels every PDF page as a printed page.
+        marker = f"<!-- ks:page pdf={excerpt.pdf_page}"
+        if excerpt.printed_page is not None:
+            marker += f" printed={excerpt.printed_page}"
+        marker += " -->"
+        lines += [marker, "", excerpt.text, ""]
     return "\n".join(lines)

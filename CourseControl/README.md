@@ -1,7 +1,7 @@
 # CourseControl
 
 
-> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
+> **2026-11-18 状态**：`check.ps1` = `check ok`（51 项，0 失败，0 内容异常）；942 个单元测试通过。课程项目合同在内容根 `projects/<course_id>/project.yaml`（ProjectSpec `production.course`），课程链先读它；仓库 `config/course-chain.yaml` 只作 legacy/测试回退。`build/` 为临时区、`deliver/` 为最终交付区。
 课程生产控制层。读取 `lessons/<slug>/` 的 YAML 契约，按课程实际使用的引擎调度渲染，生成 `build/<slug>/shots.json`，调用 Remotion 合成最终视频，并写出 `build/<slug>/final/build-report.json`；`package` 把最终资产复制到 `deliver/<slug>/`。
 
 在上游还包含三个设计/管理层：
@@ -9,6 +9,7 @@
 - `director/`：已批准的 brief / outline / script / storyboard → 导演计划、引擎路由、硬闸门；
 - `delivery/`：订单、授权、交付清单、状态与 `producer-rebuild` 增量；
 - `layout/` + `simulation.py`：版式模板/配色 token，以及模拟数据的输入输出契约。
+- `production/course_chain.py`：课程项目层。按 lesson 的 `course_id` 读取内容根 `projects/<course_id>/project.yaml` 的 `production.course`（计划、集数、card 目录、Claim 索引、声线、禁用词），再校验单集身份、计划块、card/lesson/spec；`config/course-chain.yaml` 只是 legacy/测试回退。
 
 ## 边界
 
@@ -54,6 +55,10 @@ uv run course-control audio-plan --lesson <slug> --workspace ..
 uv run course-control layout-templates
 uv run course-control layout-validate --template process_flow
 uv run course-control simulation-run --spec ../BlenderStudio/scenes/primer-poc/simulation.spec.json --out ../build/primer-poc/simulation.json
+
+# 课程项目 / 课程链
+uv run course-control project-validate --id <course_id> --workspace ..
+python ../scripts/check_course_chain.py --content-root <内容根> --all
 
 # 完整构建（导演 handoff 可选）
 uv run course-control build --lesson lesson-smoke `

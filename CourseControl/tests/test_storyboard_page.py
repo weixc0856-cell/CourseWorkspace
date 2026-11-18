@@ -1,18 +1,35 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+import yaml
 from course_control.authoring.pipeline import (
     assert_storyboard_signed,
     sign_storyboard_page,
 )
+from course_control.production.course_chain import check_lesson_course_chain
 from PIL import Image
 
 from course_control.authoring.storyboard_page import build, split_slides
 from course_control.cli.authoring import storyboard_review_command
+
+PLAN_TEXT = """```yaml curriculum
+course: demo-course
+modules:
+  - {id: T1, count: 80}
+```
+
+| 集 | 集名 | 原书小节 | 页码 | 时长 |
+| --- | --- | --- | --- | --- |
+| T1-01 | Demo Lesson | 1.1 Scope | 22-27 | 12 |
+demo
+"""
+
 
 
 class StoryboardPageTest(unittest.TestCase):
@@ -72,11 +89,85 @@ class StoryboardPageTest(unittest.TestCase):
                     "reviewed_by": "Wei Chen",
                     "storyboard_sha256": manifest.get("storyboard_sha256"),
                     "html_sha256": manifest.get("html_sha256"),
+                    "course_chain_fingerprint": manifest.get("course_chain_fingerprint"),
                     "pages": rows,
                 }
             ),
             encoding="utf-8",
         )
+
+    def _bind_course(self) -> Path:
+        lesson_path = self.lesson / "lesson.yaml"
+        lesson = yaml.safe_load(lesson_path.read_text(encoding="utf-8"))
+        lesson["course_id"] = "demo-course"
+        lesson["episode_id"] = "T1-01"
+        lesson["duration"] = {
+            "target_seconds": 720,
+            "min_seconds": 480,
+            "max_seconds": 900,
+        }
+        lesson_path.write_text(
+            yaml.safe_dump(lesson, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+
+        course_root = self.root / "runtime" / "course-content" / "demo-course"
+        card = course_root / "episodes" / "T1-01" / "card.yaml"
+        card.parent.mkdir(parents=True)
+        card.write_text(
+            yaml.safe_dump(
+                {
+                    "episode": "T1-01",
+                    "title": "Demo Lesson",
+                    "section": "1.1",
+                    "core_question": "Demo Lesson",
+                    "concepts": ["1.1"],
+                    "figures": [],
+                    "target_seconds": 720,
+                },
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
+        plan = course_root / "COURSE_MAP.md"
+        plan.write_text(PLAN_TEXT, encoding="utf-8")
+        (self.lesson / "authoring").mkdir(exist_ok=True)
+        (self.lesson / "authoring" / "episode.spec.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "target_seconds": 720,
+                    "min_seconds": 480,
+                    "max_seconds": 900,
+                    "claims": [
+                        {"id": "C01", "source": {"chapter": "1", "section": "1.1"}}
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        config = self.root / "course-chain.yaml"
+        config.write_text(
+            yaml.safe_dump(
+                {
+                    "schema_version": 2,
+                    "courses": {
+                        "demo-course": {
+                            "expected_episode_count": 80,
+                            "plan": "runtime/course-content/demo-course/COURSE_MAP.md",
+                            "cards_dir": "runtime/course-content/demo-course/episodes",
+                            "lessons_root": "lessons",
+                            "forbidden_lesson_slugs": {},
+                            "forbidden_slide_terms": [],
+                        }
+                    },
+                },
+                allow_unicode=True,
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
+        return config
 
     def test_split_slides_ignores_style_and_separators(self):
         self.assertEqual(split_slides((self.lesson / "slides.md").read_text("utf-8")), ["Opening", "Second page"])
@@ -175,6 +266,41 @@ class StoryboardPageTest(unittest.TestCase):
         self.storyboard.write_text(self.storyboard.read_text("utf-8") + "\n# changed\n", encoding="utf-8")
         with self.assertRaises(Exception):
             sign_storyboard_page(self.root, self.lesson, "Wei Chen")
+
+    def test_course_chain_change_voids_signoff(self):
+        config = self._bind_course()
+        with mock.patch.dict(
+            os.environ, {"COURSEWORKSPACE_CHAIN_CONFIG": str(config)}
+        ):
+            chain = check_lesson_course_chain(
+                self.root, self.lesson, config_path=config
+            )
+            self.assertIsNotNone(chain)
+            self.assertTrue(chain.ok, chain.errors)
+            manifest = build(
+                "demo",
+                self.lesson,
+                self.build_root,
+                course_chain={
+                    "course_id": chain.course_id,
+                    "episode_id": chain.episode_id,
+                    "fingerprint": chain.fingerprint,
+                },
+            )
+            self.assertEqual(
+                manifest["course_chain_fingerprint"], chain.fingerprint
+            )
+            self._approve_all()
+            sign_storyboard_page(self.root, self.lesson, "Wei Chen")
+            assert_storyboard_signed(self.lesson, self.storyboard)
+
+            spec = self.lesson / "authoring" / "episode.spec.yaml"
+            spec.write_text(
+                yaml.safe_dump({"claims": [], "note": "changed"}),
+                encoding="utf-8",
+            )
+            with self.assertRaises(Exception):
+                assert_storyboard_signed(self.lesson, self.storyboard)
 
 
 if __name__ == "__main__":

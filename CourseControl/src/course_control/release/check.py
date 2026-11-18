@@ -100,6 +100,17 @@ def content_exception_for(build_root: Path, lesson: str) -> dict | None:
     return blocking_exception(build_root, lesson)
 
 
+def _quality_inputs(paths: LessonPaths) -> dict:
+    from course_control.quality.evidence import file_sha256
+
+    content = getattr(paths.lesson, "content", None)
+    return {
+        "slides": file_sha256(paths.lesson_dir / content.slides) if content else None,
+        "notes": file_sha256(paths.lesson_dir / content.notes) if content else None,
+        "episode_spec": file_sha256(paths.lesson_dir / "authoring" / "episode.spec.yaml"),
+    }
+
+
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     from course_control.quality.certificate import issue, save as save_certificate
     from course_control.quality.defect import collect as collect_defects
@@ -120,6 +131,16 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
                 data=exception,
             )
         )
+        owner = str(exception.get("owner") or "").strip()
+        if owner.lower() in {"", "unassigned", "tbd", "todo", "owner"}:
+            steps.append(
+                Step(
+                    "content_exception_owner",
+                    FAIL,
+                    f"open content exception has no named owner: {owner or '<empty>'}",
+                    data=exception,
+                )
+            )
     try:
         from course_control.authoring.pipeline import assert_storyboard_signed
 
@@ -274,6 +295,34 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
             },
         )
     )
+
+    quality_path = paths.build_root / "quality" / "quality-report.json"
+    if quality_path.is_file():
+        try:
+            quality = json.loads(quality_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            quality = None
+        if isinstance(quality, dict):
+            recorded = quality.get("content_inputs")
+            current = _quality_inputs(paths)
+            if not isinstance(recorded, dict):
+                steps.append(
+                    Step(
+                        "quality_freshness",
+                        INCOMPLETE,
+                        "quality report does not record the content it verified; re-run quality-report",
+                    )
+                )
+            elif recorded != current:
+                steps.append(
+                    Step(
+                        "quality_freshness",
+                        INCOMPLETE,
+                        "quality report predates the current slides/notes/spec; re-run quality-report",
+                    )
+                )
+            else:
+                steps.append(Step("quality_freshness", PASS, "quality report matches the current content"))
 
     defects = collect_defects(paths.build_root, paths.slug)
     defects_path = save_defects(defects, paths.build_root / "quality" / "defects.json")

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import http.server
+import json
+import os
 import shutil
 import subprocess
+import threading
 import time
+import urllib.parse
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -13,7 +18,7 @@ from course_control.platform.timeouts import resolve_timeout
 from course_control.platform.utils import run_command, which_command
 from course_control.rendering.adapters.base import StageOutcome
 
-BASE_URL = "http://localhost:8081"
+BASE_URL = "http://127.0.0.1:8081"
 CAPTURE_URL = f"{BASE_URL}/CourseSlides/template/"
 
 
@@ -25,36 +30,79 @@ def _server_ready() -> bool:
         return False
 
 
-def _start_server(paths: LessonPaths, log_dir: Path) -> subprocess.Popen:
-    script = paths.workspace / "CourseSlides" / "node_modules" / "live-server" / "live-server.js"
-    if not script.is_file():
-        raise RuntimeError(f"live-server not found: {script}")
-    log_path = log_dir / "slides-server.log"
+def _expected_pages(paths: LessonPaths) -> int:
+    """Page count declared by this lesson's slides.md."""
+    slides = paths.content_path(paths.lesson.content.slides)
+    text = slides.read_text(encoding="utf-8")
+    return sum(1 for line in text.splitlines() if line.strip() == "---") + 1
+
+
+def _make_handler(workspace: Path, lessons: Path, log_handle):
+    """Serve /CourseSlides from the repo and /lessons from the content root.
+
+    The template reads ``../../lessons/<slug>/slides.md``, which resolves to
+    ``/lessons/<slug>/slides.md`` at the server root.  Serving only the
+    workspace made that miss and fall back to a one-page placeholder deck, so
+    the capture reported success for a lesson that was never loaded.
+    """
+    repo_workspace = Path(__file__).resolve().parents[5]
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def translate_path(self, path: str) -> str:
+            clean = urllib.parse.unquote(urllib.parse.urlsplit(path).path)
+            rel = clean.lstrip("/")
+            if rel == "lessons" or rel.startswith("lessons/"):
+                base = lessons
+                tail = rel[len("lessons"):].lstrip("/")
+            elif rel == "CourseSlides" or rel.startswith("CourseSlides/"):
+                base = workspace if (workspace / "CourseSlides").is_dir() else repo_workspace
+                tail = rel
+            else:
+                base = workspace if (workspace / rel.split("/")[0]).exists() else repo_workspace
+                tail = rel
+            candidate = (base / tail).resolve()
+            if candidate != base and not str(candidate).startswith(str(base) + os.sep):
+                return str(base / "__denied__")
+            return str(candidate)
+
+        def log_message(self, fmt, *args):  # noqa: A003 - stdlib signature
+            print(fmt % args, file=log_handle)
+
+    return Handler
+
+
+class _CaptureServer:
+    """Threaded static server used only by the capture stage."""
+
+    def __init__(self, workspace: Path, lessons: Path, log_handle) -> None:
+        handler = _make_handler(workspace, lessons, log_handle)
+        self._httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 8081), handler)
+        self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
+        self._thread.start()
+
+    def terminate(self) -> None:
+        self._httpd.shutdown()
+        self._httpd.server_close()
+
+    def wait(self, timeout: float | None = None) -> None:
+        self._thread.join(timeout)
+
+    def kill(self) -> None:
+        self.terminate()
+
+
+def _start_server(paths: LessonPaths, log_dir: Path) -> _CaptureServer:
     log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "slides-server.log"
     handle = log_path.open("w", encoding="utf-8")
-    command = [
-        *which_command("node"),
-        str(script),
-        str(paths.workspace),
-        "--port=8081",
-        "--entry-file=index.html",
-        "--watch=lessons,CourseSlides/template,CourseSlides/css",
-        "--no-browser",
-    ]
-    process = subprocess.Popen(
-        command,
-        cwd=str(paths.workspace),
-        stdout=handle,
-        stderr=subprocess.STDOUT,
-    )
+    server = _CaptureServer(paths.workspace, paths.lesson_dir.parent, handle)
     for _ in range(40):
         if _server_ready():
-            return process
-        if process.poll() is not None:
-            break
+            return server
         time.sleep(0.5)
-    process.terminate()
-    raise RuntimeError(f"live-server did not become ready; see {log_path}")
+    server.terminate()
+    handle.close()
+    raise RuntimeError(f"capture server did not become ready; see {log_path}")
 
 
 def capture_slides(paths: LessonPaths) -> StageOutcome:
@@ -76,10 +124,20 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
             str(width),
             "--height",
             str(height),
+            "--base-url",
+            BASE_URL,
+            "--out",
+            str(paths.build_root / "slides"),
         ]
+        repo_workspace = Path(__file__).resolve().parents[5]
+        remotion_dir = (
+            paths.workspace / "RemotionStudio"
+            if (paths.workspace / "RemotionStudio").is_dir()
+            else repo_workspace / "RemotionStudio"
+        )
         result = run_command(
             command,
-            paths.workspace / "RemotionStudio",
+            remotion_dir,
             timeout=resolve_timeout(paths, "capture_slides"),
             log_path=log_dir / "capture-slides.log",
         )
@@ -96,6 +154,28 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
                 "capture_slides",
                 Status.FAIL,
                 errors=[f"capture manifest missing: {manifest}"],
+                duration_ms=duration_ms,
+            )
+        expected = _expected_pages(paths)
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            total = int(data.get("total_slides") or 0)
+            captured = int(data.get("captured") or 0)
+        except (OSError, ValueError, TypeError) as exc:
+            return StageOutcome(
+                "capture_slides",
+                Status.FAIL,
+                errors=[f"cannot read capture manifest: {exc}"],
+                duration_ms=duration_ms,
+            )
+        if total != expected or captured != expected:
+            return StageOutcome(
+                "capture_slides",
+                Status.FAIL,
+                errors=[
+                    f"captured {captured}/{total} pages but slides.md declares {expected}; "
+                    "the server probably served a fallback deck instead of this lesson"
+                ],
                 duration_ms=duration_ms,
             )
         return StageOutcome(

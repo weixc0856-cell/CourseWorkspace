@@ -7,7 +7,8 @@ import typer
 from pathlib import Path
 
 from course_control.content.contracts import Status
-from course_control.content.paths import ContractError, LessonPaths
+from course_control.authoring.llm import AuthoringError
+from course_control.content.paths import ContractError
 from course_control.pipeline import BuildOptions, run_build
 from course_control.delivery.report import check_report_payload, toolchain_versions
 from course_control.content.validators import validate
@@ -119,22 +120,39 @@ def build_command(
         "--resume-from",
         help="re-run this stage and everything after it (implies --resume)",
     ),
+    capture_only: bool = typer.Option(
+        False,
+        "--capture-only",
+        help="render slides.md only; allowed before the storyboard page is signed",
+    ),
 ) -> None:
     """Run the applicable stages for a lesson."""
     if storyboard_source not in (None, "storyboard", "director"):
         typer.echo("--storyboard-source must be storyboard or director", err=True)
         raise typer.Exit(2)
-    from course_control.authoring.pipeline import assert_storyboard_signed
+    if capture_only:
+        conflicts = [
+            name
+            for name, enabled in (
+                ("--skip-render", skip_render),
+                ("--skip-compose", skip_compose),
+                ("--resume", resume),
+                ("--resume-from", resume_from is not None),
+                ("--storyboard", storyboard is not None),
+                ("--storyboard-source", storyboard_source is not None),
+                ("--shots", bool(shots)),
+            )
+            if enabled
+        ]
+        if conflicts:
+            typer.echo(
+                "--capture-only runs capture_slides and nothing else; it cannot be "
+                "combined with " + ", ".join(conflicts),
+                err=True,
+            )
+            raise typer.Exit(2)
 
-    lesson_path = _lesson_path(workspace, lesson_dir, lesson)
-    try:
-        signed_paths = LessonPaths.load(
-            workspace.resolve(), lesson_path, storyboard_override=storyboard
-        )
-        assert_storyboard_signed(lesson_path, signed_paths.storyboard_source)
-    except Exception as exc:  # noqa: BLE001 - the gate is user-facing
-        typer.echo(f"blocked: {exc}", err=True)
-        raise typer.Exit(3)
+    # 签字门禁只有一处：run_build 内部。CLI 不再重复判断，避免两套门禁漂移。
     try:
         report, report_path = run_build(
             workspace.resolve(),
@@ -148,8 +166,12 @@ def build_command(
                 build_root=build_root,
                 resume=resume or resume_from is not None,
                 resume_from=resume_from,
+                capture_only=capture_only,
             ),
         )
+    except AuthoringError as exc:  # the storyboard sign-off gate
+        typer.echo(f"blocked: {exc}", err=True)
+        raise typer.Exit(3)
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)

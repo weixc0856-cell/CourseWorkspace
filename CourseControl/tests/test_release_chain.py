@@ -42,7 +42,7 @@ class ReleaseChainTest(unittest.TestCase):
         (self.lesson_dir / "authoring" / "quality.rubric.yaml").write_text(
             "schema_version: 1\n", encoding="utf-8"
         )
-        timing = self.workspace / "RemotionStudio" / "src" / "episode" / "timing.json"
+        timing = self.paths.build_root / "episode" / "timing.json"
         timing.parent.mkdir(parents=True, exist_ok=True)
         timing.write_text("{}", encoding="utf-8")
         meta = (

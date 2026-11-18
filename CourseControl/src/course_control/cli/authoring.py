@@ -7,9 +7,40 @@ import typer
 from pathlib import Path
 
 from course_control.content.paths import ContractError, LessonPaths
+from course_control.production.course_chain import (
+    check_lesson_course_chain,
+    default_chain_config,
+)
 
 from . import app
 from course_control.cli._common import _authoring_client, _load_authoring, _run_authoring, _lesson_path
+
+
+def _course_chain_payload(workspace: Path, lesson_dir: Path) -> dict | None:
+    candidate = Path(lesson_dir).resolve()
+    if not (candidate / "lesson.yaml").is_file() and (
+        candidate.parent / "lesson.yaml"
+    ).is_file():
+        candidate = candidate.parent
+    result = check_lesson_course_chain(
+        workspace,
+        candidate,
+        config_path=default_chain_config(),
+    )
+    if result is None:
+        return None
+    if not result.ok:
+        for error in result.errors:
+            typer.echo(f"course chain: {error}", err=True)
+        raise typer.Exit(3)
+    return {
+        "course_id": result.course_id,
+        "episode_id": result.episode_id,
+        "lesson_slug": result.lesson_slug,
+        "plan": str(result.plan) if result.plan else None,
+        "fingerprint": result.fingerprint,
+        "artifacts": result.artifacts,
+    }
 
 
 @app.command("ingest")
@@ -44,6 +75,7 @@ def ingest_command(
 def digest_command(
     lesson: str = typer.Option(..., "--lesson"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Build a deterministic source digest with stable citation refs."""
     from course_control.authoring.digest import build_digest
@@ -280,6 +312,7 @@ def storyboard_page_command(
 
     root = _lesson_path(workspace, lesson_dir, lesson)
     try:
+        course_chain = _course_chain_payload(workspace.resolve(), root)
         paths = LessonPaths.load(workspace.resolve(), root)
         manifest = build(
             root.name,
@@ -287,6 +320,7 @@ def storyboard_page_command(
             build_root_for(workspace.resolve(), root.name),
             storyboard_path=paths.storyboard_source,
             storyboard_data=paths.storyboard,
+            course_chain=course_chain,
         )
     except (OSError, ValueError) as exc:
         typer.echo(f"storyboard-page failed: {exc}", err=True)
@@ -319,12 +353,22 @@ def storyboard_review_command(
     from course_control.platform.workspace_layout import build_root_for
 
     root = _lesson_path(workspace, lesson_dir, lesson)
+    course_chain = _course_chain_payload(workspace.resolve(), root)
     page_dir = build_root_for(workspace.resolve(), root.name) / "storyboard"
     manifest_path = page_dir / "manifest.json"
     if not manifest_path.is_file():
         typer.echo("storyboard page missing; run storyboard-page first", err=True)
         raise typer.Exit(1)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_chain = str((course_chain or {}).get("fingerprint") or "") or None
+    built_chain = str(manifest.get("course_chain_fingerprint") or "") or None
+    if built_chain != expected_chain:
+        typer.echo(
+            "course plan/card/spec changed after the storyboard page was built; "
+            "rebuild the page before reviewing it",
+            err=True,
+        )
+        raise typer.Exit(3)
     pages = manifest.get("pages_detail") or []
     total = int(manifest.get("pages") or len(pages))
 
@@ -365,6 +409,7 @@ def storyboard_review_command(
             if (
                 prior.get("storyboard_sha256") == manifest.get("storyboard_sha256")
                 and prior.get("html_sha256") == manifest.get("html_sha256")
+                and str(prior.get("course_chain_fingerprint") or "") == str(expected_chain or "")
                 and len(prior.get("pages") or []) == total
             ):
                 previous = {
@@ -388,6 +433,7 @@ def storyboard_review_command(
                 "reviewed_by": by.strip(),
                 "storyboard_sha256": manifest.get("storyboard_sha256"),
                 "html_sha256": manifest.get("html_sha256"),
+                "course_chain_fingerprint": expected_chain,
                 "pages": rows,
                 "approved": sum(1 for row in rows if row["decision"] == "approve"),
                 "rejected": sum(1 for row in rows if row["decision"] == "reject"),

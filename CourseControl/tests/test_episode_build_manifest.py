@@ -38,7 +38,7 @@ class EpisodeBuildManifestTest(unittest.TestCase):
         self._write(lesson / "authoring" / "episode.spec.yaml", "schema_version: 1\n")
         self._write(lesson / "authoring" / "quality.rubric.yaml", "schema_version: 1\n")
         self.timing = self._write(
-            root / "RemotionStudio" / "src" / "episode" / "timing.json",
+            build / "episode" / "timing.json",
             '{"total_seconds": 10, "beats": []}\n',
         )
         self.meta = self._write(

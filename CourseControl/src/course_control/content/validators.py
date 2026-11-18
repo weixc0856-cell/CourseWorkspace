@@ -280,7 +280,15 @@ def _check_subtitle_length(result, paths: LessonPaths, subtitles: Path) -> None:
         )
 
 
-def validate(paths: LessonPaths) -> ValidationResult:
+def validate(paths: LessonPaths, *, capture_only: bool = False) -> ValidationResult:
+    """Validate a lesson.
+
+    ``capture_only`` keeps the static slide contract but defers gates that
+    belong to the later animatic/film build: animation scene files, measured
+    narration assets, and the final episode-duration window.  This is necessary
+    because the static storyboard is the input that has to be reviewed before
+    those downstream assets should exist.
+    """
     result = ValidationResult()
     lesson = paths.lesson
 
@@ -326,10 +334,11 @@ def validate(paths: LessonPaths) -> ValidationResult:
             ("authoring.approval", lesson.authoring.approval),
         ):
             _check_path(result, label, value)
-    for shot in paths.storyboard.shots:
-        scene = shot.scene.split("::", 1)[0] if shot.engine == "manim" else shot.scene
-        _check_path(result, f"shot {shot.id}.scene", scene)
-        _check_path(result, f"shot {shot.id}.blend_task", shot.blend_task)
+    if not capture_only:
+        for shot in paths.storyboard.shots:
+            scene = shot.scene.split("::", 1)[0] if shot.engine == "manim" else shot.scene
+            _check_path(result, f"shot {shot.id}.scene", scene)
+            _check_path(result, f"shot {shot.id}.blend_task", shot.blend_task)
     for issue in sheet_issues(paths):
         result.add(issue["rule"], issue["level"], issue["message"])
 
@@ -375,10 +384,19 @@ def validate(paths: LessonPaths) -> ValidationResult:
                 result.add("V-26", "error", str(exc))
             else:
                 for problem in planned_problems(sum(budgets), policy):
-                    result.add("V-26", problem.level, problem.message)
+                    if capture_only:
+                        result.add(
+                            "V-26",
+                            "warning",
+                            "static capture defers the episode-duration gate: "
+                            + problem.message,
+                        )
+                    else:
+                        result.add("V-26", problem.level, problem.message)
 
-    _check_authoring(result, paths, notes_text)
-    _check_beat_sheet(result, paths)
+    if not capture_only:
+        _check_authoring(result, paths, notes_text)
+        _check_beat_sheet(result, paths)
 
     for ref in _asset_references(slides_text):
         prefix = f"/lessons/{paths.slug}/assets/"
@@ -409,17 +427,18 @@ def validate(paths: LessonPaths) -> ValidationResult:
         if shot.engine not in lesson.engines:
             result.add("V-07", "error", f"shot {shot.id} engine {shot.engine} not in lesson.engines")
 
-        scene_path, _ = paths.scene_path(shot)
-        if not scene_path.is_file():
-            result.add("V-08", "error", f"shot {shot.id} scene not found: {scene_path}")
-        if shot.engine == "blender" and not shot.blend_task:
-            result.add("V-07", "error", f"blender shot {shot.id} requires blend_task")
-        if shot.blend_task:
-            task_path = paths.blend_task_path(shot)
-            if task_path is None or not task_path.is_file():
-                result.add("V-08", "error", f"blend task not found: {shot.blend_task}")
+        if not capture_only:
+            scene_path, _ = paths.scene_path(shot)
+            if not scene_path.is_file():
+                result.add("V-08", "error", f"shot {shot.id} scene not found: {scene_path}")
+            if shot.engine == "blender" and not shot.blend_task:
+                result.add("V-07", "error", f"blender shot {shot.id} requires blend_task")
+            if shot.blend_task:
+                task_path = paths.blend_task_path(shot)
+                if task_path is None or not task_path.is_file():
+                    result.add("V-08", "error", f"blend task not found: {shot.blend_task}")
 
-    if "motion_canvas" in lesson.engines:
+    if "motion_canvas" in lesson.engines and not capture_only:
         project_file = paths.engine_home("motion_canvas") / "src" / "project.ts"
         project_text = project_file.read_text(encoding="utf-8") if project_file.is_file() else ""
         # The project may register scenes statically or import the generated
@@ -439,7 +458,8 @@ def validate(paths: LessonPaths) -> ValidationResult:
                     f"motion scene '{stem}' is not registered in src/project.ts",
                 )
 
-    _check_formula_bindings(paths, result)
+    if not capture_only:
+        _check_formula_bindings(paths, result)
     return result
 
 

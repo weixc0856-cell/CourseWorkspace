@@ -47,6 +47,7 @@ RemotionStudio/public/vibe/
 # 本机配置（凭据与本机绝对路径）
 config/*.yaml
 !config/*.example.yaml
+!config/course-chain.yaml
 # 环境变量文件
 .env
 .env.*

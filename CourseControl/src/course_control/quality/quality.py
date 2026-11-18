@@ -155,10 +155,16 @@ def _q2(paths: LessonPaths) -> dict:
         }
     status = str(narrative.get("status") or INCOMPLETE)
     mapped = {"pass": WARN, "warn": WARN, "fail": BLOCKED}.get(status, INCOMPLETE)
+    reason = {
+        "pass": "narrative structure validated; teaching effectiveness still "
+        "requires human or learner evidence",
+        "warn": "narrative structure has warnings; teaching effectiveness still "
+        "requires human or learner evidence",
+        "fail": "narrative structure validation failed; see quality/narrative.json",
+    }.get(status, f"narrative status: {status}")
     return {
         "status": mapped,
-        "reason": "narrative structure validated; teaching effectiveness still "
-        "requires human or learner evidence",
+        "reason": reason,
         "evidence": ["build/<slug>/quality/narrative.json"],
     }
 
@@ -350,6 +356,15 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
         if item["status"] in {WARN, BLOCKED, INCOMPLETE}
     ]
     content_sha = quality_content_sha256({"dimensions": dimensions, "risks": risks})
+    # Bind the report to the content it actually read.  Without this, a report
+    # generated before a later slides/notes/spec edit still reads as current.
+    content_inputs = {
+        "slides": file_sha256(paths.lesson_dir / paths.lesson.content.slides),
+        "notes": file_sha256(paths.lesson_dir / paths.lesson.content.notes),
+        "episode_spec": file_sha256(
+            paths.lesson_dir / "authoring" / "episode.spec.yaml"
+        ),
+    }
 
     review = _load(paths.build_root / "quality" / "review-approval.json")
     release = _load(paths.build_root / "quality" / "release-approval.json")
@@ -405,6 +420,7 @@ def build_quality_report(workspace: Path, paths: LessonPaths) -> tuple[dict, Pat
             "STATUS_PROBLEMS": status_problems,
         },
         "risks": risks,
+        "content_inputs": content_inputs,
     }
     report["content_sha256"] = quality_content_sha256(report)
     target = paths.build_root / "quality" / "quality-report.json"

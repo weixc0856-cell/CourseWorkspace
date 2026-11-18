@@ -34,8 +34,8 @@ class StaleFinalTest(unittest.TestCase):
             "schema_version: 1\n", encoding="utf-8"
         )
         (self.paths.lesson_dir / "slides.md").write_text("# demo\n", encoding="utf-8")
-        (root / "RemotionStudio" / "src" / "episode").mkdir(parents=True)
-        (root / "RemotionStudio" / "src" / "episode" / "timing.json").write_text(
+        (self.paths.build_root / "episode").mkdir(parents=True)
+        (self.paths.build_root / "episode" / "timing.json").write_text(
             "{}", encoding="utf-8"
         )
         (self.paths.build_root / "narration").mkdir(parents=True)
@@ -48,7 +48,7 @@ class StaleFinalTest(unittest.TestCase):
             self.paths.lesson_dir / "lesson.yaml",
             self.paths.lesson_dir / "authoring" / "quality.rubric.yaml",
             self.paths.lesson_dir / "slides.md",
-            root / "RemotionStudio" / "src" / "episode" / "timing.json",
+            self.paths.build_root / "episode" / "timing.json",
             self.paths.build_root / "narration" / "narration.resequenced.meta.json",
             self.spec,
             self.video,

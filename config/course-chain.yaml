@@ -1,0 +1,6 @@
+schema_version: 2
+# Course contracts live in the content root:
+#   projects/<course_id>/project.yaml  (production.course)
+# The program repository serves many subjects, so this file keeps only the
+# platform fallback for legacy/test courses that predate the project layer.
+courses: {}

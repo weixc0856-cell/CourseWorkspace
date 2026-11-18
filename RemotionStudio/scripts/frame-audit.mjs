@@ -496,7 +496,20 @@ function framesFromTiming(path, samples) {
 
 async function openFrame(page, baseUrl, frame) {
   await page.goto(frameUrl(baseUrl, frame), { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => window.remotion_renderReady === true, null, { timeout: 45000 });
+  await page.waitForFunction(
+    () => {
+      // The standalone Player page does not set the renderer's
+      // remotion_renderReady global. Wait for the player to exist and to have
+      // painted text; the renderer flag stays as a fast path.
+      if (window.remotion_renderReady === true) return true;
+      const player = document.querySelector('.__remotion-player');
+      if (!player) return false;
+      const rect = player.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && (player.innerText || '').trim().length > 0;
+    },
+    null,
+    { timeout: 45000 },
+  );
   await page.waitForTimeout(250);
 }
 
@@ -557,7 +570,8 @@ async function main() {
       if (message.type() !== 'error') return;
       const text = message.text();
       if (/favicon\.ico/.test(text)) return;
-      pageErrors.push(text);
+      const location = message.location();
+      pageErrors.push(location && location.url ? `${text} (${location.url})` : text);
     });
 
     if (dumpDir) {
