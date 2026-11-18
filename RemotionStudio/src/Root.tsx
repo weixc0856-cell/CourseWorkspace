@@ -11,6 +11,10 @@ import {CourseOutro} from './brand/CourseOutro';
 import {NewsOutro} from './brand/NewsOutro';
 import {ShortSignature} from './brand/ShortSignature';
 import {NewsEpisode, defaultNewsProps} from './news/NewsEpisode';
+import {ShortStoryboard} from './short/ShortStoryboard';
+import type {ShortStoryboardProps} from './short/types';
+import sampleShort from './short/sample-base-rate.json';
+import galleryShort from './short/gallery.json';
 
 // Production compositions only. Probes (R1Smoke, FormulaProbe, AccessProbe,
 // PrimerPoc/Quad, ChapterCard, BrandPreview) live in src/probes/index.ts and
@@ -89,6 +93,52 @@ export const RemotionRoot: React.FC = () => {
             height: resolution[1],
           };
         }}
+      />
+      <Composition
+        id="ShortStoryboard"
+        component={ShortStoryboard}
+        durationInFrames={Math.round(
+          (sampleShort as unknown as ShortStoryboardProps).scenes.reduce(
+            (total, scene) => total + scene.duration_s,
+            0,
+          ) * sampleShort.fps,
+        )}
+        fps={sampleShort.fps}
+        width={1920}
+        height={1080}
+        defaultProps={sampleShort as unknown as ShortStoryboardProps}
+        calculateMetadata={({props}) => ({
+          durationInFrames: Math.max(
+            1,
+            Math.round(props.scenes.reduce((total, scene) => total + scene.duration_s, 0) * props.fps),
+          ),
+          fps: props.fps,
+          width: props.aspect === '9:16' ? 1080 : props.aspect === '1:1' ? 1080 : 1920,
+          height: props.aspect === '9:16' ? 1920 : 1080,
+        })}
+      />
+      <Composition
+        id="ShortComponentGallery"
+        component={ShortStoryboard}
+        durationInFrames={Math.round(
+          (galleryShort as unknown as ShortStoryboardProps).scenes.reduce(
+            (total, scene) => total + scene.duration_s,
+            0,
+          ) * galleryShort.fps,
+        )}
+        fps={galleryShort.fps}
+        width={1920}
+        height={1080}
+        defaultProps={galleryShort as unknown as ShortStoryboardProps}
+        calculateMetadata={({props}) => ({
+          durationInFrames: Math.max(
+            1,
+            Math.round(props.scenes.reduce((total, scene) => total + scene.duration_s, 0) * props.fps),
+          ),
+          fps: props.fps,
+          width: props.aspect === '9:16' ? 1080 : props.aspect === '1:1' ? 1080 : 1920,
+          height: props.aspect === '9:16' ? 1920 : 1080,
+        })}
       />
       <Composition
         id="CourseTimeline"

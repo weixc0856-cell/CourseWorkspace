@@ -113,6 +113,28 @@ def book_index_command(
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))
     raise typer.Exit(0 if not problems else 1)
 
+@app.command("short-validate")
+def short_validate_command(
+    path: Path = typer.Option(..., "--path", help="JSON storyboard for the short component pipeline"),
+) -> None:
+    """Validate the JSON that drives ShortStoryboard (props, ids, captions)."""
+    from course_control.production.short_storyboard import (
+        ShortStoryboardError,
+        load_short,
+    )
+
+    try:
+        board = load_short(path)
+    except ShortStoryboardError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    typer.echo(f"id: {board.id}")
+    typer.echo(f"scenes: {len(board.scenes)}  total: {board.total_seconds:g}s  aspect: {board.aspect}")
+    typer.echo(f"captions: {len(board.captions)}  audio: {board.audio or 'none'}")
+    typer.echo("status: PASS")
+    raise typer.Exit(0)
+
+
 @app.command("visual-events")
 def visual_events_command(
     lesson: str = typer.Option(..., "--lesson"),
