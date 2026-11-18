@@ -113,6 +113,109 @@ def book_index_command(
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))
     raise typer.Exit(0 if not problems else 1)
 
+@app.command("visual-events")
+def visual_events_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    shots: Path | None = typer.Option(None, "--shots", help="Defaults to build/<slug>/shots.json"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Compile and check the visual-event plan for a lesson."""
+    import json
+
+    from course_control.production.episode_spec import EpisodeSpecError, load_episode_spec
+    from course_control.production.visual_events import (
+        VisualEventError,
+        compile_plan,
+        validate_plan,
+        write_plan,
+    )
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    shots_path = shots or (paths.build_root / "shots.json")
+    spec_path = paths.lesson_dir / "authoring" / "episode.spec.yaml"
+    episode = None
+    if spec_path.is_file():
+        try:
+            episode = load_episode_spec(spec_path)
+        except EpisodeSpecError as exc:
+            typer.echo(f"episode spec: {exc}", err=True)
+            raise typer.Exit(1)
+    try:
+        plan = compile_plan(
+            lesson=paths.lesson.lesson_id,
+            shots_path=shots_path,
+            storyboard=paths.storyboard,
+            episode=episode,
+        )
+        report = validate_plan(plan, build_root=paths.build_root, episode=episode)
+    except VisualEventError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    target = write_plan(plan, paths.build_root / "contracts" / "visual-events.json")
+    if as_json:
+        typer.echo(json.dumps(report.as_dict(), ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"lesson: {paths.lesson.lesson_id}")
+        typer.echo(f"events: {len(plan.events)}  total: {plan.total_duration_s:.2f}s")
+        typer.echo(f"episode spec: {'yes' if episode else 'no'}")
+        for warning in report.warnings:
+            typer.echo(f"  [warn] {warning}")
+        for error in report.errors:
+            typer.echo(f"  [error] {error}")
+        typer.echo(f"plan: {target}")
+    typer.echo(f"status: {report.status}")
+    raise typer.Exit(0 if report.status == "PASS" else (2 if report.status == "INCOMPLETE" else 1))
+
+
+@app.command("visual-events-check")
+def visual_events_check_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    path: Path | None = typer.Option(None, "--path", help="Defaults to build/<slug>/contracts/visual-events.json"),
+) -> None:
+    """Check an existing visual-event plan against the current lesson."""
+    from course_control.production.episode_spec import EpisodeSpecError, load_episode_spec
+    from course_control.production.visual_events import (
+        VisualEventError,
+        load_plan,
+        validate_plan,
+    )
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    target = path or (paths.build_root / "contracts" / "visual-events.json")
+    spec_path = paths.lesson_dir / "authoring" / "episode.spec.yaml"
+    episode = None
+    if spec_path.is_file():
+        try:
+            episode = load_episode_spec(spec_path)
+        except EpisodeSpecError as exc:
+            typer.echo(f"episode spec: {exc}", err=True)
+            raise typer.Exit(1)
+    try:
+        plan = load_plan(target)
+        report = validate_plan(plan, build_root=paths.build_root, episode=episode)
+    except VisualEventError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    for warning in report.warnings:
+        typer.echo(f"  [warn] {warning}")
+    for error in report.errors:
+        typer.echo(f"  [error] {error}")
+    typer.echo(f"status: {report.status}")
+    raise typer.Exit(0 if report.status == "PASS" else (2 if report.status == "INCOMPLETE" else 1))
+
+
 @app.command("product-check")
 def product_check_command(
     lesson: str = typer.Option(..., "--lesson"),

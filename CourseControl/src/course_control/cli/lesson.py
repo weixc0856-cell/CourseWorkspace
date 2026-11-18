@@ -235,6 +235,7 @@ def schemas_command(
     from course_control.delivery.project import ProjectSpec
     from course_control.rendering.formulas import FormulaSpec
     from course_control.platform.session import EvidenceManifest, SessionSpec
+    from course_control.production.visual_events import VisualEventPlan
 
     output.mkdir(parents=True, exist_ok=True)
     models = {
@@ -259,6 +260,7 @@ def schemas_command(
         "simulation-spec": SimulationSpec,
         "voice-bible": VoiceBible,
         "lexicon": Lexicon,
+        "visual-events": VisualEventPlan,
     }
     for name, model in models.items():
         target = output / f"{name}.schema.json"
