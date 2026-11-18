@@ -120,6 +120,9 @@ def token_frames_check_command(
     layout: Path = typer.Option(
         Path("shared/design-tokens/swatch-layout.json"), "--layout"
     ),
+    tokens: Path = typer.Option(
+        Path("shared/design-tokens/tokens.json"), "--tokens"
+    ),
     tolerance: int = typer.Option(3, "--tolerance", min=0, max=255),
     out: Path | None = typer.Option(None, "--out"),
     as_json: bool = typer.Option(False, "--json"),
@@ -131,10 +134,19 @@ def token_frames_check_command(
         TokenFrameError,
         compare_frames,
         load_layout,
+        load_tokens,
     )
 
     try:
-        report = compare_frames(a, b, load_layout(layout), tolerance=tolerance)
+        report = compare_frames(
+            a,
+            b,
+            load_layout(layout),
+            load_tokens(tokens),
+            tolerance=tolerance,
+            layout_path=layout,
+            tokens_path=tokens,
+        )
     except TokenFrameError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
@@ -148,7 +160,8 @@ def token_frames_check_command(
         typer.echo(f"worst: {report['worst']['key']} delta={report['worst']['max']}")
         for row in report["rows"]:
             typer.echo(
-                f"  {row['key']:10s} a={row['a']} b={row['b']} max={row['max']}"
+                f"  {row['key']:10s} expected={row['expected']} "
+                f"a={row['a']} b={row['b']} max={row['max']}"
             )
         typer.echo(f"failed: {', '.join(report['failed']) or 'none'}")
     typer.echo(f"status: {report['status']}")

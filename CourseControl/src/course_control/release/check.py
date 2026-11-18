@@ -170,6 +170,59 @@ def _product_steps(paths: LessonPaths) -> list[Step]:
     return steps
 
 
+def _brand_steps(paths: LessonPaths) -> list[Step]:
+    """Branded lessons must carry a token-frame proof for the current inputs.
+
+    Unbranded lessons get no step at all.  A branded lesson without evidence is
+    INCOMPLETE; evidence whose input hashes no longer match the layout or
+    tokens is FAIL, because the proof would be about a different palette.
+    """
+    branding = getattr(paths.lesson, "branding", None)
+    if branding is None or not getattr(branding, "enabled", False):
+        return []
+
+    from course_control.rendering.token_frames import file_sha256
+
+    report_path = paths.build_root / "brand" / "token-frames" / "report.json"
+    if not report_path.is_file():
+        return [
+            Step(
+                "brand_evidence",
+                INCOMPLETE,
+                f"branding enabled but {report_path} is missing; run token-frames-check",
+            )
+        ]
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return [Step("brand_evidence", INCOMPLETE, f"cannot read brand evidence: {exc}")]
+
+    workspace = getattr(paths, "workspace", None)
+    if workspace is None:
+        return [Step("brand_evidence", INCOMPLETE, "workspace is not available")]
+    layout = Path(workspace) / "shared" / "design-tokens" / "swatch-layout.json"
+    tokens = Path(workspace) / "shared" / "design-tokens" / "tokens.json"
+    problems = []
+    if str(report.get("status")) != "PASS":
+        problems.append(f"status is {report.get('status')!r}")
+    for key, path in (("layout_sha256", layout), ("tokens_sha256", tokens)):
+        recorded = report.get(key)
+        if not recorded:
+            problems.append(f"{key} is missing")
+        elif recorded != file_sha256(path):
+            problems.append(f"{key} does not match the current {path.name}")
+    if problems:
+        return [
+            Step(
+                "brand_evidence",
+                FAIL,
+                "; ".join(problems),
+                str(report_path),
+            )
+        ]
+    return [Step("brand_evidence", PASS, "token-frame proof matches current layout and tokens", str(report_path))]
+
+
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     from course_control.quality.certificate import issue, save as save_certificate
     from course_control.quality.defect import collect as collect_defects
@@ -398,6 +451,7 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     )
 
     steps.extend(_product_steps(paths))
+    steps.extend(_brand_steps(paths))
 
     blocking = [
         step.id for step in steps if step.status not in {PASS, PASS_WITH_EXEMPTION}

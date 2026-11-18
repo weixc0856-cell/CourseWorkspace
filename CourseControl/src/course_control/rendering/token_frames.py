@@ -1,9 +1,16 @@
-"""Compare two one-frame colour references cell by cell.
+"""Compare a two-engine colour proof against the brand tokens.
 
 The Remotion and Manim proofs read the same ``swatch-layout.json`` and the same
-brand tokens, then draw identical rectangles.  This module samples the centre
-of every cell (and the background corner) and reports the delta; it does not
-grade aesthetics.  A drift beyond ``tolerance`` is a mismatch, not a warning.
+``tokens.json``, then draw identical rectangles.  This module checks three
+things at every sample point:
+
+1. the two frames agree with each other;
+2. each frame agrees with the expected token colour;
+3. the layout geometry keeps every sample point inside the canvas.
+
+Point 2 is what makes a blank frame fail: two blank frames agree, but they do
+not carry the palette.  A drift beyond ``tolerance`` is a mismatch, not a
+warning.
 """
 
 from __future__ import annotations
@@ -15,10 +22,73 @@ from pathlib import Path
 from PIL import Image
 
 DEFAULT_TOLERANCE = 3
+BACKGROUND_POINT = (5, 5)
 
 
 class TokenFrameError(ValueError):
     pass
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _as_int(value, name: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TokenFrameError(f"layout {name} must be an integer")
+    return value
+
+
+def _validate_geometry(layout: dict) -> None:
+    width = _as_int(layout["width"], "width")
+    height = _as_int(layout["height"], "height")
+    columns = _as_int(layout["columns"], "columns")
+    if width <= 10 or height <= 10:
+        raise TokenFrameError("canvas must be larger than the 5 px background sample")
+    if columns <= 0:
+        raise TokenFrameError("layout columns must be greater than zero")
+    cell = layout["cell"]
+    if not isinstance(cell, dict):
+        raise TokenFrameError("layout cell must be an object")
+    cell_w = _as_int(cell.get("w"), "cell.w")
+    cell_h = _as_int(cell.get("h"), "cell.h")
+    if cell_w <= 0 or cell_h <= 0:
+        raise TokenFrameError("cell width and height must be greater than zero")
+    gap = _as_int(layout["gap"], "gap")
+    if gap < 0:
+        raise TokenFrameError("gap must not be negative")
+    origin = layout["origin"]
+    if not isinstance(origin, dict):
+        raise TokenFrameError("layout origin must be an object")
+    origin_x = _as_int(origin.get("x"), "origin.x")
+    origin_y = _as_int(origin.get("y"), "origin.y")
+    if origin_x < 0 or origin_y < 0:
+        raise TokenFrameError("origin must not be negative")
+    keys = layout["keys"]
+    if not isinstance(keys, list) or not keys:
+        raise TokenFrameError("layout has no keys")
+    if any(not isinstance(key, str) or not key for key in keys):
+        raise TokenFrameError("layout keys must be non-empty strings")
+    if len(set(keys)) != len(keys):
+        raise TokenFrameError("layout keys must be unique")
+    if BACKGROUND_POINT[0] >= width or BACKGROUND_POINT[1] >= height:
+        raise TokenFrameError("background sample point is outside the canvas")
+
+    step_x = cell_w + gap
+    step_y = cell_h + gap
+    for index, key in enumerate(keys):
+        col = index % columns
+        row = index // columns
+        left = origin_x + col * step_x
+        top = origin_y + row * step_y
+        if left + cell_w > width or top + cell_h > height:
+            raise TokenFrameError(
+                f"cell {key!r} runs outside the {width}x{height} canvas"
+            )
 
 
 def load_layout(path: Path) -> dict:
@@ -29,12 +99,37 @@ def load_layout(path: Path) -> dict:
         layout = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise TokenFrameError(f"cannot read swatch layout {path}: {exc}") from exc
+    if not isinstance(layout, dict):
+        raise TokenFrameError("swatch layout must be an object")
     for key in ("width", "height", "columns", "cell", "gap", "origin", "keys"):
         if key not in layout:
             raise TokenFrameError(f"swatch layout is missing {key!r}")
-    if not layout["keys"]:
-        raise TokenFrameError("swatch layout has no keys")
+    _validate_geometry(layout)
     return layout
+
+
+def _parse_hex(value, key: str) -> tuple[int, int, int]:
+    if not isinstance(value, str) or len(value) != 7 or not value.startswith("#"):
+        raise TokenFrameError(f"token {key!r} is not a #RRGGBB colour: {value!r}")
+    try:
+        channels = tuple(int(value[index : index + 2], 16) for index in (1, 3, 5))
+    except ValueError as exc:
+        raise TokenFrameError(f"token {key!r} is not a #RRGGBB colour: {value!r}") from exc
+    return channels  # type: ignore[return-value]
+
+
+def load_tokens(path: Path) -> dict[str, tuple[int, int, int]]:
+    path = Path(path)
+    if not path.is_file():
+        raise TokenFrameError(f"tokens file not found: {path}")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise TokenFrameError(f"cannot read tokens {path}: {exc}") from exc
+    colors = data.get("colors") if isinstance(data, dict) else None
+    if not isinstance(colors, dict):
+        raise TokenFrameError("tokens file has no colors object")
+    return {key: _parse_hex(value, key) for key, value in colors.items()}
 
 
 def cells(layout: dict) -> list[dict]:
@@ -58,14 +153,6 @@ def cells(layout: dict) -> list[dict]:
     return result
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _open(path: Path, layout: dict) -> Image.Image:
     path = Path(path)
     if not path.is_file():
@@ -76,7 +163,9 @@ def _open(path: Path, layout: dict) -> Image.Image:
         raise TokenFrameError(f"cannot read frame {path}: {exc}") from exc
     expected = (int(layout["width"]), int(layout["height"]))
     if image.size != expected:
-        raise TokenFrameError(f"{path} is {image.size[0]}x{image.size[1]}, expected {expected[0]}x{expected[1]}")
+        raise TokenFrameError(
+            f"{path} is {image.size[0]}x{image.size[1]}, expected {expected[0]}x{expected[1]}"
+        )
     return image
 
 
@@ -84,14 +173,30 @@ def _pixel(image: Image.Image, x: int, y: int) -> tuple[int, int, int]:
     return image.getpixel((x, y))
 
 
-def _delta(a: tuple[int, int, int], b: tuple[int, int, int]) -> dict:
+def _delta(a: tuple[int, int, int], b: tuple[int, int, int]) -> tuple[list[int], int]:
     channels = [abs(a[index] - b[index]) for index in range(3)]
+    return channels, max(channels)
+
+
+def _row(
+    key: str,
+    a: tuple[int, int, int],
+    b: tuple[int, int, int],
+    expected: tuple[int, int, int],
+) -> dict:
+    ab_channels, ab_max = _delta(a, b)
+    a_channels, a_max = _delta(a, expected)
+    b_channels, b_max = _delta(b, expected)
+    worst = max(ab_max, a_max, b_max)
     return {
+        "key": key,
+        "expected": list(expected),
         "a": list(a),
         "b": list(b),
-        "channels": channels,
-        "max": max(channels),
-        "euclidean": round(sum(channel * channel for channel in channels) ** 0.5, 2),
+        "a_b": ab_channels,
+        "a_expected": a_channels,
+        "b_expected": b_channels,
+        "max": worst,
     }
 
 
@@ -99,33 +204,51 @@ def compare_frames(
     frame_a: Path,
     frame_b: Path,
     layout: dict,
+    tokens: dict[str, tuple[int, int, int]],
     *,
     tolerance: int = DEFAULT_TOLERANCE,
+    layout_path: Path | None = None,
+    tokens_path: Path | None = None,
 ) -> dict:
+    missing = [key for key in layout["keys"] if key not in tokens]
+    if missing:
+        raise TokenFrameError("layout keys missing from tokens: " + ", ".join(missing))
+    if "paper" not in tokens:
+        raise TokenFrameError("tokens are missing the paper background colour")
     image_a = _open(frame_a, layout)
     image_b = _open(frame_b, layout)
-    rows = []
-    background = _delta(_pixel(image_a, 5, 5), _pixel(image_b, 5, 5))
-    background["key"] = "background"
-    rows.append(background)
+    rows = [
+        _row(
+            "background",
+            _pixel(image_a, *BACKGROUND_POINT),
+            _pixel(image_b, *BACKGROUND_POINT),
+            tokens["paper"],
+        )
+    ]
     for cell in cells(layout):
         center_x = cell["x"] + cell["w"] // 2
         center_y = cell["y"] + cell["h"] // 2
-        row = _delta(_pixel(image_a, center_x, center_y), _pixel(image_b, center_x, center_y))
-        row["key"] = cell["key"]
+        row = _row(
+            cell["key"],
+            _pixel(image_a, center_x, center_y),
+            _pixel(image_b, center_x, center_y),
+            tokens[cell["key"]],
+        )
         row["at"] = [center_x, center_y]
         rows.append(row)
     worst = max(rows, key=lambda row: row["max"])
-    failed = [row for row in rows if row["max"] > tolerance]
+    failed = [row["key"] for row in rows if row["max"] > tolerance]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "PASS" if not failed else "FAIL",
         "tolerance": tolerance,
         "frame_a": str(frame_a),
         "frame_b": str(frame_b),
-        "frame_a_sha256": _sha256(frame_a),
-        "frame_b_sha256": _sha256(frame_b),
+        "frame_a_sha256": file_sha256(frame_a),
+        "frame_b_sha256": file_sha256(frame_b),
+        "layout_sha256": file_sha256(layout_path) if layout_path else None,
+        "tokens_sha256": file_sha256(tokens_path) if tokens_path else None,
         "rows": rows,
-        "failed": [row["key"] for row in failed],
+        "failed": failed,
         "worst": {"key": worst["key"], "max": worst["max"]},
     }
