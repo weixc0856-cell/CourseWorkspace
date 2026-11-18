@@ -479,4 +479,71 @@ def verify_media_package(root: Path) -> list[str]:
         if list(metadata.get("resolution") or []) != probe_resolution:
             problems.append("metadata resolution does not match the probe")
 
+    master = root / "final" / "master.mp4"
+    try:
+        actual = probe_media(master)
+    except Exception as exc:  # noqa: BLE001
+        problems.append(f"master is not readable: {exc}")
+        actual = None
+    if actual is not None:
+        expected = manifest.get("expected") if isinstance(manifest.get("expected"), dict) else {}
+        if actual.duration is None or not (
+            expected.get("min_s", 0) <= actual.duration <= expected.get("max_s", 0)
+        ):
+            problems.append(f"actual duration {actual.duration} is outside expected")
+        if actual.width != expected.get("width") or actual.height != expected.get("height"):
+            problems.append("actual resolution does not match expected")
+        if actual.fps is None or abs(float(actual.fps) - float(expected.get("fps", 0))) > 0.01:
+            problems.append("actual fps does not match expected")
+        if bool(actual.has_audio) != bool(expected.get("audio", True)):
+            problems.append("actual audio presence does not match expected")
+        recorded_probe = manifest.get("probe") if isinstance(manifest.get("probe"), dict) else {}
+        if actual.duration != recorded_probe.get("duration"):
+            problems.append("actual duration does not match manifest probe")
+        if actual.width != recorded_probe.get("width") or actual.height != recorded_probe.get("height"):
+            problems.append("actual resolution does not match manifest probe")
+        if actual.fps is None or recorded_probe.get("fps") is None or abs(float(actual.fps) - float(recorded_probe["fps"])) > 0.01:
+            problems.append("actual fps does not match manifest probe")
+        if isinstance(metadata, dict):
+            if metadata.get("duration_s") != actual.duration:
+                problems.append("metadata duration does not match the actual media")
+            if list(metadata.get("resolution") or []) != [actual.width, actual.height]:
+                problems.append("metadata resolution does not match the actual media")
+
+        decode = run_command(
+            [*which_command("ffmpeg"), "-v", "error", "-i", str(master), "-f", "null", "-"],
+            root,
+            timeout=1800,
+        )
+        if decode.exit_code != 0 or decode.stderr.strip():
+            problems.append(f"master does not fully decode: {decode.stderr[-500:]}")
+
+        if manifest.get("subtitle_coverage") is not None:
+            subtitle_path = root / "final" / "subtitles.srt"
+            if subtitle_path.is_file():
+                actual_coverage = _srt_coverage(subtitle_path)
+                ratio = round(actual_coverage["covered_s"] / actual.duration, 4) if actual.duration else 0.0
+                recorded_coverage = manifest.get("subtitle_coverage")
+                if not isinstance(recorded_coverage, dict):
+                    problems.append("subtitle_coverage is not an object")
+                else:
+                    for key in ("cues", "covered_s", "last_end_s"):
+                        if recorded_coverage.get(key) != actual_coverage[key]:
+                            problems.append(f"subtitle {key} does not match the actual SRT")
+                    if recorded_coverage.get("coverage_ratio") is not None and abs(
+                        float(recorded_coverage["coverage_ratio"]) - ratio
+                    ) > 0.0001:
+                        problems.append("subtitle coverage_ratio does not match the actual SRT")
+                policy = manifest.get("subtitle_policy")
+                if not isinstance(policy, dict):
+                    problems.append("subtitle_policy is missing")
+                else:
+                    minimum = float(policy.get("min_coverage_ratio", 0))
+                    if ratio + 1e-9 < minimum:
+                        problems.append(
+                            f"actual subtitle coverage {ratio:.2%} is below policy {minimum:.0%}"
+                        )
+                    if policy.get("must_reach_end") and actual_coverage["last_end_s"] < actual.duration - 0.5:
+                        problems.append("actual subtitles do not reach the end of the film")
+
     return problems
