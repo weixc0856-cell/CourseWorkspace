@@ -157,12 +157,17 @@ LLM 只能产出候选，不得把推断写成原文事实，不得生成没有�
 - 教材证据链：Docling → KnowledgeStudio → book index → claim；新闻线另有事实矩阵。
 - 局部渲染：P0 shot / P1 segment / P2 project，预览与发布两档。
 
-仍缺、按本目标补齐：
+2026-11-18 已补齐（实查结果见 `docs/audit/2026-11-18-个人IP系统-实施报告.md`）：
 
-- **产品层合同**：五种内容产品没有一等字段，时长窗口只靠人工；叙事模块没有机读组合。
-- **视觉事件合同**：现有 shots/timeline 只覆盖渲染调度，缺 purpose、evidence_refs、narration_ref 与统一校验。
-- **短视频组件**：SplitCompareCard、PaperHighlightBox、MetricBarChart、SimpleFlowDiagram 尚未实现。
-- **图文一致性检查**：有素材绑定扫描，但缺“旁白声明的机制 ↔ 视觉事件声明的 claim”这一层检查。
-- **跨引擎令牌导出一致性**：Remotion 已共用，Manim/Blender 依赖各自副本；缺统一导出与漂移检查。
+- **产品层合同**：`product_tier` 五种产品、时长窗口、纵横比、叙事模块；`product-check` 与 preflight 接入。
+- **视觉事件合同**：`visual-events` 编译 `build/<slug>/contracts/visual-events.json`，校验 purpose、渲染器、资产、claim 绑定、旁白切片与时间覆盖。
+- **短视频组件**：SplitCompareCard、PaperHighlightBox、MetricBarChart、SimpleFlowDiagram + JSON `ShortStoryboard`，120 s 与 9:16 均已实际渲染。
+- **跨引擎令牌一致性**：`theme-check` 比对 tokens / themes / Manim / 版式；Blender 场景色按光照决策，不接品牌令牌。
+
+仍未完成：
+
+- **语义级图文一致性**：claim / 资产 / 时间绑定已自动校验；“旁白说分离、画面放尾流”这类语义错配仍需人工验收。
+- **存量课程声明产品层**：20 条旧 lesson 未声明 `product_tier`；声明后会要求视觉事件计划，需逐条迁移。
+- **多引擎像素级同帧对比**：Manim / Blender 尚未做受控色卡渲染。
 
 补齐顺序与每步产物见 `docs/audit/2026-11-18-个人IP系统-差距与实施计划.md`。

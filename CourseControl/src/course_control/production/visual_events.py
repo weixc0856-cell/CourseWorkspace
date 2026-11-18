@@ -49,6 +49,7 @@ BASE_ROLES = frozenset({"base", None, ""})
 COVERAGE_TOLERANCE_S = 0.5
 
 PAGE_PART = re.compile(r"^page:(\d+)(?:-(\d+))?$")
+SHOT_PART = re.compile(r"^shot:(\S+)$")
 
 
 class NarrationRef(StrictModel):
@@ -130,6 +131,23 @@ def _page_claims(spec: EpisodeSpec | None) -> dict[int, list[str]]:
     return mapping
 
 
+def _shot_claims(spec: EpisodeSpec | None) -> dict[str, list[str]]:
+    """Map a storyboard shot id to the claims a beat assigns to that shot."""
+    mapping: dict[str, list[str]] = {}
+    if spec is None:
+        return mapping
+    for beat in spec.beats:
+        raw = (beat.visual or "").split(";")[0].strip()
+        match = SHOT_PART.match(raw)
+        if match is None:
+            continue
+        bucket = mapping.setdefault(match.group(1), [])
+        for claim in beat.claims:
+            if claim not in bucket:
+                bucket.append(claim)
+    return mapping
+
+
 def _visual_type(shot: dict) -> VisualType:
     kind = str(shot.get("kind") or "")
     engine = str(shot.get("engine") or "")
@@ -183,6 +201,7 @@ def compile_plan(
 
     by_id = {shot.id: shot for shot in storyboard.shots}
     pages = _page_claims(episode)
+    shot_claims = _shot_claims(episode)
     narration = data.get("narration") or {}
     narration_path = narration.get("path")
 
@@ -210,6 +229,9 @@ def compile_plan(
             for claim in pages.get(slide, []):
                 if claim not in evidence:
                     evidence.append(claim)
+        for claim in shot_claims.get(shot_id, []):
+            if claim not in evidence:
+                evidence.append(claim)
 
         assets: list[str] = []
         if source:

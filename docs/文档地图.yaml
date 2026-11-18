@@ -45,6 +45,10 @@ questions:
 - question: 作者/验证/统筹怎么交接
   path: 协作协议-双会话流水线.md
 documents:
+- path: audit/2026-11-18-个人IP系统-实施报告.md
+  layer: record
+  status: record
+  answers: 本轮实施的提交、测试、实际渲染产物、完成标准对照与未完成项
 - path: 个人IP-内容生产系统-顶层目标.md
   layer: contract
   status: current

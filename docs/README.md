@@ -121,6 +121,7 @@
 
 - [PROJECT_STATUS.md](PROJECT_STATUS.md)：项目状态盘点与历史增量（记录）
 - [S2-S3-数据契约设计.md](S2-S3-数据契约设计.md)：S2/S3 的 Claim/Evidence 引用、brief/outline/narrative 数据契约（提案，待审）（记录）
+- [audit/2026-11-18-个人IP系统-实施报告.md](audit/2026-11-18-个人IP系统-实施报告.md)：本轮实施的提交、测试、实际渲染产物、完成标准对照与未完成项（记录）
 - [audit/2026-11-18-个人IP系统-差距与实施计划.md](audit/2026-11-18-个人IP系统-差距与实施计划.md)：2026-11-18 实查的能力对照、缺口、实施顺序与验收证据（记录）
 - [audit/content-changes-2026-11-16.md](audit/content-changes-2026-11-16.md)：本轮内容根移动、归档、删除与未解决项清单（记录）
 - [audit/handoff-2026-11-16.md](audit/handoff-2026-11-16.md)：2026-11-16 文档与目录整理的交接包与 Codex 只读审查条件（记录）

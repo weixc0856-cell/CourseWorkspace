@@ -29,10 +29,13 @@ claims:
 - id: C02
   text: The second claim.
   source: {chapter: '1', figure: '1.2'}
+- id: C03
+  text: The shot-level claim.
+  source: {chapter: '1', figure: '1.3'}
 beats:
 - {id: B1, type: question, seconds: 5, claims: [C01], visual: 'page:1'}
 - {id: B2, type: case, seconds: 5, claims: [C01], visual: 'page:2'}
-- {id: B3, type: mechanism, seconds: 5, claims: [C02], visual: 'page:2-3'}
+- {id: B3, type: mechanism, seconds: 5, claims: [C03], visual: 'shot:anim_001'}
 - {id: B4, type: derivation, seconds: 5, claims: [C02], visual: 'page:3'}
 - {id: B5, type: evidence, seconds: 5, claims: [C02], visual: 'page:3'}
 - {id: B6, type: conclusion, seconds: 5, claims: [C01, C02], visual: 'page:1-3'}
@@ -153,6 +156,7 @@ class VisualEventTest(unittest.TestCase):
         self.assertEqual(overlay.renderer, "manim")
         self.assertEqual(overlay.purpose, "demonstrate")
         self.assertIn("C02", overlay.evidence_refs)
+        self.assertIn("C03", overlay.evidence_refs)
 
     def test_valid_plan_passes(self):
         report = validate_plan(self.plan(), build_root=self.root, episode=self.spec)
