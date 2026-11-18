@@ -57,6 +57,81 @@
           ],
           "default": null,
           "title": "Lesson"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan"
+        },
+        "expected_episode_count": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Episode Count"
+        },
+        "cards_dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cards Dir"
+        },
+        "claim_index": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Index"
+        },
+        "voice_profile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Voice Profile"
+        },
+        "forbidden_lesson_slugs": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Forbidden Lesson Slugs",
+          "type": "object"
+        },
+        "forbidden_slide_terms": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Slide Terms",
+          "type": "array"
         }
       },
       "title": "CoursePlan",
