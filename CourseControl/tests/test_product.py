@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from course_control.content.contracts import (
     Authoring,
@@ -19,6 +20,7 @@ from course_control.production.product import (
     policy_for,
     write_product_record,
 )
+from course_control.release.check import INCOMPLETE, PASS, _product_steps
 
 
 def lesson(
@@ -131,6 +133,29 @@ class ProductTierTest(unittest.TestCase):
             result = check_product(lesson(), root)
         self.assertEqual(result.status, "FAIL")
         self.assertTrue(any("missing module" in error for error in result.errors))
+
+    def test_release_steps_are_opt_in(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = SimpleNamespace(
+                lesson=lesson(None),
+                lesson_dir=root,
+                build_root=root / "build",
+            )
+            self.assertEqual(_product_steps(paths), [])
+
+    def test_declared_tier_without_plan_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_plan(root, ["cold_open", "mechanism", "test", "connect"])
+            paths = SimpleNamespace(
+                lesson=lesson(),
+                lesson_dir=root,
+                build_root=root / "build",
+            )
+            steps = {step.id: step.status for step in _product_steps(paths)}
+        self.assertEqual(steps["product_tier"], PASS)
+        self.assertEqual(steps["visual_events"], INCOMPLETE)
 
     def test_record_is_written(self):
         with tempfile.TemporaryDirectory() as tmp:

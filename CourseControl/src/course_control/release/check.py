@@ -111,6 +111,65 @@ def _quality_inputs(paths: LessonPaths) -> dict:
     }
 
 
+def _product_steps(paths: LessonPaths) -> list[Step]:
+    """Product tier and visual-event checks, only for lessons that opted in.
+
+    Legacy lessons stay exactly as they were: adding a step that says "not
+    declared" would either block 20 existing courses or fake a pass.  A lesson
+    that declares ``product_tier`` opts into both checks, and a missing plan is
+    INCOMPLETE, never a pass.
+    """
+    from course_control.production.episode_spec import EpisodeSpecError, load_episode_spec
+    from course_control.production.product import check_product
+    from course_control.production.visual_events import (
+        VisualEventError,
+        load_plan,
+        validate_plan,
+    )
+
+    tier = getattr(paths.lesson, "product_tier", None)
+    plan_path = paths.build_root / "contracts" / "visual-events.json"
+    if not tier and not plan_path.is_file():
+        return []
+
+    steps: list[Step] = []
+    if tier:
+        result = check_product(paths.lesson, paths.lesson_dir)
+        status = PASS if result.status == "PASS" else FAIL if result.status == "FAIL" else INCOMPLETE
+        steps.append(
+            Step(
+                "product_tier",
+                status,
+                f"{result.status}: " + (", ".join(result.errors or result.warnings) or "window, aspect and modules verified"),
+                str(paths.build_root / "product.json"),
+            )
+        )
+
+    episode = None
+    spec_path = paths.lesson_dir / "authoring" / "episode.spec.yaml"
+    if spec_path.is_file():
+        try:
+            episode = load_episode_spec(spec_path)
+        except EpisodeSpecError as exc:
+            steps.append(Step("visual_events", INCOMPLETE, f"episode spec: {exc}"))
+            return steps
+
+    if not plan_path.is_file():
+        steps.append(
+            Step("visual_events", INCOMPLETE, f"missing {plan_path}; run visual-events")
+        )
+        return steps
+    try:
+        report = validate_plan(load_plan(plan_path), build_root=paths.build_root, episode=episode)
+    except VisualEventError as exc:
+        steps.append(Step("visual_events", INCOMPLETE, str(exc)))
+        return steps
+    status = PASS if report.status == "PASS" else FAIL if report.status == "FAIL" else INCOMPLETE
+    detail = "; ".join(report.errors or report.warnings) or f"{len(report.plan.events)} events verified"
+    steps.append(Step("visual_events", status, detail, str(plan_path)))
+    return steps
+
+
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
     from course_control.quality.certificate import issue, save as save_certificate
     from course_control.quality.defect import collect as collect_defects
@@ -337,6 +396,8 @@ def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:
             str(defects_path),
         )
     )
+
+    steps.extend(_product_steps(paths))
 
     blocking = [
         step.id for step in steps if step.status not in {PASS, PASS_WITH_EXEMPTION}
