@@ -209,7 +209,8 @@ def producer_rebuild_command(
 
 @app.command("package")
 def package_command(
-    lesson: str = typer.Option(..., "--lesson"),
+    lesson: str = typer.Option(None, "--lesson"),
+    sample: Path = typer.Option(None, "--sample", help="media sample spec for an internal package"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
@@ -217,9 +218,31 @@ def package_command(
     from course_control.delivery.package import PackageError, build_package
     from course_control.platform.workspace_layout import production_content_root
 
+    if bool(lesson) == bool(sample):
+        typer.echo("give exactly one of --lesson or --sample", err=True)
+        raise typer.Exit(2)
     try:
         production_content_root(workspace.resolve())
+        if sample:
+            from course_control.delivery.media_package import (
+                MediaPackageError,
+                build_media_package,
+            )
+
+            try:
+                manifest, root = build_media_package(sample, workspace.resolve())
+            except MediaPackageError as exc:
+                typer.echo(f"package failed: {exc}", err=True)
+                raise typer.Exit(1)
+            typer.echo(f"package: {root}")
+            typer.echo(f"kind: {manifest.get('kind')}  scope: {manifest.get('scope')}")
+            typer.echo(f"verdict: {manifest.get('verdict')}")
+            for item in manifest["files"]:
+                typer.echo(f"  {item['status']:>13}  {item['path']}")
+            raise typer.Exit(0 if manifest.get("verdict") == "pass" else 1)
         paths = _paths(workspace, lesson, lesson_dir)
+    except typer.Exit:
+        raise
     except (ContractError, RuntimeError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(2)
@@ -247,13 +270,19 @@ def package_verify_command(
     """Re-hash a delivery package and report missing or changed files."""
     from course_control.delivery.package import verify_package
 
-    problems = verify_package(package)
     manifest_path = package / "manifest.json"
-    verdict = None
+    manifest = {}
     try:
-        verdict = json.loads(manifest_path.read_text(encoding="utf-8")).get("verdict")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        pass
+        manifest = {}
+    if isinstance(manifest, dict) and manifest.get("kind") == "media_sample":
+        from course_control.delivery.media_package import verify_media_package
+
+        problems = verify_media_package(package)
+    else:
+        problems = verify_package(package)
+    verdict = manifest.get("verdict") if isinstance(manifest, dict) else None
     if verdict != "pass":
         problems.append(f"manifest verdict is {verdict or 'missing'}, not pass")
     if problems:

@@ -77,6 +77,8 @@
   course-control retime --lesson <slug>                       # 按实测旁白重算时间轴
   course-control subtitles-rebuild --lesson <slug>            # 字幕重建（实测对齐）
   course-control release-check --lesson <slug>                # 发布三态
+  course-control release-check --sample <spec.yaml>           # 内部样片交付检查
+  course-control package --sample <spec.yaml>                 # 内部样片包（不含许可签核）
   course-control release-approve --lesson <slug> --by <name>  # 课程 review/release 签核
   course-control release-approve --project <project.yaml> --by <name>  # 主题片候选签核
   course-control contract-validate --kind product|ledger|timeline --path <p>
