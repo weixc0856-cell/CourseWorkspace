@@ -1407,3 +1407,17 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 6. **不以代码量、组件数或自动化率判定完成。** 完成标准按八项能力验收：品牌视觉、短视频、长视频、证据追踪、视觉匹配、音频系统、局部重渲染、交付系统；每项都要有产物路径与检查结果。
 
 **后果**：本轮先完成 P0（顶层目标与差距记录）与 P1/P2 的合同层，再进入组件与样片；未完成项在差距文档中保留 `not_run`，不得写成通过。既有课程、镜头表、渲染适配器与交付链不变。
+
+
+## D-115 品牌身份扩展到 WAYNE WEI（2026-11-18）
+
+**背景**：旧品牌把频道名定为 `Wayne-CFD`、副标题定为 `ENGINEERING & COMPUTATION`。这与 D-114 的个人 IP 定位冲突：频道要覆盖工程、AI、经济、商业与社会，不能被读成单一 CFD 技术频道。
+
+**决策**：
+
+1. `shared/design-tokens/brand.json` 的 `identity` 改为：`name: WAYNE WEI`、`channel: Wayne Wei`、`tagline: BUILD · EXPLAIN · CREATE`、`descriptor: Engineering · AI · Business · Society`。
+2. 标识仍是同一条折线 W；色板、字体、网格、安全边距不变。品牌层只换身份文字，不换视觉系统。
+3. 品牌组件仍默认关闭，只有 lesson 显式开启才拼接；正片原子资产规则不变。
+4. 已交付成片不回溯重渲；新身份从下一次品牌渲染开始生效。
+
+**后果**：`BrandCourseIntro` 已用新身份实际渲染一帧检查，`WAYNE WEI` 与 `BUILD · EXPLAIN · CREATE` 在 1920×1080 下无溢出。`品牌与片头片尾.md` §1 同步更新；旧身份作为历史记录保留在 D-053 与本次背景中。
