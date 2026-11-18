@@ -6,6 +6,8 @@ layers:
   guide: 现行指南：按问题分工，每份只回答一个问题
   record: 记录：一次性审计、评估、交付记录或未生效草案，不是指令
 questions:
+- question: 这套系统最终为谁、做到什么程度
+  path: 个人IP-内容生产系统-顶层目标.md
 - question: 管线怎么分层、新课怎么接
   path: 课程开发管线-分层架构.md
 - question: 产品边界与功能需求
@@ -43,6 +45,14 @@ questions:
 - question: 作者/验证/统筹怎么交接
   path: 协作协议-双会话流水线.md
 documents:
+- path: 个人IP-内容生产系统-顶层目标.md
+  layer: contract
+  status: current
+  answers: 个人 IP 的定位、A–E 五种内容产品、视觉家族与跨产品线完成标准
+- path: audit/2026-11-18-个人IP系统-差距与实施计划.md
+  layer: record
+  status: record
+  answers: 2026-11-18 实查的能力对照、缺口、实施顺序与验收证据
 - path: 课程开发管线-分层架构.md
   layer: contract
   status: current

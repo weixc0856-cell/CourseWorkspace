@@ -113,6 +113,48 @@ def book_index_command(
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))
     raise typer.Exit(0 if not problems else 1)
 
+@app.command("product-check")
+def product_check_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Check the lesson against its A-E product tier (window, aspect, modules)."""
+    import json
+
+    from course_control.production.product import check_product, write_product_record
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+    except ContractError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    result = check_product(paths.lesson, paths.lesson_dir)
+    target = write_product_record(result, paths.build_root / "product.json")
+    if as_json:
+        typer.echo(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"lesson: {result.lesson}")
+        typer.echo(f"tier: {result.tier or 'not declared'}")
+        if result.window:
+            typer.echo(
+                f"window: {result.window[0]:g}-{result.window[1]:g}s  "
+                f"target: {result.target_s:g}s  aspect: {result.aspect}"
+            )
+        for warning in result.warnings:
+            typer.echo(f"  [warn] {warning}")
+        for error in result.errors:
+            typer.echo(f"  [error] {error}")
+        typer.echo(f"record: {target}")
+    typer.echo(f"status: {result.status}")
+    if result.status == "FAIL":
+        raise typer.Exit(1)
+    if result.status == "INCOMPLETE":
+        raise typer.Exit(2)
+    raise typer.Exit(0)
+
+
 @app.command("contract-validate")
 def contract_validate_command(
     kind: str = typer.Option(..., "--kind", help="product | ledger | timeline"),

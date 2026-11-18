@@ -261,6 +261,13 @@ class LessonConfig(StrictModel):
     audio: AudioPolicy = AudioPolicy()
     branding: Branding = Branding()
     video_form: Literal["long", "short"] = "long"
+    # A-E content product tier (docs/个人IP-内容生产系统-顶层目标.md).
+    # Optional so legacy lessons keep loading; a declared tier is enforced
+    # by preflight and product-check.
+    product_tier: Literal[
+        "micro_explainer", "short_explainer", "research_brief",
+        "deep_lecture", "course_series",
+    ] | None = None
     duration: DurationPolicy | None = None
     authoring: Authoring | None = None
     production: str | None = None
@@ -408,7 +415,7 @@ AnnotationSpec = Annotated[
 class Storyboard(StrictModel):
     schema_version: Literal[1, 2] = 1
     lesson: str
-    shots: list[ShotSpec] = Field(min_length=1)
+    shots: list[ShotSpec] = Field(default_factory=list)
     annotations: list[AnnotationSpec] = Field(default_factory=list)
     # The objects a shot sheet keeps continuous; only meaningful in v2.
     continuity: list[ContinuityObject] = Field(default_factory=list)

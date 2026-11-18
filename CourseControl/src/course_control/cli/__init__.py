@@ -39,7 +39,7 @@ from . import (  # noqa: E402,F401
 _HELP_PANELS: dict[str, str] = {}
 for _panel, _names in {
     "Build & verify": (
-        "build validate verify preflight schemas schemas-v1 contract-v1-validate content-root "
+        "build validate verify preflight schemas schemas-v1 contract-v1-validate product-check content-root "
         "separation layout-templates layout-validate"
     ),
     "Authoring": (

@@ -96,6 +96,7 @@
 
 ## 3. 索引（按需查阅，不在此堆砌）
 
+- **顶层目标**：[docs/个人IP-内容生产系统-顶层目标.md](docs/个人IP-内容生产系统-顶层目标.md)（个人 IP 定位、A–E 内容产品、完成标准） · [差距与实施计划](docs/audit/2026-11-18-个人IP系统-差距与实施计划.md)
 - **命令链与文档地图**：[docs/生产流水线-阶段与中间交付物.md](docs/生产流水线-阶段与中间交付物.md) · [docs/README.md](docs/README.md)
 - **架构与验收**：[docs/PRD.md](docs/PRD.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) · [docs/TRACEABILITY.md](docs/TRACEABILITY.md)
 - **视觉与版式**：[docs/动画视觉导演规范.md](docs/动画视觉导演规范.md) · [docs/课程页面系统.md](docs/课程页面系统.md) · [docs/版式系统.md](docs/版式系统.md) · [docs/配色规范.md](docs/配色规范.md)

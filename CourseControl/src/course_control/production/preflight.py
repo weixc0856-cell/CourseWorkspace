@@ -506,6 +506,14 @@ def run_preflight(lesson_dir: Path, strict: bool = False, paths=None) -> Preflig
         report.errors.append(str(exc))
         spec = None
 
+    lesson_config = getattr(paths, "lesson", None) if paths is not None else None
+    if lesson_config is not None and getattr(lesson_config, "product_tier", None):
+        from course_control.production.product import check_product
+
+        product = check_product(lesson_config, lesson_dir)
+        report.errors.extend(f"product: {item}" for item in product.errors)
+        report.warnings.extend(f"product: {item}" for item in product.warnings)
+
     if spec is not None:
         if not (spec.min_seconds <= spec.total_seconds <= spec.max_seconds):
             report.errors.append(

@@ -1392,3 +1392,18 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 7. **系统契约**：lesson.yaml 声明 `authoring.sources/digest/brief/outline/narrative/script/approval`；前两者已有，其余等 Claim 批准后生成。S2/S3 的数据契约见 `docs/S2-S3-数据契约设计.md`。
 
 **后果**：T1-01 的课程定义、研究证据（digest/claims/figures）与系统数据契约一致；旧 Ch3 能量 Claim 不再参与任何 T1-01 检查。D-109 的 energy 主题作为历史保留，D-112 的 T1-01 内容重建以本条为准。下一阶段才是按新 Claim 重写 deck/notes/script。
+
+## D-114 个人 IP 内容生产系统作为顶层目标，并入现有 SSOT（2026-11-18）
+
+**背景**：owner 给出《WAYNE WEI — Personal Media Production System》任务书，要求把 CourseWorkspace 从“课程生产”升级为可持续的个人 IP 内容生产系统。任务书覆盖面很广，但已有 PRD、ARCHITECTURE、ACCEPTANCE 与 DECISIONS；如果直接按任务书另立一套规范，会出现两套互相冲突的项目标准。
+
+**决策**：
+
+1. **任务书是顶层目标，不是第二套 SSOT。** 新增 `docs/个人IP-内容生产系统-顶层目标.md`，只承载任务书新增的两类内容：A–E 五种内容产品分层，以及跨产品线的完成标准。产品边界仍以 PRD 为准，结构与数据契约仍以 ARCHITECTURE 为准，验收命令仍以 ACCEPTANCE 为准；冲突先执行顶层目标，并在本文件记录迁移方式。
+2. **频道定位扩展到工程 / AI / 经济 / 商业 / 社会。** 品牌仍是 WAYNE WEI，但不再以 CFD 或单一技术栈定义；视觉上共用品牌气质，允许 `editorial_science`、`engineering_studio`、`deep_space` 等不同视觉家族，不强迫所有视频同一版式。
+3. **产品分层进入机读契约。** 五种产品层各有自己的时长窗口、纵横比、叙事模块与视觉密度；声明 `product_tier` 后由 `preflight` / `validate` 检查，不靠人工记忆。叙事模块是 `hook` / `context` / `mechanism` / `evidence` / `implication` / `conclusion` 的可组合集，不强制五段式。
+4. **视觉事件成为内容与渲染之间的调度层。** 每条视觉事件必须声明 purpose、visual_type、renderer、资产、证据、旁白引用；允许静态与长保持，禁止按固定间隔强制动画。现有 shots/timeline 不推翻，视觉事件是同一条数据的规范化视图。
+5. **分阶段施工，每阶段留真实产物。** 顺序为产品层 → 视觉事件 → 短视频组件 → 双样片 → 质量接入 → 跨引擎令牌导出；每阶段必须有可复现产物、一个能红的负例与独立提交。后续模块未开发时不提前铺空接口。
+6. **不以代码量、组件数或自动化率判定完成。** 完成标准按八项能力验收：品牌视觉、短视频、长视频、证据追踪、视觉匹配、音频系统、局部重渲染、交付系统；每项都要有产物路径与检查结果。
+
+**后果**：本轮先完成 P0（顶层目标与差距记录）与 P1/P2 的合同层，再进入组件与样片；未完成项在差距文档中保留 `not_run`，不得写成通过。既有课程、镜头表、渲染适配器与交付链不变。
