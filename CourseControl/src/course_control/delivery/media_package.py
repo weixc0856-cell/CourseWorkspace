@@ -60,6 +60,8 @@ class MediaSampleSpec(StrictModel):
     publication: Literal[False] = False
     expected: MediaExpectation
     evidence: list[str] = Field(default_factory=list)
+    subtitle_min_coverage_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
+    subtitle_must_reach_end: bool = False
     notes: str | None = None
 
 
@@ -183,10 +185,22 @@ def check_media_sample(
             add("subtitles", INCOMPLETE, f"missing: {subtitle_path}")
         else:
             subtitle_info = _srt_coverage(subtitle_path)
+            ratio = round(subtitle_info["covered_s"] / info.duration, 4) if info.duration else 0.0
+            policy_ok = ratio + 1e-9 >= spec.subtitle_min_coverage_ratio
+            if spec.subtitle_must_reach_end:
+                policy_ok = policy_ok and subtitle_info["last_end_s"] >= info.duration - 0.5
+            subtitle_info = {
+                **subtitle_info,
+                "coverage_ratio": ratio,
+                "min_coverage_ratio": spec.subtitle_min_coverage_ratio,
+                "must_reach_end": spec.subtitle_must_reach_end,
+            }
             add(
                 "subtitles",
-                PASS,
-                f"{subtitle_info['cues']} cues, {subtitle_info['covered_s']}s covered, last end {subtitle_info['last_end_s']}s",
+                PASS if policy_ok else FAIL,
+                f"{subtitle_info['cues']} cues, {subtitle_info['covered_s']}s covered "
+                f"({ratio:.1%}), last end {subtitle_info['last_end_s']}s; "
+                f"policy min {spec.subtitle_min_coverage_ratio:.0%}, reach_end={spec.subtitle_must_reach_end}",
                 subtitle_info,
             )
     else:
@@ -316,6 +330,11 @@ def build_media_package(
         "expected": spec.expected.model_dump(),
         "probe": info.as_dict(),
         "subtitle_coverage": check.get("subtitle_coverage"),
+        "subtitle_policy": {
+            "min_coverage_ratio": spec.subtitle_min_coverage_ratio,
+            "must_reach_end": spec.subtitle_must_reach_end,
+        },
+        "evidence_count": len(spec.evidence),
         "checks": check["steps"],
         "files": records,
     }
@@ -334,7 +353,7 @@ def build_media_package(
 
 
 def verify_media_package(root: Path) -> list[str]:
-    root = Path(root)
+    root = Path(root).resolve()
     manifest_path = root / "manifest.json"
     if not manifest_path.is_file():
         return ["manifest.json is missing"]
@@ -348,22 +367,116 @@ def verify_media_package(root: Path) -> list[str]:
         return [f"schema_version is {manifest.get('schema_version')!r}, expected {SCHEMA_VERSION}"]
     if manifest.get("verdict") != "pass":
         return [f"verdict is {manifest.get('verdict')!r}, not pass"]
+    if manifest.get("scope") != "internal_sample":
+        return [f"scope is {manifest.get('scope')!r}, expected internal_sample"]
     if manifest.get("publication") is not False:
         return ["media_sample package must declare publication: false"]
+
     problems: list[str] = []
-    for item in manifest.get("files") or []:
+    records = manifest.get("files")
+    if not isinstance(records, list) or not records:
+        return ["files must be a non-empty list"]
+    recorded: set[str] = set()
+    for item in records:
         if not isinstance(item, dict):
             problems.append("file record is not an object")
             continue
-        path = root / str(item.get("path") or "")
-        if not path.is_file():
-            if item.get("required"):
-                problems.append(f"missing required file: {item.get('path')}")
+        relative = str(item.get("path") or "")
+        if not relative:
+            problems.append("file record has no path")
             continue
-        if item.get("sha256") != _sha(path):
-            problems.append(f"sha256 mismatch: {item.get('path')}")
-        if item.get("bytes") != path.stat().st_size:
-            problems.append(f"size mismatch: {item.get('path')}")
-    if not (root / "final" / "master.mp4").is_file():
-        problems.append("final/master.mp4 is missing")
+        if relative in recorded:
+            problems.append(f"duplicate file record: {relative}")
+            continue
+        recorded.add(relative)
+        candidate = (root / relative).resolve()
+        if root not in candidate.parents:
+            problems.append(f"file record escapes the package: {relative}")
+            continue
+        if not candidate.is_file():
+            if item.get("required"):
+                problems.append(f"missing required file: {relative}")
+            continue
+        if item.get("sha256") != _sha(candidate):
+            problems.append(f"sha256 mismatch: {relative}")
+        if item.get("bytes") != candidate.stat().st_size:
+            problems.append(f"size mismatch: {relative}")
+
+    required = {"final/master.mp4", "metadata.json", "delivery-checklist.md"}
+    if manifest.get("subtitle_coverage") is not None:
+        required.add("final/subtitles.srt")
+    for relative in sorted(required):
+        if relative not in recorded:
+            problems.append(f"manifest does not record required file: {relative}")
+        if not (root / relative).is_file():
+            problems.append(f"required file is missing: {relative}")
+
+    evidence_count = manifest.get("evidence_count")
+    if not isinstance(evidence_count, int) or evidence_count < 0:
+        problems.append("evidence_count is not a non-negative integer")
+    else:
+        evidence_records = [item for item in recorded if item.startswith("evidence/")]
+        if len(evidence_records) < evidence_count:
+            problems.append(
+                f"manifest records {len(evidence_records)} evidence file(s), expected {evidence_count}"
+            )
+
+    actual = {
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*")
+        if path.is_file() and path.name != "manifest.json"
+    }
+    for extra in sorted(actual - recorded):
+        problems.append(f"file is not in the manifest: {extra}")
+
+    checks = manifest.get("checks")
+    if not isinstance(checks, list) or not checks:
+        problems.append("checks must be a non-empty list")
+    else:
+        statuses = {}
+        for step in checks:
+            if not isinstance(step, dict):
+                problems.append("check is not an object")
+                continue
+            step_id = step.get("id")
+            statuses[step_id] = step.get("status")
+            if step.get("status") != PASS:
+                problems.append(f"check {step_id!r} is {step.get('status')!r}, not pass")
+        for step_id in (
+            "final_video", "media_probe", "expected", "decode",
+            "black", "freeze", "subtitles", "evidence",
+        ):
+            if step_id not in statuses:
+                problems.append(f"check {step_id!r} is missing")
+
+    expected = manifest.get("expected")
+    probe = manifest.get("probe")
+    if not isinstance(expected, dict) or not isinstance(probe, dict):
+        problems.append("expected and probe must be objects")
+    else:
+        duration = probe.get("duration")
+        if duration is None or not (expected.get("min_s", 0) <= duration <= expected.get("max_s", 0)):
+            problems.append(f"probe duration {duration} is outside expected")
+        if probe.get("width") != expected.get("width") or probe.get("height") != expected.get("height"):
+            problems.append("probe resolution does not match expected")
+        if probe.get("fps") is None or abs(float(probe["fps"]) - float(expected.get("fps", 0))) > 0.01:
+            problems.append("probe fps does not match expected")
+
+    metadata_path = root / "metadata.json"
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        metadata = None
+        problems.append(f"metadata.json is unreadable: {exc}")
+    if isinstance(metadata, dict):
+        if metadata.get("id") != manifest.get("id"):
+            problems.append("metadata id does not match the manifest")
+        if metadata.get("publication") is not False:
+            problems.append("metadata must declare publication: false")
+        if metadata.get("duration_s") != (probe or {}).get("duration"):
+            problems.append("metadata duration does not match the probe")
+        probe_resolution = [(probe or {}).get("width"), (probe or {}).get("height")]
+        if list(metadata.get("resolution") or []) != probe_resolution:
+            problems.append("metadata resolution does not match the probe")
+
     return problems
