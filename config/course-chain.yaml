@@ -1,0 +1,19 @@
+schema_version: 2
+courses:
+  automotive-aerodynamics:
+    # 180 is the only current scale (D-108 / D-110). The plan file is the only
+    # list of episode slots; the card is the only place an episode's title,
+    # home section, evidence and duration live. There are no per-episode
+    # keyword lists here: a keyword cannot prove a theme, and 180 of them
+    # would only create a second copy of the plan.
+    expected_episode_count: 180
+    plan: "runtime/course-content/automotive-aerodynamics/COURSE_MAP.md"
+    cards_dir: "runtime/course-content/automotive-aerodynamics/episodes"
+    lessons_root: "lessons"
+    forbidden_lesson_slugs:
+      aero-t1-01: T1-01
+    forbidden_slide_terms:
+      - "episode 1 of 90"
+      - "episode 1 of 80"
+      - " of 90"
+      - " of 80"
