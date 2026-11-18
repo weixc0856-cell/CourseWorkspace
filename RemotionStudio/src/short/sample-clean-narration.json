@@ -415,21 +415,21 @@
       "start_s": 65.5,
       "end_s": 70.5,
       "en": "0.99 × 0.01 = 0.0099.",
-      "zh": "0.99 × 0.01 = 0.0099。",
-      "tts": "0.99 times 0.01 equals 0.0099."
+      "zh": "真阳性：0.99 乘 0.01 等于 0.0099。",
+      "tts": "The true positive rate is one percent."
     },
     {
       "start_s": 70.5,
       "end_s": 75.5,
       "en": "0.01 × 0.99 = 0.0099.",
-      "zh": "0.01 × 0.99 = 0.0099。",
-      "tts": "0.01 times 0.99 equals 0.0099."
+      "zh": "假阳性：0.01 乘 0.99 等于 0.0099。",
+      "tts": "The false positive rate is one percent."
     },
     {
       "start_s": 75.5,
       "end_s": 80.0,
       "en": "0.0099 / (0.0099 + 0.0099) = 50%.",
-      "zh": "0.0099 / (0.0099 + 0.0099) = 50%。",
+      "zh": "比值：0.0099 除以（0.0099 加 0.0099）等于 50%。",
       "tts": "The result is 50."
     },
     {
@@ -443,7 +443,8 @@
       "start_s": 84.0,
       "end_s": 87.0,
       "en": "At 0.1% prevalence: 9%.",
-      "zh": "患病率 0.1% 时：9%。"
+      "zh": "患病率 0.1% 时：9%。",
+      "tts": "Prevalence is one in a thousand. The result is nine percent."
     },
     {
       "start_s": 87.0,
@@ -475,7 +476,7 @@
       "end_s": 106.5,
       "en": "A 1-in-10,000 event, a 99% test: about 100 false alarms per true one.",
       "zh": "万分之一的事件，99% 的检测：每个真警报约配 100 个假警报。",
-      "tts": "A one in ten thousand event, a 99 percent test: about 100 false alarms per true one."
+      "tts": "A one-in-ten-thousand event. A 99 percent test. About 100 false alarms per true one."
     },
     {
       "start_s": 108.0,

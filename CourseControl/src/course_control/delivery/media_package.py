@@ -141,6 +141,25 @@ def _srt_coverage(path: Path) -> dict:
     return {"cues": len(intervals), "covered_s": covered, "last_end_s": round(merged[-1][1], 3) if merged else 0.0}
 
 
+def _bilingual_check(path: Path) -> dict:
+    from course_control.voice.srt import parse_srt
+    from course_control.voice.subtitles import CuePolicy
+    from course_control.voice.subtitles_qc import check_cues
+
+    policy = CuePolicy(
+        en_max_chars_per_line=200,
+        zh_max_chars_per_line=200,
+        min_seconds=0.0,
+        max_seconds=120.0,
+        zh_cps_max=100.0,
+    )
+    return check_cues(
+        parse_srt(Path(path).read_text(encoding="utf-8", errors="replace")),
+        bilingual=True,
+        policy=policy,
+    )
+
+
 def check_media_sample(
     spec_path: Path,
     workspace: Path,
@@ -198,7 +217,16 @@ def check_media_sample(
 
     black, freeze = detect_black_freeze(video, Path(workspace).resolve(), video.parent / "media-qc-blackfreeze.log")
     add("black", FAIL if black else PASS, f"{len(black)} black interval(s)", {"intervals": black[:20]})
-    add("freeze", PASS, f"{len(freeze)} frozen interval(s); review intentional holds", {"intervals": freeze[:20]})
+    add(
+        "freeze",
+        PASS,
+        f"{len(freeze)} frozen interval(s); human review pending",
+        {
+            "freeze_count": len(freeze),
+            "intervals": freeze,
+            "human_review": "PENDING",
+        },
+    )
 
     subtitle_info = None
     if spec.subtitles:
@@ -211,18 +239,22 @@ def check_media_sample(
             policy_ok = ratio + 1e-9 >= spec.subtitle_min_coverage_ratio
             if spec.subtitle_must_reach_end:
                 policy_ok = policy_ok and subtitle_info["last_end_s"] >= info.duration - 0.5
+            bilingual = _bilingual_check(subtitle_path)
             subtitle_info = {
                 **subtitle_info,
                 "coverage_ratio": ratio,
                 "min_coverage_ratio": spec.subtitle_min_coverage_ratio,
                 "must_reach_end": spec.subtitle_must_reach_end,
+                "bilingual": bilingual,
             }
+            policy_ok = policy_ok and bilingual.get("status") != "FAIL"
             add(
                 "subtitles",
                 PASS if policy_ok else FAIL,
                 f"{subtitle_info['cues']} cues, {subtitle_info['covered_s']}s covered "
                 f"({ratio:.1%}), last end {subtitle_info['last_end_s']}s; "
-                f"policy min {spec.subtitle_min_coverage_ratio:.0%}, reach_end={spec.subtitle_must_reach_end}",
+                f"policy min {spec.subtitle_min_coverage_ratio:.0%}, reach_end={spec.subtitle_must_reach_end}; "
+                f"bilingual={bilingual.get('status')}",
                 subtitle_info,
             )
     else:
@@ -236,7 +268,15 @@ def check_media_sample(
     add(
         "evidence",
         INCOMPLETE if missing_evidence else PASS,
-        "; ".join(missing_evidence) or f"{len(spec.evidence)} evidence file(s) present",
+        (
+            f"external evidence: {len(spec.evidence)} declared, "
+            f"{len(missing_evidence)} missing; generated evidence is recorded separately"
+        ),
+        {
+            "external_count": len(spec.evidence),
+            "external_missing": missing_evidence,
+            "generated": "narration/asr/subtitles/media-qc when present",
+        },
     )
 
     if spec.narration_kind == "clean_tts":
@@ -467,6 +507,7 @@ def build_media_package(
             "must_reach_end": spec.subtitle_must_reach_end,
         },
         "evidence_count": len(spec.evidence),
+        "external_evidence_count": len(spec.evidence),
         "narration_kind": spec.narration_kind,
         "script_sha256": script_sha,
         "timed_script_sha256": timed_script_sha,
@@ -548,6 +589,8 @@ def verify_media_package(root: Path, workspace: Path | None = None) -> list[str]
                 "evidence/script.timed.json",
                 "evidence/narration.provenance.json",
                 "evidence/asr-alignment.json",
+                "evidence/quality-checks.json",
+                "evidence/subtitle-coverage.json",
                 "narration/stem.wav",
             }
         )
@@ -694,6 +737,12 @@ def verify_media_package(root: Path, workspace: Path | None = None) -> list[str]
                         )
                     if policy.get("must_reach_end") and actual_coverage["last_end_s"] < actual.duration - 0.5:
                         problems.append("actual subtitles do not reach the end of the film")
+                    bilingual = _bilingual_check(subtitle_path)
+                    if bilingual.get("status") == "FAIL":
+                        problems.append(
+                            "subtitles are not bilingual: "
+                            + "; ".join(bilingual.get("errors") or [])
+                        )
 
     if manifest.get("narration_kind") == "clean_tts":
         try:
@@ -744,6 +793,30 @@ def verify_media_package(root: Path, workspace: Path | None = None) -> list[str]
             except (OSError, ValueError) as exc:
                 problems.append(f"INCOMPLETE: saved ASR report is unreadable: {exc}")
                 saved_asr = None
+            try:
+                quality_checks = json.loads(
+                    (root / "evidence" / "quality-checks.json").read_text(encoding="utf-8")
+                )
+            except (OSError, ValueError) as exc:
+                problems.append(f"INCOMPLETE: quality checks are unreadable: {exc}")
+                quality_checks = None
+            if isinstance(quality_checks, list):
+                freeze_step = next(
+                    (item for item in quality_checks if isinstance(item, dict) and item.get("id") == "freeze"),
+                    None,
+                )
+                if not isinstance(freeze_step, dict):
+                    problems.append("INCOMPLETE: freeze check is missing from quality evidence")
+                else:
+                    data = freeze_step.get("data") or {}
+                    intervals = data.get("intervals")
+                    if data.get("freeze_count") != len(intervals or []):
+                        problems.append("freeze evidence is truncated or its count is wrong")
+                    if data.get("human_review") != "PENDING":
+                        problems.append("freeze evidence must record human_review: PENDING")
+            else:
+                problems.append("INCOMPLETE: quality checks are not a list")
+
             if workspace is None:
                 problems.append("INCOMPLETE: ASR verification needs --workspace")
             else:

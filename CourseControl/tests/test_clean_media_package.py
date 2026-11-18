@@ -98,9 +98,25 @@ class CleanMediaPackageTest(unittest.TestCase):
             encoding="utf-8",
         )
         coverage = self.root / "evidence" / "subtitle-coverage.json"
-        coverage.write_text(json.dumps({"cues": 1, "covered_s": 1.0}), encoding="utf-8")
+        coverage.write_text(
+            json.dumps({"cues": 1, "covered_s": 1.0, "bilingual": {"status": "PASS"}}),
+            encoding="utf-8",
+        )
+        quality = self.root / "evidence" / "quality-checks.json"
+        quality.write_text(
+            json.dumps(
+                [
+                    {"id": "final_video", "status": "pass", "data": {}},
+                    {"id": "freeze", "status": "pass",
+                     "data": {"freeze_count": 2,
+                              "intervals": [{"start_s": 0.1, "end_s": 0.3}, {"start_s": 0.4, "end_s": 0.6}],
+                              "human_review": "PENDING"}},
+                ]
+            ),
+            encoding="utf-8",
+        )
         srt = self.root / "final" / "subtitles.srt"
-        srt.write_text("1\n00:00:00,000 --> 00:00:01,000\nHello\n", encoding="utf-8")
+        srt.write_text("1" + chr(10) + "00:00:00,000 --> 00:00:01,000" + chr(10) + "Hello" + chr(10) + "你好" + chr(10), encoding="utf-8")
         metadata = self.root / "metadata.json"
         metadata.write_text(
             json.dumps(
@@ -117,7 +133,10 @@ class CleanMediaPackageTest(unittest.TestCase):
         checklist.write_text("# checklist" + chr(10), encoding="utf-8")
         files = [
             self._record(path)
-            for path in (master, srt, script, timed, provenance, asr, coverage, stem, metadata, checklist)
+            for path in (
+                master, srt, script, timed, provenance, asr, coverage, quality,
+                stem, metadata, checklist,
+            )
         ]
         checks = [
             {"id": step, "status": "pass", "detail": ""}
@@ -149,7 +168,7 @@ class CleanMediaPackageTest(unittest.TestCase):
                 "coverage_ratio": 1.0,
             },
             "subtitle_policy": {"min_coverage_ratio": 0.9, "must_reach_end": True},
-            "evidence_count": 3,
+            "evidence_count": 5,
             "checks": checks,
             "files": files,
         }
@@ -236,6 +255,41 @@ class CleanMediaPackageTest(unittest.TestCase):
         problems = self.verify()
         for step in ("narration", "asr", "loudness"):
             self.assertTrue(any(f"check '{step}' is missing" in item for item in problems))
+
+    def test_missing_chinese_line_fails(self):
+        manifest = self.build()
+        srt = self.root / "final" / "subtitles.srt"
+        srt.write_text("1" + chr(10) + "00:00:00,000 --> 00:00:01,000" + chr(10) + "Hello" + chr(10), encoding="utf-8")
+        for item in manifest["files"]:
+            if item["path"] == "final/subtitles.srt":
+                item["sha256"] = self._sha(srt)
+                item["bytes"] = srt.stat().st_size
+        (self.root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        problems = self.verify()
+        self.assertTrue(any("not bilingual" in item for item in problems))
+
+    def test_truncated_freeze_evidence_fails(self):
+        manifest = self.build()
+        quality = self.root / "evidence" / "quality-checks.json"
+        data = json.loads(quality.read_text(encoding="utf-8"))
+        for step in data:
+            if step["id"] == "freeze":
+                step["data"]["freeze_count"] = 23
+                step["data"]["intervals"] = step["data"]["intervals"][:1]
+        quality.write_text(json.dumps(data), encoding="utf-8")
+        for item in manifest["files"]:
+            if item["path"] == "evidence/quality-checks.json":
+                item["sha256"] = self._sha(quality)
+                item["bytes"] = quality.stat().st_size
+        (self.root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        problems = self.verify()
+        self.assertTrue(any("freeze evidence is truncated" in item for item in problems))
+
+    def test_missing_quality_evidence_is_incomplete(self):
+        self.build()
+        (self.root / "evidence" / "quality-checks.json").unlink()
+        problems = self.verify()
+        self.assertTrue(any(item.startswith("INCOMPLETE:") for item in problems))
 
 
 if __name__ == "__main__":

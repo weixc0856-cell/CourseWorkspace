@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,7 +36,7 @@ GAP_MERGE_MS = 600
 STOPWORDS = {
     "a", "an", "the", "of", "but", "and", "for", "those", "that",
     "to", "in", "on", "at", "as", "it", "this", "these", "they", "their",
-    "all", "about", "0",
+    "all", "about", "0", "percent",
 }
 
 THRESHOLDS = {
@@ -43,6 +44,7 @@ THRESHOLDS = {
     "numeric_wer_max": NUMERIC_WER_MAX,
     "timing_deviation_max_s": TIMING_MAX_S,
     "uncovered_speech_max_s": UNCOVERED_MAX_S,
+    "numeric_values_must_match": True,
 }
 
 
@@ -124,6 +126,7 @@ def _transcribe(
 def _wer_tokens(text: str) -> list[str]:
     # Whisper may split a decimal into separate words; canonicalise both sides
     # to digit strings before comparing.
+    text = _words_to_numbers(text)
     text = text.replace(",", "")
     text = re.sub(r"(\d)\s*\.\s*(\d)", lambda m: m.group(1) + m.group(2), text)
     text = re.sub(r"(?<!\d)0\s+(\d)", lambda m: "0" + m.group(1), text)
@@ -138,6 +141,67 @@ def _wer_tokens(text: str) -> list[str]:
             token = token.lstrip("0") or "0"
         tokens.append(token)
     return tokens
+
+
+NUMBER_RE = re.compile(r"(?<![A-Za-z])(\d+(?:\.\d+)?)(\s*%)?")
+DIGIT_WORDS = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4,
+    "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+}
+_DIGITS = "|".join(DIGIT_WORDS)
+
+
+def _words_to_numbers(text: str) -> str:
+    text = text.replace(",", "")
+    text = re.sub(r"ten\s+thousand", "10000", text, flags=re.IGNORECASE)
+    text = re.sub(r"thousand", "1000", text, flags=re.IGNORECASE)
+    text = re.sub(r"10\s+0", "10000", text)
+
+    def decimal(match):
+        integer = DIGIT_WORDS[match.group(1).lower()]
+        fraction = "".join(str(DIGIT_WORDS[word.lower()]) for word in match.group(2).split())
+        return f"{integer}.{fraction}"
+
+    text = re.sub(
+        rf"({_DIGITS})\s+point\s+((?:{_DIGITS})(?:\s+(?:{_DIGITS}))*)",
+        decimal,
+        text,
+        flags=re.IGNORECASE,
+    )
+    for word, value in DIGIT_WORDS.items():
+        text = re.sub(rf"{word}", str(value), text, flags=re.IGNORECASE)
+    text = re.sub(r"ten", "10", text, flags=re.IGNORECASE)
+    return text
+
+
+def _numbers(text: str) -> list[tuple[Decimal, bool]]:
+    text = _words_to_numbers(text)
+    values = []
+    for match in NUMBER_RE.finditer(text):
+        try:
+            value = Decimal(match.group(1))
+        except InvalidOperation:
+            continue
+        values.append((value, bool(match.group(2))))
+    return values
+
+
+def _numbers_match(reference: list[tuple[Decimal, bool]], heard: list[tuple[Decimal, bool]]) -> bool:
+    if len(reference) != len(heard):
+        return False
+    remaining = list(heard)
+    for value, percent in reference:
+        candidates = [
+            index
+            for index, (other, other_percent) in enumerate(remaining)
+            if value == other
+            or (percent and value / Decimal(100) == other)
+            or (other_percent and other / Decimal(100) == value)
+        ]
+        if not candidates:
+            return False
+        remaining.pop(candidates[0])
+    return True
 
 
 def _wer(reference: list[str], hypothesis: list[str]) -> float:
@@ -209,7 +273,11 @@ def evaluate(cues: list[dict], words: list[Word], audio_duration_s: float | None
             first = min(words[index].start_ms for index in chosen) / 1000
             last = max(words[index].end_ms for index in chosen) / 1000
             timing = round(max(abs(first - cue["start_s"]), abs(last - cue["end_s"])), 3)
-        limit = NUMERIC_WER_MAX if re.search(r"\d", str(cue.get("tts") or cue.get("en") or "")) else WER_MAX
+        spoken = str(cue.get("tts") or cue.get("en") or "")
+        reference_numbers = _numbers(spoken)
+        heard_numbers = _numbers(" ".join(words[index].text for index in chosen))
+        numeric_ok = _numbers_match(reference_numbers, heard_numbers)
+        limit = NUMERIC_WER_MAX if reference_numbers else WER_MAX
         segments.append(
             {
                 "index": cue.get("index"),
@@ -219,6 +287,9 @@ def evaluate(cues: list[dict], words: list[Word], audio_duration_s: float | None
                 "asr_text": " ".join(hypothesis),
                 "wer": wer,
                 "wer_max": limit,
+                "numeric_reference": [str(value) + ("%" if percent else "") for value, percent in reference_numbers],
+                "numeric_asr": [str(value) + ("%" if percent else "") for value, percent in heard_numbers],
+                "numeric_ok": numeric_ok,
                 "timing_deviation_s": timing,
                 "word_count": len(chosen),
             }
@@ -227,8 +298,13 @@ def evaluate(cues: list[dict], words: list[Word], audio_duration_s: float | None
     bad_segments = [
         item
         for item in segments
-        if item["wer"] > item["wer_max"] or item["timing_deviation_s"] > TIMING_MAX_S
+        if (
+            item["wer"] > item["wer_max"]
+            or item["timing_deviation_s"] > TIMING_MAX_S
+            or not item["numeric_ok"]
+        )
     ]
+    numeric_review = [item["index"] for item in segments if not item["numeric_ok"]]
     status = PASS if not bad_segments and not uncovered and words else FAIL
     return {
         "status": status,
@@ -238,6 +314,8 @@ def evaluate(cues: list[dict], words: list[Word], audio_duration_s: float | None
         "cue_count": len(cues),
         "segments": segments,
         "bad_segments": bad_segments,
+        "human_review_required": numeric_review,
+        "human_review": "PENDING" if numeric_review else None,
         "uncovered_speech": uncovered,
         "uncovered_speech_s": round(sum(item["duration_s"] for item in uncovered), 3),
     }
