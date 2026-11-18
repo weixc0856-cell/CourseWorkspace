@@ -13,6 +13,8 @@ export type CarFlowSceneProps = {
   caption1?: string;
   caption2?: string;
   pathLabel?: string;
+  // The audit fixture must run without the lesson's GLB in public/staging.
+  car?: 'drivaer' | 'procedural';
 };
 
 export const CarScene: React.FC<CarFlowSceneProps> = ({
@@ -21,6 +23,7 @@ export const CarScene: React.FC<CarFlowSceneProps> = ({
   caption1 = 'Over the roof, the air speeds up. Pressure falls.',
   caption2 = 'Behind the car, the flow separates. Low pressure, drag.',
   pathLabel = 'FRONT → ROOF → UNDERBODY → WHEELS → WAKE',
+  car = 'drivaer',
   duration,
 }) => {
   const t = useSceneTime(duration);
@@ -42,7 +45,7 @@ export const CarScene: React.FC<CarFlowSceneProps> = ({
         camera={{fov: 36, position: [6.8, 2.9, 7.8], near: 0.1, far: 200}}
         gl={{antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08}}
       >
-        <World t={t} />
+        <World t={t} car={car} />
       </ThreeCanvas>
 
       <div style={{position: 'absolute', left: 96, top: 96, opacity: title, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em', fontFamily: FONT}}>

@@ -6,7 +6,10 @@ import {ThreeCanvas} from '@remotion/three';
 import {World} from '../carflow/Scene';
 import {C, DISPLAY, FONT, ease} from './theme';
 
-export const ConclusionScene: React.FC<{duration?: number}> = ({duration}) => {
+export const ConclusionScene: React.FC<{
+  duration?: number;
+  car?: 'drivaer' | 'procedural';
+}> = ({duration, car = 'drivaer'}) => {
   const t = useSceneTime(duration);
   const worldT = 25.6 + t * 0.085;
   const q = ease(t / 0.8);
@@ -26,7 +29,7 @@ export const ConclusionScene: React.FC<{duration?: number}> = ({duration}) => {
         camera={{fov: 36, position: [-9.2, 3.0, 8.2], near: 0.1, far: 200}}
         gl={{antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08}}
       >
-        <World t={worldT} />
+        <World t={worldT} car={car} />
       </ThreeCanvas>
 
       <div style={{position: 'absolute', left: 96, top: 96, opacity: q, color: C.orange, fontSize: 18, fontWeight: 600, letterSpacing: '0.26em', fontFamily: FONT}}>

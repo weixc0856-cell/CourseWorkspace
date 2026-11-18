@@ -35,7 +35,9 @@ def _is_zh(line: str) -> bool:
 
 
 def _split_languages(lines: list[str]) -> tuple[list[str], list[str]]:
-    en = [line for line in lines if LETTER_RE.search(line) and not _is_zh(line)]
+    # A formula line may contain no Latin letters; anything that is not the
+    # bottom language still counts as the top line.
+    en = [line for line in lines if line.strip() and not _is_zh(line)]
     zh = [line for line in lines if _is_zh(line)]
     return en, zh
 

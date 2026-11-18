@@ -32,6 +32,11 @@ def validate_lesson(
     lesson: str = typer.Option(..., "--lesson"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    scope: str = typer.Option(
+        "full",
+        "--scope",
+        help="spec: episode.spec + quality.rubric only (the S0 gate); full: every lesson contract",
+    ),
 ) -> None:
     """Validate lesson contracts without rendering."""
     try:
@@ -39,6 +44,19 @@ def validate_lesson(
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
+    if scope not in {"full", "spec"}:
+        typer.echo("--scope must be full or spec", err=True)
+        raise typer.Exit(2)
+    if scope == "spec":
+        from course_control.production.preflight import run_preflight
+
+        report = run_preflight(paths.lesson_dir, strict=False, paths=paths)
+        for warning in report.warnings:
+            typer.echo(f"[preflight] warning: {warning}")
+        for error in report.errors:
+            typer.echo(f"[preflight] error: {error}")
+        typer.echo("status: " + ("PASS" if report.ok else "FAIL"))
+        raise typer.Exit(0 if report.ok else 1)
     result = validate(paths)
     _print_issues(result)
     raise typer.Exit(0 if result.ok else 1)
@@ -125,10 +143,26 @@ def build_command(
         "--capture-only",
         help="render slides.md only; allowed before the storyboard page is signed",
     ),
+    through: str | None = typer.Option(
+        None,
+        "--through",
+        help="stop at a stage boundary; 'collect' writes the timeline and stops",
+    ),
 ) -> None:
     """Run the applicable stages for a lesson."""
     if storyboard_source not in (None, "storyboard", "director"):
         typer.echo("--storyboard-source must be storyboard or director", err=True)
+        raise typer.Exit(2)
+    through_value = through if isinstance(through, str) else None
+    if through_value not in (None, "collect"):
+        typer.echo("--through supports only 'collect'", err=True)
+        raise typer.Exit(2)
+    if through_value and (capture_only or skip_render or skip_compose):
+        typer.echo(
+            "--through collect runs the stages up to collect; it cannot be "
+            "combined with --capture-only, --skip-render or --skip-compose",
+            err=True,
+        )
         raise typer.Exit(2)
     if capture_only:
         conflicts = [
@@ -167,6 +201,7 @@ def build_command(
                 resume=resume or resume_from is not None,
                 resume_from=resume_from,
                 capture_only=capture_only,
+                through=through_value,
             ),
         )
     except AuthoringError as exc:  # the storyboard sign-off gate
@@ -176,6 +211,12 @@ def build_command(
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
     typer.echo(f"verdict: {report.verdict}")
+    if report.verification_scope != "full":
+        typer.echo(
+            f"scope: {report.verification_scope} (not a lesson pass; deferred: "
+            + "; ".join(report.deferred_checks)
+            + ")"
+        )
     typer.echo(f"report: {report_path}")
     for stage in report.stages:
         typer.echo(f"  {stage.name}: {stage.status.value}")

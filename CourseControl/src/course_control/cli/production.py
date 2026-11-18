@@ -81,6 +81,50 @@ def checks_command(
     typer.echo("status: " + ("FAIL" if failed else ("INCOMPLETE" if incomplete else "PASS")))
     raise typer.Exit(1 if failed else (2 if incomplete else 0))
 
+@app.command("content-audit")
+def content_audit_command(
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+    root_option: Path | None = typer.Option(
+        None, "--content-root", help="must equal the resolved content root"
+    ),
+    strict: bool = typer.Option(False, "--strict", help="warnings fail the audit"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Audit the production content root. Read-only; never writes."""
+    import json
+
+    from course_control.platform.content_audit import run_audit
+    from course_control.platform.workspace_layout import (
+        content_root as resolve_content_root,
+        dev_mode,
+    )
+
+    if dev_mode():
+        typer.echo(
+            "content-audit is a production command; it refuses dev mode", err=True
+        )
+        raise typer.Exit(2)
+    root = resolve_content_root(workspace.resolve())
+    if root_option is not None and root_option.resolve() != root:
+        typer.echo(
+            f"--content-root {root_option} is not the resolved content root {root}; "
+            "set COURSEWORKSPACE_CONTENT_ROOT or config/local-paths.yaml instead",
+            err=True,
+        )
+        raise typer.Exit(2)
+    result = run_audit(workspace.resolve(), strict=strict)
+    payload = result.as_dict(strict=strict)
+    if as_json:
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"content root: {payload['content_root']}")
+        for item in payload["findings"]:
+            typer.echo(f"  [{item['status']}] {item['area']}: {item['detail']}")
+        typer.echo(f"status: {payload['status']}")
+    status = payload["status"]
+    raise typer.Exit(0 if status == "pass" else (3 if status == "incomplete" else 1))
+
+
 @app.command("book-index")
 def book_index_command(
     index: Path = typer.Option(..., "--index", help="book/index.json"),

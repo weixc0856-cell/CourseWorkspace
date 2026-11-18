@@ -389,8 +389,12 @@ def _release_exit(payload: dict) -> int:
 def release_check(
     lesson: str = typer.Option(None, "--lesson"),
     project: Path = typer.Option(None, "--project", help="project.yaml for a topic video"),
+    sample: Path = typer.Option(None, "--sample", help="media sample spec for an internal package"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     shot_review_dir: Path | None = typer.Option(None, "--shot-review-dir"),
+    asr_model: str | None = typer.Option(
+        None, "--asr-model", help="sample ASR model override (default small.en)"
+    ),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
@@ -399,14 +403,32 @@ def release_check(
 
     from course_control.platform.workspace_layout import production_content_root
 
-    if bool(lesson) == bool(project):
-        typer.echo("give exactly one of --lesson or --project", err=True)
+    if sum(bool(item) for item in (lesson, project, sample)) != 1:
+        typer.echo("give exactly one of --lesson, --project or --sample", err=True)
         raise typer.Exit(2)
     try:
         production_content_root(workspace.resolve())
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(2)
+    if sample:
+        from course_control.delivery.media_package import MediaPackageError, check_media_sample
+
+        try:
+            payload = check_media_sample(
+                sample, workspace.resolve(), asr_model=asr_model
+            )
+        except MediaPackageError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1)
+        if as_json:
+            typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            typer.echo(f"sample: {payload.get('id')}  scope: {payload.get('scope')}")
+            for step in payload["steps"]:
+                typer.echo(f"  [{step['status']}] {step['id']}: {step['detail']}")
+        typer.echo(f"status: {payload['status']}")
+        raise typer.Exit(0 if payload["status"] == "pass" else (2 if payload["status"] == "incomplete" else 1))
     if lesson:
         try:
             paths = _paths(workspace, lesson, lesson_dir)

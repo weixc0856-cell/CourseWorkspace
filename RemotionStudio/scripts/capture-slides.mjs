@@ -1,4 +1,5 @@
-import {mkdir, stat, writeFile} from 'node:fs/promises';
+import {mkdir, readFile, stat, writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
@@ -32,6 +33,7 @@ if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(lesson)) {
 const baseUrl = args['base-url'] ?? 'http://localhost:8081';
 const outDir = path.resolve(args.out ?? path.join(workspaceRoot, 'build', lesson, 'slides'));
 const maxPages = args.max ? Number(args.max) : null;
+const slidesPath = args.slides ? path.resolve(args.slides) : null;
 const preferredChannel = args.channel ?? 'chrome';
 const width = Number(args.width ?? 1920);
 const height = Number(args.height ?? 1080);
@@ -242,6 +244,10 @@ try {
         lesson,
         generated_at: new Date().toISOString(),
         source: 'auto',
+        slides_path: slidesPath,
+        slides_sha256: slidesPath
+          ? createHash('sha256').update(await readFile(slidesPath)).digest('hex')
+          : null,
         viewport: [width, height],
         total_slides: total,
         captured: pages.length,

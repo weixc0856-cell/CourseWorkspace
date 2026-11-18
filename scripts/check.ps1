@@ -326,104 +326,46 @@ try {
         Write-Host "skip golden set (no golden frames in the content root)"
     }
 
-    # The audit renders the chapter composition and reads the DOM; it needs the
-    # staged assets, so it only runs where a content root exists.  The episode
-    # is the composition that ships, so it is audited too, at a frame inside
-    # every instance (not at a fixed frame list that goes stale).
-    if (-not $CleanClone -and $content -ne $root) {
-        Invoke-Checked "frame audit" {
-            node RemotionStudio/scripts/frame-audit.mjs
-        }
-        # Assembly refuses to render when a segment has not named its own
-        # content, because the components would fall back to the sample card's
-        # picture and copy. That is a data gap, not a code defect: report it as
-        # a skip with the missing props named, so the gate stays meaningful.
-        $episodeOut = & node RemotionStudio/scripts/frame-audit.mjs `
-            --entry src/audit/episode.tsx `
-            --timing RemotionStudio/src/episode/timing.json `
-            --samples "mid" `
-            --out (Join-Path $content "build/_shared/frame-audit/episode") 2>&1
-        if ($episodeOut -match 'episode assembly:') {
-            # This is a content gap, not a program failure.  It goes to an
-            # explicit exception queue and is counted in the summary; it is
-            # never called a skip and never passed silently.
-            $script:contentExceptionPath = Join-Path $content "build/t1-01-why-aerodynamics/quality/content-exceptions.json"
-            $detail = ($episodeOut | Select-String -Pattern 'episode assembly:|^  ' |
-                Select-Object -First 12 | ForEach-Object { $_.Line.Trim() }) -join "`n"
-            $runId = "check:" + (Get-Date).ToUniversalTime().ToString("o")
-            & uv run --project CourseControl course-control exception-observe `
-                --lesson "t1-01-why-aerodynamics" `
-                --build-root (Join-Path $content "build/t1-01-why-aerodynamics") `
-                --check "episode assembly" `
-                --state open `
-                --owner "unassigned" `
-                --scope "RemotionStudio/src/episode/timing.json" `
-                --reason "43 required component props are not set, so the episode would fall back to the sample card" `
-                --clear-when "timing.json sets every required prop and check.ps1 no longer reports this entry" `
-                --release-policy "release-check and package must return incomplete for this lesson until cleared" `
-                --detail $detail `
-                --run-id $runId `
-                --workspace .
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "FAILED: exception queue update (existing files were not overwritten)"
-                $script:failed = $true
-            }
-            else {
-                $script:contentExceptions += 1
-            }
-            Write-Host "content exception: episode assembly incomplete (queued at $script:contentExceptionPath)"
-            $episodeOut | Select-String -Pattern 'episode assembly:|^  ' | Select-Object -First 6 |
-                ForEach-Object { Write-Host "  $_" }
-        }
-        elseif ($LASTEXITCODE -ne 0) {
-            $episodeOut | ForEach-Object { Write-Host $_ }
-            Write-Host "FAILED: frame audit episode"
-            $script:failed = $true
-        }
-        else {
-            # The condition is gone: record a resolved observation.  The entry
-            # is kept, and a human clear is never overridden by a passing check.
-            $runId = "check:" + (Get-Date).ToUniversalTime().ToString("o")
-            & uv run --project CourseControl course-control exception-observe `
-                --lesson "t1-01-why-aerodynamics" `
-                --build-root (Join-Path $content "build/t1-01-why-aerodynamics") `
-                --check "episode assembly" `
-                --state resolved `
-                --run-id $runId `
-                --workspace .
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "FAILED: exception queue update (existing files were not overwritten)"
-                $script:failed = $true
-            }
-        }
-
-        # Reverse cases for the audit itself. A crashed render and an empty
-        # render both used to report "0 issues"; these fixtures fail if the
-        # audit ever goes back to only checking that nothing bad happened.
-        $script:checksRun += 1
-        Write-Host "frame audit catches render errors (must be rejected)"
-        $throwOut = & node RemotionStudio/scripts/frame-audit.mjs 30 `
-            --entry src/audit/throwing.tsx `
-            --out (Join-Path $content "build/_shared/frame-audit/throwing-fixture") 2>&1
-        if ($LASTEXITCODE -eq 0 -or -not (($throwOut | Out-String) -match 'deliberate render error')) {
-            Write-Host "FAILED: frame audit did not report the render error"
-            $script:failed = $true
-        }
-
-        $script:checksRun += 1
-        Write-Host "frame audit catches blank frames (must be rejected)"
-        $blankOut = & node RemotionStudio/scripts/frame-audit.mjs 30 `
-            --entry src/audit/blank.tsx `
-            --out (Join-Path $content "build/_shared/frame-audit/blank-fixture") 2>&1
-        $blankExceptions = Join-Path $content "build/_shared/frame-audit/blank-fixture/exceptions.json"
-        if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $blankExceptions -Pattern '"blank_frame"' -Quiet)) {
-            Write-Host "FAILED: frame audit did not report the blank frame"
-            $script:failed = $true
-        }
+    # The code regression audits a repository fixture, never an episode's
+    # staging cache. The fixture renders the same Chapter components with
+    # committed images and the procedural car, so an empty public/staging
+    # cannot turn the regression red; deleting the fixture still turns it red.
+    Invoke-Checked "frame audit fixture" {
+        node RemotionStudio/scripts/frame-audit.mjs `
+            --entry src/audit/chapter-fixture.tsx `
+            --out (Join-Path $content "build/_shared/frame-audit/chapter-fixture")
     }
-    else {
-        Write-Host "skip frame audit (no content root)"
+
+    # Reverse cases for the audit itself. A crashed render and an empty render
+    # both used to report "0 issues"; these fixtures fail if the audit ever
+    # goes back to only checking that nothing bad happened.
+    $script:checksRun += 1
+    Write-Host "frame audit catches render errors (must be rejected)"
+    $throwOut = & node RemotionStudio/scripts/frame-audit.mjs 30 `
+        --entry src/audit/throwing.tsx `
+        --out (Join-Path $content "build/_shared/frame-audit/throwing-fixture") 2>&1
+    if ($LASTEXITCODE -eq 0 -or -not (($throwOut | Out-String) -match 'deliberate render error')) {
+        Write-Host "FAILED: frame audit did not report the render error"
+        $script:failed = $true
     }
+
+    $script:checksRun += 1
+    Write-Host "frame audit catches blank frames (must be rejected)"
+    $blankOut = & node RemotionStudio/scripts/frame-audit.mjs 30 `
+        --entry src/audit/blank.tsx `
+        --out (Join-Path $content "build/_shared/frame-audit/blank-fixture") 2>&1
+    $blankExceptions = Join-Path $content "build/_shared/frame-audit/blank-fixture/exceptions.json"
+    if ($LASTEXITCODE -eq 0 -or -not (Select-String -Path $blankExceptions -Pattern '"blank_frame"' -Quiet)) {
+        Write-Host "FAILED: frame audit did not report the blank frame"
+        $script:failed = $true
+    }
+
+    # The real Chapter composition and the episode assembly are content
+    # audits, not code regressions: run
+    #   node RemotionStudio/scripts/frame-audit.mjs
+    # against a populated public/staging, or `course-control content-audit`
+    # for the production root. A missing staged asset is reported there by
+    # path; it is never turned into a silent pass here.
 
     # CLAUDE.md §16: temporary output lives in build/<slug>/. Isolation runs
     # and preview folders otherwise pile up at the top level until nobody can
@@ -599,6 +541,7 @@ try {
     Write-Host "check summary: checks=$script:checksRun failed=0 content_exceptions=0"
     Write-Host "check log: $logPath"
     Write-Host "check ok"
+    Write-Host "scope: code regression only; production content is audited by course-control content-audit"
     exit 0
 }
 finally {

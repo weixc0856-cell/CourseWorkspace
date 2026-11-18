@@ -3,6 +3,19 @@
     "ShortCaption": {
       "additionalProperties": false,
       "properties": {
+        "index": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Index"
+        },
         "start_s": {
           "minimum": 0,
           "title": "Start S",
@@ -29,6 +42,18 @@
           ],
           "default": null,
           "title": "Zh"
+        },
+        "tts": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tts"
         }
       },
       "required": [

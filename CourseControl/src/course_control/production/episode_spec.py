@@ -17,6 +17,9 @@ class SourceRef(StrictModel):
     figure: str | None = None
     table: str | None = None
     page: int | None = Field(default=None, ge=1)
+    pdf_page: int | None = Field(default=None, ge=1)
+    printed_page: int | None = Field(default=None, ge=1)
+    source_edition: str | None = None
     note: str | None = None
 
     @model_validator(mode="after")

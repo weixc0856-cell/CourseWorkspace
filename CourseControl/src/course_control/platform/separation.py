@@ -103,6 +103,7 @@ MEDIA_ALLOWED: dict[str, str] = {
     "RemotionStudio/public/fengshui": "legacy media for the fengshui episode; content-root copy exists under projects/fengshui; owner decides removal by 2026-12-15",
     "RemotionStudio/public/fengshui-ab": "legacy media for the fengshui A/B experiment; content-root copy exists under projects/fengshui/experiments; owner decides removal by 2026-12-15",
     "RemotionStudio/public/opener": "brand-opener audio; no content-root source found yet; owner decides keep or regenerate by 2026-12-15",
+    "RemotionStudio/public/audit-fixtures": "committed fixtures for the frame-audit code regression; never lesson content",
     "RemotionStudio/public/staging": "staging area copied from the content root by scripts/stage-media.mjs",
     "RemotionStudio/public/vibe": "legacy music for the vibe compositions; content-root copy exists under projects/experiments; owner decides removal by 2026-12-15",
     "ScientificFigures/output": "figure output cited by the POC evaluation doc; move to the content root by 2026-12-15",

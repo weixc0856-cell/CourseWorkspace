@@ -67,8 +67,8 @@ def _tokens(text: str) -> list[str]:
     if re.search(r"[一-鿿]", text):
         normalized = text.translate(_TRAD_TO_SIMP)
         return [ch for ch in normalized if "一" <= ch <= "鿿" or ch.isalnum()]
-    cleaned = re.sub(r"[^a-z0-9']+", " ", text.lower())
-    return [token for token in cleaned.split() if token]
+    cleaned = text.lower()
+    return re.findall(r"[a-z]+(?:'[a-z]+)?|[0-9]+(?:\.[0-9]+)?", cleaned)
 
 
 @dataclass

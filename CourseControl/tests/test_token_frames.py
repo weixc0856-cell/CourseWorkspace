@@ -356,6 +356,41 @@ class BrandEvidenceTest(unittest.TestCase):
         self._write(report)
         self.assertEqual(self._step().status, FAIL)
 
+    def test_wrong_size_frames_are_incomplete(self):
+        from course_control.release.check import INCOMPLETE
+        from course_control.rendering.token_frames import file_sha256
+
+        report = self._report()
+        Image.new("RGB", (640, 360), COLORS["paper"]).save(self.frame_a)
+        Image.new("RGB", (640, 360), COLORS["paper"]).save(self.frame_b)
+        report["frame_a_sha256"] = file_sha256(self.frame_a)
+        report["frame_b_sha256"] = file_sha256(self.frame_b)
+        self._write(report)
+        self.assertEqual(self._step().status, INCOMPLETE)
+
+    def test_undecodable_frame_is_incomplete(self):
+        from course_control.release.check import INCOMPLETE
+        from course_control.rendering.token_frames import file_sha256
+
+        report = self._report()
+        self.frame_a.write_bytes(b"not a png")
+        report["frame_a_sha256"] = file_sha256(self.frame_a)
+        self._write(report)
+        self.assertEqual(self._step().status, INCOMPLETE)
+
+    def test_tokens_missing_layout_key_is_incomplete(self):
+        from course_control.release.check import INCOMPLETE
+        from course_control.rendering.token_frames import file_sha256
+
+        report = self._report()
+        tokens_path = self.workspace / "shared" / "design-tokens" / "tokens.json"
+        data = json.loads(tokens_path.read_text(encoding="utf-8"))
+        data["colors"].pop("flow")
+        tokens_path.write_text(json.dumps(data), encoding="utf-8")
+        report["tokens_sha256"] = file_sha256(tokens_path)
+        self._write(report)
+        self.assertEqual(self._step().status, INCOMPLETE)
+
     def test_forged_rows_with_real_hashes_fail(self):
         from course_control.release.check import FAIL
 

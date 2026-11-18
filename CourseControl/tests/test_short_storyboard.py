@@ -105,6 +105,15 @@ class ShortStoryboardTest(unittest.TestCase):
                 board([scene("simple_flow", "explain", {"steps": []})])
             )
 
+    def test_caption_can_carry_spoken_text(self):
+        payload = ShortStoryboard.model_validate(
+            board(
+                [scene()],
+                captions=[{"start_s": 0, "end_s": 1, "en": "0.99 x 0.01", "zh": "0.99 乘 0.01", "tts": "0.99 times 0.01"}],
+            )
+        )
+        self.assertEqual(payload.captions[0].tts, "0.99 times 0.01")
+
     def test_captions_must_be_ordered(self):
         with self.assertRaises(ValidationError):
             ShortStoryboard.model_validate(

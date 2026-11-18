@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 import os
 import re
 import tempfile
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -51,7 +53,9 @@ def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def candidate_dir(workspace: Path, lesson_dir: Path) -> Path:
+def candidate_dir(
+    workspace: Path, lesson_dir: Path, *, create: bool = True
+) -> Path:
     """Candidate drafts live in the content root, never in the program workspace.
 
     Resolving ``workspace / "build"`` wrote authoring candidates into the
@@ -59,8 +63,58 @@ def candidate_dir(workspace: Path, lesson_dir: Path) -> Path:
     separation check then reported as course content leaking into the code.
     """
     target = build_root_for(workspace, lesson_dir.resolve().name) / "authoring" / "candidates"
-    target.mkdir(parents=True, exist_ok=True)
+    if create:
+        target.mkdir(parents=True, exist_ok=True)
     return target
+
+
+CANDIDATE_RECORD = "candidates.json"
+
+
+def _candidate_record(directory: Path) -> dict:
+    path = directory / CANDIDATE_RECORD
+    if not path.is_file():
+        return {"schema_version": 1, "files": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"schema_version": 1, "files": {}}
+    if not isinstance(data, dict):
+        return {"schema_version": 1, "files": {}}
+    if not isinstance(data.get("files"), dict):
+        data["files"] = {}
+    return data
+
+
+def _record_candidates(
+    workspace: Path, lesson_dir: Path, entries: dict[str, str]
+) -> None:
+    """Record what each candidate was generated from.
+
+    A candidate is a draft against a target that existed at generation time.
+    Without this record ``author-accept`` cannot tell a fresh draft from one
+    generated against a file that has since been edited by hand, so the record
+    is what makes "refuse a stale candidate" possible at all.
+    """
+    directory = candidate_dir(workspace, lesson_dir)
+    data = _candidate_record(directory)
+    files = data["files"]
+    now = _now()
+    for name, relative in entries.items():
+        candidate = directory / name
+        if not candidate.is_file():
+            continue
+        target = lesson_dir.resolve() / relative
+        files[name] = {
+            "candidate": name,
+            "target": relative,
+            "candidate_sha256": _sha(candidate),
+            "target_sha256": _sha(target) if target.is_file() else None,
+            "generated_at": now,
+        }
+    data["schema_version"] = 1
+    data["lesson"] = lesson_dir.resolve().name
+    _write_json(directory / CANDIDATE_RECORD, data)
 
 
 def _write_json(path: Path, data) -> None:
@@ -140,8 +194,7 @@ def _digest_text(digest: SourceDigest, refs: list[str] | None = None, max_chars:
     return "\n".join(lines)
 
 
-def _lesson_context(paths: LessonPaths) -> str:
-    lesson = paths.lesson
+def _lesson_context(lesson: LessonConfig) -> str:
     policy = resolve(lesson)
     duration = policy.as_dict() if policy else {"profile": "none"}
     return (
@@ -161,14 +214,21 @@ def generate_brief(
     lesson_dir: Path,
     digest: SourceDigest,
 ) -> Brief:
-    paths = LessonPaths.load(workspace, lesson_dir)
+    lesson_yaml = lesson_dir / "lesson.yaml"
+    if not lesson_yaml.is_file():
+        raise AuthoringError(f"lesson.yaml not found: {lesson_yaml}")
+    from course_control.content.contracts import LessonConfig
+
+    lesson = LessonConfig.model_validate(
+        yaml.safe_load(lesson_yaml.read_text(encoding="utf-8"))
+    )
     messages = [
         {"role": "system", "content": _prompt("course_brief.md")},
         {
             "role": "user",
             "content": (
                 "Lesson metadata:\n"
-                + _lesson_context(paths)
+                + _lesson_context(lesson)
                 + "\nSource digest:\n"
                 + _digest_text(digest)
             ),
@@ -187,6 +247,11 @@ def generate_brief(
     target = candidate_dir(workspace, lesson_dir)
     _write_json(target / "brief.json", brief)
     _write_md(target / "brief.md", _brief_md(brief))
+    _record_candidates(
+        workspace,
+        lesson_dir,
+        {"brief.json": "authoring/brief.json", "brief.md": "authoring/brief.md"},
+    )
     return brief
 
 
@@ -250,6 +315,11 @@ def generate_outline(
     target = candidate_dir(workspace, lesson_dir)
     _write_json(target / "outline.json", outline)
     _write_md(target / "outline.md", _outline_md(outline))
+    _record_candidates(
+        workspace,
+        lesson_dir,
+        {"outline.json": "authoring/outline.json", "outline.md": "authoring/outline.md"},
+    )
     return outline
 
 
@@ -302,6 +372,14 @@ def generate_script(
     target = candidate_dir(workspace, lesson_dir)
     _write_json(target / "narration.script.json", script)
     _write_md(target / "narration.script.md", _script_md(script))
+    _record_candidates(
+        workspace,
+        lesson_dir,
+        {
+            "narration.script.json": "authoring/narration.script.json",
+            "narration.script.md": "authoring/narration.script.md",
+        },
+    )
     return script
 
 
@@ -424,6 +502,15 @@ def generate_content(
     (target / "lecture_notes.md").write_text(notes_md, encoding="utf-8")
     (target / "storyboard.yaml").write_text(
         yaml.safe_dump(storyboard, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    _record_candidates(
+        workspace,
+        lesson_dir,
+        {
+            "slides.md": "slides.md",
+            "lecture_notes.md": "lecture_notes.md",
+            "storyboard.yaml": "storyboard.yaml",
+        },
     )
     return {
         "slides": str(target / "slides.md"),
@@ -599,6 +686,19 @@ def sign_storyboard_page(
             + ", ".join(map(str, manifest["missing_captures"]))
             + "; capture the slides before signing"
         )
+    capture = manifest.get("capture") or {}
+    slides_relative = (paths.lesson.content.slides or "slides.md")
+    if not capture.get("bound"):
+        raise AuthoringError(
+            "storyboard page was built from slide captures with no source hash; "
+            "run course-control build --lesson "
+            + lesson_dir.name
+            + " --capture-only, then rebuild the page"
+        )
+    if capture.get("slides_sha256") != _sha(lesson_dir / slides_relative):
+        raise AuthoringError(
+            "slide captures no longer match slides.md; recapture and rebuild the page"
+        )
 
     reviewed = lesson_dir / "authoring" / "storyboard-review.html"
     reviewed.parent.mkdir(parents=True, exist_ok=True)
@@ -611,6 +711,7 @@ def sign_storyboard_page(
         "storyboard_path": str(source),
         "storyboard_sha256": manifest["storyboard_sha256"],
         "slides_md_sha256": manifest.get("slides_md_sha256"),
+        "capture": capture,
         "course_chain": (
             {
                 "course_id": chain.course_id,
@@ -723,6 +824,14 @@ def assert_storyboard_signed(lesson_dir: Path, storyboard_source: Path | None) -
     slides_path = lesson_dir / slides_relative
     if review.get("slides_md_sha256") != _sha(slides_path):
         raise AuthoringError("slides.md changed after sign-off; rebuild and sign the page")
+    capture = review.get("capture") or {}
+    if not capture.get("bound") or capture.get("slides_sha256") != review.get(
+        "slides_md_sha256"
+    ):
+        raise AuthoringError(
+            "sign-off is not bound to the slide captures it reviewed; "
+            "recapture the slides, rebuild the page and sign again"
+        )
 
     build_root = lesson_dir.parents[1] / "build" / lesson_dir.name
     slides = review.get("slides") or []
@@ -764,72 +873,236 @@ def _write_atomic_text(path: Path, text: str) -> None:
             temp.unlink(missing_ok=True)
 
 
+ACCEPTANCE_KINDS: dict[str, list[tuple[str, str]]] = {
+    "brief": [
+        ("brief.json", "authoring/brief.json"),
+        ("brief.md", "authoring/brief.md"),
+    ],
+    "outline": [
+        ("outline.json", "authoring/outline.json"),
+        ("outline.md", "authoring/outline.md"),
+    ],
+    "script": [
+        ("narration.script.json", "authoring/narration.script.json"),
+        ("narration.script.md", "authoring/narration.script.md"),
+    ],
+    "digest": [
+        ("source-digest.json", "authoring/source-digest.json"),
+        ("source-digest.md", "authoring/source-digest.md"),
+    ],
+    "content": [
+        ("slides.md", "slides.md"),
+        ("lecture_notes.md", "lecture_notes.md"),
+        ("storyboard.yaml", "storyboard.yaml"),
+    ],
+}
+
+
+@dataclass
+class AcceptancePlan:
+    """What one approval will do, decided before anything is written."""
+
+    kind: str
+    relative: str
+    target: Path
+    candidate: Path | None
+    current_sha256: str | None
+    candidate_sha256: str | None
+    action: str
+    diff: str = ""
+
+
+def _diff_summary(old: str, new: str, limit: int = 4) -> str:
+    if old == new:
+        return "identical"
+    lines = list(difflib.unified_diff(old.splitlines(), new.splitlines(), lineterm="", n=0))
+    body = [
+        line
+        for line in lines[2:]
+        if line[:1] in "+-" and not line.startswith(("+++", "---"))
+    ]
+    added = sum(1 for line in body if line.startswith("+"))
+    removed = sum(1 for line in body if line.startswith("-"))
+    head = body[:limit]
+    summary = f"+{added}/-{removed} lines"
+    return summary + ("; " + " | ".join(head) if head else "")
+
+
+def _digest_problem(value: str | None) -> str | None:
+    if value is None:
+        return None
+    text = value.strip().lower()
+    if len(text) != 64 or any(ch not in "0123456789abcdef" for ch in text):
+        return "must be a 64-character hex SHA-256 digest"
+    return None
+
+
+def plan_acceptance(
+    workspace: Path,
+    lesson_dir: Path,
+    kind: str,
+    *,
+    source: str = "candidate",
+    expect_sha256: str | None = None,
+    force_replace: bool = False,
+) -> list[AcceptancePlan]:
+    """Decide what an approval would change, without writing anything.
+
+    ``source="current"`` approves the file that is in the lesson right now.
+    ``source="candidate"`` promotes the generated draft, but only when the
+    target has not changed since the draft was generated; a stale draft would
+    silently undo a hand edit, so it is refused unless ``force_replace``.
+    """
+    if source not in {"candidate", "current"}:
+        raise AuthoringError(f"unknown acceptance source: {source}")
+    problem = _digest_problem(expect_sha256)
+    if problem:
+        raise AuthoringError(f"--expect-sha256 {problem}")
+    if kind not in ACCEPTANCE_KINDS:
+        raise AuthoringError(f"unknown approval kind: {kind}")
+    pairs = ACCEPTANCE_KINDS[kind]
+    primary = pairs[0][1]
+    directory = candidate_dir(workspace, lesson_dir, create=False)
+    record = _candidate_record(directory)
+    recorded = record.get("files") or {}
+    lesson_dir = lesson_dir.resolve()
+    plans: list[AcceptancePlan] = []
+    for candidate_name, relative in pairs:
+        target = lesson_dir / relative
+        current = _sha(target) if target.is_file() else None
+        if (
+            expect_sha256 is not None
+            and relative == primary
+            and current != expect_sha256
+        ):
+            raise AuthoringError(
+                f"current {relative} is {current or 'missing'}, not "
+                f"{expect_sha256}; the file changed, refusing to approve it"
+            )
+        if source == "current":
+            if current is None:
+                raise AuthoringError(f"cannot approve a missing file: {target}")
+            plans.append(
+                AcceptancePlan(
+                    kind, relative, target, None, current, None, "approve-current"
+                )
+            )
+            continue
+        candidate = directory / candidate_name
+        if not candidate.is_file():
+            # A digest and a hand-written content file have no draft; approving
+            # the current file is the only meaning those kinds have.
+            if current is None:
+                raise AuthoringError(f"candidate missing: {candidate_name}")
+            plans.append(
+                AcceptancePlan(
+                    kind, relative, target, None, current, None, "approve-current"
+                )
+            )
+            continue
+        candidate_sha = _sha(candidate)
+        entry = recorded.get(candidate_name)
+        if isinstance(entry, dict):
+            if entry.get("target_sha256") != current and not force_replace:
+                raise AuthoringError(
+                    f"refusing to replace {relative}: it changed after this candidate "
+                    f"was generated ({str(entry.get('target_sha256'))[:12]} -> "
+                    f"{str(current)[:12]}); approve the current file with "
+                    "--source current, or pass --force-replace"
+                )
+        elif kind != "digest" and not force_replace:
+            raise AuthoringError(
+                f"candidate {candidate_name} has no generation record; approve the "
+                "current file with --source current, or pass --force-replace"
+            )
+        if candidate_sha == current:
+            action = "unchanged"
+        elif current is None:
+            action = "create"
+        else:
+            action = "replace"
+        old = target.read_text(encoding="utf-8") if target.is_file() else ""
+        new = candidate.read_text(encoding="utf-8")
+        plans.append(
+            AcceptancePlan(
+                kind,
+                relative,
+                target,
+                candidate,
+                current,
+                candidate_sha,
+                action,
+                _diff_summary(old, new),
+            )
+        )
+    return plans
+
+
+def apply_acceptance(
+    workspace: Path,
+    lesson_dir: Path,
+    kind: str,
+    approved_by: str,
+    *,
+    source: str = "candidate",
+    expect_sha256: str | None = None,
+    force_replace: bool = False,
+    dry_run: bool = False,
+) -> list[AcceptancePlan]:
+    """Plan, then (unless dry-run) write and approve."""
+    if not is_named_approver(approved_by):
+        raise AuthoringError(f"approval must name a person, not {approved_by!r}")
+    if kind == SIGNOFF_KIND:
+        if dry_run or source != "candidate" or expect_sha256 or force_replace:
+            raise AuthoringError(
+                "the storyboard gate is signed with storyboard-review followed by "
+                "author-accept --kind storyboard-page; it has no current/candidate choice"
+            )
+        sign_storyboard_page(workspace, lesson_dir, approved_by)
+        return [
+            AcceptancePlan(
+                kind,
+                SIGNOFF_FILE,
+                lesson_dir.resolve() / SIGNOFF_FILE,
+                None,
+                _sha(lesson_dir.resolve() / SIGNOFF_FILE),
+                None,
+                "signed",
+            )
+        ]
+    plans = plan_acceptance(
+        workspace,
+        lesson_dir,
+        kind,
+        source=source,
+        expect_sha256=expect_sha256,
+        force_replace=force_replace,
+    )
+    if dry_run:
+        return plans
+    lesson_dir = lesson_dir.resolve()
+    for plan in plans:
+        if plan.candidate is not None and plan.action in {"replace", "create"}:
+            _write_atomic_text(
+                plan.target, plan.candidate.read_text(encoding="utf-8")
+            )
+    if kind == "content":
+        for plan in plans:
+            approve(lesson_dir, "content", plan.relative, approved_by)
+    else:
+        approve(lesson_dir, kind, plans[0].relative, approved_by)
+    return plans
+
+
 def accept_artifact(
     workspace: Path, lesson_dir: Path, kind: str, approved_by: str
 ) -> list[str]:
     """Copy a candidate artifact into lessons/<slug>/authoring and approve it."""
-    if not is_named_approver(approved_by):
-        raise AuthoringError(
-            f"approval must name a person, not {approved_by!r}"
-        )
-    if kind == SIGNOFF_KIND:
-        return sign_storyboard_page(workspace, lesson_dir, approved_by)
-    source = candidate_dir(workspace, lesson_dir)
-    lesson_dir = lesson_dir.resolve()
-    mapping = {
-        "brief": [
-            ("brief.json", "authoring/brief.json"),
-            ("brief.md", "authoring/brief.md"),
-        ],
-        "outline": [
-            ("outline.json", "authoring/outline.json"),
-            ("outline.md", "authoring/outline.md"),
-        ],
-        "script": [
-            ("narration.script.json", "authoring/narration.script.json"),
-            ("narration.script.md", "authoring/narration.script.md"),
-        ],
-        "digest": [
-            ("source-digest.json", "authoring/source-digest.json"),
-            ("source-digest.md", "authoring/source-digest.md"),
-        ],
-    }
-    if kind not in mapping:
-        raise AuthoringError(f"unknown approval kind: {kind}")
-    written: list[str] = []
-    primary = mapping[kind][0][1]
-    for candidate_name, relative in mapping[kind]:
-        src = source / candidate_name
-        if not src.is_file():
-            # Digest was generated in the lesson directory, not in candidates.
-            src = lesson_dir / relative
-        if not src.is_file():
-            raise AuthoringError(f"candidate missing: {candidate_name}")
-        dst = lesson_dir / relative
-        _write_atomic_text(dst, src.read_text(encoding="utf-8"))
-        written.append(relative)
-    approve(lesson_dir, kind, primary, approved_by)
-    return written
+    plans = apply_acceptance(workspace, lesson_dir, kind, approved_by)
+    return [plan.relative for plan in plans]
 
 
 def accept_content(workspace: Path, lesson_dir: Path, approved_by: str) -> list[str]:
     """Promote approved candidate content into lessons/<slug>/."""
-    if not is_named_approver(approved_by):
-        raise AuthoringError(
-            f"approval must name a person, not {approved_by!r}"
-        )
-    source = candidate_dir(workspace, lesson_dir)
-    mapping = {
-        "slides": (source / "slides.md", lesson_dir.resolve() / "slides.md"),
-        "notes": (source / "lecture_notes.md", lesson_dir.resolve() / "lecture_notes.md"),
-        "storyboard": (source / "storyboard.yaml", lesson_dir.resolve() / "storyboard.yaml"),
-    }
-    written: list[str] = []
-    for _, (src, dst) in mapping.items():
-        if not src.is_file():
-            raise AuthoringError(f"candidate missing: {src}")
-        _write_atomic_text(dst, src.read_text(encoding="utf-8"))
-        written.append(dst.relative_to(lesson_dir.resolve()).as_posix())
-    for relative in written:
-        approve(lesson_dir, "content", relative, approved_by)
-    return written
+    plans = apply_acceptance(workspace, lesson_dir, "content", approved_by)
+    return [plan.relative for plan in plans]

@@ -22,10 +22,13 @@ THEMES = ("editorial_science", "deep_space", "engineering_studio")
 
 
 class ShortCaption(StrictModel):
+    index: int | None = Field(default=None, ge=1)
     start_s: float = Field(ge=0)
     end_s: float = Field(gt=0)
     en: str = Field(min_length=1)
     zh: str | None = None
+    # Spoken form when it differs from the display text (formulas, symbols).
+    tts: str | None = None
 
     @model_validator(mode="after")
     def _ordered(self):

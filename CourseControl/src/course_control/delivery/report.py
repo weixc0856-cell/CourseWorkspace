@@ -63,6 +63,8 @@ class ReportBuilder:
         self.config_snapshot: str = ""
         self.resumed: bool = False
         self.reused_stages: list[str] = []
+        self.verification_scope: str = "full"
+        self.deferred_checks: list[str] = []
 
     def add_stage(self, outcome) -> None:
         self.stages.append(
@@ -224,6 +226,8 @@ class ReportBuilder:
             artifacts=self.artifacts,
             checks=self.checks,
             verdict=verdict,
+            verification_scope=self.verification_scope,
+            deferred_checks=list(self.deferred_checks),
             failures=failures,
             config_fingerprint=self.config_fingerprint,
             config_snapshot=self.config_snapshot,

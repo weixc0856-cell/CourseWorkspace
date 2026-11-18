@@ -40,7 +40,7 @@ _HELP_PANELS: dict[str, str] = {}
 for _panel, _names in {
     "Build & verify": (
         "build validate verify preflight schemas schemas-v1 contract-v1-validate product-check visual-events visual-events-check short-validate theme-check token-frames-check content-root "
-        "separation layout-templates layout-validate"
+        "content-audit separation layout-templates layout-validate"
     ),
     "Authoring": (
         "ingest digest brief outline script content-draft author-accept narration-build shot-sheet"

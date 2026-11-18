@@ -80,6 +80,22 @@ class PackageTest(unittest.TestCase):
         Image.new("RGB", (64, 36), (240, 240, 240)).save(
             build / "slides" / "slide-001.png"
         )
+        import hashlib
+
+        (build / "slides" / "capture-manifest.json").write_text(
+            json.dumps(
+                {
+                    "lesson": "demo",
+                    "slides_sha256": hashlib.sha256(
+                        (self.lesson_dir / "slides.md").read_bytes()
+                    ).hexdigest(),
+                    "total_slides": 1,
+                    "captured": 1,
+                    "pages": [{"index": 0, "page": "001", "file": "slide-001.png"}],
+                }
+            ),
+            encoding="utf-8",
+        )
         (build / "quality" / "media-qc.json").write_text('{"status": "PASS"}', encoding="utf-8")
         quality_report = build / "quality" / "quality-report.json"
         quality_report.write_text(

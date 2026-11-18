@@ -8,14 +8,26 @@ import {ConclusionScene} from './ConclusionScene';
 
 const FPS = 30;
 
-export const Chapter: React.FC = () => (
+export type ChapterProps = {
+  // The audit fixture passes its own committed images and a procedural car so
+  // the regression never depends on public/staging/<slug>/.
+  photoImage?: string;
+  evidenceImage?: string;
+  car?: 'drivaer' | 'procedural';
+};
+
+export const Chapter: React.FC<ChapterProps> = ({
+  photoImage,
+  evidenceImage,
+  car = 'drivaer',
+}) => (
   <AbsoluteFill style={{background: '#05070A'}}>
     <Sequence from={0} durationInFrames={18 * FPS}>
-      <PhotoScene />
+      <PhotoScene image={photoImage} />
     </Sequence>
 
     <Sequence from={18 * FPS} durationInFrames={30 * FPS}>
-      <CarScene />
+      <CarScene car={car} />
     </Sequence>
 
     <Sequence from={48 * FPS} durationInFrames={40 * FPS}>
@@ -23,11 +35,11 @@ export const Chapter: React.FC = () => (
     </Sequence>
 
     <Sequence from={88 * FPS} durationInFrames={35 * FPS}>
-      <EvidenceScene />
+      <EvidenceScene image={evidenceImage} />
     </Sequence>
 
     <Sequence from={123 * FPS} durationInFrames={30 * FPS}>
-      <ConclusionScene />
+      <ConclusionScene car={car} />
     </Sequence>
   </AbsoluteFill>
 );
