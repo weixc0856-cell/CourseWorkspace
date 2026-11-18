@@ -214,14 +214,17 @@ def _brand_steps(paths: LessonPaths) -> list[Step]:
     except TokenFrameError as exc:
         return [Step("brand_evidence", INCOMPLETE, f"cannot read brand inputs: {exc}")]
 
-    result = verify_report(
-        report,
-        layout=layout,
-        tokens=tokens,
-        layout_path=layout_path,
-        tokens_path=tokens_path,
-        report_path=report_path,
-    )
+    try:
+        result = verify_report(
+            report,
+            layout=layout,
+            tokens=tokens,
+            layout_path=layout_path,
+            tokens_path=tokens_path,
+            report_path=report_path,
+        )
+    except TokenFrameError as exc:
+        return [Step("brand_evidence", INCOMPLETE, f"cannot verify brand evidence: {exc}")]
     status = {"PASS": PASS, "FAIL": FAIL, "INCOMPLETE": INCOMPLETE}[result["status"]]
     detail = "; ".join(result["problems"]) or "token-frame proof verified"
     return [Step("brand_evidence", status, detail, str(report_path))]

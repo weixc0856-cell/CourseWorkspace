@@ -337,15 +337,21 @@ def verify_report(
     if structural:
         return {"status": "INCOMPLETE", "problems": structural + mismatches}
 
-    fresh = compare_frames(
-        frames["frame_a"],
-        frames["frame_b"],
-        layout,
-        tokens,
-        tolerance=tolerance,
-        layout_path=layout_path,
-        tokens_path=tokens_path,
-    )
+    try:
+        fresh = compare_frames(
+            frames["frame_a"],
+            frames["frame_b"],
+            layout,
+            tokens,
+            tolerance=tolerance,
+            layout_path=layout_path,
+            tokens_path=tokens_path,
+        )
+    except TokenFrameError as exc:
+        return {
+            "status": "INCOMPLETE",
+            "problems": [f"cannot recompute from the frames: {exc}"],
+        }
     if report.get("status") != fresh["status"]:
         mismatches.append(
             f"status is {report.get('status')!r}, recomputed {fresh['status']!r}"
