@@ -75,6 +75,10 @@ def _validate_geometry(layout: dict) -> None:
         raise TokenFrameError("layout keys must be non-empty strings")
     if len(set(keys)) != len(keys):
         raise TokenFrameError("layout keys must be unique")
+    if "paper" in keys:
+        raise TokenFrameError(
+            "paper is the canvas background, not a swatch; remove it from keys"
+        )
     if BACKGROUND_POINT[0] >= width or BACKGROUND_POINT[1] >= height:
         raise TokenFrameError("background sample point is outside the canvas")
 
@@ -252,3 +256,105 @@ def compare_frames(
         "failed": failed,
         "worst": {"key": worst["key"], "max": worst["max"]},
     }
+
+
+def verify_report(
+    report,
+    *,
+    layout: dict,
+    tokens: dict[str, tuple[int, int, int]],
+    layout_path: Path,
+    tokens_path: Path,
+    report_path: Path,
+) -> dict:
+    """Validate a saved report as evidence, not as a claim.
+
+    Structure errors are INCOMPLETE (the report cannot prove anything); a
+    mismatch against the current inputs or a row over tolerance is FAIL.
+    """
+    structural: list[str] = []
+    mismatches: list[str] = []
+    if not isinstance(report, dict):
+        return {"status": "INCOMPLETE", "problems": ["report is not an object"]}
+    if report.get("schema_version") != 2:
+        structural.append("schema_version is not 2")
+
+    rows = report.get("rows")
+    expected_keys = ["background"] + list(layout["keys"])
+    if not isinstance(rows, list):
+        structural.append("rows is not a list")
+        rows = []
+    if len(rows) != len(expected_keys):
+        structural.append(f"rows has {len(rows)} entries, expected {len(expected_keys)}")
+    tolerance = report.get("tolerance", DEFAULT_TOLERANCE)
+    if not isinstance(tolerance, int) or isinstance(tolerance, bool) or tolerance < 0:
+        structural.append("tolerance is not a non-negative integer")
+        tolerance = DEFAULT_TOLERANCE
+
+    seen: list[object] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            structural.append("row is not an object")
+            continue
+        key = row.get("key")
+        seen.append(key)
+        if key not in expected_keys:
+            structural.append(f"unknown row key {key!r}")
+            continue
+        values = [row.get("expected"), row.get("a"), row.get("b")]
+        if any(
+            not isinstance(value, list)
+            or len(value) != 3
+            or any(not isinstance(channel, int) for channel in value)
+            for value in values
+        ):
+            structural.append(f"{key}: expected/a/b must be three-channel integer lists")
+            continue
+        expected, a, b = values
+        computed = max(
+            max(abs(a[i] - b[i]) for i in range(3)),
+            max(abs(a[i] - expected[i]) for i in range(3)),
+            max(abs(b[i] - expected[i]) for i in range(3)),
+        )
+        recorded = row.get("max")
+        if recorded != computed:
+            structural.append(f"{key}: max is {recorded!r}, computed {computed}")
+        if computed > tolerance:
+            mismatches.append(f"{key}: delta {computed} exceeds tolerance {tolerance}")
+    if sorted(str(key) for key in seen) != sorted(expected_keys):
+        structural.append("row keys do not match the layout")
+
+    if report.get("status") != "PASS":
+        mismatches.append(f"status is {report.get('status')!r}")
+
+    for key, path in (("layout_sha256", layout_path), ("tokens_sha256", tokens_path)):
+        recorded = report.get(key)
+        if not recorded:
+            structural.append(f"{key} is missing")
+        elif recorded != file_sha256(path):
+            mismatches.append(f"{key} does not match the current {Path(path).name}")
+
+    for key, hash_key in (("frame_a", "frame_a_sha256"), ("frame_b", "frame_b_sha256")):
+        raw = report.get(key)
+        recorded = report.get(hash_key)
+        if not raw:
+            structural.append(f"{key} path is missing")
+            continue
+        frame = Path(str(raw))
+        if not frame.is_absolute():
+            frame = Path(report_path).parent / frame
+        if not frame.is_file():
+            structural.append(f"{key} file is missing: {frame}")
+            continue
+        if not recorded:
+            structural.append(f"{hash_key} is missing")
+        elif recorded != file_sha256(frame):
+            mismatches.append(f"{hash_key} does not match {frame.name}")
+
+    if structural:
+        status = "INCOMPLETE"
+    elif mismatches:
+        status = "FAIL"
+    else:
+        status = "PASS"
+    return {"status": status, "problems": structural + mismatches}

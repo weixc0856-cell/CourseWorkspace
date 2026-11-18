@@ -171,17 +171,23 @@ def _product_steps(paths: LessonPaths) -> list[Step]:
 
 
 def _brand_steps(paths: LessonPaths) -> list[Step]:
-    """Branded lessons must carry a token-frame proof for the current inputs.
+    """Branded lessons must carry a complete token-frame proof.
 
-    Unbranded lessons get no step at all.  A branded lesson without evidence is
-    INCOMPLETE; evidence whose input hashes no longer match the layout or
-    tokens is FAIL, because the proof would be about a different palette.
+    Unbranded lessons get no step.  A branded lesson with a missing or
+    malformed report is INCOMPLETE; a report whose frames, rows or input
+    hashes no longer match is FAIL.  The verifier never trusts a bare
+    ``status: PASS``.
     """
     branding = getattr(paths.lesson, "branding", None)
     if branding is None or not getattr(branding, "enabled", False):
         return []
 
-    from course_control.rendering.token_frames import file_sha256
+    from course_control.rendering.token_frames import (
+        TokenFrameError,
+        load_layout,
+        load_tokens,
+        verify_report,
+    )
 
     report_path = paths.build_root / "brand" / "token-frames" / "report.json"
     if not report_path.is_file():
@@ -200,27 +206,25 @@ def _brand_steps(paths: LessonPaths) -> list[Step]:
     workspace = getattr(paths, "workspace", None)
     if workspace is None:
         return [Step("brand_evidence", INCOMPLETE, "workspace is not available")]
-    layout = Path(workspace) / "shared" / "design-tokens" / "swatch-layout.json"
-    tokens = Path(workspace) / "shared" / "design-tokens" / "tokens.json"
-    problems = []
-    if str(report.get("status")) != "PASS":
-        problems.append(f"status is {report.get('status')!r}")
-    for key, path in (("layout_sha256", layout), ("tokens_sha256", tokens)):
-        recorded = report.get(key)
-        if not recorded:
-            problems.append(f"{key} is missing")
-        elif recorded != file_sha256(path):
-            problems.append(f"{key} does not match the current {path.name}")
-    if problems:
-        return [
-            Step(
-                "brand_evidence",
-                FAIL,
-                "; ".join(problems),
-                str(report_path),
-            )
-        ]
-    return [Step("brand_evidence", PASS, "token-frame proof matches current layout and tokens", str(report_path))]
+    layout_path = Path(workspace) / "shared" / "design-tokens" / "swatch-layout.json"
+    tokens_path = Path(workspace) / "shared" / "design-tokens" / "tokens.json"
+    try:
+        layout = load_layout(layout_path)
+        tokens = load_tokens(tokens_path)
+    except TokenFrameError as exc:
+        return [Step("brand_evidence", INCOMPLETE, f"cannot read brand inputs: {exc}")]
+
+    result = verify_report(
+        report,
+        layout=layout,
+        tokens=tokens,
+        layout_path=layout_path,
+        tokens_path=tokens_path,
+        report_path=report_path,
+    )
+    status = {"PASS": PASS, "FAIL": FAIL, "INCOMPLETE": INCOMPLETE}[result["status"]]
+    detail = "; ".join(result["problems"]) or "token-frame proof verified"
+    return [Step("brand_evidence", status, detail, str(report_path))]
 
 
 def _lesson_steps(workspace: Path, paths: LessonPaths) -> list[Step]:

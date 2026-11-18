@@ -185,7 +185,25 @@ class TokenFrameTest(unittest.TestCase):
 
     def test_duplicate_keys_are_rejected(self):
         with self.assertRaises(TokenFrameError):
-            load_layout(self._layout_file(self._bad_layout(keys=["paper", "paper"])))
+            load_layout(self._layout_file(self._bad_layout(keys=["ink", "ink"])))
+
+    def test_paper_cannot_be_a_swatch(self):
+        with self.assertRaises(TokenFrameError):
+            load_layout(self._layout_file(self._bad_layout(keys=["paper", "ink"])))
+
+    def test_wrong_background_in_both_frames_fails(self):
+        first = self.root / "a.png"
+        second = self.root / "b.png"
+        draw(first, self.layout)
+        draw(second, self.layout)
+        for path in (first, second):
+            image = Image.open(path).convert("RGB")
+            drawer = ImageDraw.Draw(image)
+            drawer.rectangle([0, 0, 40, 40], fill=(0, 0, 0))
+            image.save(path)
+        report = compare_frames(first, second, self.layout, self.tokens)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertIn("background", report["failed"])
 
     def test_missing_key_is_reported(self):
         path = self.root / "layout.json"
@@ -216,6 +234,7 @@ if __name__ == "__main__":
 
 class BrandEvidenceTest(unittest.TestCase):
     def setUp(self):
+        import shutil
         from types import SimpleNamespace
 
         self.SimpleNamespace = SimpleNamespace
@@ -224,38 +243,45 @@ class BrandEvidenceTest(unittest.TestCase):
         self.workspace = self.root / "workspace"
         tokens_dir = self.workspace / "shared" / "design-tokens"
         tokens_dir.mkdir(parents=True)
-        (tokens_dir / "tokens.json").write_text(json.dumps({"colors": {"paper": "#FBFAF7"}}), encoding="utf-8")
-        (tokens_dir / "swatch-layout.json").write_text(json.dumps({"width": 10}), encoding="utf-8")
+        shutil.copy2(LAYOUT, tokens_dir / "swatch-layout.json")
+        shutil.copy2(TOKENS, tokens_dir / "tokens.json")
+        self.layout = load_layout(tokens_dir / "swatch-layout.json")
+        self.tokens = load_tokens(tokens_dir / "tokens.json")
         self.build = self.root / "build"
         self.report_path = self.build / "brand" / "token-frames" / "report.json"
+        self.report_path.parent.mkdir(parents=True)
+        self.frame_a = self.root / "a.png"
+        self.frame_b = self.root / "b.png"
+        draw(self.frame_a, self.layout)
+        draw(self.frame_b, self.layout)
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def _paths(self, enabled: bool):
+    def _paths(self, enabled: bool = True):
         return self.SimpleNamespace(
             lesson=self.SimpleNamespace(branding=self.SimpleNamespace(enabled=enabled)),
             build_root=self.build,
             workspace=self.workspace,
         )
 
-    def _write_report(self, layout_hash: str, tokens_hash: str, status: str = "PASS"):
-        from course_control.rendering.token_frames import file_sha256
-
-        self.report_path.parent.mkdir(parents=True, exist_ok=True)
-        self.report_path.write_text(
-            json.dumps(
-                {
-                    "status": status,
-                    "layout_sha256": layout_hash,
-                    "tokens_sha256": tokens_hash,
-                }
-            ),
-            encoding="utf-8",
+    def _report(self) -> dict:
+        return compare_frames(
+            self.frame_a,
+            self.frame_b,
+            self.layout,
+            self.tokens,
+            layout_path=self.workspace / "shared" / "design-tokens" / "swatch-layout.json",
+            tokens_path=self.workspace / "shared" / "design-tokens" / "tokens.json",
         )
-        layout = self.workspace / "shared" / "design-tokens" / "swatch-layout.json"
-        tokens = self.workspace / "shared" / "design-tokens" / "tokens.json"
-        return file_sha256(layout), file_sha256(tokens)
+
+    def _write(self, report) -> None:
+        self.report_path.write_text(json.dumps(report), encoding="utf-8")
+
+    def _step(self):
+        from course_control.release.check import _brand_steps
+
+        return _brand_steps(self._paths(True))[0]
 
     def test_unbranded_lesson_has_no_step(self):
         from course_control.release.check import _brand_steps
@@ -263,28 +289,71 @@ class BrandEvidenceTest(unittest.TestCase):
         self.assertEqual(_brand_steps(self._paths(False)), [])
 
     def test_branded_lesson_without_evidence_is_incomplete(self):
-        from course_control.release.check import INCOMPLETE, _brand_steps
+        from course_control.release.check import INCOMPLETE
 
-        steps = _brand_steps(self._paths(True))
-        self.assertEqual([(step.id, step.status) for step in steps], [("brand_evidence", INCOMPLETE)])
+        self.assertEqual(self._step().status, INCOMPLETE)
 
-    def test_matching_evidence_passes(self):
-        from course_control.release.check import PASS, _brand_steps
+    def test_complete_evidence_passes(self):
+        from course_control.release.check import PASS
+
+        self._write(self._report())
+        self.assertEqual(self._step().status, PASS)
+
+    def test_stub_report_is_incomplete(self):
+        from course_control.release.check import INCOMPLETE
         from course_control.rendering.token_frames import file_sha256
 
         layout = self.workspace / "shared" / "design-tokens" / "swatch-layout.json"
         tokens = self.workspace / "shared" / "design-tokens" / "tokens.json"
-        self._write_report(file_sha256(layout), file_sha256(tokens))
-        steps = _brand_steps(self._paths(True))
-        self.assertEqual([(step.id, step.status) for step in steps], [("brand_evidence", PASS)])
+        self._write(
+            {
+                "status": "PASS",
+                "layout_sha256": file_sha256(layout),
+                "tokens_sha256": file_sha256(tokens),
+            }
+        )
+        self.assertEqual(self._step().status, INCOMPLETE)
 
-    def test_stale_or_failed_evidence_fails(self):
-        from course_control.release.check import FAIL, _brand_steps
-        from course_control.rendering.token_frames import file_sha256
+    def test_non_object_report_is_incomplete(self):
+        from course_control.release.check import INCOMPLETE
 
-        layout = self.workspace / "shared" / "design-tokens" / "swatch-layout.json"
-        tokens = self.workspace / "shared" / "design-tokens" / "tokens.json"
-        self._write_report("0" * 64, file_sha256(tokens))
-        self.assertEqual(_brand_steps(self._paths(True))[0].status, FAIL)
-        self._write_report(file_sha256(layout), file_sha256(tokens), status="FAIL")
-        self.assertEqual(_brand_steps(self._paths(True))[0].status, FAIL)
+        self._write([])
+        self.assertEqual(self._step().status, INCOMPLETE)
+
+    def test_missing_row_is_incomplete(self):
+        from course_control.release.check import INCOMPLETE
+
+        report = self._report()
+        report["rows"].pop()
+        self._write(report)
+        self.assertEqual(self._step().status, INCOMPLETE)
+
+    def test_frame_hash_mismatch_fails(self):
+        from course_control.release.check import FAIL
+
+        report = self._report()
+        report["frame_a_sha256"] = "0" * 64
+        self._write(report)
+        self.assertEqual(self._step().status, FAIL)
+
+    def test_row_over_tolerance_fails(self):
+        from course_control.release.check import FAIL
+
+        report = self._report()
+        row = report["rows"][1]
+        row["a"] = [0, 0, 0]
+        row["max"] = max(
+            max(abs(row["a"][i] - row["b"][i]) for i in range(3)),
+            max(abs(row["a"][i] - row["expected"][i]) for i in range(3)),
+            max(abs(row["b"][i] - row["expected"][i]) for i in range(3)),
+        )
+        self._write(report)
+        self.assertEqual(self._step().status, FAIL)
+
+    def test_stale_input_hash_fails(self):
+        from course_control.release.check import FAIL
+
+        report = self._report()
+        report["layout_sha256"] = "0" * 64
+        self._write(report)
+        self.assertEqual(self._step().status, FAIL)

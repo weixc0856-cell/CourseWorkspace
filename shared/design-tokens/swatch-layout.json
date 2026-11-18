@@ -3,11 +3,16 @@
   "width": 1920,
   "height": 1080,
   "columns": 4,
-  "cell": {"w": 300, "h": 160},
+  "cell": {
+    "w": 300,
+    "h": 160
+  },
   "gap": 40,
-  "origin": {"x": 300, "y": 160},
+  "origin": {
+    "x": 300,
+    "y": 260
+  },
   "keys": [
-    "paper",
     "surface",
     "ink",
     "text",
