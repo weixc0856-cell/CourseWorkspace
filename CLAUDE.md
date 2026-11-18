@@ -69,9 +69,14 @@
   ```powershell
   .\scripts\check.ps1                                        # 全量回归（必须打印 check ok）
   course-control validate --lesson <slug>                     # 课程校验
+  course-control validate --lesson <slug> --scope spec        # S0：只查 episode.spec + rubric
   course-control preflight --lesson <slug>                    # 开工前置
+  course-control content-audit --strict                       # 生产内容根只读审计（布局/审批/链路/交付）
   course-control storyboard-page --lesson <slug>              # 静态分镜页（闸门）
   course-control author-accept --lesson <slug> --kind storyboard-page --by <name>  # 签字放行
+  course-control author-accept --lesson <slug> --kind script --source current --expect-sha256 <hash> --by <name>  # 批准当前文件，不覆盖
+  course-control author-accept --lesson <slug> --kind script --dry-run --by <name>  # 只打印哈希与差异
+  course-control build --lesson <slug> --through collect      # 只跑到时间线，供 animatic 使用
   python scripts/check_docs.py --write                        # 从 文档地图.yaml 生成 docs/README.md
   course-control checks --lesson <slug> --book-index <path>   # 类型化检查 + 异常队列
   course-control retime --lesson <slug>                       # 按实测旁白重算时间轴

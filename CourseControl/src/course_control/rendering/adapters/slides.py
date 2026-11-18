@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import http.server
 import json
 import os
@@ -115,11 +116,14 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
         if not _server_ready():
             server = _start_server(paths, log_dir)
         width, height = paths.lesson.outputs.resolution
+        slides_path = paths.content_path(paths.lesson.content.slides)
         command = [
             *which_command("node"),
             "scripts/capture-slides.mjs",
             "--lesson",
             paths.slug,
+            "--slides",
+            str(slides_path),
             "--width",
             str(width),
             "--height",
@@ -166,6 +170,26 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
                 "capture_slides",
                 Status.FAIL,
                 errors=[f"cannot read capture manifest: {exc}"],
+                duration_ms=duration_ms,
+            )
+        expected_sha = None
+        if slides_path.is_file():
+            expected_sha = hashlib.sha256(slides_path.read_bytes()).hexdigest()
+        if expected_sha is None:
+            return StageOutcome(
+                "capture_slides",
+                Status.FAIL,
+                errors=[f"slides.md is not readable: {slides_path}"],
+                duration_ms=duration_ms,
+            )
+        if data.get("slides_sha256") != expected_sha:
+            return StageOutcome(
+                "capture_slides",
+                Status.FAIL,
+                errors=[
+                    "capture manifest is not bound to the current slides.md "
+                    f"({str(data.get('slides_sha256'))[:12]} != {expected_sha[:12]})"
+                ],
                 duration_ms=duration_ms,
             )
         if total != expected or captured != expected:

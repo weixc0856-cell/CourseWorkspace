@@ -153,6 +153,10 @@ _DIGITS = "|".join(DIGIT_WORDS)
 
 def _words_to_numbers(text: str) -> str:
     text = text.replace(",", "")
+    # TTS text often hyphenates number words ("one-in-ten-thousand"). The
+    # compound below only matched spaces, so the reference read 1/10/1000 and
+    # a correct read of 10,000 failed the numeric gate.
+    text = re.sub(r"(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])", " ", text)
     text = re.sub(r"ten\s+thousand", "10000", text, flags=re.IGNORECASE)
     text = re.sub(r"thousand", "1000", text, flags=re.IGNORECASE)
     text = re.sub(r"10\s+0", "10000", text)

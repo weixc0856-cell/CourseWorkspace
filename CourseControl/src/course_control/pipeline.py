@@ -57,6 +57,9 @@ class BuildOptions:
     # review.  It is the one entry allowed before the page is signed, because it
     # produces the input to that review and runs nothing else.
     capture_only: bool = False
+    # Stop after a named stage boundary. ``collect`` is the supported boundary:
+    # it produces the timeline the animatic reads, without composing the film.
+    through: str | None = None
 
 
 def _stage(name: str, status: Status, reason: str | None = None, errors: list[str] | None = None) -> StageOutcome:
@@ -223,6 +226,13 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
 
     adapters.slides.clean_staging(paths)
     builder = ReportBuilder(paths)
+    if options.capture_only:
+        builder.verification_scope = "capture"
+        builder.deferred_checks = [
+            "measured narration and its duration window",
+            "animation scene files and registered scenes",
+            "render, compose, brand and verify stages",
+        ]
 
     config_report = resolve_config(workspace, paths)
     snapshot = write_snapshot(paths, config_report)
@@ -495,6 +505,11 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
         if run.store is not None:
             run.store.save(collect_outcome, collect_inputs, builder.run_id)
     builder.add_stage(collect_outcome)
+
+    if options.through == "collect":
+        for name in ("compose", "brand", "verify"):
+            builder.add_stage(_stage(name, Status.NOT_RUN, reason="through_collect"))
+        return run.finish()
 
     if options.skip_compose:
         builder.add_stage(_stage("compose", Status.SKIPPED, reason="skip_compose"))

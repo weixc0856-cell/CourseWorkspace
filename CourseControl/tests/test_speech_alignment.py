@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from decimal import Decimal
 from pathlib import Path
 
 from course_control.quality.speech_alignment import (
@@ -85,6 +86,12 @@ class SpeechAlignmentTest(unittest.TestCase):
         reference = _numbers("1%")
         heard = _numbers("0.01")
         self.assertTrue(_numbers_match(reference, heard))
+
+    def test_hyphenated_number_words_compose(self):
+        expected = [(Decimal("1"), False), (Decimal("10000"), False)]
+        self.assertEqual(_numbers("A one-in-ten-thousand event"), expected)
+        self.assertEqual(_numbers("A one in ten thousand event"), expected)
+        self.assertEqual(_numbers("ten-thousand"), [(Decimal("10000"), False)])
 
     def test_missing_or_extra_number_fails(self):
         self.assertFalse(_numbers_match(_numbers("0.0099"), _numbers("")))

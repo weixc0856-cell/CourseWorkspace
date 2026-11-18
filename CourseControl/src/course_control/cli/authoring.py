@@ -193,23 +193,53 @@ def author_accept_command(
     lesson: str = typer.Option(..., "--lesson"),
     kind: str = typer.Option(..., "--kind"),
     by: str = typer.Option(..., "--by", help="the person accepting"),
+    source: str = typer.Option(
+        "candidate",
+        "--source",
+        help="candidate: promote the generated draft; current: approve the file as it is",
+    ),
+    expect_sha256: str | None = typer.Option(
+        None, "--expect-sha256", help="refuse unless the current file has this hash"
+    ),
+    force_replace: bool = typer.Option(
+        False, "--force-replace", help="replace a target that changed since the draft"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="print the plan, write nothing"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
-    """Human gate: promote a candidate artifact and record its sha256."""
-    from course_control.authoring.pipeline import accept_artifact, accept_content
+    """Human gate: promote a candidate or approve the current file, with hashes."""
+    from course_control.authoring.pipeline import apply_acceptance
 
     root = _lesson_path(workspace, lesson_dir, lesson)
     try:
-        if kind == "content":
-            written = accept_content(workspace.resolve(), root, by)
-        else:
-            written = accept_artifact(workspace.resolve(), root, kind, by)
+        plans = apply_acceptance(
+            workspace.resolve(),
+            root,
+            kind,
+            by,
+            source=source,
+            expect_sha256=expect_sha256,
+            force_replace=force_replace,
+            dry_run=dry_run,
+        )
     except Exception as exc:  # noqa: BLE001
         typer.echo(f"accept failed: {exc}", err=True)
         raise typer.Exit(1)
-    for path in written:
-        typer.echo(f"accepted: {path}")
+    for plan in plans:
+        typer.echo(f"{plan.action}: {plan.relative}")
+        typer.echo(
+            f"  current   {plan.current_sha256 or 'missing'}"
+            f"  ({plan.target})"
+        )
+        if plan.candidate is not None:
+            typer.echo(f"  candidate {plan.candidate_sha256 or 'missing'}  ({plan.candidate})")
+            typer.echo(f"  diff      {plan.diff}")
+    if dry_run:
+        typer.echo("dry run: nothing was written")
+        raise typer.Exit(0)
+    for plan in plans:
+        typer.echo(f"accepted: {plan.relative}")
 
 
 @app.command("narration-build")

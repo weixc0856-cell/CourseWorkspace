@@ -165,6 +165,7 @@ def check_media_sample(
     workspace: Path,
     *,
     root: Path | None = None,
+    asr_model: str | None = None,
 ) -> dict:
     spec = load_media_spec(spec_path)
     base = Path(root) if root is not None else content_root(Path(workspace).resolve())
@@ -317,13 +318,14 @@ def check_media_sample(
                     )
             add("narration", FAIL if problems else PASS, "; ".join(problems) or "provenance, source script and stem match")
 
-            from course_control.quality.speech_alignment import run_alignment
+            from course_control.quality.speech_alignment import DEFAULT_MODEL, run_alignment
 
             fresh = run_alignment(
                 video,
                 timed.get("captions") or [],
                 timed_path,
                 Path(workspace).resolve(),
+                model_size=asr_model or DEFAULT_MODEL,
                 report_path=_resolve(base, spec.asr_report or f"build/{spec.id}/asr-alignment.json"),
             )
             asr_status = {"PASS": PASS, "FAIL": FAIL, "INCOMPLETE": INCOMPLETE}.get(fresh.get("status"), INCOMPLETE)

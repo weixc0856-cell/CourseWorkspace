@@ -70,6 +70,29 @@ class StoryboardPageTest(unittest.TestCase):
         Image.new("RGB", (64, 36), (240, 240, 240)).save(
             self.build_root / "slides" / "slide-002.png"
         )
+        self._write_capture_manifest()
+
+    def _write_capture_manifest(self, slides_sha: str | None = None) -> None:
+        import hashlib
+
+        digest = slides_sha or hashlib.sha256(
+            (self.lesson / "slides.md").read_bytes()
+        ).hexdigest()
+        (self.build_root / "slides" / "capture-manifest.json").write_text(
+            json.dumps(
+                {
+                    "lesson": "demo",
+                    "slides_sha256": digest,
+                    "total_slides": 2,
+                    "captured": 2,
+                    "pages": [
+                        {"index": 0, "page": "001", "file": "slide-001.png"},
+                        {"index": 1, "page": "002", "file": "slide-002.png"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -240,6 +263,7 @@ class StoryboardPageTest(unittest.TestCase):
         (self.lesson / "slides.md").write_text(
             "<h1>Opening changed</h1>\n---\n<h2>Second page changed</h2>\n", encoding="utf-8"
         )
+        self._write_capture_manifest()
         build("demo", self.lesson, self.build_root)
         storyboard_review_command(
             lesson="demo", approve="", reject="", by="Wei Chen",
@@ -260,6 +284,34 @@ class StoryboardPageTest(unittest.TestCase):
         build("demo", self.lesson, self.build_root)
         with self.assertRaises(Exception):
             assert_storyboard_signed(self.lesson, self.storyboard)
+
+    def test_changed_slides_with_old_captures_is_rejected(self):
+        build("demo", self.lesson, self.build_root)
+        (self.lesson / "slides.md").write_text(
+            "<h1>Opening v2</h1>\n---\n<h2>Second page v2</h2>\n", encoding="utf-8"
+        )
+        with self.assertRaisesRegex(ValueError, "different slides.md"):
+            build("demo", self.lesson, self.build_root)
+
+    def test_unbound_captures_block_signoff(self):
+        (self.build_root / "slides" / "capture-manifest.json").write_text(
+            json.dumps(
+                {
+                    "lesson": "demo",
+                    "total_slides": 2,
+                    "captured": 2,
+                    "pages": [
+                        {"index": 0, "page": "001", "file": "slide-001.png"},
+                        {"index": 1, "page": "002", "file": "slide-002.png"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        build("demo", self.lesson, self.build_root)
+        self._approve_all()
+        with self.assertRaisesRegex(Exception, "no source hash"):
+            sign_storyboard_page(self.root, self.lesson, "Wei Chen")
 
     def test_stale_page_is_rejected(self):
         build("demo", self.lesson, self.build_root)

@@ -581,6 +581,11 @@ class BuildReport(StrictModel):
     artifacts: list[Artifact]
     checks: list[CheckRecord]
     verdict: Literal["pass", "fail", "incomplete"]
+    # A capture-only run is a real scope, not a hidden exception: the report
+    # says which gates it deferred so a green capture cannot read as a green
+    # lesson.
+    verification_scope: Literal["full", "capture"] = "full"
+    deferred_checks: list[str] = Field(default_factory=list)
     failures: list[str] = Field(default_factory=list)
     # Configuration identity for this run and, when --resume was used, which
     # stages were reused instead of executed.

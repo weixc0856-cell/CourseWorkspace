@@ -392,6 +392,9 @@ def release_check(
     sample: Path = typer.Option(None, "--sample", help="media sample spec for an internal package"),
     lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
     shot_review_dir: Path | None = typer.Option(None, "--shot-review-dir"),
+    asr_model: str | None = typer.Option(
+        None, "--asr-model", help="sample ASR model override (default small.en)"
+    ),
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
@@ -412,7 +415,9 @@ def release_check(
         from course_control.delivery.media_package import MediaPackageError, check_media_sample
 
         try:
-            payload = check_media_sample(sample, workspace.resolve())
+            payload = check_media_sample(
+                sample, workspace.resolve(), asr_model=asr_model
+            )
         except MediaPackageError as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(1)

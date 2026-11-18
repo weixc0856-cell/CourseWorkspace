@@ -52,8 +52,20 @@ class CapturePageCountTest(unittest.TestCase):
         self._tmp.cleanup()
 
     def _capture(self, total: int, captured: int):
+        import hashlib
+
         self.manifest.write_text(
-            json.dumps({"lesson": "demo", "total_slides": total, "captured": captured, "pages": []}),
+            json.dumps(
+                {
+                    "lesson": "demo",
+                    "slides_sha256": hashlib.sha256(
+                        self.slides_md.read_bytes()
+                    ).hexdigest(),
+                    "total_slides": total,
+                    "captured": captured,
+                    "pages": [],
+                }
+            ),
             encoding="utf-8",
         )
         with mock.patch.object(slides, "_server_ready", return_value=True), mock.patch.object(

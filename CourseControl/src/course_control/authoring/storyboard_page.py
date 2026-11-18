@@ -85,6 +85,33 @@ def _data_uri(path: Path) -> str:
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
 
 
+def _capture_binding(slides_dir: Path, slides_md_sha: str) -> dict:
+    """Prove the captures in ``slides_dir`` were made from this slides.md.
+
+    A page that embeds old screenshots while pinning the new slides hash is
+    worse than an unsigned page: the owner reviews one thing and authorises
+    another.  The capture manifest carries the source hash; without it the page
+    is built but cannot be signed.
+    """
+    manifest = slides_dir / "capture-manifest.json"
+    if not manifest.is_file():
+        return {"source": "missing", "slides_sha256": None, "bound": False}
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"capture manifest is unreadable: {exc}") from exc
+    recorded = str(data.get("slides_sha256") or "") or None
+    if recorded is None:
+        return {"source": "unbound", "slides_sha256": None, "bound": False}
+    if recorded != slides_md_sha:
+        raise ValueError(
+            "slide captures were made from a different slides.md "
+            f"({recorded[:12]} != {slides_md_sha[:12]}); run "
+            "`course-control build --lesson <slug> --capture-only` first"
+        )
+    return {"source": "bound", "slides_sha256": recorded, "bound": True}
+
+
 def _effective_storyboard(lesson_dir: Path, lesson: dict, override: Path | None) -> Path:
     if override is not None:
         return Path(override).resolve()
@@ -117,6 +144,7 @@ def collect(
     titles = split_slides(slides_path.read_text(encoding="utf-8")) if slides_path.is_file() else []
     slides_md_sha = _sha(slides_path) if slides_path.is_file() else ""
     slides_dir = build_root / "slides"
+    capture = _capture_binding(slides_dir, slides_md_sha)
 
     raw_by_id: dict[str, dict] = {}
     if storyboard_path.name == "production.yaml":
@@ -164,6 +192,7 @@ def collect(
         _sha(storyboard_path),
         slides_md_sha,
         slide_hashes,
+        capture,
     )
 
 
@@ -292,7 +321,7 @@ def build(
     storyboard_data: Any | None = None,
     course_chain: dict | None = None,
 ) -> dict:
-    title, pages, storyboard_sha, slides_md_sha, slide_hashes = collect(
+    title, pages, storyboard_sha, slides_md_sha, slide_hashes, capture = collect(
         lesson_dir, build_root, storyboard_path, storyboard_data
     )
     out = build_root / "storyboard"
@@ -317,6 +346,7 @@ def build(
         "storyboard_path": str(Path(storyboard_path).resolve()) if storyboard_path else "lesson.content.storyboard",
         "storyboard_sha256": storyboard_sha,
         "slides_md_sha256": slides_md_sha,
+        "capture": capture,
         "course_chain": course_chain,
         "course_chain_fingerprint": (
             str(course_chain.get("fingerprint") or "") if course_chain else None

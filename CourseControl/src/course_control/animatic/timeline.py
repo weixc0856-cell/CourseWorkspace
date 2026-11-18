@@ -129,7 +129,8 @@ def resolve_build(
             manifest = _read_json(build / "scenes" / "manifest.json")
             if not (manifest and manifest.get("pages")):
                 raise AnimaticError(
-                    f"no timeline for {slug}: run `course-control build` or `collect` first "
+                    f"no timeline for {slug}: run `course-control build --lesson "
+                    f"{slug} --through collect` first "
                     f"(looked for timeline/page-plan.json, shots.json, scenes/manifest.json under {build})"
                 )
             units = _manifest_units(build, manifest["pages"], warnings)

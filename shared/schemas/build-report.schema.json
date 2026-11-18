@@ -250,6 +250,22 @@
       "title": "Verdict",
       "type": "string"
     },
+    "verification_scope": {
+      "default": "full",
+      "enum": [
+        "full",
+        "capture"
+      ],
+      "title": "Verification Scope",
+      "type": "string"
+    },
+    "deferred_checks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Deferred Checks",
+      "type": "array"
+    },
     "failures": {
       "items": {
         "type": "string"

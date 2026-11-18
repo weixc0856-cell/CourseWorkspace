@@ -121,6 +121,26 @@ class CaptureOnlyTest(unittest.TestCase):
         static = validate(paths, capture_only=True)
         self.assertTrue(any(issue.rule == "V-05" for issue in static.errors))
 
+    def test_capture_only_does_not_skip_approvals(self):
+        lesson_path = self.lesson / "lesson.yaml"
+        lesson = yaml.safe_load(lesson_path.read_text(encoding="utf-8"))
+        lesson["authoring"] = {"script": "authoring/narration.script.json"}
+        lesson_path.write_text(
+            yaml.safe_dump(lesson, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+        (self.lesson / "authoring").mkdir(exist_ok=True)
+        (self.lesson / "authoring" / "narration.script.json").write_text(
+            '{"lesson": "demo", "language": "en", "voice": {}, "policy": {}, "pages": []}',
+            encoding="utf-8",
+        )
+        paths = LessonPaths.load(self.ws, self.lesson)
+        static = validate(paths, capture_only=True)
+        self.assertTrue(
+            any(issue.rule == "V-33" for issue in static.errors),
+            "capture-only must still require an approval entry",
+        )
+
     def test_plain_build_is_still_blocked_without_a_signature(self):
         with self.assertRaises(AuthoringError):
             self._build()
@@ -192,6 +212,24 @@ class CaptureOnlyTest(unittest.TestCase):
                 for item in report.checks
             )
         )
+
+    def test_build_through_rejects_unknown_stage_and_conflicts(self):
+        for kwargs, expected in (
+            ({"through": "segment"}, "--through supports only"),
+            ({"through": "collect", "skip_compose": True}, "--through collect"),
+        ):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                with self.assertRaises(typer.Exit) as caught:
+                    build_command(
+                        lesson="demo",
+                        lesson_dir=self.lesson,
+                        workspace=self.ws,
+                        storyboard_source=None,
+                        **kwargs,
+                    )
+            self.assertEqual(caught.exception.exit_code, 2)
+            self.assertIn(expected, err.getvalue())
 
     def test_capture_only_rejects_conflicting_flags(self):
         err = io.StringIO()

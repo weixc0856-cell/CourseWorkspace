@@ -76,6 +76,48 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def approval_problems(paths: LessonPaths) -> list[str]:
+    """Approval entries that are missing, unreadable or stale.
+
+    Shared by V-33 and the production content audit so both answer with the
+    same rule instead of drifting into two definitions of "approved".
+    """
+    lesson = paths.lesson
+    authoring = lesson.authoring
+    if authoring is None:
+        return []
+    approval_rel = authoring.approval or "authoring/approval.json"
+    approval_path = paths.content_path(approval_rel)
+    if not approval_path.is_file():
+        return [f"authoring approval file not found: {approval_rel}"]
+    try:
+        from course_control.authoring.models import ApprovalFile
+
+        approval = ApprovalFile.model_validate(
+            json.loads(approval_path.read_text(encoding="utf-8"))
+        )
+    except Exception as exc:  # noqa: BLE001
+        return [f"cannot read approval file: {exc}"]
+    problems: list[str] = []
+    for relative in (
+        authoring.digest,
+        authoring.brief,
+        authoring.outline,
+        authoring.script,
+    ):
+        if not relative:
+            continue
+        target = paths.content_path(relative)
+        if not target.is_file():
+            continue
+        entry = approval.find(relative)
+        if entry is None:
+            problems.append(f"no approval for {relative}")
+        elif entry.sha256 != _sha256(target):
+            problems.append(f"approval hash is stale for {relative}")
+    return problems
+
+
 def _check_authoring(result: ValidationResult, paths: LessonPaths, notes_text: str) -> None:
     lesson = paths.lesson
     authoring = lesson.authoring
@@ -98,36 +140,8 @@ def _check_authoring(result: ValidationResult, paths: LessonPaths, notes_text: s
             except Exception as exc:  # noqa: BLE001
                 result.add("V-29", "error", f"script and notes disagree: {exc}")
 
-    approval_rel = authoring.approval or "authoring/approval.json"
-    approval_path = paths.content_path(approval_rel)
-    if not approval_path.is_file():
-        result.add("V-33", "error", f"authoring approval file not found: {approval_rel}")
-    else:
-        try:
-            from course_control.authoring.models import ApprovalFile
-
-            approval = ApprovalFile.model_validate(
-                json.loads(approval_path.read_text(encoding="utf-8"))
-            )
-        except Exception as exc:  # noqa: BLE001
-            result.add("V-33", "error", f"cannot read approval file: {exc}")
-        else:
-            for relative in (
-                authoring.digest,
-                authoring.brief,
-                authoring.outline,
-                authoring.script,
-            ):
-                if not relative:
-                    continue
-                target = paths.content_path(relative)
-                if not target.is_file():
-                    continue
-                entry = approval.find(relative)
-                if entry is None:
-                    result.add("V-33", "error", f"no approval for {relative}")
-                elif entry.sha256 != _sha256(target):
-                    result.add("V-33", "error", f"approval hash is stale for {relative}")
+    for message in approval_problems(paths):
+        result.add("V-33", "error", message)
 
     if authoring.digest:
         digest_path = paths.content_path(authoring.digest)
@@ -342,6 +356,12 @@ def validate(paths: LessonPaths, *, capture_only: bool = False) -> ValidationRes
     for issue in sheet_issues(paths):
         result.add(issue["rule"], issue["level"], issue["message"])
 
+    # A missing required file is already a V-02 error. Reading it anyway turned
+    # one lesson problem into a traceback and hid every later lesson from the
+    # content audit.
+    if any(not path.is_file() for path in required.values()):
+        return result
+
     slides_text = required["slides"].read_text(encoding="utf-8")
     notes_text = required["notes"].read_text(encoding="utf-8")
     pages = _page_count(slides_text)
@@ -394,8 +414,10 @@ def validate(paths: LessonPaths, *, capture_only: bool = False) -> ValidationRes
                     else:
                         result.add("V-26", problem.level, problem.message)
 
+    # Approvals and script/notes agreement hold in every scope: a capture made
+    # from unapproved or mismatched text cannot be the thing a human signs.
+    _check_authoring(result, paths, notes_text)
     if not capture_only:
-        _check_authoring(result, paths, notes_text)
         _check_beat_sheet(result, paths)
 
     for ref in _asset_references(slides_text):
