@@ -113,6 +113,20 @@ def book_index_command(
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))
     raise typer.Exit(0 if not problems else 1)
 
+@app.command("theme-check")
+def theme_check_command(
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Check that tokens.json, themes.json, Manim and the layout system agree."""
+    from course_control.rendering.theme import consistency_problems
+
+    problems = consistency_problems(workspace)
+    for problem in problems:
+        typer.echo(f"  [error] {problem}")
+    typer.echo("status: " + ("PASS" if not problems else "FAIL"))
+    raise typer.Exit(0 if not problems else 1)
+
+
 @app.command("short-validate")
 def short_validate_command(
     path: Path = typer.Option(..., "--path", help="JSON storyboard for the short component pipeline"),
