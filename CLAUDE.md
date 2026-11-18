@@ -84,6 +84,7 @@
   course-control visual-events --lesson <slug>              # 视觉事件计划 + 校验
   course-control short-validate --path <json>               # 短视频 JSON 分镜校验
   course-control theme-check --workspace .                  # 跨引擎品牌令牌一致性
+  course-control token-frames-check --a <png> --b <png> --layout <json>  # Remotion/Manim 色板帧逐点比对
   scripts/build-lesson.ps1 -Lesson <slug>                     # 完整构建
   scripts/check_segment_assets.py --lesson-dir <dir>          # 绑定扫描（缺参/复用图/禁令词）
   scripts/fetch_book_figures.py --source-id <id> --figure <n> # 从 Docling 取原书图

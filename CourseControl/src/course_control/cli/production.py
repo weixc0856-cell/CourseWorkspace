@@ -113,6 +113,48 @@ def book_index_command(
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))
     raise typer.Exit(0 if not problems else 1)
 
+@app.command("token-frames-check")
+def token_frames_check_command(
+    a: Path = typer.Option(..., "--a", help="First frame (e.g. Remotion still)"),
+    b: Path = typer.Option(..., "--b", help="Second frame (e.g. Manim still)"),
+    layout: Path = typer.Option(
+        Path("shared/design-tokens/swatch-layout.json"), "--layout"
+    ),
+    tolerance: int = typer.Option(3, "--tolerance", min=0, max=255),
+    out: Path | None = typer.Option(None, "--out"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Compare the shared token swatches across two engines, pixel by pixel."""
+    import json
+
+    from course_control.rendering.token_frames import (
+        TokenFrameError,
+        compare_frames,
+        load_layout,
+    )
+
+    try:
+        report = compare_frames(a, b, load_layout(layout), tolerance=tolerance)
+    except TokenFrameError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(report, ensure_ascii=False, indent=2) + chr(10)
+        out.write_text(payload, encoding="utf-8")
+    if as_json:
+        typer.echo(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(f"worst: {report['worst']['key']} delta={report['worst']['max']}")
+        for row in report["rows"]:
+            typer.echo(
+                f"  {row['key']:10s} a={row['a']} b={row['b']} max={row['max']}"
+            )
+        typer.echo(f"failed: {', '.join(report['failed']) or 'none'}")
+    typer.echo(f"status: {report['status']}")
+    raise typer.Exit(0 if report["status"] == "PASS" else 1)
+
+
 @app.command("theme-check")
 def theme_check_command(
     workspace: Path = typer.Option(Path.cwd(), "--workspace"),

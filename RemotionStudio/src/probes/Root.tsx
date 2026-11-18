@@ -6,6 +6,7 @@ import {FormulaProbe} from './FormulaProbe';
 import {PrimerPoc, primerPocDefaults} from './PrimerPoc';
 import {PrimerQuad, primerQuadDefaults} from './PrimerQuad';
 import {R1Smoke} from './R1Smoke';
+import {TokenSwatch} from './TokenSwatch';
 import {BRAND} from '../brand/tokens';
 import {BrandPreview} from '../brand/BrandPreview';
 import {BrandProps} from '../brand/types';
@@ -69,6 +70,14 @@ export const ProbeRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={{latex: 'a^2 + b^2 = c^2'}}
+      />
+      <Composition
+        id="TokenSwatch"
+        component={TokenSwatch}
+        durationInFrames={1}
+        fps={30}
+        width={1920}
+        height={1080}
       />
       <Composition
         id="R1Smoke"

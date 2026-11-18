@@ -88,7 +88,7 @@
 | 观点叙事 | `deep_space` 或高对比编辑版 | 故事、情绪、思考；允许更长静止与更强字幕 |
 
 - 令牌唯一来源：`shared/design-tokens/tokens.json`、`themes.json`、`brand.json`。
-- Remotion、Manim、Blender、CodeVideo 读同一套令牌或由它导出的副本；副本必须有检查，不能手抄第二份。
+- Remotion、Manim、Blender、CodeVideo 读同一套令牌或由它导出的副本；副本必须有检查，不能手抄第二份。Remotion 与 Manim 已用同一布局色板帧做逐点比对（背景 + 13 token，max delta 0）；Blender 场景色按光照决策，不纳入品牌令牌。
 - 品牌组件（标识、章节名、标题、片尾、进度）必须可显示、可隐藏、可换位置与尺寸；禁止所有画面强制 HUD。
 
 ## 5. 统一内容与证据链

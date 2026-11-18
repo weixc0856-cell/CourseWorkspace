@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "width": 1920,
+  "height": 1080,
+  "columns": 4,
+  "cell": {"w": 300, "h": 160},
+  "gap": 40,
+  "origin": {"x": 300, "y": 160},
+  "keys": [
+    "paper",
+    "surface",
+    "ink",
+    "text",
+    "muted",
+    "border",
+    "orange",
+    "blue",
+    "teal",
+    "purple",
+    "red",
+    "navy",
+    "flow"
+  ]
+}
