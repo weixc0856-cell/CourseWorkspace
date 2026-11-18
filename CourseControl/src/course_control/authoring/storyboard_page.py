@@ -180,9 +180,24 @@ def _shot_html(shot: dict) -> str:
     return f"<article class=\"shot\"><dl>{''.join(rows)}</dl></article>"
 
 
-def render(lesson_title: str, pages: list[Page], *, storyboard_sha: str, lesson: str) -> str:
+def render(
+    lesson_title: str,
+    pages: list[Page],
+    *,
+    storyboard_sha: str,
+    lesson: str,
+    course_chain: dict | None = None,
+) -> str:
     shots = sum(len(page.shots) for page in pages)
     generated = datetime.now().astimezone().isoformat(timespec="seconds")
+    chain_line = ""
+    if course_chain:
+        chain_line = (
+            "<p>course chain: "
+            f"{html.escape(str(course_chain.get('course_id') or ''))}/"
+            f"{html.escape(str(course_chain.get('episode_id') or ''))} · "
+            f"sha256 {html.escape(str(course_chain.get('fingerprint') or '')[:16])}…</p>"
+        )
     nav = "".join(f"<a href=\"#p{page.number}\">{page.number:02d}</a>" for page in pages)
     sections = []
     for page in pages:
@@ -258,6 +273,7 @@ def render(lesson_title: str, pages: list[Page], *, storyboard_sha: str, lesson:
   <h1>{html.escape(lesson_title)}</h1>
   <p>{html.escape(lesson)} · {len(pages)} pages · {shots} shots · generated {html.escape(generated)}</p>
   <p>storyboard sha256: {html.escape(storyboard_sha[:16])}…</p>
+  {chain_line}
   <p class="gate">Sign-off gate: no motion, narration or render before this page is approved page by page.</p>
   <nav>{nav}</nav>
 </header>
@@ -274,6 +290,7 @@ def build(
     build_root: Path,
     storyboard_path: Path | None = None,
     storyboard_data: Any | None = None,
+    course_chain: dict | None = None,
 ) -> dict:
     title, pages, storyboard_sha, slides_md_sha, slide_hashes = collect(
         lesson_dir, build_root, storyboard_path, storyboard_data
@@ -282,7 +299,14 @@ def build(
     out.mkdir(parents=True, exist_ok=True)
     html_path = out / "index.html"
     html_path.write_text(
-        render(title, pages, storyboard_sha=storyboard_sha, lesson=lesson), encoding="utf-8"
+        render(
+            title,
+            pages,
+            storyboard_sha=storyboard_sha,
+            lesson=lesson,
+            course_chain=course_chain,
+        ),
+        encoding="utf-8",
     )
     missing = [page.number for page in pages if page.image is None]
     manifest = {
@@ -293,6 +317,10 @@ def build(
         "storyboard_path": str(Path(storyboard_path).resolve()) if storyboard_path else "lesson.content.storyboard",
         "storyboard_sha256": storyboard_sha,
         "slides_md_sha256": slides_md_sha,
+        "course_chain": course_chain,
+        "course_chain_fingerprint": (
+            str(course_chain.get("fingerprint") or "") if course_chain else None
+        ),
         "slides": slide_hashes,
         "pages": len(pages),
         "shots": sum(len(page.shots) for page in pages),

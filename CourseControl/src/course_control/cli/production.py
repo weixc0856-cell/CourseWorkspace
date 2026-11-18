@@ -23,7 +23,7 @@ def preflight_command(
     except ContractError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1)
-    report = run_preflight(paths.lesson_dir, strict=strict)
+    report = run_preflight(paths.lesson_dir, strict=strict, paths=paths)
     typer.echo(f"lesson: {report.lesson}")
     if report.spec is not None:
         typer.echo(f"episode: {report.spec.episode}")
@@ -73,32 +73,41 @@ def checks_command(
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     typer.echo(f"exceptions: {target}")
-    failed = bool(report.auto_failed) or (strict and bool(report.review_open))
-    typer.echo("status: " + ("FAIL" if failed else "PASS"))
-    raise typer.Exit(1 if failed else 0)
+    review_open = bool(report.review_open)
+    failed = bool(report.auto_failed) or (strict and review_open)
+    # Review items are not auto checks: an open review is INCOMPLETE, never
+    # PASS.  Only --strict turns it into a failure.
+    incomplete = (not failed) and review_open
+    typer.echo("status: " + ("FAIL" if failed else ("INCOMPLETE" if incomplete else "PASS")))
+    raise typer.Exit(1 if failed else (2 if incomplete else 0))
 
 @app.command("book-index")
 def book_index_command(
     index: Path = typer.Option(..., "--index", help="book/index.json"),
     cards_dir: Path = typer.Option(..., "--cards-dir", help="episodes directory with */card.yaml"),
+    map_path: Path | None = typer.Option(None, "--map", help="COURSE_MAP.md with the episode table"),
 ) -> None:
-    """Check episode cards against the book index references."""
+    """Check episode cards against the book index and the course map."""
     from course_control.production.book_index import (
         BookIndexError,
         check_cards,
         load_book_index,
         load_card_dir,
+        load_course_map,
     )
 
     try:
         data = load_book_index(index)
         cards = load_card_dir(cards_dir)
+        map_episodes = load_course_map(map_path) if map_path is not None else None
     except BookIndexError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(2)
-    problems = check_cards(data, cards)
+    problems = check_cards(data, cards, map_episodes)
     typer.echo(f"book index: {index}")
     typer.echo(f"cards: {len(cards)}")
+    if map_episodes is not None:
+        typer.echo(f"map: {map_path} ({len(map_episodes)} episodes)")
     for problem in problems:
         typer.echo(f"  [error] {problem}")
     typer.echo("status: " + ("PASS" if not problems else "FAIL"))

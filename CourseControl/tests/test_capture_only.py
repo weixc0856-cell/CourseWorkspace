@@ -14,15 +14,19 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
 import typer
+import yaml
 
 from course_control.authoring.llm import AuthoringError
 from course_control.cli.lesson import build_command
+from course_control.content.paths import LessonPaths
+from course_control.content.validators import validate
 from course_control.pipeline import BuildOptions, run_build
 from course_control.rendering import adapters
 
@@ -43,7 +47,9 @@ class CaptureOnlyTest(unittest.TestCase):
             "  storyboard: storyboard.yaml\n  assets: assets/\n"
             "outputs:\n  fps: 30\n  resolution: [1920, 1080]\n"
             "  slides_canvas: [1280, 720]\n  animation_canvas: [1920, 1080]\n"
-            "engines: [manim]\ncompose:\n  mode: deck\n",
+            "engines: [manim]\ncompose:\n  mode: deck\n"
+            "duration:\n  profile: short\n  target_seconds: 720\n"
+            "  min_seconds: 600\n  max_seconds: 900\n",
             encoding="utf-8",
         )
         (self.lesson / "slides.md").write_text(
@@ -94,6 +100,27 @@ class CaptureOnlyTest(unittest.TestCase):
             "capture must not create approval evidence of any kind",
         )
 
+    def test_capture_only_defers_scene_and_duration_gates(self):
+        (self.ws / "ManimSandbox" / "demo" / "scene.py").unlink()
+        paths = LessonPaths.load(self.ws, self.lesson)
+
+        full = validate(paths)
+        self.assertTrue(any(issue.rule == "V-08" for issue in full.errors))
+        self.assertTrue(any(issue.rule == "V-26" for issue in full.errors))
+
+        static = validate(paths, capture_only=True)
+        self.assertFalse(any(issue.rule == "V-08" for issue in static.errors))
+        self.assertFalse(any(issue.rule == "V-26" for issue in static.errors))
+        self.assertTrue(any("episode-duration gate" in issue.message for issue in static.warnings))
+
+    def test_capture_only_still_rejects_missing_slide_assets(self):
+        (self.lesson / "slides.md").write_text(
+            '<img src="/lessons/demo/assets/missing.png">\n', encoding="utf-8"
+        )
+        paths = LessonPaths.load(self.ws, self.lesson)
+        static = validate(paths, capture_only=True)
+        self.assertTrue(any(issue.rule == "V-05" for issue in static.errors))
+
     def test_plain_build_is_still_blocked_without_a_signature(self):
         with self.assertRaises(AuthoringError):
             self._build()
@@ -119,6 +146,52 @@ class CaptureOnlyTest(unittest.TestCase):
                 f"{later} must not run under --capture-only",
             )
         self.assertEqual(stages["render:manim"].reason, "capture_only")
+
+    def test_bound_lesson_without_plan_fails_before_capture(self):
+        lesson_path = self.lesson / "lesson.yaml"
+        lesson = yaml.safe_load(lesson_path.read_text(encoding="utf-8"))
+        lesson["course_id"] = "demo-course"
+        lesson["episode_id"] = "T1-01"
+        lesson_path.write_text(
+            yaml.safe_dump(lesson, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+        config = self.root / "course-chain.yaml"
+        config.write_text(
+            yaml.safe_dump(
+                {
+                    "schema_version": 2,
+                    "courses": {
+                        "demo-course": {
+                            "expected_episode_count": 80,
+                            "plan": "runtime/course-content/demo-course/COURSE_MAP-80.md",
+                            "cards_dir": "runtime/course-content/demo-course/episodes",
+                            "lessons_root": "lessons",
+                            "forbidden_lesson_slugs": {},
+                            "forbidden_slide_terms": [],
+                        }
+                    },
+                },
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
+        with mock.patch.dict(
+            os.environ, {"COURSEWORKSPACE_CHAIN_CONFIG": str(config)}
+        ):
+            report, calls = self._build(capture_only=True)
+        stages = {stage.name: stage for stage in report.stages}
+        self.assertEqual(calls, [])
+        self.assertEqual(stages["validate"].status.value, "not_run")
+        self.assertEqual(stages["capture_slides"].status.value, "not_run")
+        self.assertTrue(
+            any(
+                item.id == "V-48"
+                and item.status.value == "fail"
+                and "no 80-episode plan" in (item.actual or "")
+                for item in report.checks
+            )
+        )
 
     def test_capture_only_rejects_conflicting_flags(self):
         err = io.StringIO()

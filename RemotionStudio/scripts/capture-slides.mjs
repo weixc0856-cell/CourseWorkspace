@@ -44,6 +44,92 @@ const pageLabel = (horizontal, vertical) =>
   String(horizontal + 1).padStart(3, '0') +
   (vertical > 0 ? String.fromCharCode(96 + vertical) : '');
 
+const inspectSlideLayout = async (page) =>
+  page.evaluate(() => {
+    const section = document.querySelector('.reveal .slides section.present');
+    if (!section) {
+      return {ok: false, issues: ['no present slide section']};
+    }
+
+    const sectionRect = section.getBoundingClientRect();
+    const selector = 'h1,h2,h3,h4,p,li,figcaption,img,table,pre,blockquote';
+    const candidates = Array.from(section.querySelectorAll(selector)).filter((element) => {
+      if (element.closest('[data-layout-ignore]')) return false;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        Number(style.opacity) > 0 &&
+        rect.width > 1 &&
+        rect.height > 1
+      );
+    });
+
+    // Keep leaf content blocks only.  Parent wrappers contain child text and
+    // would otherwise report artificial overlaps with their own descendants.
+    const leaves = candidates.filter(
+      (element) =>
+        !candidates.some(
+          (other) => other !== element && element.contains(other),
+        ),
+    );
+
+    const issues = [];
+    const tolerance = 2;
+    if (
+      section.scrollHeight > section.clientHeight + tolerance ||
+      section.scrollWidth > section.clientWidth + tolerance
+    ) {
+      issues.push(
+        `section overflow ${section.scrollWidth}x${section.scrollHeight} ` +
+          `> ${section.clientWidth}x${section.clientHeight}`,
+      );
+    }
+
+    const boxes = leaves.map((element) => ({
+      element,
+      rect: element.getBoundingClientRect(),
+      label:
+        element.tagName.toLowerCase() +
+        (element.className ? `.${String(element.className).trim().replace(/\s+/g, '.')}` : ''),
+    }));
+
+    for (const box of boxes) {
+      const {left, top, right, bottom} = box.rect;
+      if (
+        left < sectionRect.left - tolerance ||
+        top < sectionRect.top - tolerance ||
+        right > sectionRect.right + tolerance ||
+        bottom > sectionRect.bottom + tolerance
+      ) {
+        issues.push(`${box.label} extends outside the slide`);
+      }
+    }
+
+    const overlapArea = (a, b) => {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      return width * height;
+    };
+
+    for (let i = 0; i < boxes.length; i += 1) {
+      for (let j = i + 1; j < boxes.length; j += 1) {
+        const area = overlapArea(boxes[i].rect, boxes[j].rect);
+        if (area > 4) {
+          issues.push(
+            `${boxes[i].label} overlaps ${boxes[j].label} (${Math.round(area)} px^2)`,
+          );
+        }
+      }
+    }
+
+    return {
+      ok: issues.length === 0,
+      issues: issues.slice(0, 20),
+    };
+  });
+
 const launch = async () => {
   const channels = [preferredChannel, preferredChannel === 'chrome' ? 'msedge' : 'chrome'];
   let lastError;
@@ -115,12 +201,27 @@ try {
     await page.waitForTimeout(900);
     const indices = await page.evaluate(() => window.Reveal.getIndices());
     const pageNumber = pageLabel(indices.h, indices.v);
+    const layout = await inspectSlideLayout(page);
+    if (!layout.ok) {
+      throw new Error(
+        `slide ${pageNumber} layout audit failed:\n- ${layout.issues.join('\n- ')}`,
+      );
+    }
     const file = `slide-${pageNumber}.png`;
     const target = path.join(outDir, file);
     await page.screenshot({path: target, fullPage: false});
     const info = await stat(target);
     if (info.size <= 0) throw new Error(`empty screenshot: ${target}`);
-    pages.push({index, page: pageNumber, file, width, height, bytes: info.size});
+    pages.push({
+      index,
+      page: pageNumber,
+      file,
+      width,
+      height,
+      bytes: info.size,
+      layout_audit: 'pass',
+    });
+    console.log(`AUDIT ${pageNumber} PASS`);
     console.log(`WROTE ${file} (${info.size} bytes)`);
 
     index += 1;

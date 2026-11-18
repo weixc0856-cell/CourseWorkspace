@@ -37,7 +37,7 @@
 - **M4 编排 DAG**：`platform/checkpoint.py` 新增 `STAGE_DEPS`；`--resume-from` 与 `invalidate_from` 按下游子图计算，兄弟渲染阶段不再连带重跑。默认构建路径不变，3 条 DAG 测试覆盖依赖顺序、兄弟隔离与失效范围。
 - **M5 质量闭环核心**：`quality/defect.py` 统一缺陷、`quality/repair.py` 归因与修复计划（attempt 上限 3、无法归因即停）、`quality/regression.py` 差分；CLI `quality-diagnose` / `quality-repair-plan` / `quality-regression`。`aging-evolution` 诊断 0 缺陷；`01-transformer-demo` 诊断出 Q1/Q2 两条缺失报告缺陷。修复执行器未做；交付证书已落地（`quality/certificate.py`、`quality-certificate`，`aging-evolution` 当前为 incomplete，原因是发布签核未完成）。
 - **M6 契约层**：`KnowledgeStudio/src/knowledge_studio/knowledge_ir.py` 新增概念/先修/claim/证据/冲突契约与课程规划校验；CLI `knowledge-ir-validate`、`curriculum-validate`、`schemas`；新增 `shared/schemas/knowledge-ir.schema.json` 与 `curriculum.schema.json`。自动研究、Mode B 流程与 A3 执行器未做。
-- **汽车空气动力学重排（D-093 / D-108）**：旧 30 集 × 20–30 分钟方案作废并归档；D-094 的 90 集口径由 D-108 取代，全书定为 **14 章 / 13 个模块 / 180 集 × 8–12 分钟（约 1800 分钟，32 学时）**。`COURSE_MAP` v2.0、`第一季方案` v0.4、`系列口径统一` v3.0 已重写；先从 T1-01 做 10 分钟样片。
+- **汽车空气动力学重排（D-108 / D-110 / D-111 / D-113）**：现行口径是 **13 个模块 / 180 集**，课程项目合同在 `projects/automotive-aerodynamics/project.yaml`（ProjectSpec `production.course`），仓库的 `config/course-chain.yaml` 只作 legacy 回退。T1-01 的范围已改为 **Ch. 1 §1.1「为什么汽车需要空气动力学」**；旧 Ch.3 能量主题的 `K-T1-01-01…06` 已退役并归档归属，新的 `K-T1-01-S1…S6` 已登记进书索引；PDF 页/印刷页/图号/版次分列。旧 energy 主题的 deck/notes/script/assets 已从活动 lesson 移除并归档。当前状态是「定义/研究/合同就绪、内容未生产」：平台回归与课程项目层单测通过；`check_course_chain.py --all` 因缺 slides/notes 报"内容未生产"，这是预期状态。TTS、字幕、动画与成片尚未运行。
 - **未执行**：第一专题的真实生产与 P5 验证；真实 build/渲染/TTS。这些不能由 smoke 与单测替代（skip ≠ pass）。
 
 ## 0.0000C 2026-11-11 交付与临时分区

@@ -17,6 +17,10 @@ from course_control.rendering.engine_router import VisualRequirement, route_engi
 from course_control.content.paths import LessonPaths
 from course_control.platform.workspace_layout import build_root_for
 from course_control.quality.evidence import is_named_approver
+from course_control.production.course_chain import (
+    assert_lesson_course_chain,
+    default_chain_config,
+)
 from course_control.authoring.llm import AuthoringClient, AuthoringError
 from course_control.authoring.models import (
     ApprovalEntry,
@@ -514,6 +518,12 @@ def sign_storyboard_page(
     from course_control.content.paths import LessonPaths
 
     paths = LessonPaths.load(Path(workspace).resolve(), lesson_dir)
+    chain = assert_lesson_course_chain(
+        Path(workspace).resolve(),
+        lesson_dir,
+        config_path=default_chain_config(),
+    )
+    chain_fingerprint = chain.fingerprint if chain is not None else None
     source = paths.storyboard_source
     if source is None:
         raise AuthoringError("lesson has no storyboard or production source to sign")
@@ -537,6 +547,14 @@ def sign_storyboard_page(
         raise AuthoringError(
             "storyboard changed after the page was built; rebuild the page and review it"
         )
+    if (
+        str(manifest.get("course_chain_fingerprint") or "")
+        != str(chain_fingerprint or "")
+    ):
+        raise AuthoringError(
+            "course plan/card/spec changed after the page was built; "
+            "rebuild the page and review it"
+        )
 
     decisions_path = page_dir / "decisions.json"
     if not decisions_path.is_file():
@@ -552,6 +570,13 @@ def sign_storyboard_page(
         raise AuthoringError("decisions were made against a different storyboard; review again")
     if decisions.get("html_sha256") != manifest.get("html_sha256"):
         raise AuthoringError("decisions were made against a different page; review again")
+    if (
+        str(decisions.get("course_chain_fingerprint") or "")
+        != str(chain_fingerprint or "")
+    ):
+        raise AuthoringError(
+            "decisions were made against a different course plan/card/spec; review again"
+        )
     if not is_named_approver(decisions.get("reviewed_by")):
         raise AuthoringError(
             "per-page decisions must name the reviewer; run storyboard-review --by"
@@ -586,6 +611,19 @@ def sign_storyboard_page(
         "storyboard_path": str(source),
         "storyboard_sha256": manifest["storyboard_sha256"],
         "slides_md_sha256": manifest.get("slides_md_sha256"),
+        "course_chain": (
+            {
+                "course_id": chain.course_id,
+                "episode_id": chain.episode_id,
+                "lesson_slug": chain.lesson_slug,
+                "plan": str(chain.plan) if chain.plan else None,
+                "fingerprint": chain.fingerprint,
+                "artifacts": chain.artifacts,
+            }
+            if chain is not None
+            else None
+        ),
+        "course_chain_fingerprint": chain_fingerprint,
         "slides": manifest.get("slides") or [],
         "page_path": "authoring/storyboard-review.html",
         "page_sha256": _sha(reviewed),
@@ -628,6 +666,21 @@ def assert_storyboard_signed(lesson_dir: Path, storyboard_source: Path | None) -
             f"author-accept --lesson {lesson_dir.name} --kind {SIGNOFF_KIND} --by <name>"
         )
     review = json.loads(review_path.read_text(encoding="utf-8"))
+    workspace = lesson_dir.parents[1]
+    chain = assert_lesson_course_chain(
+        workspace,
+        lesson_dir,
+        config_path=default_chain_config(),
+    )
+    expected_chain = chain.fingerprint if chain is not None else None
+    if (
+        str(review.get("course_chain_fingerprint") or "")
+        != str(expected_chain or "")
+    ):
+        raise AuthoringError(
+            "course plan/card/spec changed after sign-off; "
+            "rebuild the storyboard page and sign it again"
+        )
     if not is_named_approver(review.get("approved_by")):
         raise AuthoringError(
             "storyboard sign-off was not made by a named person; sign it again"

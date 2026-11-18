@@ -128,6 +128,38 @@ def default_chain_config() -> Path:
     return (Path(__file__).resolve().parents[4] / "config" / "course-chain.yaml").resolve()
 
 
+def project_course_config(root: Path, course_id: str) -> dict | None:
+    """Read the course contract from ``projects/<course_id>/project.yaml``.
+
+    The program repository serves many subjects; the plan, card directory,
+    claim index, voice profile and forbidden terms belong to the course
+    project in the content root, not to a per-course block in the repo config.
+    """
+    path = Path(root) / "projects" / course_id / "project.yaml"
+    if not path.is_file():
+        return None
+    from course_control.delivery.project import load_project
+
+    spec = load_project(path)
+    if spec.project.mode != "course" or spec.production.course is None:
+        return None
+    course = spec.production.course
+    if not course.plan:
+        raise ValueError(f"{path}: production.course.plan is required")
+    return {
+        "expected_episode_count": course.expected_episode_count
+        or course.lesson_count.target,
+        "plan": course.plan,
+        "cards_dir": course.cards_dir
+        or f"runtime/course-content/{course_id}/episodes",
+        "lessons_root": "lessons",
+        "forbidden_lesson_slugs": dict(course.forbidden_lesson_slugs or {}),
+        "forbidden_slide_terms": list(course.forbidden_slide_terms or []),
+        "claim_index": course.claim_index,
+        "voice_profile": course.voice_profile,
+    }
+
+
 def resolve_chain_root(workspace: Path, lesson_dir: Path) -> Path:
     """The content root that owns the lesson and its course plan.
 
@@ -320,9 +352,18 @@ def check_course_chain(
         result.errors.append(f"course chain config missing: {config_path}")
         return _finish(result, root, artifacts)
     data = _read_yaml(config_path)
-    course = (data.get("courses") or {}).get(course_id)
+    try:
+        course = project_course_config(root, course_id)
+    except Exception as exc:  # noqa: BLE001 - a broken project must block
+        result.errors.append(f"invalid course project for {course_id!r}: {exc}")
+        return _finish(result, root, artifacts)
+    if course is None:
+        course = (data.get("courses") or {}).get(course_id)
     if not isinstance(course, dict):
-        result.errors.append(f"course {course_id!r} missing from {config_path}")
+        result.errors.append(
+            f"course {course_id!r} has no projects/{course_id}/project.yaml "
+            f"and no entry in {config_path}"
+        )
         return _finish(result, root, artifacts)
 
     expected = int(course.get("expected_episode_count") or 0)

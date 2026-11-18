@@ -52,8 +52,13 @@ def _sections_for(source: SourceEntry, text: str) -> list[DigestSection]:
         match = HEADING.match(line)
         if not match:
             continue
-        flush(number)
         level = len(match.group(1))
+        heading = match.group(2).strip()
+        # Running page headers/footers arrive as unnumbered level-6 headings.
+        # They are content, not sections; a numbered level-6 heading is real.
+        if level == 6 and not re.match(r"\d", heading):
+            continue
+        flush(number)
         counters[level] += 1
         for deeper in range(level + 1, 7):
             counters[deeper] = 0

@@ -166,8 +166,14 @@ class ReportBuilder:
             errors.append("V-31 must be not_applicable when subtitles are disabled")
         return errors
 
-    def finalize(self) -> BuildReport:
-        self.collect_artifacts()
+    def finalize(
+        self,
+        *,
+        collect_artifacts: bool = True,
+        probe_toolchain: bool = True,
+    ) -> BuildReport:
+        if collect_artifacts:
+            self.collect_artifacts()
         applicability = self._applicability_errors()
         self.add_check(
             "V-19",
@@ -209,7 +215,11 @@ class ReportBuilder:
             lesson=self.paths.slug,
             started_at=self.started_at,
             finished_at=_now(),
-            toolchain=toolchain_versions(self.paths.workspace),
+            toolchain=(
+                toolchain_versions(self.paths.workspace)
+                if probe_toolchain
+                else {}
+            ),
             stages=self.stages,
             artifacts=self.artifacts,
             checks=self.checks,

@@ -32,12 +32,12 @@ def _spec(**overrides):
             }
         ],
         "beats": [
-            {"id": "B1", "type": "question", "seconds": 100, "claims": ["C01"]},
-            {"id": "B2", "type": "case", "seconds": 100, "claims": ["C01"]},
-            {"id": "B3", "type": "mechanism", "seconds": 100, "claims": ["C01"]},
-            {"id": "B4", "type": "derivation", "seconds": 100, "claims": ["C01"]},
-            {"id": "B5", "type": "evidence", "seconds": 100, "claims": ["C01"]},
-            {"id": "B6", "type": "conclusion", "seconds": 100, "claims": ["C01"]},
+            {"id": "B1", "type": "question", "seconds": 100, "claims": ["C01"], "visual": "page:1; static, reason: fixture"},
+            {"id": "B2", "type": "case", "seconds": 100, "claims": ["C01"], "visual": "page:1; static, reason: fixture"},
+            {"id": "B3", "type": "mechanism", "seconds": 100, "claims": ["C01"], "visual": "page:1; static, reason: fixture"},
+            {"id": "B4", "type": "derivation", "seconds": 100, "claims": ["C01"], "visual": "page:1; static, reason: fixture"},
+            {"id": "B5", "type": "evidence", "seconds": 100, "claims": ["C01"], "visual": "page:1; static, reason: fixture"},
+            {"id": "B6", "type": "conclusion", "seconds": 100, "claims": ["C01"], "visual": "page:1; static, reason: fixture"},
         ],
         "cut_list": ["history"],
         "not_claimed": ["market data"],

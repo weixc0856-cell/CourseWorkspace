@@ -91,9 +91,12 @@ def record_episode_build(
     video = Path(video).resolve()
     if not video.is_file():
         raise EpisodeBuildError(f"episode film not found: {video}")
-    timing_path = timing or (paths.workspace / "RemotionStudio" / "src" / "episode" / "timing.json")
+    timing_path = timing or (paths.build_root / "episode" / "timing.json")
     if not timing_path.is_file():
-        raise EpisodeBuildError(f"episode timing not found: {timing_path}")
+        raise EpisodeBuildError(
+            f"episode timing not found: {timing_path}; write the beat timing per "
+            "lesson under build/<slug>/episode/ or pass --timing"
+        )
     episode = json.loads(timing_path.read_text(encoding="utf-8"))
     expected_seconds = float(episode.get("total_seconds") or 0.0)
     expected_fps = int(episode.get("fps") or paths.lesson.outputs.fps)

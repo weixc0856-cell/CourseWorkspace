@@ -298,13 +298,22 @@ try {
     # neither, so the gate only runs where the source material is present.
     $bookIndex = Join-Path $content "runtime/course-content/automotive-aerodynamics/book/index.json"
     $bookCards = Join-Path $content "runtime/course-content/automotive-aerodynamics/episodes"
+    $bookMap = Join-Path $content "runtime/course-content/automotive-aerodynamics/COURSE_MAP.md"
     if (-not $CleanClone -and (Test-Path $bookIndex) -and (Test-Path $bookCards)) {
         Invoke-Checked "book index" {
-            uv run --project CourseControl course-control book-index --index $bookIndex --cards-dir $bookCards
+            uv run --project CourseControl course-control book-index --index $bookIndex --cards-dir $bookCards --map $bookMap
         }
     }
     else {
         Write-Host "skip book index (source material not present)"
+    }
+
+    # The course chain's production state belongs to the content root, not to
+    # this isolated dev regression.  The selftest proves the code; the real
+    # course is checked explicitly with:
+    #   python scripts/check_course_chain.py --content-root <root> --all
+    Invoke-Checked "course chain selftest" -Quiet {
+        uv run --project CourseControl python scripts/check_course_chain.py --selftest
     }
 
     $goldenRoot = Join-Path $content "build/_shared/golden"
@@ -575,12 +584,18 @@ try {
     if ($script:testCounts.Count -gt 0) {
         $script:testCounts | ConvertTo-Json | Set-Content -LiteralPath $countsPath -Encoding utf8
     }
-    Write-Host "check summary: checks=$script:checksRun failed=0 content_exceptions=$script:contentExceptions"
+    if ($script:contentExceptions -gt 0) {
+        Write-Host "check summary: checks=$script:checksRun failed=0 content_exceptions=$script:contentExceptions"
+        Write-Host "check log: $logPath"
+        Write-Host "check incomplete: $script:contentExceptions content exception(s) open; this is not a pass"
+        if ($script:contentExceptionPath) {
+            Write-Host "content exceptions: $script:contentExceptionPath"
+        }
+        exit 1
+    }
+    Write-Host "check summary: checks=$script:checksRun failed=0 content_exceptions=0"
     Write-Host "check log: $logPath"
     Write-Host "check ok"
-    if ($script:contentExceptions -gt 0) {
-        Write-Host "content exceptions: $script:contentExceptions (queued at $script:contentExceptionPath)"
-    }
     exit 0
 }
 finally {

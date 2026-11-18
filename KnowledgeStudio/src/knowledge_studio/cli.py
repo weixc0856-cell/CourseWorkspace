@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -242,11 +243,39 @@ def retrieve_command(
     excerpt_chars: int = typer.Option(700, "--excerpt-chars"),
     into_lesson: Path | None = typer.Option(None, "--into-lesson"),
     entry_id: str | None = typer.Option(None, "--entry-id", help="sources.yaml id, e.g. S14."),
+    register: bool = typer.Option(
+        False, "--register", help="append or replace the source entry in authoring/sources.yaml"
+    ),
+    pages: str | None = typer.Option(
+        None, "--pages", help="limit candidate PDF pages, e.g. 22-27 or 22"
+    ),
+    full_pages: bool = typer.Option(
+        False, "--full-pages", help="write the selected pages in full instead of excerpts"
+    ),
 ) -> None:
     """Select the pages a lesson needs and write a citable retrieval artifact."""
     root = root.resolve()
+    page_start = page_end = None
+    if pages:
+        match = re.fullmatch(r"(\d+)(?:-(\d+))?", pages.strip())
+        if match is None:
+            typer.echo(f"invalid --pages {pages!r}; use N or N-M", err=True)
+            raise typer.Exit(2)
+        page_start = int(match.group(1))
+        page_end = int(match.group(2) or page_start)
+        if page_end < page_start:
+            typer.echo(f"invalid --pages {pages!r}; end must be >= start", err=True)
+            raise typer.Exit(2)
     try:
-        result = retrieve(root, query, max_pages=max_pages, excerpt_chars=excerpt_chars)
+        result = retrieve(
+            root,
+            query,
+            max_pages=max_pages,
+            excerpt_chars=excerpt_chars,
+            page_start=page_start,
+            page_end=page_end,
+            full_pages=full_pages,
+        )
         paths = write_retrieval(root, result)
     except (RetrieveError, index_mod.IndexError) as exc:
         typer.echo(f"blocked: {exc}", err=True)
@@ -259,10 +288,12 @@ def retrieve_command(
     typer.echo(f"markdown: {paths['markdown']}")
     if into_lesson is not None:
         exported = export_lesson(
-            root, result, into_lesson.resolve(), entry_id=entry_id
+            root, result, into_lesson.resolve(), entry_id=entry_id, register=register
         )
         typer.echo(f"lesson source: {exported['source']}")
         typer.echo(f"sources fragment: {exported['fragment']}")
+        if exported.get("sources"):
+            typer.echo(f"sources.yaml: {exported['sources']}")
 
 
 @app.command("evidence")

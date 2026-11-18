@@ -52,7 +52,7 @@ def declared_inputs(
     meta: Path | None = None,
 ) -> list[tuple[str, Path]]:
     """The inputs a re-render must consume for the film to stay current."""
-    timing_path = timing or (workspace / "RemotionStudio" / "src" / "episode" / "timing.json")
+    timing_path = timing or (paths.build_root / "episode" / "timing.json")
     meta_path = meta or (paths.build_root / "narration" / "narration.resequenced.meta.json")
     subtitles = paths.subtitles_path()
     entries = [
@@ -253,40 +253,29 @@ def check_freshness(paths: LessonPaths, video: Path) -> Freshness:
         for entry in manifest.get("inputs") or []
         if isinstance(entry, dict)
     }
+    reasons: list[str] = []
     missing = [name for name in required_entries if name not in declared]
     if missing:
-        return Freshness(
-            False,
-            FINGERPRINT,
-            build_id,
-            "stale: build manifest predates required inputs: " + ", ".join(missing),
-        )
+        reasons.append("build manifest predates required inputs: " + ", ".join(missing))
     for name, current_path in required_entries.items():
-        entry = declared[name]
+        entry = declared.get(name)
+        if not isinstance(entry, dict):
+            continue
         declared_path = Path(str(entry.get("path") or ""))
         if declared_path.resolve() != Path(current_path).resolve():
-            return Freshness(
-                False,
-                FINGERPRINT,
-                build_id,
-                f"stale: input {name} now points at {current_path}, not {declared_path}",
-            )
+            reasons.append(f"input {name} now points at {current_path}, not {declared_path}")
     for entry in manifest.get("inputs") or []:
-        declared = Path(str(entry.get("path") or ""))
-        if not declared.is_file():
-            return Freshness(
-                False,
-                FINGERPRINT,
-                build_id,
-                f"stale: build input removed since build {build_id}: {declared}",
+        if not isinstance(entry, dict):
+            continue
+        declared_path = Path(str(entry.get("path") or ""))
+        if not declared_path.is_file():
+            reasons.append(f"build input removed since build {build_id}: {declared_path}")
+        elif _sha256(declared_path) != entry.get("sha256"):
+            reasons.append(
+                f"{declared_path} changed since build {build_id}; re-render before release"
             )
-        if _sha256(declared) != entry.get("sha256"):
-            return Freshness(
-                False,
-                FINGERPRINT,
-                build_id,
-                f"stale: {declared} changed since build {build_id}; re-render before release",
-            )
+    if reasons:
+        return Freshness(False, FINGERPRINT, build_id, "stale: " + "; ".join(reasons))
     try:
         current = fingerprint(paths, paths.workspace)
     except (BuildManifestError, OSError) as exc:

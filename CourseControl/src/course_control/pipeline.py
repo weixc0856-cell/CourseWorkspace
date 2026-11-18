@@ -31,6 +31,10 @@ from course_control.delivery.report import ReportBuilder
 from course_control.content.validators import validate
 from course_control.quality.verify import verify
 from course_control.platform.workspace_layout import build_root_for
+from course_control.production.course_chain import (
+    check_lesson_course_chain,
+    default_chain_config,
+)
 
 
 @dataclass
@@ -166,8 +170,11 @@ class _Run:
                 resume["invalid"][stage] = reasons
         return outcome
 
-    def finish(self) -> tuple:
-        report = self.builder.finalize()
+    def finish(self, *, preflight_blocked: bool = False) -> tuple:
+        report = self.builder.finalize(
+            collect_artifacts=not preflight_blocked,
+            probe_toolchain=not preflight_blocked,
+        )
         path = self.builder.write(report)
         self.record["finished_at"] = report.finished_at
         self.record["verdict"] = report.verdict
@@ -278,10 +285,61 @@ def _run_build_locked(workspace: Path, lesson_dir: Path, options: BuildOptions) 
             ],
             "upstream_failed",
         )
-        return run.finish()
+        return run.finish(preflight_blocked=True)
+
+    chain_config = default_chain_config()
+    chain_result = check_lesson_course_chain(
+        workspace,
+        lesson_dir,
+        config_path=chain_config,
+    )
+    if chain_result is None:
+        builder.add_check(
+            "V-48",
+            Status.NOT_APPLICABLE,
+            expected="course plan, card, lesson and theme share one chain",
+            actual="lesson is not bound to a course",
+        )
+    else:
+        if not chain_result.ok:
+            for error in chain_result.errors:
+                builder.add_check(
+                    "V-48",
+                    Status.FAIL,
+                    expected="course plan, card, lesson and theme share one chain",
+                    actual=error,
+                )
+            _mark_not_run(
+                builder,
+                [
+                    "validate",
+                    "capture_slides",
+                    "render:motion_canvas",
+                    "render:manim",
+                    "render:blender",
+                    "render:code_video",
+                    "collect",
+                    "compose",
+                    "brand",
+                    "verify",
+                ],
+                "course_chain_failed",
+            )
+            return run.finish(preflight_blocked=True)
+        builder.add_check(
+            "V-48",
+            Status.PASS,
+            expected="course plan, card, lesson and theme share one chain",
+            actual=(
+                f"{chain_result.course_id}/{chain_result.episode_id} "
+                f"sha256={str(chain_result.fingerprint or '')[:16]}"
+            ),
+        )
 
     started = time.monotonic()
-    validation = validate(paths)
+    # Static capture has its own review gate.  Animation scenes, measured
+    # narration and the final episode-duration window intentionally come later.
+    validation = validate(paths, capture_only=options.capture_only)
     for issue in validation.issues:
         builder.add_check(
             issue.rule,

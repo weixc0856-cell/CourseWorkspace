@@ -18,7 +18,7 @@ from course_control.platform.timeouts import resolve_timeout
 from course_control.platform.utils import run_command, which_command
 from course_control.rendering.adapters.base import StageOutcome
 
-BASE_URL = "http://localhost:8081"
+BASE_URL = "http://127.0.0.1:8081"
 CAPTURE_URL = f"{BASE_URL}/CourseSlides/template/"
 
 
@@ -45,6 +45,7 @@ def _make_handler(workspace: Path, lessons: Path, log_handle):
     workspace made that miss and fall back to a one-page placeholder deck, so
     the capture reported success for a lesson that was never loaded.
     """
+    repo_workspace = Path(__file__).resolve().parents[5]
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def translate_path(self, path: str) -> str:
@@ -53,8 +54,11 @@ def _make_handler(workspace: Path, lessons: Path, log_handle):
             if rel == "lessons" or rel.startswith("lessons/"):
                 base = lessons
                 tail = rel[len("lessons"):].lstrip("/")
+            elif rel == "CourseSlides" or rel.startswith("CourseSlides/"):
+                base = workspace if (workspace / "CourseSlides").is_dir() else repo_workspace
+                tail = rel
             else:
-                base = workspace
+                base = workspace if (workspace / rel.split("/")[0]).exists() else repo_workspace
                 tail = rel
             candidate = (base / tail).resolve()
             if candidate != base and not str(candidate).startswith(str(base) + os.sep):
@@ -120,12 +124,20 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
             str(width),
             "--height",
             str(height),
+            "--base-url",
+            BASE_URL,
             "--out",
             str(paths.build_root / "slides"),
         ]
+        repo_workspace = Path(__file__).resolve().parents[5]
+        remotion_dir = (
+            paths.workspace / "RemotionStudio"
+            if (paths.workspace / "RemotionStudio").is_dir()
+            else repo_workspace / "RemotionStudio"
+        )
         result = run_command(
             command,
-            paths.workspace / "RemotionStudio",
+            remotion_dir,
             timeout=resolve_timeout(paths, "capture_slides"),
             log_path=log_dir / "capture-slides.log",
         )

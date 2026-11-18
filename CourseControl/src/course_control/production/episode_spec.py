@@ -27,7 +27,10 @@ class SourceRef(StrictModel):
 
 
 class Claim(StrictModel):
-    id: str = Field(pattern=r"^C[0-9]{2,3}$")
+    # C-ids are the legacy episode-local numbering; K-ids are the book index
+    # claims. One evidence table can carry either, and the index remains the
+    # source for K-ids.
+    id: str = Field(pattern=r"^(?:C[0-9]{2,3}|K-[A-Za-z0-9-]+)$")
     text: str = Field(min_length=1)
     source: SourceRef
     status: Literal["must_teach", "support", "cut"] = "must_teach"

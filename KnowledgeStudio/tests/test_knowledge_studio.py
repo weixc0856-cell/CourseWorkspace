@@ -256,6 +256,45 @@ class KnowledgePipelineTest(unittest.TestCase):
         self.assertEqual(len(entry["sha256"]), 64)
         self.assertTrue(exported["source"].read_text(encoding="utf-8").startswith("# demo-book"))
 
+    def test_retrieve_page_range_keeps_only_requested_pages(self):
+        entries, _ = self._toc()
+        build_units(self.root, entries)
+        index_mod.build(self.root, "demo-book")
+        result = retrieve(self.root, "drag", max_pages=10, page_start=6, page_end=6)
+        self.assertTrue(result.excerpts)
+        self.assertTrue(all(excerpt.pdf_page == 6 for excerpt in result.excerpts))
+        with self.assertRaises(Exception):
+            retrieve(self.root, "drag", max_pages=3, page_start=11, page_end=12)
+
+    def test_retrieve_full_pages_keeps_the_page_heading(self):
+        entries, _ = self._toc()
+        build_units(self.root, entries)
+        index_mod.build(self.root, "demo-book")
+        result = retrieve(
+            self.root, "drag", max_pages=1, page_start=6, page_end=6, full_pages=True
+        )
+        text = result.excerpts[0].text
+        self.assertIn("2 Drag", text)
+        self.assertIn("Drag is the resistance force", text)
+
+    def test_export_register_updates_sources_yaml_with_the_text_hash(self):
+        entries, _ = self._toc()
+        build_units(self.root, entries)
+        index_mod.build(self.root, "demo-book")
+        result = retrieve(self.root, "wind tunnel", max_pages=4)
+        lesson = Path(self._tmp.name) / "lessons" / "demo-lesson"
+        lesson.mkdir(parents=True)
+        exported = export_lesson(self.root, result, lesson, entry_id="S1", register=True)
+        sources = yaml.safe_load((lesson / "authoring" / "sources.yaml").read_text(encoding="utf-8"))
+        self.assertEqual([item["id"] for item in sources["sources"]], ["S1"])
+        expected = hashlib.sha256(
+            exported["source"].read_text(encoding="utf-8").encode("utf-8")
+        ).hexdigest()
+        self.assertEqual(sources["sources"][0]["sha256"], expected)
+        export_lesson(self.root, result, lesson, entry_id="S1", register=True)
+        again = yaml.safe_load((lesson / "authoring" / "sources.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(len(again["sources"]), 1)
+
     def test_verify_blocks_when_a_page_hash_changes(self):
         entries, _ = self._toc()
         build_units(self.root, entries)

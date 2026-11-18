@@ -127,22 +127,23 @@ def selftest() -> None:
     print("course chain selftest: PASS")
 
 
-def _bound_lessons(root: Path, course_id: str) -> list[Path]:
-    lessons: list[Path] = []
+def _bound_lessons(root: Path) -> list[tuple[Path, str]]:
+    lessons: list[tuple[Path, str]] = []
     base = root / "lessons"
     if not base.is_dir():
         return lessons
     for lesson_file in sorted(base.glob("*/lesson.yaml")):
         data = yaml.safe_load(lesson_file.read_text(encoding="utf-8")) or {}
-        if str(data.get("course_id") or "") == course_id:
-            lessons.append(lesson_file.parent)
+        course_id = str(data.get("course_id") or "")
+        if course_id:
+            lessons.append((lesson_file.parent, course_id))
     return lessons
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--content-root", type=Path)
-    parser.add_argument("--course", default="automotive-aerodynamics")
+    parser.add_argument("--course")
     parser.add_argument("--episode")
     parser.add_argument("--lesson")
     parser.add_argument("--all", action="store_true", help="check every lesson bound to the course")
@@ -159,12 +160,15 @@ def main() -> None:
     config = args.config or repo / "config" / "course-chain.yaml"
 
     if args.all:
-        lessons = _bound_lessons(root, args.course)
+        lessons = _bound_lessons(root)
+        if args.course:
+            lessons = [item for item in lessons if item[1] == args.course]
         if not lessons:
-            print(f"{args.course}: no lesson declares course_id {args.course!r}", file=sys.stderr)
+            scope = f" for course {args.course!r}" if args.course else ""
+            print(f"no lesson declares a course_id{scope}", file=sys.stderr)
             raise SystemExit(1)
         failed = False
-        for lesson in lessons:
+        for lesson, lesson_course in lessons:
             result = check_lesson_course_chain(root, lesson, config_path=config)
             if result is None or not result.ok:
                 failed = True
@@ -175,18 +179,25 @@ def main() -> None:
                 f"plan: {result.plan} "
                 f"({result.discovered_episode_count}/{result.expected_episode_count} episodes)"
             )
-            print(f"{args.course}: PASS ({result.episode_id} -> {lesson.name})")
+            print(f"{lesson_course}: PASS ({result.episode_id} -> {lesson.name})")
         if failed:
             raise SystemExit(1)
         return
 
     lesson_dir = None
+    course_id = args.course
     if args.lesson:
         lesson_dir = root / "lessons" / args.lesson
+        if course_id is None:
+            lesson_file = lesson_dir / "lesson.yaml"
+            data = yaml.safe_load(lesson_file.read_text(encoding="utf-8")) if lesson_file.is_file() else {}
+            course_id = str((data or {}).get("course_id") or "") or None
+    if not course_id:
+        parser.error("--course is required unless --lesson names a bound lesson")
     result = check_course_chain(
         root,
         config_path=config,
-        course_id=args.course,
+        course_id=course_id,
         episode_id=args.episode,
         lesson_dir=lesson_dir,
     )

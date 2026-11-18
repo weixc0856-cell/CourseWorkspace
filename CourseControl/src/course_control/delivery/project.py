@@ -76,6 +76,15 @@ class CoursePlan(StrictModel):
     # The lesson a project renders when it has exactly one.  Defaults to the
     # project id so the common case needs no extra field.
     lesson: str | None = None
+    # Course-project contract consumed by the course chain.  These live on the
+    # project, not in the program repository: one repo serves many subjects.
+    plan: str | None = None
+    expected_episode_count: int | None = Field(default=None, ge=1)
+    cards_dir: str | None = None
+    claim_index: str | None = None
+    voice_profile: str | None = None
+    forbidden_lesson_slugs: dict[str, str] = Field(default_factory=dict)
+    forbidden_slide_terms: list[str] = Field(default_factory=list)
 
 
 class TopicSegment(StrictModel):

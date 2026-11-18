@@ -1199,6 +1199,13 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 3. 方向 02 的版权表述改为三层：来源使用、内容引用、素材再利用；只有“复用风险”被记录（`rights_note` / `usage`），不是门禁；D-099 不因表述调整而改变。
 4. `visual-design` / `sound-design` 的 `--project` 适配器仍未做；等 A/B/C 样片跑完，根据实际字段需求再定。
 
+**补充（2026-11-18，长课视觉强度分层）**：
+
+1. 10–20 分钟长课默认 **结构化板书 ≈80% + 关键机制动画 ≈20%**。稳定页不是“稀疏模板页”：必须有证据大图、多级文字、注记和来源；动画只放在因果关系最抽象、最反直觉的节点（T1-01 是分离线 → wake → vortex 这一段）。
+2. 2–4 分钟短视频维持高密度、高动效；4–12 分钟新闻用组件化卡片/代码/图表/网页。三者共用控制层，视觉强度分开。
+3. T1-01 应用：15 页 2:12 golden sample 是关键机制摘录，允许动画占比高于 80/20；12 分钟正片按 80/20 铺稳定板书，只在第 8–11 页（分离/wake/vortex）和第 12–14 页（证据揭示）动。
+4. 不新增门禁；本条是视觉策略，不是审批关卡。
+
 ## D-102 主题视频源码与素材归内容根
 
 **背景**：2026-11-14 所有者明确：临时文件和实际课程文件相关内容都应放在内容根。此前一次性主题视频的 Remotion 源码与 public 素材在仓库内，和“远程仓库只放工作流”的边界不一致。
@@ -1301,3 +1308,87 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **仍然有效**：D-093 的单集质量要求、8–12 分钟目标、旧 30×20 方案作废；D-095 的"书为唯一依据、原图优先、不伪造 CFD 与动画数据"。
 
 **后果**：D-094 的 90 集规模失效、D-093 的 T1 九集编号失效、D-095 的"本轮 90 集"表述失效；三者正文保留为历史，不修改。`COURSE_MAP.md` 需按 180 集重写，`第一季方案.md` 在 T1 细排完成前标记为 superseded。
+
+## D-109 T1-01 唯一 canonical lesson 与主题锁
+
+> **D-113 更新（2026-11-18）**：T1-01 的主题改为 Hucho 5th ed. Ch. 1 §1.1；本条的能量主题、Ch.3 定量动机与 Fig. 1.67/3.9/3.25 不再作为 T1-01 依据。canonical slug 仍为 `t1-01-why-aerodynamics`。
+
+**背景**：T1-01 反复被重建到不同目录和不同主题。canonical 内容同时存在 `t1-01-why-aerodynamics` 与临时 `aero-t1-01`，并且“§1.1 scope 概览”和“高速空气能耗”两种主题都曾被当作第一集。继续这样会出现多个“第一集”，评审也可能落在错误 slug 上。
+
+**决策**：
+
+1. **唯一 slug**：canonical lesson 是 `t1-01-why-aerodynamics`；`aero-t1-01` 只能作为历史实验目录，不得作为第一集交付入口。
+2. **唯一主题**：第一集必须先建立高速空气代价：约 60 km/h 空气阻力超过滚动阻力的 B-Class 例子、阻力随速度平方增长、所需功率随速度立方增长、100 km/h 中型车约 75–80% 行驶阻力来自空气、`cD·A` 决定阻力、140 km/h 下 `cD 0.30→0.26` 约有 0.6 L/100km 收益。任务谱、形状、分离和烟流/CFD 只作后续解释与预览。
+3. **来源范围**：定量动机使用 Ch.3 §3.1、§3.2.2、§3.2.5–3.2.6、§3.6.7；Ch.1 §1.1、Fig. 1.1、Fig. 1.67、Fig. 1.66 用于任务与设计约束。不得把尾部造型、边界层或 CFD 方法细节提前扩写。
+4. **卡片与地图同步**：T1-01 card 的 core question、concepts、figures 与 180 集 `COURSE_MAP.md` 中的 T1-01 五视觉事件按本条维护。
+5. **自动防漂移**：`config/course-chain.yaml`、`CourseControl/src/course_control/production/course_chain.py` 与 `scripts/check_course_chain.py` 检查 180 集计划、canonical slug、主题词、卡片图源、Ch.3 motivation claim、禁用重复 slug 和地图入口。lesson 用 `course_id` / `episode_id` 显式绑定课程身份；构建与签字共用同一 SHA-256 链路指纹。**（D-111 更新：关键词表与 slug 反查已撤销，改为显式绑定与结构断言；主题锁本身不变。）**
+
+**后果**：第一集不得通过新建 slug 或重写 scope 来“重启”。改主题必须先改 D-109、card/map 与 canonical identity 配置；否则回归失败。`aero-t1-01` 只能保留为历史材料，不能报为第一集交付。
+
+## D-110 180 集合同、身份绑定与审核冻结
+
+**背景**：现行规模是 180 集。链路此前只按 T1-01 slug 反查，未知 slug 可以绕过；分镜签字也只冻结 storyboard 和截图，没有冻结课程计划、card 与 episode spec。结果就是审核看过的内容和生产最终使用的内容可能不是同一版。
+
+**决策**：
+
+1. **现行规模固定 180 集。** `config/course-chain.yaml` 的 `expected_episode_count` 固定为 180；`COURSE_MAP.md` 用模块集数展开为 180 个唯一 episode slot。模块总数、编号范围或 T11 头盔编号不一致时，构建必须在 `V-48` 失败，禁止猜测或回退。
+2. **身份写进 lesson。** 课程内 lesson 必须声明 `course_id` 与 `episode_id`。一旦声明，缺配置、缺计划、slug 漂移、card 缺失、主题漂移都必须阻断；不再允许通过改名绕过。
+3. **审核冻结整条链路。** storyboard page、逐页 decisions、签字的 `storyboard-review.json` 都记录课程链路 SHA-256。计划、card、lesson、slides、lecture notes、episode spec 或签字画稿任一变化，旧 decisions 与旧签字自动失效。
+4. **一个防漂移入口。** 旧的 canonical-episodes 配置与检查脚本已删除；构建、静态分镜、逐页审核、签字和后续渲染只调用 `course_chain.py`，避免两套规则各说各话。
+5. **计划与单集不能互相冒充。** 模块级地图负责 180 集总数与编号；单集 card/spec 负责该集主题、证据、图示与时长。两者不一致时阻断，不以其中一份静默覆盖另一份。
+
+**后果**：180 集地图、T1-01 card、lesson、slides、lecture notes 与 episode spec 必须同时一致，`V-48` 才会放行。审核通过后若其中任一项变化，签字自动作废，必须重出静态页再签。
+
+## D-111 课程链解耦：内容根解析、计划块与显式绑定（2026-11-18）
+
+**背景**：D-109/D-110 建立了课程链，但实现把仓库根 `workspace` 当作课程根，而计划与 lesson 在内容根，导致 `build` 与 `storyboard-page` 在 `V-48` 直接判红、静态分镜页生成不出来。同时配置为 T1-01 维护了一列关键词，回归把 T1-01 写死，lesson 身份仍按 slug 反查；180 集无法按这种方式维护。
+
+**决策**：
+
+1. **课程根由 lesson 解析。** `resolve_chain_root()` 取 lesson 所在内容根（优先 `content_root(workspace)`，其次 `<root>/lessons/<slug>` 的上两级）；`workspace` 只代表程序仓库。构建、静态分镜页、审核与签字共用这一处解析。
+2. **计划块是唯一槽位来源。** `COURSE_MAP.md` 内的 ```yaml curriculum``` 块声明模块、集数与 T11 头盔子区间；§2 的模块表只做人读视图并与块交叉校验。程序不再解析表格来推集数，也不再为 T11 写特例。
+3. **配置不再有 per-episode 关键词表。** `config/course-chain.yaml` 只保留集数、计划路径、card 目录、禁用 slug 与过期标签。关键词既不能证明主题，写 180 份只会制造第二份计划。
+4. **身份显式声明。** lesson 必须同时写 `course_id` 与 `episode_id`；缺失即报错。删除按 slug 反查身份的路径，连同为此存在的测试夹具绕过。
+5. **单集事实只在 card。** 标题、归属小节、目标时长、concept 由 card 声明；`episode.spec.yaml` 的每条 claim 的 `source.section` 必须落在 `card.concepts` 内。计划明细行存在时，card 的标题、小节、时长必须与之一致。
+6. **回归遍历所有绑定 lesson。** `check.ps1` 用 `--all` 检查内容根内每个声明了 `course_id` 的 lesson；内容根存在却一个都没绑定时直接失败，不静默跳过。
+7. **设计文档回到 D-109。** `课程页面系统.md` §7 的 T1-01 映射按当前 15 页实际结构重写；v1.1 的“§1.1 Scope 五事件”标记为撤回路程，不再作为模板。
+
+**后果**：构建不再依赖仓库根；T1-01 的 `build --capture-only`、`storyboard-page` 均通过。主题判断交回人在静态分镜页上逐页决定，程序只保证“签的就是渲的”。新增 180 集内容时，只需在计划块与 card 里各写一次，不再需要改配置关键词或回归脚本。
+
+## D-112 T1-01 从书重建与管线硬化（2026-11-18）
+
+**背景**：旧 T1-01 的 slide/notes/script 用了三套 claim 编号（spec C01–C06、notes/outline C01–C19、书索引 K-T1-01-*），成片 build 用的是 pre-visual-lock spec，旁白有 12 处 “the book”，字幕签核全部过期；`deliver/` 里还放着一个 incomplete 包。继续在旧内容上修补只会重复返工。
+
+**决策**：
+
+1. **旧内容整体归档后剔除。** `lessons/t1-01-why-aerodynamics`、`lessons/02-car-aerodynamics`、旧 `build/t1-01-*`、`build/aero-t1-01`、`build/02-car-aerodynamics`、`deliver/t1-01-why-aerodynamics` 与课程 runtime 里的 A01/B01/第一季方案/图账等，全部归档到 `archive/projects/automotive-aerodynamics/legacy-2026-11-18/`；仓库不再保留旧副本。
+2. **证据只有一个编号空间。** 新 spec 直接引用书索引 claim `K-T1-01-01` … `K-T1-01-06`；`Claim.id` 允许 `C##` 与 `K-*`，书索引是 K-claim 的唯一来源。notes、outline、script 的 `source_refs` 全部用 K-ID。
+3. **第一集主题按 180 大纲。** 高速空气代价：同族两车 cD、v²/v³、约 60 km/h 交叉、120 km/h 功率账单（Table 3.1 模型计算）、压力/摩擦/冷却份额、cD 0.30→0.26 的油耗后果。预览页 10–13 不新增 claim。
+4. **管线硬化。**
+   - `checks` 的 review 项未执行时输出 `INCOMPLETE`，不再假 PASS。
+   - `check.ps1` 有 content exception 时输出 `check incomplete` 并退出非零。
+   - `episode-build` / `build_manifest` 的 timing 默认改为 `build/<slug>/episode/timing.json`，不再读仓库里的全局文件。
+   - `release-check` 报出全部过期输入，不再只报第一条；content exception 的 owner 为 `unassigned` 时新增 FAIL；质量报告记录 slides/notes/spec 哈希，过期即 INCOMPLETE。
+   - `check.ps1` 不再读取生产内容根跑课程链；课程链用 selftest 验证代码，生产状态用 `scripts/check_course_chain.py --all` 显式检查。
+   - `frame audit` 的等待条件改为 Player 真正画出首帧（`remotion_renderReady` 是 renderer 的全局，Player 页面不会设置），并给 Chapter 样本恢复 3 个渲染资产到 `RemotionStudio/public/staging/t1-01-why-aerodynamics/`（separation 明确允许该目录）。
+   - `firstprinciples5ghz` 主题补 `neonLime`，TypeScript 检查恢复。
+5. **第一集的当前状态。** 新 deck 15 页已 capture，静态分镜页已重出（15 页，带课程链指纹）；`preflight --strict`、`validate`（除 V-33 脚本未签）、`course chain --all`、`book index` 全部通过。旁白脚本已按 notes 逐字生成（15 页 / 33 段 / 1397 词，约 11–12 分钟），TTS 尚未运行。
+
+**后果**：第一集的内容与证据重新从书建立，不再继承旧 claim 编号和旧成片。下一步是 owner 逐页审静态分镜页并签脚本；签完后才跑 TTS、字幕、动画与成片。
+
+
+## D-113 T1-01 改为 Ch1 §1.1 范围；旧 Claim 退役、新 Claim 登记（2026-11-18）
+
+**背景**：owner 确认 T1-01 的正式范围是 Hucho 5th ed. Ch. 1 §1.1「汽车为什么需要空气动力学」，不再采用 D-109 的 Ch.3 能量主题。三个教学目标：①运动改变周围空气的速度场/压力场；②气动不仅是外部气动力，还包括内部流动与伴生问题；③气动设计是工程约束下的多目标权衡。
+
+**决策**：
+
+1. **主题与证据范围**：T1-01 以 Ch. 1 §1.1（PDF 22–27 / 印刷 1–6）为主要依据；必用图 Fig. 1.1、1.2、1.3、1.4a/b。Fig. 3.3/3.9/3.25 属 T3；Fig. 1.66/1.67 属 T1-10，均不进入 T1-01。
+2. **旧 Claim 退役**：`K-T1-01-01…06` 从 `book/curation.yaml` 与 `book/index.json` 移除，归档到 `archive/projects/automotive-aerodynamics/legacy-2026-11-18/old-claims/retired-T1-01-claims.yaml`，并记录归属（能量/Ch3 → T3；同族形状/设计冲突 → T1-10）。不把它们重新登记为 T1-01 的 Claim。
+3. **新 Claim 登记**：`K-T1-01-S1…S6` 写入 `book/curation.yaml`，随书索引重建；每条带 `chapter / section / figure / page / pdf_page / printed_page / source_edition / kind`。Claim 文本以书索引为唯一来源。
+4. **页码与图号口径**：系统数据必须区分 `pdf_page`、`printed_page`、`figure`（F-ID）、`source_edition`。Docling 的 `ks:page` 在 Ch1 曾把 PDF 页写成 printed；KnowledgeStudio 的 lesson source 现在只在真正知道印刷页时写 `printed=`，否则只写 `pdf=`；书索引的 figures/claims 同时保留 PDF 页与印刷页。
+5. **digest 噪声**：未编号的 level-6 页眉/页脚不再作为 digest section；§1.1 的 section 列表为 1.1、1.1.1、1.1.2、1.1.3。
+6. **旧内容归属**：旧 energy 主题的 slides/notes/outline/storyboard/narration/evidence/assets/staging 与 build 从活动 lesson 移除，归档到 `legacy-2026-11-18/energy-theme-content/`；活动 lesson 只保留新的课程定义、spec/card、研究证据与 sources/digest。当前状态是「合同与研究就绪、内容未生产」，不进入视频生产。
+7. **系统契约**：lesson.yaml 声明 `authoring.sources/digest/brief/outline/narrative/script/approval`；前两者已有，其余等 Claim 批准后生成。S2/S3 的数据契约见 `docs/S2-S3-数据契约设计.md`。
+
+**后果**：T1-01 的课程定义、研究证据（digest/claims/figures）与系统数据契约一致；旧 Ch3 能量 Claim 不再参与任何 T1-01 检查。D-109 的 energy 主题作为历史保留，D-112 的 T1-01 内容重建以本条为准。下一阶段才是按新 Claim 重写 deck/notes/script。
