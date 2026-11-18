@@ -3,6 +3,7 @@
 - **版本**：v1.6（2026-11-10）
 - **上游**：[PRD.md](PRD.md)；结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)
 - 原则：**只记录真实执行结果**。未执行写 `NOT_RUN`，人工缺失写 `skipped`，凭据缺失写 `blocked`。
+- **2026-11-18 增量**：[个人IP-内容生产系统-顶层目标.md](个人IP-内容生产系统-顶层目标.md) 是个人 IP 的顶层目标增量；验收命令、状态词与“skip ≠ pass”仍以本文为准（D-114）。
 - 路径约定：`lessons/`、`build/`、`deliver/` 均相对**内容根**（`config/local-paths.yaml` 的 `content_root`，默认等于工作区；2026-11-12 起本机在工作区外）。
 
 ---
