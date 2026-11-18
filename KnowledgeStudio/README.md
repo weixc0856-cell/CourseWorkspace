@@ -26,9 +26,13 @@ uv run --project KnowledgeStudio knowledge-studio index --root knowledge/hucho
 uv run --project KnowledgeStudio knowledge-studio extract-report `
     --root knowledge/hucho --min-chars 200 --allow-empty 12,13-15
 
-# 6. 按主题取页（默认最多 18 页），可直接写成 lesson 的 sources 片段
+# 6. 按主题取页（默认最多 18 页）；--pages 限定 PDF 页范围，--full-pages 保留整页标题，--register 直接写入 lesson 的 sources.yaml
 uv run --project KnowledgeStudio knowledge-studio retrieve --root knowledge/hucho `
-    --query "drag mechanisms" --max-pages 18 --into-lesson lessons/<slug>
+    --query "scope and character of vehicle aerodynamics" `
+    --pages 22-27 --max-pages 6 --full-pages `
+    --into-lesson lessons/<slug> --entry-id S1 --register
+
+> `retrieve` 的约定（2026-11-18）：`--pages N-M` 先收窄候选页，避免拉到其他章节/索引页；`--full-pages` 写整页而不是 700 字窗口，保证 `1.1.2` 这类标题不丢；`--register` 把条目追加/替换进 `authoring/sources.yaml`（只写片段时由人合并）。条目 sha256 用解码后的文本计算，与 `course-control digest` 一致；源标记只在真正知道印刷页时写 `printed=`，否则只写 `pdf=`。
 
 # 7. claim → 页 的证据
 uv run --project KnowledgeStudio knowledge-studio evidence --root knowledge/hucho `

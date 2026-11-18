@@ -1,7 +1,7 @@
 # CourseWorkspace 课程生产工作区
 
 
-> **2026-11-17 状态**：CourseControl 892 用例通过 / 52 跳过（其中 41 个是未配置本地课程的真实内容测试，开发回归显式跳过）；`check.ps1` 在隔离的开发内容根运行并打印 `check ok`。生产检查（`release-check`、`release-approve`、`package`、`package-verify`）必须显式指定生产内容根。仓库只保留工具、测试夹具与规范，课程与项目材料在内容根。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补、项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层已落地；M2 真实 P5 暂缓（见 `docs/v2/m0/EXECUTION_PLAN.md`）。
+> **2026-11-18 状态**：CourseControl 942 用例通过 / 9 跳过；`check.ps1` 在隔离的开发内容根运行并打印 `check ok`（51 项，0 失败，0 内容异常）。仓库是**平台管线**；课程的计划、卡片、Claim 索引、声线与禁用词在内容根的 `projects/<course_id>/project.yaml`（ProjectSpec `production.course`），课程链先读它。T1-01 已按 Hucho 5th ed. Ch.1 §1.1 重定范围（D-113），旧 Ch.3 能量主题的 Claim 与内容已退役归档；当前是「定义/研究/合同就绪、内容未生产」。生产检查（`release-check`、`release-approve`、`package`、`package-verify`）必须显式指定生产内容根。
 把人工撰写的课程内容转换成带动画与三维场景的成片视频，并在每一步留下可核验的证据。
 
 - **文档索引**：[docs/README.md](docs/README.md)
@@ -39,6 +39,22 @@
 克隆后是一个**没有课程内容**的工作流仓库：先按 [lessons/README.md](lessons/README.md) 在本地创建课程，再运行 `scripts/setup.ps1` 生成本机配置。
 
 课程内容不在仓库里：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 与 `engines/` 都相对**内容根**（见 `config/local-paths.yaml` 的 `content_root`，默认等于工作区；`course-control content-root` 可查询）。2026-11-12 起本机内容根在工作区外，仓库只剩程序、共用模块与夹具。下文路径除特别说明外都相对内容根。
+
+## 管线分层（2026-11-18）
+
+```text
+上游资料层   Docling Bridge output/<source_id>/ → KnowledgeStudio knowledge/<source_id>/
+平台管线层   本仓库：CourseControl / KnowledgeStudio / 渲染器 / shared schema / docs
+课程项目层   <内容根>/projects/<course_id>/project.yaml（ProjectSpec production.course）
+单集层       <内容根>/episodes/<ID>/card.yaml + <内容根>/lessons/<slug>/
+产物层       <内容根>/build/<slug>/ + <内容根>/deliver/<slug>/
+```
+
+- 一个仓库服务多门学科；课程规模、计划、card 目录、Claim 索引、声线、禁用词都写在课程项目里，不写进仓库。
+- `config/course-chain.yaml` 只保留 legacy/测试回退；真实课程由 `project.yaml` 提供合同。
+- 课程链：`python scripts/check_course_chain.py --content-root <内容根> --all` 遍历所有声明 `course_id` 的 lesson。
+- 教材来源：Docling `to-knowledge` → `knowledge-studio retrieve --pages N-M --full-pages --register` → `course-control digest`；短资料可用 `to-lesson --register --digest`。
+- 分层、命名与新课接入的完整说明：[docs/课程开发管线-分层架构.md](docs/课程开发管线-分层架构.md)。
 
 ## 生产闭环
 

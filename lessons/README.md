@@ -8,6 +8,20 @@
 
 课程正文、讲师手册与课程素材的版权归作者所有，不适用仓库根目录的 AGPL；除非文件另有声明。
 
+## 课程身份与项目层（2026-11-18）
+
+课程内的 lesson 必须在 `lesson.yaml` 声明：
+
+```yaml
+course_id: automotive-aerodynamics
+episode_id: T1-01
+```
+
+- 课程合同在内容根 `projects/<course_id>/project.yaml`（ProjectSpec `production.course`）：计划、集数、card 目录、Claim 索引、声线、禁用词。
+- `authoring/` 的证据链：`sources.yaml` → `source-digest.json` → `brief.json` → `outline.json` → `narrative-plan.json` → `narration.script.json` → `approval.json`。
+- 课程链：`python scripts/check_course_chain.py --content-root <内容根> --all`；它按每集自己的 `course_id` 读取课程项目，不再依赖仓库里的课程配置。
+- 分层与新课接入见 `docs/课程开发管线-分层架构.md`。
+
 ## 本地课程状态（2026-11-10）
 
 | 课程 | 状态 |
@@ -53,6 +67,7 @@ lessons/<slug>/
 │   ├── source-digest.{json,md}# 稳定引用 S1-3.2
 │   ├── brief.{json,md}        # 课程 brief / 学习目标
 │   ├── outline.{json,md}      # 大纲与页时长
+│   ├── narrative-plan.json    # 六幕叙事结构（长视频必填）
 │   ├── narration.script.{json,md}  # 英文带情绪口播稿
 │   └── approval.json          # 人工批准（sha256）
 ├── outline.md                 # 正式大纲（content.outline）
