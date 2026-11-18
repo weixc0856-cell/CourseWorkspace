@@ -132,3 +132,7 @@ RemotionStudio/src/fengshui-ab
 RemotionStudio/public/fengshui/
 RemotionStudio/public/fengshui-ab/
 RemotionStudio/public/vibe/
+
+# local Remotion/webpack caches (never source)
+.cache/
+.remotion/
