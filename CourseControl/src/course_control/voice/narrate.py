@@ -255,7 +255,7 @@ class TtsService:
         deadline = time.monotonic() + self.wait_timeout_s
         while True:
             info = lock.read()
-            if info is None:
+            if info is None or lock.is_stale(info):
                 break
             if time.monotonic() >= deadline:
                 raise TtsBusy(
