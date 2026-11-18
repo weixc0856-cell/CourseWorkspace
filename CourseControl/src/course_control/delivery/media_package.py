@@ -20,7 +20,7 @@ import yaml
 from pydantic import Field, model_validator
 
 from course_control.content.contracts import StrictModel
-from course_control.platform.utils import probe_media, run_command, which_command
+from course_control.platform.utils import probe_audio, probe_media, run_command, which_command
 from course_control.platform.workspace_layout import content_root
 from course_control.quality.media_qc import _measure_loudness, detect_black_freeze
 
@@ -62,7 +62,29 @@ class MediaSampleSpec(StrictModel):
     evidence: list[str] = Field(default_factory=list)
     subtitle_min_coverage_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
     subtitle_must_reach_end: bool = False
+    narration_kind: Literal["reused_audio", "clean_tts"] = "reused_audio"
+    script_path: str | None = None
+    timed_script: str | None = None
+    provenance: str | None = None
+    asr_report: str | None = None
     notes: str | None = None
+
+    @model_validator(mode="after")
+    def _clean_requirements(self):
+        if self.narration_kind == "clean_tts":
+            missing = [
+                name
+                for name, value in (
+                    ("script_path", self.script_path),
+                    ("timed_script", self.timed_script),
+                    ("provenance", self.provenance),
+                    ("asr_report", self.asr_report),
+                )
+                if not value
+            ]
+            if missing:
+                raise ValueError("clean_tts requires: " + ", ".join(missing))
+        return self
 
 
 def load_media_spec(path: Path) -> MediaSampleSpec:
@@ -217,6 +239,62 @@ def check_media_sample(
         "; ".join(missing_evidence) or f"{len(spec.evidence)} evidence file(s) present",
     )
 
+    if spec.narration_kind == "clean_tts":
+        provenance_path = _resolve(base, spec.provenance or "")
+        source_path = Path(spec.script_path or "")
+        if not source_path.is_absolute():
+            source_path = Path(workspace).resolve() / source_path
+        timed_path = _resolve(base, spec.timed_script or "")
+        try:
+            provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+            source = json.loads(source_path.read_text(encoding="utf-8"))
+            timed = json.loads(timed_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            add("narration", INCOMPLETE, f"cannot read narration evidence: {exc}")
+            provenance = None
+            source = None
+            timed = None
+        if provenance is not None and source is not None and timed is not None:
+            problems = []
+            if provenance.get("sample_id") != spec.id:
+                problems.append("provenance sample_id does not match the spec")
+            if provenance.get("script_sha256") != _sha(source_path):
+                problems.append("provenance script_sha256 does not match the source script")
+            stem = Path(str((provenance.get("stem") or {}).get("path") or ""))
+            stem_duration = None
+            if not stem.is_file():
+                problems.append(f"narration stem is missing: {stem}")
+            else:
+                if (provenance.get("stem") or {}).get("sha256") != _sha(stem):
+                    problems.append("narration stem sha256 does not match provenance")
+                try:
+                    stem_duration = float(probe_audio(stem))
+                except Exception as exc:  # noqa: BLE001
+                    problems.append(f"narration stem is not readable: {exc}")
+                if stem_duration is not None and abs(stem_duration - info.duration) > 0.1:
+                    problems.append(
+                        f"stem duration {stem_duration:.3f}s differs from master {info.duration:.3f}s"
+                    )
+            add("narration", FAIL if problems else PASS, "; ".join(problems) or "provenance, source script and stem match")
+
+            from course_control.quality.speech_alignment import run_alignment
+
+            fresh = run_alignment(
+                video,
+                timed.get("captions") or [],
+                timed_path,
+                Path(workspace).resolve(),
+                report_path=_resolve(base, spec.asr_report or f"build/{spec.id}/asr-alignment.json"),
+            )
+            asr_status = {"PASS": PASS, "FAIL": FAIL, "INCOMPLETE": INCOMPLETE}.get(fresh.get("status"), INCOMPLETE)
+            detail = (
+                f"{fresh.get('status')}: {len(fresh.get('bad_segments') or [])} bad segment(s), "
+                f"{fresh.get('uncovered_speech_s')}s uncovered"
+            )
+            if fresh.get("errors"):
+                detail += "; " + "; ".join(fresh["errors"])
+            add("asr", asr_status, detail)
+
     status = FAIL if any(step["status"] == FAIL for step in steps) else (
         INCOMPLETE if any(step["status"] == INCOMPLETE for step in steps) else PASS
     )
@@ -273,6 +351,13 @@ def build_media_package(
         shutil.rmtree(scratch)
     scratch.mkdir(parents=True)
     records = [_record(scratch, _copy(scratch, video, "final/master.mp4"))]
+    quality_path = scratch / "evidence" / "quality-checks.json"
+    quality_path.parent.mkdir(parents=True, exist_ok=True)
+    quality_path.write_text(
+        json.dumps(check["steps"], ensure_ascii=False, indent=2) + chr(10),
+        encoding="utf-8",
+    )
+    records.append(_record(scratch, quality_path))
     if check.get("subtitles"):
         source = Path(check["subtitles"])
         suffix = source.suffix or ".srt"
@@ -284,6 +369,53 @@ def build_media_package(
         except ValueError:
             relative = f"external/{index:02d}-{source.name}"
         records.append(_record(scratch, _copy(scratch, source, f"evidence/{relative}")))
+    script_sha = None
+    timed_script_sha = None
+    stem_record = None
+    if spec.narration_kind == "clean_tts":
+        if not spec.provenance or not spec.asr_report or not spec.script_path or not spec.timed_script:
+            raise MediaPackageError(
+                "clean_tts requires provenance, asr_report, script_path and timed_script"
+            )
+        provenance_path = _resolve(base, spec.provenance)
+        asr_path = _resolve(base, spec.asr_report)
+        timed_path = _resolve(base, spec.timed_script)
+        source_path = Path(spec.script_path)
+        if not source_path.is_absolute():
+            source_path = Path(workspace).resolve() / source_path
+        for required in (provenance_path, asr_path, timed_path, source_path):
+            if not required.is_file():
+                raise MediaPackageError(f"clean narration input is missing: {required}")
+        try:
+            provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise MediaPackageError(f"cannot read narration provenance: {exc}") from exc
+        if provenance.get("script_sha256") != _sha(source_path):
+            raise MediaPackageError("provenance script_sha256 does not match the source script")
+        stem = Path(str((provenance.get("stem") or {}).get("path") or ""))
+        if not stem.is_file():
+            raise MediaPackageError(f"narration stem is missing: {stem}")
+        records.append(_record(scratch, _copy(scratch, source_path, "evidence/script.source.json")))
+        records.append(_record(scratch, _copy(scratch, timed_path, "evidence/script.timed.json")))
+        records.append(_record(scratch, _copy(scratch, provenance_path, "evidence/narration.provenance.json")))
+        records.append(_record(scratch, _copy(scratch, asr_path, "evidence/asr-alignment.json")))
+        records.append(_record(scratch, _copy(scratch, stem, "narration/stem.wav")))
+        if check.get("subtitle_coverage") is not None:
+            coverage_path = scratch / "evidence" / "subtitle-coverage.json"
+            coverage_path.parent.mkdir(parents=True, exist_ok=True)
+            coverage_path.write_text(
+                json.dumps(check["subtitle_coverage"], ensure_ascii=False, indent=2) + chr(10),
+                encoding="utf-8",
+            )
+            records.append(_record(scratch, coverage_path))
+        script_sha = _sha(source_path)
+        timed_script_sha = _sha(timed_path)
+        stem_record = {
+            "path": "narration/stem.wav",
+            "sha256": _sha(stem),
+            "duration_s": round(float(probe_audio(stem)), 3),
+        }
+
     info = probe_media(video)
     metadata = {
         "schema_version": 1,
@@ -335,6 +467,10 @@ def build_media_package(
             "must_reach_end": spec.subtitle_must_reach_end,
         },
         "evidence_count": len(spec.evidence),
+        "narration_kind": spec.narration_kind,
+        "script_sha256": script_sha,
+        "timed_script_sha256": timed_script_sha,
+        "stem": stem_record,
         "checks": check["steps"],
         "files": records,
     }
@@ -352,7 +488,7 @@ def build_media_package(
     return manifest, target
 
 
-def verify_media_package(root: Path) -> list[str]:
+def verify_media_package(root: Path, workspace: Path | None = None) -> list[str]:
     root = Path(root).resolve()
     manifest_path = root / "manifest.json"
     if not manifest_path.is_file():
@@ -405,6 +541,16 @@ def verify_media_package(root: Path) -> list[str]:
     required = {"final/master.mp4", "metadata.json", "delivery-checklist.md"}
     if manifest.get("subtitle_coverage") is not None:
         required.add("final/subtitles.srt")
+    if manifest.get("narration_kind") == "clean_tts":
+        required.update(
+            {
+                "evidence/script.source.json",
+                "evidence/script.timed.json",
+                "evidence/narration.provenance.json",
+                "evidence/asr-alignment.json",
+                "narration/stem.wav",
+            }
+        )
     for relative in sorted(required):
         if relative not in recorded:
             problems.append(f"manifest does not record required file: {relative}")
@@ -442,10 +588,13 @@ def verify_media_package(root: Path) -> list[str]:
             statuses[step_id] = step.get("status")
             if step.get("status") != PASS:
                 problems.append(f"check {step_id!r} is {step.get('status')!r}, not pass")
-        for step_id in (
+        required_checks = [
             "final_video", "media_probe", "expected", "decode",
             "black", "freeze", "subtitles", "evidence",
-        ):
+        ]
+        if manifest.get("narration_kind") == "clean_tts":
+            required_checks.extend(["narration", "asr", "loudness"])
+        for step_id in required_checks:
             if step_id not in statuses:
                 problems.append(f"check {step_id!r} is missing")
 
@@ -545,5 +694,91 @@ def verify_media_package(root: Path) -> list[str]:
                         )
                     if policy.get("must_reach_end") and actual_coverage["last_end_s"] < actual.duration - 0.5:
                         problems.append("actual subtitles do not reach the end of the film")
+
+    if manifest.get("narration_kind") == "clean_tts":
+        try:
+            source = json.loads((root / "evidence" / "script.source.json").read_text(encoding="utf-8"))
+            timed = json.loads((root / "evidence" / "script.timed.json").read_text(encoding="utf-8"))
+            provenance = json.loads((root / "evidence" / "narration.provenance.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            problems.append(f"clean narration evidence is unreadable: {exc}")
+            source = None
+            timed = None
+            provenance = None
+        if isinstance(source, dict) and isinstance(timed, dict) and isinstance(provenance, dict):
+            source_sha = _sha(root / "evidence" / "script.source.json")
+            timed_sha = _sha(root / "evidence" / "script.timed.json")
+            if manifest.get("script_sha256") != source_sha:
+                problems.append("script_sha256 does not match evidence/script.source.json")
+            if manifest.get("timed_script_sha256") != timed_sha:
+                problems.append("timed_script_sha256 does not match evidence/script.timed.json")
+            if provenance.get("script_sha256") != source_sha:
+                problems.append("provenance script_sha256 does not match evidence/script.source.json")
+            if provenance.get("sample_id") != manifest.get("id"):
+                problems.append("provenance sample_id does not match the manifest")
+            stem = root / "narration" / "stem.wav"
+            recorded_stem = manifest.get("stem") or {}
+            if not stem.is_file():
+                problems.append("narration/stem.wav is missing")
+            else:
+                if recorded_stem.get("sha256") != _sha(stem):
+                    problems.append("stem sha256 does not match the manifest")
+                try:
+                    stem_duration = float(probe_audio(stem))
+                except Exception as exc:  # noqa: BLE001
+                    problems.append(f"stem is not readable: {exc}")
+                    stem_duration = None
+                if stem_duration is not None:
+                    if actual is not None and abs(stem_duration - actual.duration) > 0.1:
+                        problems.append(
+                            f"stem duration {stem_duration:.3f}s differs from master {actual.duration:.3f}s"
+                        )
+                    if recorded_stem.get("duration_s") is not None and abs(
+                        float(recorded_stem["duration_s"]) - stem_duration
+                    ) > 0.1:
+                        problems.append("stem duration does not match the manifest")
+            try:
+                saved_asr = json.loads(
+                    (root / "evidence" / "asr-alignment.json").read_text(encoding="utf-8")
+                )
+            except (OSError, ValueError) as exc:
+                problems.append(f"INCOMPLETE: saved ASR report is unreadable: {exc}")
+                saved_asr = None
+            if workspace is None:
+                problems.append("INCOMPLETE: ASR verification needs --workspace")
+            else:
+                from course_control.quality.speech_alignment import run_alignment
+
+                cues = timed.get("captions") or []
+                fresh = run_alignment(
+                    master,
+                    cues,
+                    root / "evidence" / "script.timed.json",
+                    Path(workspace),
+                    report_path=content_root(Path(workspace)) / "build" / "_shared" / "asr" / f"{manifest.get('id')}.json",
+                )
+                if not isinstance(saved_asr, dict):
+                    problems.append("INCOMPLETE: saved ASR report is not an object")
+                else:
+                    if saved_asr.get("master_sha256") != _sha(master):
+                        problems.append("saved ASR master_sha256 does not match the package master")
+                    if saved_asr.get("script_sha256") != timed_sha:
+                        problems.append("saved ASR script_sha256 does not match the timed script")
+                    if saved_asr.get("thresholds") != fresh.get("thresholds"):
+                        problems.append("saved ASR thresholds do not match the current thresholds")
+                    for key in ("status", "bad_segments", "uncovered_speech_s"):
+                        if saved_asr.get(key) != fresh.get(key):
+                            problems.append(f"saved ASR {key} does not match the fresh ASR result")
+                if fresh.get("status") == "INCOMPLETE":
+                    problems.append(
+                        "INCOMPLETE: independent ASR unavailable: "
+                        + "; ".join(fresh.get("errors") or [])
+                    )
+                elif fresh.get("status") != "PASS":
+                    problems.append(
+                        "independent ASR failed: "
+                        + f"{len(fresh.get('bad_segments') or [])} bad segment(s), "
+                        + f"{fresh.get('uncovered_speech_s')}s uncovered"
+                    )
 
     return problems

@@ -1,0 +1,494 @@
+{
+  "schema_version": 1,
+  "id": "base-rate-clean-narration",
+  "title": "A 99% Accurate Test — clean narration",
+  "theme": "editorial_science",
+  "aspect": "16:9",
+  "fps": 30,
+  "audio": "staging/audio/ip-sample-short-clean-narration.wav",
+  "scenes": [
+    {
+      "id": "hook",
+      "kind": "statement",
+      "duration_s": 5,
+      "purpose": "orient",
+      "props": {
+        "kicker": "BAYES, WITHOUT THE FORMULA",
+        "text": "A test is 99% accurate.",
+        "sub": "You test positive. What is the chance you have it?",
+        "size": "hero"
+      }
+    },
+    {
+      "id": "answer",
+      "kind": "statement",
+      "duration_s": 7,
+      "purpose": "explain",
+      "props": {
+        "text": "Most people say 99%.",
+        "sub": "The answer is about 50%.",
+        "size": "hero"
+      }
+    },
+    {
+      "id": "expectation",
+      "kind": "split_compare",
+      "duration_s": 7.5,
+      "purpose": "compare",
+      "props": {
+        "left": {
+          "label": "What it feels like",
+          "title": "99% accurate",
+          "accent": "muted",
+          "points": [
+            "The test sounds almost perfect",
+            "A positive result feels decisive"
+          ]
+        },
+        "right": {
+          "label": "What it means",
+          "title": "About 50%",
+          "accent": "accent",
+          "points": [
+            "Half of positive results are false",
+            "The test is the same; the group is not"
+          ]
+        },
+        "verdict": "The base rate does the work"
+      }
+    },
+    {
+      "id": "two-origins",
+      "kind": "split_compare",
+      "duration_s": 10.3,
+      "purpose": "compare",
+      "props": {
+        "left": {
+          "label": "99% of sick people",
+          "title": "25 people",
+          "accent": "muted",
+          "points": [
+            "Test positive"
+          ]
+        },
+        "right": {
+          "label": "1% of healthy people",
+          "title": "25 people",
+          "accent": "accent",
+          "points": [
+            "Also test positive"
+          ]
+        },
+        "verdict": "Same report. Different group."
+      }
+    },
+    {
+      "id": "cohort-a",
+      "kind": "statement",
+      "duration_s": 6.2,
+      "purpose": "explain",
+      "props": {
+        "text": "Start with 2,500 people.",
+        "sub": "A 1% prevalence.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "cohort-b",
+      "kind": "statement",
+      "duration_s": 6,
+      "purpose": "explain",
+      "props": {
+        "text": "25 are sick.",
+        "sub": "The other 2,475 are healthy.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "healthy-a",
+      "kind": "statement",
+      "duration_s": 4,
+      "purpose": "explain",
+      "props": {
+        "text": "The other 2,475 are healthy.",
+        "size": "normal"
+      }
+    },
+    {
+      "id": "healthy-b",
+      "kind": "statement",
+      "duration_s": 4,
+      "purpose": "explain",
+      "props": {
+        "text": "1% of them also test positive.",
+        "sub": "25 people.",
+        "size": "normal"
+      }
+    },
+    {
+      "id": "positives",
+      "kind": "metric_bar",
+      "duration_s": 4,
+      "purpose": "demonstrate",
+      "props": {
+        "title": "Out of 50 positive results",
+        "data": [
+          {
+            "label": "True positives",
+            "value": 25,
+            "display": "25",
+            "color": "accent"
+          },
+          {
+            "label": "False positives",
+            "value": 25,
+            "display": "25",
+            "color": "red"
+          }
+        ],
+        "max": 50,
+        "source": "Illustrative cohort · 1% prevalence",
+        "note": "From 2,500 people, 99% sensitivity and specificity"
+      }
+    },
+    {
+      "id": "half",
+      "kind": "statement",
+      "duration_s": 2,
+      "purpose": "emote",
+      "props": {
+        "text": "Half.",
+        "emphasis": "Half.",
+        "size": "hero"
+      }
+    },
+    {
+      "id": "ppv",
+      "kind": "statement",
+      "duration_s": 4.5,
+      "purpose": "explain",
+      "props": {
+        "text": "The positive predictive value is a ratio.",
+        "sub": "Not a property of the test alone.",
+        "size": "normal"
+      }
+    },
+    {
+      "id": "sensitivity",
+      "kind": "statement",
+      "duration_s": 5,
+      "purpose": "explain",
+      "props": {
+        "text": "Sensitivity × prevalence.",
+        "sub": "The share of true positives in the population.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "true-formula",
+      "kind": "statement",
+      "duration_s": 5,
+      "purpose": "explain",
+      "props": {
+        "text": "0.99 × 0.01 = 0.0099",
+        "sub": "True positives in the whole population.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "false-formula",
+      "kind": "statement",
+      "duration_s": 5,
+      "purpose": "explain",
+      "props": {
+        "text": "0.01 × 0.99 = 0.0099",
+        "sub": "False positives in the whole population.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "ratio",
+      "kind": "statement",
+      "duration_s": 5,
+      "purpose": "explain",
+      "props": {
+        "text": "0.0099 / (0.0099 + 0.0099) = 50%",
+        "size": "large"
+      }
+    },
+    {
+      "id": "base-rate",
+      "kind": "split_compare",
+      "duration_s": 10,
+      "purpose": "compare",
+      "props": {
+        "left": {
+          "label": "Rare disease",
+          "title": "0.1% prevalence",
+          "accent": "muted",
+          "points": [
+            "Positive predictive value: 9%"
+          ]
+        },
+        "right": {
+          "label": "Common condition",
+          "title": "10% prevalence",
+          "accent": "accent",
+          "points": [
+            "Positive predictive value: 92%"
+          ]
+        },
+        "verdict": "Same test. Different base rate."
+      }
+    },
+    {
+      "id": "elsewhere",
+      "kind": "simple_flow",
+      "duration_s": 13,
+      "purpose": "explain",
+      "props": {
+        "title": "This is not a medical curiosity",
+        "steps": [
+          {
+            "label": "Fraud alerts",
+            "detail": "rare events, many flags",
+            "accent": "blue"
+          },
+          {
+            "label": "Security watchlists",
+            "detail": "small base rate",
+            "accent": "teal"
+          },
+          {
+            "label": "Any rare event",
+            "detail": "most alarms are false",
+            "accent": "accent"
+          }
+        ],
+        "footer": "When the event is rare, most alarms are false."
+      }
+    },
+    {
+      "id": "hundred",
+      "kind": "statement",
+      "duration_s": 4.5,
+      "purpose": "explain",
+      "props": {
+        "text": "About 100 false alarms per true one.",
+        "sub": "A 1-in-10,000 event, a 99% test.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "close-a",
+      "kind": "statement",
+      "duration_s": 6,
+      "purpose": "summarize",
+      "props": {
+        "text": "The test did not get worse.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "close-b",
+      "kind": "statement",
+      "duration_s": 6,
+      "purpose": "summarize",
+      "props": {
+        "text": "The base rate got smaller.",
+        "emphasis": "The base rate got smaller.",
+        "size": "large"
+      }
+    }
+  ],
+  "captions": [
+    {
+      "start_s": 2.0,
+      "end_s": 5.0,
+      "en": "A test is 99% accurate. You test positive.",
+      "zh": "一项检测准确率 99%，你测出了阳性。"
+    },
+    {
+      "start_s": 5.0,
+      "end_s": 8.0,
+      "en": "What is the chance you have it?",
+      "zh": "你真正患病的概率是多少？"
+    },
+    {
+      "start_s": 8.0,
+      "end_s": 10.0,
+      "en": "Most people say 99%.",
+      "zh": "多数人会说 99%。"
+    },
+    {
+      "start_s": 10.0,
+      "end_s": 12.0,
+      "en": "The answer is about 50%.",
+      "zh": "答案是大约 50%。"
+    },
+    {
+      "start_s": 12.0,
+      "end_s": 16.0,
+      "en": "Half of the positives are false.",
+      "zh": "阳性里有一半是假的。"
+    },
+    {
+      "start_s": 16.5,
+      "end_s": 19.5,
+      "en": "How can a 99% test be wrong half the time?",
+      "zh": "99% 的检测，怎么会错一半？"
+    },
+    {
+      "start_s": 19.5,
+      "end_s": 23.0,
+      "en": "Because 99% describes the test, not the population.",
+      "zh": "因为 99% 描述的是检测，不是人群。"
+    },
+    {
+      "start_s": 23.0,
+      "end_s": 26.5,
+      "en": "99% of sick people test positive.",
+      "zh": "99% 的病人会测出阳性。"
+    },
+    {
+      "start_s": 26.5,
+      "end_s": 29.8,
+      "en": "But 1% of healthy people do too.",
+      "zh": "但 1% 的健康人也会。"
+    },
+    {
+      "start_s": 30.5,
+      "end_s": 34.0,
+      "en": "Start with 2,500 people.",
+      "zh": "先看 2,500 个人。"
+    },
+    {
+      "start_s": 34.0,
+      "end_s": 38.0,
+      "en": "At 1% prevalence, 25 are sick.",
+      "zh": "患病率 1%，其中 25 人患病。"
+    },
+    {
+      "start_s": 38.0,
+      "end_s": 42.0,
+      "en": "99% of them test positive: 25 people.",
+      "zh": "其中 99% 测出阳性：25 人。"
+    },
+    {
+      "start_s": 42.0,
+      "end_s": 46.0,
+      "en": "The other 2,475 are healthy.",
+      "zh": "其余 2,475 人健康。"
+    },
+    {
+      "start_s": 46.0,
+      "end_s": 50.0,
+      "en": "1% of them also test positive: 25 people.",
+      "zh": "他们中 1% 也测出阳性：25 人。"
+    },
+    {
+      "start_s": 50.0,
+      "end_s": 54.0,
+      "en": "50 positive results. 25 true. 25 false.",
+      "zh": "50 个阳性，25 个真，25 个假。"
+    },
+    {
+      "start_s": 54.0,
+      "end_s": 56.0,
+      "en": "Half.",
+      "zh": "一半。"
+    },
+    {
+      "start_s": 56.5,
+      "end_s": 60.5,
+      "en": "The positive predictive value is a ratio.",
+      "zh": "阳性预测值是一个比值。"
+    },
+    {
+      "start_s": 60.5,
+      "end_s": 65.5,
+      "en": "Sensitivity × prevalence, divided by all positives.",
+      "zh": "灵敏度 × 患病率，除以所有阳性。",
+      "tts": "Sensitivity times prevalence, divided by all positives."
+    },
+    {
+      "start_s": 65.5,
+      "end_s": 70.5,
+      "en": "0.99 × 0.01 = 0.0099.",
+      "zh": "0.99 × 0.01 = 0.0099。",
+      "tts": "0.99 times 0.01 equals 0.0099."
+    },
+    {
+      "start_s": 70.5,
+      "end_s": 75.5,
+      "en": "0.01 × 0.99 = 0.0099.",
+      "zh": "0.01 × 0.99 = 0.0099。",
+      "tts": "0.01 times 0.99 equals 0.0099."
+    },
+    {
+      "start_s": 75.5,
+      "end_s": 80.0,
+      "en": "0.0099 / (0.0099 + 0.0099) = 50%.",
+      "zh": "0.0099 / (0.0099 + 0.0099) = 50%。",
+      "tts": "The result is 50."
+    },
+    {
+      "start_s": 80.0,
+      "end_s": 84.0,
+      "en": "Same test. Different base rate.",
+      "zh": "同一个检测，不同的基础率。",
+      "tts": "Test is the same. Different starting rate."
+    },
+    {
+      "start_s": 84.0,
+      "end_s": 87.0,
+      "en": "At 0.1% prevalence: 9%.",
+      "zh": "患病率 0.1% 时：9%。"
+    },
+    {
+      "start_s": 87.0,
+      "end_s": 90.0,
+      "en": "At 10%: 92%.",
+      "zh": "10% 时：92%。"
+    },
+    {
+      "start_s": 90.5,
+      "end_s": 94.5,
+      "en": "This is not a medical curiosity.",
+      "zh": "这不是医学的怪例。"
+    },
+    {
+      "start_s": 94.5,
+      "end_s": 98.5,
+      "en": "Fraud alerts. Security watchlists. Rare events.",
+      "zh": "欺诈警报、安全名单、罕见事件。",
+      "tts": "Warning alerts. Security watch lists. Rare events."
+    },
+    {
+      "start_s": 98.5,
+      "end_s": 103.0,
+      "en": "When the event is rare, most alarms are false.",
+      "zh": "事件越罕见，警报越可能是假的。"
+    },
+    {
+      "start_s": 103.0,
+      "end_s": 106.5,
+      "en": "A 1-in-10,000 event, a 99% test: about 100 false alarms per true one.",
+      "zh": "万分之一的事件，99% 的检测：每个真警报约配 100 个假警报。",
+      "tts": "A one in ten thousand event, a 99 percent test: about 100 false alarms per true one."
+    },
+    {
+      "start_s": 108.0,
+      "end_s": 114.0,
+      "en": "The test did not get worse.",
+      "zh": "检测本身并没有变差。"
+    },
+    {
+      "start_s": 114.0,
+      "end_s": 120.0,
+      "en": "The base rate got smaller.",
+      "zh": "变小的，是基础率。",
+      "tts": "The base rate became smaller."
+    }
+  ]
+}

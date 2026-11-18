@@ -266,6 +266,7 @@ def package_command(
 @app.command("package-verify")
 def package_verify_command(
     package: Path = typer.Option(..., "--package"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
 ) -> None:
     """Re-hash a delivery package and report missing or changed files."""
     from course_control.delivery.package import verify_package
@@ -279,16 +280,17 @@ def package_verify_command(
     if isinstance(manifest, dict) and manifest.get("kind") == "media_sample":
         from course_control.delivery.media_package import verify_media_package
 
-        problems = verify_media_package(package)
+        problems = verify_media_package(package, workspace.resolve())
     else:
         problems = verify_package(package)
     verdict = manifest.get("verdict") if isinstance(manifest, dict) else None
     if verdict != "pass":
         problems.append(f"manifest verdict is {verdict or 'missing'}, not pass")
     if problems:
+        incomplete = [item for item in problems if item.startswith("INCOMPLETE:")]
         for problem in problems:
             typer.echo(problem, err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(3 if incomplete else 2)
     typer.echo("package ok")
     raise typer.Exit(0)
 
