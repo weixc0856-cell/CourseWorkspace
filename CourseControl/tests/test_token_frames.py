@@ -228,8 +228,6 @@ class TokenFrameTest(unittest.TestCase):
             compare_frames(first, second, self.layout, tokens)
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class BrandEvidenceTest(unittest.TestCase):
@@ -357,3 +355,38 @@ class BrandEvidenceTest(unittest.TestCase):
         report["layout_sha256"] = "0" * 64
         self._write(report)
         self.assertEqual(self._step().status, FAIL)
+
+    def test_forged_rows_with_real_hashes_fail(self):
+        from course_control.release.check import FAIL
+
+        report = self._report()
+        for row in report["rows"]:
+            row["expected"] = [0, 0, 0]
+            row["a"] = [0, 0, 0]
+            row["b"] = [0, 0, 0]
+            row["max"] = 0
+        self._write(report)
+        self.assertEqual(self._step().status, FAIL)
+
+    def test_widened_tolerance_fails(self):
+        from course_control.release.check import FAIL
+
+        report = self._report()
+        report["tolerance"] = 255
+        self._write(report)
+        self.assertEqual(self._step().status, FAIL)
+
+    def test_forged_pass_with_blank_frames_fails(self):
+        from course_control.release.check import FAIL
+
+        Image.new("RGB", (1920, 1080), COLORS["paper"]).save(self.frame_a)
+        Image.new("RGB", (1920, 1080), COLORS["paper"]).save(self.frame_b)
+        report = self._report()
+        self.assertEqual(report["status"], "FAIL")
+        report["status"] = "PASS"
+        self._write(report)
+        self.assertEqual(self._step().status, FAIL)
+
+
+if __name__ == "__main__":
+    unittest.main()

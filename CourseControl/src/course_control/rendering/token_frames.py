@@ -266,11 +266,13 @@ def verify_report(
     layout_path: Path,
     tokens_path: Path,
     report_path: Path,
+    tolerance: int = DEFAULT_TOLERANCE,
 ) -> dict:
-    """Validate a saved report as evidence, not as a claim.
+    """Recompute the proof from the actual frames and compare it with the report.
 
-    Structure errors are INCOMPLETE (the report cannot prove anything); a
-    mismatch against the current inputs or a row over tolerance is FAIL.
+    A report is only evidence if its rows can be reproduced from the frame
+    files and the current tokens.  Structure errors are INCOMPLETE; any
+    mismatch between the saved report and the recomputed one is FAIL.
     """
     structural: list[str] = []
     mismatches: list[str] = []
@@ -278,6 +280,10 @@ def verify_report(
         return {"status": "INCOMPLETE", "problems": ["report is not an object"]}
     if report.get("schema_version") != 2:
         structural.append("schema_version is not 2")
+    if report.get("tolerance") != tolerance:
+        mismatches.append(
+            f"tolerance is {report.get('tolerance')!r}, expected {tolerance}"
+        )
 
     rows = report.get("rows")
     expected_keys = ["background"] + list(layout["keys"])
@@ -286,54 +292,23 @@ def verify_report(
         rows = []
     if len(rows) != len(expected_keys):
         structural.append(f"rows has {len(rows)} entries, expected {len(expected_keys)}")
-    tolerance = report.get("tolerance", DEFAULT_TOLERANCE)
-    if not isinstance(tolerance, int) or isinstance(tolerance, bool) or tolerance < 0:
-        structural.append("tolerance is not a non-negative integer")
-        tolerance = DEFAULT_TOLERANCE
-
-    seen: list[object] = []
+    saved_rows: dict[str, dict] = {}
     for row in rows:
         if not isinstance(row, dict):
             structural.append("row is not an object")
             continue
         key = row.get("key")
-        seen.append(key)
         if key not in expected_keys:
             structural.append(f"unknown row key {key!r}")
             continue
-        values = [row.get("expected"), row.get("a"), row.get("b")]
-        if any(
-            not isinstance(value, list)
-            or len(value) != 3
-            or any(not isinstance(channel, int) for channel in value)
-            for value in values
-        ):
-            structural.append(f"{key}: expected/a/b must be three-channel integer lists")
+        if key in saved_rows:
+            structural.append(f"duplicate row key {key!r}")
             continue
-        expected, a, b = values
-        computed = max(
-            max(abs(a[i] - b[i]) for i in range(3)),
-            max(abs(a[i] - expected[i]) for i in range(3)),
-            max(abs(b[i] - expected[i]) for i in range(3)),
-        )
-        recorded = row.get("max")
-        if recorded != computed:
-            structural.append(f"{key}: max is {recorded!r}, computed {computed}")
-        if computed > tolerance:
-            mismatches.append(f"{key}: delta {computed} exceeds tolerance {tolerance}")
-    if sorted(str(key) for key in seen) != sorted(expected_keys):
+        saved_rows[key] = row
+    if sorted(saved_rows) != sorted(expected_keys):
         structural.append("row keys do not match the layout")
 
-    if report.get("status") != "PASS":
-        mismatches.append(f"status is {report.get('status')!r}")
-
-    for key, path in (("layout_sha256", layout_path), ("tokens_sha256", tokens_path)):
-        recorded = report.get(key)
-        if not recorded:
-            structural.append(f"{key} is missing")
-        elif recorded != file_sha256(path):
-            mismatches.append(f"{key} does not match the current {Path(path).name}")
-
+    frames: dict[str, Path] = {}
     for key, hash_key in (("frame_a", "frame_a_sha256"), ("frame_b", "frame_b_sha256")):
         raw = report.get(key)
         recorded = report.get(hash_key)
@@ -346,10 +321,48 @@ def verify_report(
         if not frame.is_file():
             structural.append(f"{key} file is missing: {frame}")
             continue
+        frames[key] = frame
         if not recorded:
             structural.append(f"{hash_key} is missing")
         elif recorded != file_sha256(frame):
             mismatches.append(f"{hash_key} does not match {frame.name}")
+
+    for key, path in (("layout_sha256", layout_path), ("tokens_sha256", tokens_path)):
+        recorded = report.get(key)
+        if not recorded:
+            structural.append(f"{key} is missing")
+        elif recorded != file_sha256(path):
+            mismatches.append(f"{key} does not match the current {Path(path).name}")
+
+    if structural:
+        return {"status": "INCOMPLETE", "problems": structural + mismatches}
+
+    fresh = compare_frames(
+        frames["frame_a"],
+        frames["frame_b"],
+        layout,
+        tokens,
+        tolerance=tolerance,
+        layout_path=layout_path,
+        tokens_path=tokens_path,
+    )
+    if report.get("status") != fresh["status"]:
+        mismatches.append(
+            f"status is {report.get('status')!r}, recomputed {fresh['status']!r}"
+        )
+    if report.get("failed") != fresh["failed"]:
+        mismatches.append("failed list does not match the recomputed rows")
+    if report.get("worst") != fresh["worst"]:
+        mismatches.append("worst does not match the recomputed rows")
+    fresh_rows = {row["key"]: row for row in fresh["rows"]}
+    for key, fresh_row in fresh_rows.items():
+        saved = saved_rows.get(key)
+        if saved is None:
+            structural.append(f"row {key!r} is missing")
+            continue
+        for field in ("expected", "a", "b", "max"):
+            if saved.get(field) != fresh_row[field]:
+                mismatches.append(f"{key}: saved {field} does not match the frame")
 
     if structural:
         status = "INCOMPLETE"
