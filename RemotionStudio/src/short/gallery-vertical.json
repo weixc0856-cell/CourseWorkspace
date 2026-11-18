@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "id": "component-gallery-vertical",
+  "title": "Vertical component gallery",
+  "theme": "editorial_science",
+  "aspect": "9:16",
+  "fps": 30,
+  "scenes": [
+    {
+      "id": "intro",
+      "kind": "statement",
+      "duration_s": 4,
+      "purpose": "orient",
+      "props": {
+        "kicker": "VERTICAL PROOF",
+        "text": "One column, larger type.",
+        "size": "large"
+      }
+    },
+    {
+      "id": "split",
+      "kind": "split_compare",
+      "duration_s": 4,
+      "purpose": "compare",
+      "props": {
+        "left": {
+          "label": "Feels like",
+          "title": "99%",
+          "accent": "muted"
+        },
+        "right": {
+          "label": "Means",
+          "title": "50%",
+          "accent": "accent"
+        },
+        "verdict": "Same evidence"
+      }
+    },
+    {
+      "id": "bars",
+      "kind": "metric_bar",
+      "duration_s": 4,
+      "purpose": "demonstrate",
+      "props": {
+        "title": "50 positive results",
+        "data": [
+          {
+            "label": "True",
+            "value": 25,
+            "color": "accent"
+          },
+          {
+            "label": "False",
+            "value": 25,
+            "color": "red"
+          }
+        ],
+        "max": 50
+      }
+    },
+    {
+      "id": "flow",
+      "kind": "simple_flow",
+      "duration_s": 4,
+      "purpose": "explain",
+      "props": {
+        "title": "Rare event, many alarms",
+        "steps": [
+          {
+            "label": "Rare event",
+            "accent": "blue"
+          },
+          {
+            "label": "99% test",
+            "accent": "teal"
+          },
+          {
+            "label": "Most alarms false",
+            "accent": "accent"
+          }
+        ],
+        "direction": "vertical"
+      }
+    }
+  ],
+  "captions": []
+}

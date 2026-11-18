@@ -7,8 +7,9 @@ const Side: React.FC<{
   side: CompareSide;
   align: 'left' | 'right';
   progress: number;
+  vertical: boolean;
   themeName?: string;
-}> = ({side, align, progress, themeName}) => {
+}> = ({side, align, progress, vertical, themeName}) => {
   const theme = resolveTheme(themeName);
   const accent = resolveColor(theme, side.accent) || theme.accent;
   const offset = interpolate(progress, [0, 1], [align === 'left' ? -48 : 48, 0]);
@@ -40,7 +41,7 @@ const Side: React.FC<{
       </div>
       <div
         style={{
-          fontSize: 56,
+          fontSize: vertical ? 78 : 56,
           lineHeight: 1.08,
           fontWeight: 700,
           color: theme.ink,
@@ -56,7 +57,7 @@ const Side: React.FC<{
             gap: 14,
             alignItems: 'flex-start',
             maxWidth: 720,
-            fontSize: 30,
+            fontSize: vertical ? 34 : 30,
             lineHeight: 1.35,
             color: theme.body,
             opacity: interpolate(progress, [0.35 + index * 0.18, 1], [0, 1], {
@@ -108,7 +109,7 @@ export const SplitCompareCard: React.FC<SplitCompareProps & {themeName?: string}
         justifyContent: 'center',
       }}
     >
-      <Side side={left} align="left" progress={leftProgress} themeName={themeName} />
+      <Side side={left} align="left" progress={leftProgress} vertical={vertical} themeName={themeName} />
       <div
         style={{
           width: vertical ? '100%' : 1,
@@ -122,6 +123,7 @@ export const SplitCompareCard: React.FC<SplitCompareProps & {themeName?: string}
         side={right}
         align={vertical ? 'left' : 'right'}
         progress={rightProgress}
+        vertical={vertical}
         themeName={themeName}
       />
       {verdict ? (
