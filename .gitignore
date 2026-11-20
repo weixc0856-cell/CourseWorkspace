@@ -1,6 +1,9 @@
 # ---------------------------------------------------------------------------
-# 本地运行态（不入库）
+# 本地运行态与内容根联接（不入库，绝对杜绝大文件与课程产物进 Git）
 # ---------------------------------------------------------------------------
+content_data/
+content_data
+*.code-workspace
 runtime/
 build/
 deliver/
@@ -70,6 +73,9 @@ debug.log
 CourseControl/tests/local-lesson.yaml
 .DS_Store
 Thumbs.db
+*.db
+*.sqlite
+*.sqlite3
 desktop.ini
 .vscode/
 .idea/

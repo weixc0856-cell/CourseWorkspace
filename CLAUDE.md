@@ -57,6 +57,14 @@
 
 23. **未读标准不得开工。** 新闻类必须先读 [docs/新闻与调查报道标准.md](docs/新闻与调查报道标准.md) 与 [docs/新闻视频生产流程.md](docs/新闻视频生产流程.md)，按 **证据 → 叙事 → 视觉 → 声音 → 后期 → 验收** 执行。硬要求：每集 `authoring/fact-check.md` 含证据矩阵与"本片明确不主张"；六幕叙事；四层证据标注（DOCUMENTED / REPORTED / INFERENCE / CLAIM）；素材直接用、**不设授权审批，唯一红线是不伪造、不错配来源**；100 分制 ≥75 才发布，研究准确性 <16/20 直接不发布。
 
+### E. 专著转课程大纲与编译红线
+
+24. **认知装箱防注水。** 千页专著拆课严禁“按页平分”。按认知负荷装箱并压缩 80% fluff/编年史；实行三层弹性时长（Tier 1: 8–10m 概念机理、Tier 2: 11–14m 核心推导、Tier 3: 15–18m 闭环开发），平均 10.5–11.5 分钟。
+25. **四类来源严禁混淆。** 逐集必须标定 `[B] Book-based`、`[C] Cross-chapter`、`[E] Engineering extension`、`[M] Modern update`。出版后新技术严禁冒充原书节次；工程经验数值（CMS $\Delta C_D$、扩散角等）必须带测试工况，严禁当作普适物理常数。
+26. **工程开发闭环贯穿。** 严禁做成“视频版原书目录”。必须建立 `机理识别 (T4) -> 数值预测 (T14) -> 物理验证 (T13) -> 整车迭代` 的完整工程主轴，以标准参考体与量产车为贯穿线。
+27. **状态机与五重门禁。** 生成必须由 SQLite 状态库驱动（`symbol_registry` 符号圣经、`covered_ledger` 强制前序仅一句引用防车轱辘话、`forward_guard` 防剧透）；逐集必须通过确定性五重 QA 门禁（动态词数、套话率 $\le 12\%$、查重 $\le 0.82$、LaTeX 符号核对、Slide/Script 1:1 对齐）。
+28. **代码仓与内容根物理分离。** 仓库只进代码/工具/规范；视频/音频/教材/课程正文全在内容根（工作区映射为 `content_data/`，实际路径由 `config/local-paths.yaml` 的 `content_root` 或环境变量指定），绝不入 Git。路径单源走 `scripts/resolve_paths.py`，严禁硬编码绝对路径。提交前必须 `python scripts/course_pipeline.py status` 验证通过。
+
 ---
 
 ## 2. 操作事实（本机）
@@ -67,6 +75,9 @@
 - **内容根**：`<content_root>/{lessons,build,deliver,runtime,knowledge,audio,projects,references,archive}`；`course-control content-root` 可查询。`build/` 顶层只允许 `_engine-cache/`、`_shared/`、`_logs/`、`<slug>/`、`<project-id>/`，其余由回归直接失败。
 - **常用命令**：
   ```powershell
+  python scripts/course_pipeline.py status                   # 双根隔离、Junction与课程对齐自检
+  python scripts/course_pipeline.py sync                     # COURSE_MAP与episodes卡片毫秒级对齐
+  python scripts/course_pipeline.py clean-build              # 安全清空build中间缓存(保留deliver)
   .\scripts\check.ps1                                        # 全量回归（必须打印 check ok）
   course-control validate --lesson <slug>                     # 课程校验
   course-control validate --lesson <slug> --scope spec        # S0：只查 episode.spec + rubric
@@ -115,4 +126,5 @@
 - **生产合同与质量**：[docs/生产合同.md](docs/生产合同.md) · [docs/课程质量模型.md](docs/课程质量模型.md) · [docs/知识视频质量基准.md](docs/知识视频质量基准.md)
 - **声音**：[docs/声音资产-VoiceBible与Lexicon.md](docs/声音资产-VoiceBible与Lexicon.md) · [docs/声音导演层.md](docs/声音导演层.md)
 - **边界与准入**：[docs/仓库与项目边界.md](docs/仓库与项目边界.md) · [docs/第三方依赖准入规范.md](docs/第三方依赖准入规范.md) · [docs/资料采集与预处理.md](docs/资料采集与预处理.md)
+- **专著转课程方法论与大纲**：[docs/专业书籍转工业级课程内容划分方法论.md](docs/专业书籍转工业级课程内容划分方法论.md) · [docs/v2/汽车空气动力学180节课程大纲地图-v5.2-Freeze.md](docs/v2/汽车空气动力学180节课程大纲地图-v5.2-Freeze.md)
 - **完整清单**：[docs/README.md](docs/README.md)
