@@ -1,7 +1,6 @@
 # ModelingStudio
 
 
-> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 本地自动化建模工作流：单张图片 → Qwen3-VL 视觉分析 → Qwen3 建模规划 → Qwen3-Coder 生成 bpy 脚本 → Blender 执行 → 预览与验收 →（可选）VL 视觉修正建议。
 
 不使用云端 API、不引入图生 3D 模型、不新增推理服务。模型全部走本机 `<AI_ROOT>` 的 8080 单实例 llama.cpp 服务，按阶段启动和停止。

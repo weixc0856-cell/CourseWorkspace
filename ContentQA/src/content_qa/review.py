@@ -13,7 +13,7 @@ from .client import OnlineClient, OnlineError
 from .config import ReviewConfig, load_config, resolve_api_key
 from .contracts import Finding, ModelReply, ReviewReport, ReviewTask
 from .splitter import Chunk, plan_chunks, pair_pages
-from .workspace_layout import build_root_for
+from .workspace_layout import build_root_for, content_root
 
 SYSTEM_PROMPT = """你是课程内容审查助手。你的输出只是候选意见，不是最终结论。
 
@@ -202,7 +202,7 @@ def run_review(
     sources_text = _source_index(_load_sources(lesson_dir, config.sources_file))
 
     client = (client_factory or (lambda: OnlineClient(config, api_key)))()
-    store = TaskStore(workspace / "runtime" / "tasks")
+    store = TaskStore(content_root(workspace) / "runtime" / "tasks")
     raw_dir = review_dir / "raw"
     budget = ContextBudget(
         limit=config.context_limit, reserved_output=config.model.max_tokens

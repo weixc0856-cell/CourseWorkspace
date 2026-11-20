@@ -1,7 +1,6 @@
 # KnowledgeStudio
 
 
-> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 教材与知识资产管理：把一本专业教材拆成**按页可引用**的知识单元，让一节课只读它需要的十几页。
 
 教材、论文与视频来源统一进入本机 Docling 资料区；采集与预处理见 [docs/资料采集与预处理.md](../docs/资料采集与预处理.md)。PDF 的 `document.md` / `pages/` 与 YouTube 的 `transcript.clean.md` 都从该区读取。

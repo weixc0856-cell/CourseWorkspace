@@ -1,7 +1,6 @@
 # Reveal.js 技术课件工程
 
 
-> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 一个以 **纸白/橙色 Light Technical Editorial** 为视觉基调的双语技术课件环境。项目只包含一个 `reveal.js` 渲染外壳，具体课件内容全部放在**工作区根目录**的 `lessons/` 下，通过 URL 参数切换。生成课件前，请先阅读 [课件生成调用指南](docs/课件生成调用指南.md)。
 
 ## 快速开始
@@ -44,7 +43,7 @@ npm run dev
 1. 在工作区根目录新建 `lessons/<lesson-slug>/`，放入 `slides.md`（纯展示）、`lecture_notes.md`（逐字稿）与 `lesson.yaml`、`storyboard.yaml`，`assets/` 按需。
 2. 用短横线小写命名 slug，例如 `02-attention-patterns`。
 3. 访问 `http://localhost:8081/?lesson=02-attention-patterns`。
-4. 在仓库 `docs/交付清单-<slug>.md` 建一份交付清单，模板见 [课程交付清单模板](../docs/课程交付清单模板.md)。
+4. 在仓库 `docs/交付清单-<slug>.md` 建一份交付清单，模板见 [课程生产交付物规范](../docs/课程生产交付物规范.md) 附录 A。
 
 `slides.md` 只放观众能看到的内容：页标题、英文论点、公式/图表、`.zh-sub` 中文对照。口播、时长、导播提示、动画切入一律写进 `lecture_notes.md`，两边按 `Slide N` 一一对应。
 

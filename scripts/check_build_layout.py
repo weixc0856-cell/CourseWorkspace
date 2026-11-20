@@ -25,6 +25,14 @@ from pathlib import Path
 import yaml
 
 SHARED = {"_engine-cache", "_shared", "_logs"}
+# Content-root directories that must never appear in the code workspace.
+# Before the dual-root split, runtime/ lived at the repo root; a stray
+# elevated run left ACL-locked tmp dirs there that ordinary users could
+# not delete.  The code repo holds code, fixtures and docs only.
+REPO_ROOT_FORBIDDEN = {
+    "runtime", "build", "deliver", "scratch", "archive",
+    "knowledge", "audio", "projects", "references",
+}
 LESSON_DIRS = {
     "authoring", "slides", "scenes", "animation", "blender", "narration",
     "tts", "subtitles", "contracts", "timeline", "design", "director",
@@ -137,10 +145,42 @@ def audit(
     return errors, advice, len(slugs)
 
 
+def repo_root_audit(workspace: Path) -> list[str]:
+    """Course artifacts belong to the content root, never the code workspace."""
+    errors: list[str] = []
+    for name in sorted(REPO_ROOT_FORBIDDEN):
+        if (workspace / name).exists():
+            errors.append(
+                f"{name}/ at the repo root belongs to the content root "
+                "(config/local-paths.yaml content_root)"
+            )
+    if (workspace / "debug.log").exists():
+        errors.append("debug.log is a stray run log; logs go to <content_root>/build/_logs/")
+    lessons = workspace / "lessons"
+    if lessons.is_dir():
+        for entry in sorted(lessons.iterdir()):
+            if entry.name != "README.md":
+                errors.append(
+                    f"lessons/{entry.name} is course content; it belongs under <content_root>/lessons/"
+                )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     if "--selftest" in args:
         return selftest()
+    if "--repo-root" in args:
+        idx = args.index("--repo-root")
+        workspace = Path(args[idx + 1]) if len(args) > idx + 1 else Path.cwd()
+        errors = repo_root_audit(workspace)
+        if errors:
+            print(f"{len(errors)} course artifact(s) at the code workspace root:")
+            for line in errors:
+                print(f"  {line}")
+            return 1
+        print("repo root ok (no course artifacts in the code workspace)")
+        return 0
     args = [a for a in args if not a.startswith("--")]
     build = Path(args[0]) if len(args) > 0 else Path("build")
     lessons = Path(args[1]) if len(args) > 1 else Path("lessons")
@@ -249,6 +289,25 @@ def selftest() -> int:
             for link in (top_link, inner_link):
                 if is_link(link):
                     os.rmdir(link)
+        repo = root / "repo"
+        (repo / "lessons").mkdir(parents=True)
+        (repo / "lessons" / "README.md").write_text("pointer", encoding="utf-8")
+        if repo_root_audit(repo):
+            print("selftest FAIL: a clean code workspace was rejected")
+            return 1
+        (repo / "runtime").mkdir()
+        (repo / "lessons" / "demo").mkdir()
+        (repo / "debug.log").write_text("x", encoding="utf-8")
+        repo_errors = repo_root_audit(repo)
+        if len(repo_errors) != 3 or not any("runtime" in e for e in repo_errors):
+            print(f"selftest FAIL: repo-root artifacts were accepted: {repo_errors}")
+            return 1
+        (repo / "runtime").rmdir()
+        (repo / "lessons" / "demo").rmdir()
+        (repo / "debug.log").unlink()
+        if repo_root_audit(repo):
+            print("selftest FAIL: a cleaned code workspace was still rejected")
+            return 1
         print("build layout selftest PASS")
         return 0
     finally:

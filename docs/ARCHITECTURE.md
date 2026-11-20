@@ -81,16 +81,40 @@ CourseWorkspace/
 | `ModelingStudio` | 图片→分析→规划→脚本→Blender→验收 | 不写 `lessons/` 与课程 `build/` |
 | `ContentQA` | 审查候选意见与报告（默认 Claude Code） | 不改课程、不影响 verdict |
 | `KnowledgeStudio` | 教材拆页、单元、索引、按页检索与 claim 引用 | 不生成课程内容、不判断结论真伪、不改 `lessons/` |
-| `CourseDemo` | 驱动 VS Code 终端会话并回收退出码/输出 | 不做执行证据的唯一来源 |
 | `shared/ai_runtime` | 锁、服务生命周期、任务状态、预算 | 不含业务逻辑 |
 
-`CourseControl/direction` 与 `CourseControl/delivery` 是 CourseControl 内部的设计层与制片层：前者把批准的 brief/outline/script 收敛成章节、镜头、引擎与旁白计划；后者管订单、授权、用量、交付清单和增量指纹。两者都不新增独立进程，也不写课程正文。上下文的划分、聚合与依赖方向见 [架构-DDD上下文与边界.md](架构-DDD上下文与边界.md)。
+`CourseControl/direction` 与 `CourseControl/delivery` 是 CourseControl 内部的设计层与制片层：前者把批准的 brief/outline/script 收敛成章节、镜头、引擎与旁白计划；后者管订单、授权、用量、交付清单和增量指纹。两者都不新增独立进程，也不写课程正文。
+
+### 2.1 上下文依赖方向与聚合不变量（2026-11-20 并入自《架构-DDD上下文与边界》）
+
+CourseControl 内部按"这件事对谁负责"划分为 8 个上下文（content / direction / rendering / voice / quality / delivery / platform / authoring）加 3 个能力包（animatic / locks / cli）；`pipeline.py` 是组合根，不承载领域规则。依赖方向（约定，不是工具强制）：
+
+1. `platform` 不 import 任何业务上下文。
+2. `content` 只依赖 `platform`；契约不反向依赖渲染。
+3. `rendering` 可以读 `content`，不能 import `direction` 的计划对象——它只接受适配器输入。
+4. `quality` 观察其他上下文，不被它们 import（除了组合根）。
+5. 包 `__init__.py` 不 eager import 整个上下文，避免循环。跨上下文一律绝对导入，上下文内部保持相对导入。
+
+每个聚合只有一个入口负责维持不变量：
+
+| 聚合 | 上下文 | 不变量 |
+| --- | --- | --- |
+| `Lesson` / `Storyboard` | content | 一模式一权威；v2 字段只在 `schema_version: 2` 下可用；镜头 id 唯一 |
+| `ProductionPlan` | content | shots 是唯一计时权威；sequence 不带自己的时钟 |
+| `DirectorPlan` | direction | 是视图，不是第二权威；镜头必须可路由到引擎 |
+| `ShotSheet`（storyboard v2 编译结果） | direction | 引用必须能解析成资产/连续性对象；指纹由设计字段与资产字节算出 |
+| `VoiceBible` / `Lexicon` | voice | 身份是文档哈希；参考音频必须与其声明哈希一致 |
+| `Narration` | voice | 缓存键 = 文本 + 声线哈希 + 本段命中的词条 + 参数 |
+| `Animatic` | animatic | 帧网格由绝对时间算出，段内取整不累积误差 |
+| `PictureLock` / `DialogueLock` | locks | 锁是快照不是禁令；漂移必须映射到下游 |
+| `QualityReport` | quality | 状态由检查结果推导，不由人写；`RELEASE_APPROVED` 需两次人工签核 |
+| `DeliveryManifest` | delivery | 每个文件带 SHA-256；缺项即失败 |
 
 ---
 
 ## 3. 调用关系
 
-> 面向操作的完整流程（输入、输出、人工节点、失败恢复）见 [WORKFLOW.md](WORKFLOW.md)。
+> 面向操作的完整流程（输入、输出、人工节点、失败恢复）见 [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md)。
 
 ### 3.1 课程构建
 
@@ -268,7 +292,19 @@ Schema 由 Pydantic 模型导出：旧契约用 `course-control schemas --output
 
 映射仅用于阅读，不用于互相写入：`completed ≈ pass`，`failed ≈ fail`，`skipped = skipped`，`blocked` 与 `pending` 在构建语境下对应 `not_run`。
 
-质量层的五个 `*_VERIFIED` 名称与代码状态的对应见 [五态映射表.md](五态映射表.md)。
+质量层的五个 `*_VERIFIED` 名称与代码状态的对应（2026-11-20 并入自《五态映射表》；只做阅读映射，不改名。权威：状态由 `quality/quality.py` 计算并写入 `build/<slug>/quality/quality-report.json` 的 `states` 块）：
+
+| 建议稿名称 | 代码状态 | 判定条件 | 写入位置 |
+| --- | --- | --- | --- |
+| `ENGINEERING_VERIFIED` | `BUILD_PASS` 且 `VERIFY_PASS` | 构建报告 verdict 为 pass；`verify` 无失败项 | `quality-report.json.states` |
+| `CONTENT_VERIFIED` | Q1 `内容可信度 = PASS` | Content QA 无未决意见，claim 证据充分 | `quality-report.json.dimensions[0]` |
+| `VISUAL_VERIFIED` | Q3 `视听体验 = PASS` | `media-qc` 全项 pass，无未决 WARN | `quality-report.json.dimensions[2]` |
+| `PACKAGE_VERIFIED` | `package-verify` 返回空问题列表 | 交付包 manifest 全项 present，哈希一致 | `deliver/<slug>/manifest.json` + 命令输出 |
+| `RELEASE_APPROVED` | `REVIEW_APPROVED` 且 `RELEASE_APPROVED` | review 与 release 两次人工签核都已完成 | `quality/review-approval.json`、`quality/release-approval.json` |
+
+补充状态：`VERIFY_WARN`（通过但有警告）、`VERIFY_INCOMPLETE`（有检查未执行，不得当作通过）、`VERIFY_FAIL`（硬性失败）、`NEEDS_HUMAN_REVIEW`（存在 human_review 类警告）、`BLOCKED_WARNINGS`（blocking 类警告 id 列表，阻断发布）、`QUALITY_PASS`（旧名，等价 `VERIFY_PASS`，仅兼容读取）。
+
+读法：`QUALITY_VERIFIED` 只表示五维全部 PASS，不表示发布已批准；`RELEASE_APPROVED` 需前四步成立再加两次签核，任何一步 incomplete 都为 false；报告新鲜度由 `quality-gate` 校验，哈希或时间不一致记为 incomplete。新增状态必须先改 `quality.py` 与 Schema，再更新本表；本表不是第二套状态机。
 
 ### 4.5 项目与运行契约（2026-11-13，增量）
 

@@ -1,7 +1,7 @@
 # 声音资产：Voice Bible 与 Lexicon
 
 - **日期**：2026-11-12
-- **状态**：可用。P2 完成（[工业化生产流程 V2.0](v2/工业化生产流程V2.0-建议稿.md) WP-3 的 Voice Bible / Lexicon 部分；Dialogue Lock 属 P4，未开始）。
+- **状态**：可用。P2 完成（V2.0 建议稿 WP-3 的 Voice Bible / Lexicon 部分；Dialogue Lock 见 [锁定与失效](锁定与失效.md)）。
 - **命令**：`course-control narration-assets --lesson <slug>`
 
 ---

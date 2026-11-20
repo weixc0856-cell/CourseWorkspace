@@ -1,7 +1,6 @@
 # CodeVideoStudio
 
 
-> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 镜头级代码视频生产目录（R1 P2/P3）。
 
 - **上游 Skill**：`skills/code-video/`，来自 [SenseNova-6.8-Code2Video](https://github.com/OpenSenseNova/SenseNova-6.8-Code2Video)，Apache 2.0（`LICENSE.code-video`）。该目录保留 Apache-2.0；仓库其余部分为 AGPL-3.0-or-later，见根目录 `LICENSE` / `NOTICE`。

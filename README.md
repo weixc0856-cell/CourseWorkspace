@@ -31,12 +31,12 @@
 | `index.html` | 是 | 根入口：把 `/?lesson=<slug>` 重定向到 Reveal 外壳 |
 | `CodeVideoStudio/` | 是 | Code2Video Skill（Apache 2.0）与镜头 POC；不含 27B 权重 |
 | `scripts/`、`config/*.example.yaml`、`docs/` | 是 | 入口、模板与指导 |
-| `<内容根>/lessons/` 真实课程 | **否** | 本地内容，仓库只保留 `lessons/README.md` |
+| `<内容根>/lessons/` 真实课程 | **否** | 本地内容，不入仓库；内容根由 `config/local-paths.yaml` 指定 |
 | `<内容根>/build/`、`deliver/`、`runtime/`、`knowledge/`；`ModelingStudio/workspace/` | 否 | 临时构建、最终交付、运行态与本地资料；`deliver/` 不随 `build/` 清理 |
 | 模型权重、视频、音频、`*.blend1` | 否 | 大文件与媒体 |
 | `config/tools.yaml`、`config/local-paths.yaml`、`config/content-qa.yaml`、`ModelingStudio/config/workflow.yaml` | 否 | 本机路径与凭据 |
 
-克隆后是一个**没有课程内容**的工作流仓库：先按 [lessons/README.md](lessons/README.md) 在本地创建课程，再运行 `scripts/setup.ps1` 生成本机配置。
+克隆后是一个**没有课程内容**的工作流仓库：先按 [仓库与项目边界](docs/仓库与项目边界.md) 在本地建立内容根，再运行 `scripts/setup.ps1` 生成本机配置。
 
 课程内容不在仓库里：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 与 `engines/` 都相对**内容根**（见 `config/local-paths.yaml` 的 `content_root`，默认等于工作区；`course-control content-root` 可查询）。2026-11-12 起本机内容根在工作区外，仓库只剩程序、共用模块与夹具。下文路径除特别说明外都相对内容根。
 
@@ -147,7 +147,7 @@ Motion Canvas 已是自动节点：`MotionStudio/scripts/render-headless.mjs` �
 - **正式课程**（书章节、MIT/Stanford/高校或机构课程解读、二次录制）：不使用 BGM，旁白 + 静默为准；
 - **新闻/资讯**：不使用 BGM。
 
-详见 [内容类型与音频策略](docs/内容类型与音频策略.md)；曲目、许可与试听见 [音乐资产盘点](docs/音乐资产盘点.md)。
+详见 [声音导演层 §8](docs/声音导演层.md)；曲目、许可与试听见 [音乐资产盘点](docs/音乐资产盘点.md)。
 
 **语言**：所有视频英文画面与旁白；字幕英文在上、中文在下。中文只做字幕与文章版本，默认不做中文配音（D-084）。
 
@@ -295,11 +295,11 @@ Copy-Item config/claude-code.example.yaml config/claude-code.yaml
 
 ## 文档
 
-- 内容规范：[课件制作总指导](docs/课件制作总指导.md) · [课程交付清单模板](docs/课程交付清单模板.md)
+- 内容规范：[课件制作总指导](docs/课件制作总指导.md) · [课程生产交付物规范](docs/课程生产交付物规范.md)（含交付清单模板）
 - 运行时：[本地模型与配音工作流](docs/本地模型与配音工作流.md) · [AI-Blender 本地建模工作流](docs/AI-Blender本地建模工作流.md)
 - 三维契约：[Blender 场景任务 IR v2](docs/Blender场景任务IR-v2.md)
 - 流程：[提交前检查清单](docs/提交前检查清单.md)
-- 当前状态：[项目状态与 PRD 盘点](docs/PROJECT_STATUS.md) · [真实工作流](docs/WORKFLOW.md)
+- 文档地图：[docs/README.md](docs/README.md) · 命令链：[生产流水线-阶段与中间交付物](docs/生产流水线-阶段与中间交付物.md)
 - 导演/制片：[导演层](docs/导演层.md) · [制片层](docs/制片层.md)
-- 版式/配色/运镜：[版式系统](docs/版式系统.md) · [配色规范](docs/配色规范.md) · [运镜与剪辑](docs/运镜与剪辑.md)
+- 版式/配色/运镜：[版式系统](docs/版式系统.md) · [配色规范](docs/配色规范.md) · [动画视觉导演规范](docs/动画视觉导演规范.md)
 - 历史归档与项目材料在内容根下：`<内容根>/archive/`、`<内容根>/projects/<系列>/`（不入库）

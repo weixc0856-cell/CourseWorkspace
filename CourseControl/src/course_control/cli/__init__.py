@@ -35,7 +35,7 @@ from . import (  # noqa: E402,F401
 
 # 90 commands in one flat list made the entry point unreadable.  Grouping is
 # presentation only: every command, flag and behaviour stays exactly as it was.
-# The audit behind this split is docs/生产复杂度审计.md.
+# The audit behind this split was docs/生产复杂度审计.md (archived 2026-11-20).
 _HELP_PANELS: dict[str, str] = {}
 for _panel, _names in {
     "Build & verify": (
