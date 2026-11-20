@@ -7,7 +7,7 @@
 - **2026-11-18 增量**：[个人IP-内容生产系统-顶层目标.md](个人IP-内容生产系统-顶层目标.md) 是个人 IP 的顶层目标增量；本文仍拥有产品边界与 `FR-*` / `NFR-*` 条目，冲突时按该文件 §1 的优先级处理（D-114）。
 - **v2.0 变更**：采纳双生产模式（Course / Topic Video）与无人值守目标（A3，当前实现 A1）；新增 FR-45～FR-51；质量从“检查通过”升级为“缺陷闭环 + 交付证书”。产品边界变更记录见 D-092。`docs/v2/m0/` 是本次升级的规划与审计，不替代本文件。
 - **取代**：`<内容根>/archive/CourseWorkspace-R0-R5改造PRD.md`（改造规格，已执行完毕）、`<内容根>/archive/ContentQA_实施评估.md`（设计稿，仅保留审查内核）、`<内容根>/archive/AI-Blender落地路线图.md`（历史状态快照）。
-- **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；真实工作流见 [WORKFLOW.md](WORKFLOW.md)；当前状态见 [PROJECT_STATUS.md](PROJECT_STATUS.md)。
+- **配套**：结构与契约见 [ARCHITECTURE.md](ARCHITECTURE.md)；验收命令见 [ACCEPTANCE.md](ACCEPTANCE.md)；决策理由见 [DECISIONS.md](DECISIONS.md)；命令链见 [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md)。
 
 ---
 
@@ -428,7 +428,7 @@ Claude Code、远程 API 与本地模型不得互相冒充。外部后端不可�
 
 ## 7. 阶段工作流（含人工节点）
 
-> 详细输入、输出、失败恢复与真实证据见 [WORKFLOW.md](WORKFLOW.md)；两模式统一流程见 `docs/v2/m0/PRODUCTION_WORKFLOW_V2.md`。
+> 详细输入、输出与失败恢复见 [生产流水线-阶段与中间交付物.md](生产流水线-阶段与中间交付物.md)。
 
 八阶段内核（两种模式共用）：
 

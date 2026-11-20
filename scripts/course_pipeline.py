@@ -26,6 +26,7 @@ if str(WORKSPACE_ROOT) not in sys.path:
 
 import yaml
 
+from scripts.check_build_layout import repo_root_audit
 from scripts.resolve_paths import (
     check_and_ensure_junction,
     get_content_root,
@@ -95,6 +96,15 @@ def cmd_status(args: argparse.Namespace) -> None:
 
     # 3. Git Boundary & Large File Security Audit
     print(f"\n[3. Git Isolation & Large File Security Audit]")
+    failed = False
+    root_errors = repo_root_audit(workspace)
+    if root_errors:
+        failed = True
+        print(f"  • Repo Root Cleanliness     : [FAIL] course artifacts in the code workspace:")
+        for line in root_errors:
+            print(f"    ↳ {line}")
+    else:
+        print(f"  • Repo Root Cleanliness     : [PASS] No course artifacts at the code workspace root.")
     try:
         git_res = subprocess.run(
             ["git", "status", "--porcelain"],
@@ -110,6 +120,7 @@ def cmd_status(args: argparse.Namespace) -> None:
         if not leaked_media and not leaked_content:
             print(f"  • Large File Leak Guard     : [PASS] Zero media or content_data files tracked by Git.")
         else:
+            failed = True
             if leaked_media:
                 print(f"  • Large File Leak Guard     : [FAIL] Leaked media files detected: {leaked_media}")
             if leaked_content:
@@ -130,6 +141,8 @@ def cmd_status(args: argparse.Namespace) -> None:
         print(f"  • deliver/ (Final Masters)  : {deliver_mb:.1f} MB (permanent deliverables)")
 
     print("\n================================================================================")
+    if failed:
+        sys.exit(1)
 
 
 def re_is_episode_row(line: str) -> bool:

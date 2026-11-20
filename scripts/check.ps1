@@ -382,6 +382,13 @@ try {
         uv run --project CourseControl python scripts/check_build_layout.py --selftest
     }
 
+    # The code workspace holds code, fixtures and docs only.  Course artifacts
+    # (runtime/, build/, deliver/, stray logs, lesson content) live in the
+    # content root; a repo-root runtime/ once left ACL-locked tmp dirs behind.
+    Invoke-Checked "repo root cleanliness" -Quiet {
+        uv run --project CourseControl python scripts/check_build_layout.py --repo-root $root
+    }
+
     # One map owns which document answers which question.  The check fails on
     # an unlisted document, a broken link, an unknown subcommand or a command
     # path that does not exist, so the map cannot drift into a second truth.

@@ -1,7 +1,6 @@
 # BlenderStudio
 
 
-> **2026-11-13 状态**：`check.ps1` = `check ok`。V2 的动画预览、声音资产、镜头表、锁定、M1 闭环修补，以及项目/运行契约、阶段 DAG、质量缺陷闭环与知识概念层均已落地；执行台账见 `docs/v2/m0/EXECUTION_PLAN.md`。`build/` 为临时区、`deliver/` 为最终交付区。
 3D 场景与渲染工程。负责 Blender 场景构建、Geometry Nodes 资产、场景级验收与渲染；课程级编排、调度与最终验收仍属于 `CourseControl/`。
 
 ## 边界

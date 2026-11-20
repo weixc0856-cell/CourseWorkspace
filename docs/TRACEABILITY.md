@@ -1,6 +1,6 @@
 # 需求映射索引
 
-- **状态与证据的唯一清单**：[PROJECT_STATUS.md](PROJECT_STATUS.md)
+- **验收命令与证据要求**：[ACCEPTANCE.md](ACCEPTANCE.md)
 - **需求基线**：[PRD.md](PRD.md)
 - 本文件只回答“需求由哪些代码和测试承载”，不重复状态判定。
 
