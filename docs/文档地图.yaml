@@ -46,6 +46,8 @@ questions:
   path: 协作协议-双会话流水线.md
 - question: 怎么把千页专业书拆分为系统课程
   path: 专业书籍转工业级课程内容划分方法论.md
+- question: 课件视觉体系与幻灯片设计规范
+  path: 教育内容视觉设计体系与视觉叙事规范.md
 documents:
 - path: audit/2026-11-18-个人IP系统-实施报告.md
   layer: record
@@ -145,6 +147,10 @@ documents:
   layer: guide
   status: current
   answers: 内容层四阶段与 slides / lecture_notes 契约
+- path: 教育内容视觉设计体系与视觉叙事规范.md
+  layer: guide
+  status: current
+  answers: 六大视觉表达方式、视觉叙事弧与Visual Concept意图契约
 - path: 课程视觉风格指南.md
   layer: guide
   status: current

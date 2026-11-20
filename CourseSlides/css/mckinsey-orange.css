@@ -940,3 +940,207 @@ body {
   font-size: 0.66em;
   line-height: 1.3;
 }
+
+/* ==========================================================================
+   Educational Visual Design System (EVDS) — Six Archetypes
+   ========================================================================== */
+
+/* 1. Hero Visual (大图主导型) */
+.reveal .slide--hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+.reveal .slide--hero .hero-visual {
+  position: relative;
+  width: 100%;
+  height: 620px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  background: #111;
+}
+.reveal .slide--hero .hero-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reveal .slide--hero .hero-caption {
+  margin-top: 18px;
+  font-size: 0.85em;
+  color: var(--mk-text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 2. Editorial Layout (图文融合型) */
+.reveal .slide--editorial {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  align-items: center;
+  height: 100%;
+}
+.reveal .slide--editorial .editorial-visual {
+  width: 100%;
+  height: 600px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.reveal .slide--editorial .editorial-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reveal .slide--editorial .editorial-text .step-item {
+  margin-bottom: 24px;
+  padding-left: 20px;
+  border-left: 3px solid var(--mk-border);
+}
+.reveal .slide--editorial .editorial-text .step-item.active {
+  border-left-color: var(--mk-orange);
+}
+.reveal .slide--editorial .editorial-text .step-number {
+  font-size: 0.75em;
+  font-weight: 700;
+  color: var(--mk-orange);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* 3. Annotated Visual (物理注释型) */
+.reveal .slide--annotated {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.reveal .slide--annotated .annotated-container {
+  position: relative;
+  width: 100%;
+  height: 580px;
+  background: #f8f6f0;
+  border-radius: 8px;
+  border: 1px solid var(--mk-border);
+  overflow: hidden;
+}
+.reveal .slide--annotated .annotated-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.reveal .slide--annotated .callout-badge {
+  position: absolute;
+  background: rgba(28, 25, 23, 0.92);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.65em;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 3px solid var(--mk-orange);
+}
+
+/* 4. Comparison (同构对比型) */
+.reveal .slide--comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  height: 100%;
+}
+.reveal .slide--comparison .compare-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--mk-border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.reveal .slide--comparison .compare-card.active {
+  border-top: 4px solid var(--mk-orange);
+}
+.reveal .slide--comparison .compare-visual {
+  width: 100%;
+  height: 380px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fafafa;
+}
+.reveal .slide--comparison .compare-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.reveal .slide--comparison .compare-meta {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+/* 5. Process / Mechanism (流动机理型) */
+.reveal .slide--process {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.reveal .slide--process .process-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 20px;
+}
+.reveal .slide--process .process-step {
+  background: #fff;
+  border: 1px solid var(--mk-border);
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.reveal .slide--process .process-step .step-tag {
+  font-size: 0.65em;
+  font-weight: 700;
+  color: var(--mk-orange);
+  margin-bottom: 8px;
+}
+.reveal .slide--process .process-step .step-img {
+  width: 100%;
+  height: 220px;
+  background: #fdfdfd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.reveal .slide--process .process-step .step-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 6. Data-driven (专业图表型) */
+.reveal .slide--data {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 40px;
+  align-items: center;
+  height: 100%;
+}
+.reveal .slide--data .chart-container {
+  width: 100%;
+  height: 560px;
+  background: #fff;
+  border: 1px solid var(--mk-border);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.reveal .slide--data .takeaway-box {
+  background: var(--mk-orange-soft);
+  border-left: 4px solid var(--mk-orange);
+  padding: 20px;
+  border-radius: 0 6px 6px 0;
+  margin-top: 20px;
+}
