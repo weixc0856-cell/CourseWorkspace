@@ -65,8 +65,18 @@ Generate a world-class, professional engineering lecture for episode {episode_id
 ---
 ### Output Format Requirements:
 Provide TWO strictly aligned tracks:
-1. [TRACK A: 16:9 English Slide Deck] (Markdown with '---' separating slides, clean, concise bullet points, LaTeX equations, and figure placeholders).
-2. [TRACK B: Dual-language Teleprompter Script] (Full English spoken text verbatim, paired with paragraph-level Chinese translation for subtitles).
+
+1. [TRACK A: 16:9 English Slide Deck (EVDS Compliant)]
+Total slides MUST be exactly 5 to 6 slides, structured as an unbroken Visual Narrative Arc:
+- Slide 1: [slide--hero] (Grand physical conflict, large imagery 65–80%, sets cognitive hook)
+- Slide 2: [slide--editorial] (Physical contrast, asymmetric Swiss grid, 01/02/03 numbered deduction points)
+- Slide 3: [slide--annotated] (Microscopic flow anatomy, CFD/smoke flow with explicit physical callout badges)
+- Slide 4: [slide--data] (Governing formulas, cubic scaling dynamics, quantitative engineering takeaway box)
+- Slide 5: [slide--comparison or slide--process] (Baseline vs Optimized, or step-by-step flow separation, styling/packaging compromise)
+
+*STRICT PROHIBITION*: NEVER use mechanical "title top, bullets left, image right" layouts. Slides MUST use EVDS classes (.slide--hero, .slide--editorial, .slide--annotated, .slide--data, .slide--comparison, .slide--process) and follow the 3-tier narrative (Headline poses problem -> Visual demonstrates phenomenon -> Text explains causality).
+
+2. [TRACK B: Dual-language Teleprompter Script] (Full English spoken text verbatim, paired with paragraph-level Chinese translation for subtitles). Spoken text must deeply explain the visual elements rather than reading slide bullet points.
 """
 
 
