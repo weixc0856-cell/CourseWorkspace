@@ -125,6 +125,9 @@ def _resolve(workspace: Path) -> tuple[Path, str]:
     configured = _configured_root(workspace)
     if configured is not None:
         return configured, "config"
+    content_data = workspace / "content_data"
+    if content_data.is_dir() and (content_data / "projects").exists():
+        return content_data.resolve(), "junction"
     return workspace, "workspace"
 
 

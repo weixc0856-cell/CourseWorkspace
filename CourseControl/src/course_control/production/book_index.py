@@ -18,7 +18,6 @@ import yaml
 
 EPISODE_ID = re.compile(r"^[A-Z]\d+-\d{2}$")
 MIN_SECONDS = 480
-MAX_SECONDS = 900
 
 
 class BookIndexError(ValueError):
@@ -72,8 +71,8 @@ def load_card(path: Path) -> EpisodeCard:
     if not EPISODE_ID.match(episode):
         raise BookIndexError(f"{path}: invalid episode id {episode!r}")
     seconds = int(data["target_seconds"])
-    if not MIN_SECONDS <= seconds <= MAX_SECONDS:
-        raise BookIndexError(f"{path}: target_seconds {seconds} outside {MIN_SECONDS}-{MAX_SECONDS}")
+    if seconds < MIN_SECONDS:
+        raise BookIndexError(f"{path}: target_seconds {seconds} below the {MIN_SECONDS}s floor")
     return EpisodeCard(
         path=path,
         episode=episode,

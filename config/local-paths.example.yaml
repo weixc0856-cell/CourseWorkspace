@@ -17,3 +17,7 @@ bgm_root: <BGM_LIBRARY_ROOT>
 docling_root: "<DOCLING_ROOT>"
 source_libraries:
   automotive-aerodynamics: "<SOURCE_LIBRARY_ROOT>"
+
+# 课程内容与产物根（物理隔离；lessons / build / deliver / runtime / knowledge / projects 不在代码仓库内）
+# 本地典型配置：工作区内联接目录 ./content_data 或本地自定义路径（在 local-paths.yaml 中按需填写）
+content_root: "<CONTENT_ROOT>"

@@ -44,6 +44,8 @@ questions:
   path: 课程生产交付物规范.md
 - question: 作者/验证/统筹怎么交接
   path: 协作协议-双会话流水线.md
+- question: 怎么把千页专业书拆分为系统课程
+  path: 专业书籍转工业级课程内容划分方法论.md
 documents:
 - path: audit/2026-11-18-个人IP系统-实施报告.md
   layer: record
@@ -498,3 +500,15 @@ documents:
   layer: record
   status: record
   answers: 工具链收敛的子项目、任务顺序、失败测试与验收矩阵
+- path: 专业书籍转工业级课程内容划分方法论.md
+  layer: guide
+  status: current
+  answers: 大部头专著转化为工业级课程的内容划分定律、认知装箱、工程闭环与编译管线
+- path: v2/180节全自动课程生产技术方案.md
+  layer: guide
+  status: current
+  answers: 六阶段全自动课程编译管线架构、状态机表结构与质量门禁设计
+- path: v2/汽车空气动力学180节课程大纲地图-v5.2-Freeze.md
+  layer: contract
+  status: current
+  answers: 汽车空气动力学 180 节全书课程大纲地图正式冻结版（经原书逐项校验，总时长 2004 分钟）

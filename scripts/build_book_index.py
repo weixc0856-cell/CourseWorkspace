@@ -91,7 +91,8 @@ def chapters(entries: list[dict], wanted: set[int], offset: int) -> list[dict]:
                         "page": page - offset if page else None,
                     }
                 )
-        elif entry.get("level") == 1:
+        elif entry.get("level") == 1 and not re.fullmatch(r"Chapter\s+\d+", title):
+            # A bare "Chapter N" entry is a running header, not a boundary.
             current = None
     return found
 

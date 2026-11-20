@@ -40,6 +40,49 @@
 
 课程内容不在仓库里：`lessons/`、`build/`、`deliver/`、`runtime/`、`knowledge/` 与 `engines/` 都相对**内容根**（见 `config/local-paths.yaml` 的 `content_root`，默认等于工作区；`course-control content-root` 可查询）。2026-11-12 起本机内容根在工作区外，仓库只剩程序、共用模块与夹具。下文路径除特别说明外都相对内容根。
 
+### 双根物理隔离与实时直通架构 (Dual-Root Physical Separation)
+
+为杜绝几十 GB 视频/音频/教材误推 GitHub，同时保证在 IDE 和 AI Agent 中能毫秒级实时浏览、对齐和读写实际课程，系统采用双根直通架构：
+
+```mermaid
+flowchart TD
+    subgraph Repo["开发管线仓 (CourseWorkspace - 进 GitHub)"]
+        CLI["统一生产与运维 CLI<br><b>scripts/course_pipeline.py</b>"]
+        CC["课程控制核心引擎<br><b>CourseControl/</b>"]
+        ENGINES["视听渲染引擎<br><b>Remotion / Manim / Blender / Reveal</b>"]
+        CFG["路径与契约配置<br><b>config/*.yaml</b>"]
+        JUNCTION["Windows 目录联接<br><b>content_data/ (mklink /J)</b>"]
+    end
+
+    subgraph ContentRoot["物理内容与产物根 (CourseContent - 本地独立/冷备/Git忽略)"]
+        P1["<b>projects/</b><br>学科合同 project.yaml (目标集数/时长区间)"]
+        P2["<b>runtime/</b><br>课程总图 COURSE_MAP.md / 卡片集 episodes/"]
+        P3["<b>lessons/</b><br>单集正文 slides.md / 逐字稿 / 分镜 storyboard.yaml"]
+        P4["<b>knowledge/ & audio/</b><br>Docling 教材知识库 / 声线 Bible / 读音词典"]
+        P5["<b>build/</b><br>渲染过程帧 / 临时切片 (可一键清理)"]
+        P6["<b>deliver/</b><br>4K 成片 / 双语母带 / 最终课件包 (永久归档)"]
+    end
+
+    CLI --> CFG
+    CLI --> CC
+    CC --> ENGINES
+    JUNCTION === ContentRoot
+    CLI -->|"透明读写"| JUNCTION
+    ENGINES -->|"资产消费与输出"| JUNCTION
+```
+
+#### 极速上手常用命令：
+```powershell
+# 1. 检查物理路径、目录联接、大纲/卡片对齐与 Git 大文件安全防护
+python scripts/course_pipeline.py status
+
+# 2. 根据最新的 COURSE_MAP.md 毫秒级自动同步/更新/归档卡片槽位
+python scripts/course_pipeline.py sync --course automotive-aerodynamics
+
+# 3. 安全清理 build/ 过程缓存（释放几十 GB 磁盘空间，绝不碰 deliver/ 成片）
+python scripts/course_pipeline.py clean-build
+```
+
 ## 管线分层（2026-11-18）
 
 ```text
