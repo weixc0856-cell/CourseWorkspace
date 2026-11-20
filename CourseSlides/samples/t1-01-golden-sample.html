@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>T1-01 Golden Sample: Educational Visual Design System</title>
+  <link rel="stylesheet" href="../node_modules/reveal.js/dist/reset.css">
+  <link rel="stylesheet" href="../node_modules/reveal.js/dist/reveal.css">
+  <link rel="stylesheet" href="../css/mckinsey-orange.css">
+  <style>
+    /* Standalone demo adjustments */
+    .reveal .slides section {
+      padding: 36px 64px 40px !important;
+    }
+    .kicker {
+      font-size: 0.7em;
+      font-weight: 700;
+      color: var(--mk-orange);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .headline {
+      font-size: 1.45em;
+      font-weight: 700;
+      line-height: 1.22;
+      margin-bottom: 24px;
+      color: var(--mk-text);
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- SLIDE 01: Hero Visual (大图主导型 · 建立核心认知入口与宏观矛盾) -->
+      <section>
+        <div class="kicker">01 / 05 · The Core Paradox</div>
+        <div class="headline">Why Does Air Resist a Moving Vehicle?</div>
+        
+        <div class="slide--hero">
+          <div class="hero-visual">
+            <img src="/content_data/lessons/t1-01-why-aerodynamics/assets/ref-eng-car-wake.png" alt="Car in Wind Tunnel Flow">
+          </div>
+          <div class="hero-caption">
+            <span><strong>Phenomenon:</strong> Above 100 km/h, over 70% of total drivetrain energy is spent shearing and displacing atmospheric air.</span>
+            <span style="color: var(--mk-orange); font-weight: 600;">[ Archetype 1: Hero Visual ]</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 02: Editorial Layout (图文融合型 · 瑞士风格非对称网格解析机理) -->
+      <section>
+        <div class="kicker">02 / 05 · The Physical Contrast</div>
+        <div class="headline">Streamlined Airfoil vs. Ground-Bound Bluff Body</div>
+
+        <div class="slide--editorial">
+          <div class="editorial-visual">
+            <img src="/content_data/lessons/t1-01-why-aerodynamics/assets/ref-eng-aircraft-vs-bluff.png" alt="Airfoil vs Bluff Body">
+          </div>
+          <div class="editorial-text">
+            <div class="step-item">
+              <div class="step-number">01 · Attached Flow</div>
+              <p style="font-size: 0.8em; margin: 4px 0 0;">An aircraft wing keeps the boundary layer attached along 95% of its chord. Skin friction dominates, and wake pressure is fully recovered.</p>
+            </div>
+            <div class="step-item active">
+              <div class="step-number">02 · Ground &amp; Wheels</div>
+              <p style="font-size: 0.8em; margin: 4px 0 0;">A road car cannot taper infinitely. It is sliced abruptly by legal length limits, ground clearance, and wheel rotation.</p>
+            </div>
+            <div class="step-item active">
+              <div class="step-number">03 · The Bluff Reality</div>
+              <p style="font-size: 0.8em; margin: 4px 0 0;">Over <strong>85%–90%</strong> of automobile drag is <strong>Pressure Drag (Form Drag)</strong> caused by early boundary layer separation.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 03: Annotated Visual (物理注释型 · 汽车空气动力学精髓：流场微观解剖) -->
+      <section>
+        <div class="kicker">03 / 05 · Mechanics Anatomy</div>
+        <div class="headline">Flow Separation Dictates Surface Pressure Distribution</div>
+
+        <div class="slide--annotated">
+          <div class="annotated-container">
+            <img src="/content_data/lessons/t1-01-why-aerodynamics/assets/ref-eng-separation-mechanisms.png" alt="Flow Separation Anatomy">
+            <!-- Precise physical callouts -->
+            <div class="callout-badge" style="top: 18%; left: 24%;">
+              Stagnation Zone (Cp ≈ +1.0)
+            </div>
+            <div class="callout-badge" style="top: 22%; left: 45%;">
+              A-Pillar Corner Vortex
+            </div>
+            <div class="callout-badge" style="bottom: 35%; right: 12%; border-left-color: #C75B55;">
+              Recirculation Dead Water (Cp &lt; 0)
+            </div>
+            <div class="callout-badge" style="bottom: 12%; right: 38%;">
+              Underbody Diffuser Expansion
+            </div>
+          </div>
+          <div style="margin-top: 14px; font-size: 0.78em; color: var(--mk-text-muted); display: flex; justify-content: space-between;">
+            <span><strong>Causality:</strong> The net pressure difference between the high-pressure nose and low-pressure suction wake produces the net retarding force.</span>
+            <span style="color: var(--mk-orange); font-weight: 600;">[ Archetype 3: Annotated Visual ]</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 04: Data-driven & Model (专业图表型 · 物理数学模型与速度三次方能耗定律) -->
+      <section>
+        <div class="kicker">04 / 05 · Governing Dynamics</div>
+        <div class="headline">The Cubic Power Law: Energy Scales with Velocity Cubed</div>
+
+        <div class="slide--data">
+          <div class="chart-container" style="display: flex; flex-direction: column; justify-content: space-around;">
+            <div style="font-size: 0.85em; font-weight: 600; color: var(--mk-text);">Aerodynamic Drag Force &amp; Power Requirements:</div>
+            <div style="background: #FAF8F5; padding: 18px; border-radius: 6px; font-family: var(--mk-font-mono); font-size: 1.1em; text-align: center; border: 1px dashed var(--mk-border);">
+              F<sub>D</sub> = ½ · ρ · v<sup>2</sup> · C<sub>D</sub> · A <br>
+              <span style="color: var(--mk-orange); font-size: 1.15em; font-weight: 700;">P<sub>aero</sub> = F<sub>D</sub> · v = ½ · ρ · v<sup>3</sup> · C<sub>D</sub> · A</span>
+            </div>
+            <div style="font-size: 0.78em; line-height: 1.5; color: var(--mk-text-muted);">
+              • <strong>ρ</strong>: Atmospheric density (1.225 kg/m³ at 15°C, 101.3 kPa)<br>
+              • <strong>C<sub>D</sub></strong>: Drag Coefficient (dimensionless bluff shape efficiency)<br>
+              • <strong>A</strong>: Frontal projected area (~2.2 m² for modern sedans, ~2.8 m² for SUVs)
+            </div>
+          </div>
+          <div>
+            <div class="takeaway-box">
+              <div style="font-size: 0.75em; font-weight: 700; color: var(--mk-orange); text-transform: uppercase;">Engineering Consequence</div>
+              <p style="font-size: 0.85em; font-weight: 600; margin: 8px 0 4px;">Cruising Speed vs. Power Dissipation:</p>
+              <ul style="font-size: 0.78em; margin: 0; padding-left: 18px; line-height: 1.6;">
+                <li>80 km/h → <strong>~5.5 kW</strong> aero load</li>
+                <li>100 km/h → <strong>~10.8 kW</strong> (+96% increase)</li>
+                <li>120 km/h → <strong>~18.7 kW</strong> (+240% increase)</li>
+              </ul>
+            </div>
+            <p style="font-size: 0.75em; color: var(--mk-text-muted); margin-top: 14px;">Every 20% increase in highway speed nearly doubles aerodynamic energy consumption, directly shrinking EV battery range.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 05: Comparison (同构对比型 · 三类车身后体形态与整车系统工程妥协) -->
+      <section>
+        <div class="kicker">05 / 05 · Industrial Synthesis</div>
+        <div class="headline">Three Rear Archetypes: Separation Lines vs. Usable Volume</div>
+
+        <div class="slide--comparison">
+          <div class="compare-card">
+            <div style="font-size: 0.8em; font-weight: 700; color: var(--mk-text);">Fastback / Streamlined Hatch</div>
+            <div class="compare-visual">
+              <img src="/content_data/lessons/t1-01-why-aerodynamics/assets/ref-eng-shape-diversity.png" alt="Fastback Flow">
+            </div>
+            <div class="compare-meta">
+              <span style="font-size: 0.75em; color: var(--mk-text-muted);">Lowest Drag (C<sub>D</sub> ≈ 0.20–0.24)</span>
+              <span style="font-size: 0.75em; color: #42A69A; font-weight: 600;">Long Wake Recovery</span>
+            </div>
+            <p style="font-size: 0.72em; margin-top: 8px; color: var(--mk-text-muted);">Gentle roof slope allows attached boundary layer, delaying vortex shedding at the expense of rear occupant headroom.</p>
+          </div>
+
+          <div class="compare-card active">
+            <div style="font-size: 0.8em; font-weight: 700; color: var(--mk-orange);">Squareback / SUV / Estate</div>
+            <div class="compare-visual">
+              <img src="/content_data/lessons/t1-01-why-aerodynamics/assets/ref-eng-synthesis-compromise.png" alt="Squareback Flow">
+            </div>
+            <div class="compare-meta">
+              <span style="font-size: 0.75em; color: var(--mk-text-muted);">Higher Drag (C<sub>D</sub> ≈ 0.30–0.36)</span>
+              <span style="font-size: 0.75em; color: var(--mk-orange); font-weight: 600;">Fixed Separation Lip</span>
+            </div>
+            <p style="font-size: 0.72em; margin-top: 8px; color: var(--mk-text-muted);">Sudden geometric cut-off fixes separation line to eliminate unstable buffeting and maximize trunk cargo payload.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="../node_modules/reveal.js/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1920,
+      height: 1080,
+      margin: 0.04,
+      controls: true,
+      progress: true,
+      center: false,
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast'
+    });
+  </script>
+</body>
+</html>
