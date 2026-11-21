@@ -57,6 +57,14 @@ documents:
   layer: record
   status: record
   answers: 2026-11-18 实查的能力对照、缺口、实施顺序与验收证据
+- path: audit/2026-11-21-上下文纪律与证据门-实施方案.md
+  layer: record
+  status: record
+  answers: 2026-11-21 实测 token 构成、上下文纪律落地与五组证据门（E1–E5）的文件级方案
+- path: 课程开发避坑清单.md
+  layer: contract
+  status: current
+  answers: 做课窗口实测坑位（编码/合同/返工链/token）与每集开工前 Top5 自查、账单监测机制
 - path: 课程开发管线-分层架构.md
   layer: contract
   status: current

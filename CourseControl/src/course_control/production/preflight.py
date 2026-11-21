@@ -438,9 +438,15 @@ def evidence_problems(
                 f"{expected} for {edition} (mixed page convention)"
             )
 
-        if edition not in page_cache:
-            page_cache[edition] = _docling_page_by_asset(docling_output / edition)
-        asset_page = page_cache[edition].get(Path(str(raw["docling_asset"])).name)
+        # source_edition is a human label ("hucho-en-5e (5th ed., 2016)"), not a
+        # directory name. The docling_asset path carries the real bundle id, so
+        # resolve from it first; falling back to the label silently skipped the
+        # cross-check and reported a warning instead of verifying the page.
+        asset_rel = Path(str(raw["docling_asset"]))
+        bundle_id = asset_rel.parts[0] if len(asset_rel.parts) > 1 else edition
+        if bundle_id not in page_cache:
+            page_cache[bundle_id] = _docling_page_by_asset(docling_output / bundle_id)
+        asset_page = page_cache[bundle_id].get(asset_rel.name)
         if asset_page is None:
             warnings.append(
                 f"{label}: pdf_page {pdf} could not be cross-checked against the Docling page markers"

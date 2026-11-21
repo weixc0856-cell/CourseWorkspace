@@ -48,7 +48,7 @@ for _panel, _names in {
     "Director & design": (
         "director-plan director-validate direction-validate beats-validate animation-score "
         "narrative-validate teaching-qa plan-audit shot-taxonomy grammar-list "
-        "production-validate quality-gate reference-compare visual-design sound-design"
+        "production-validate quality-gate reference-compare visual-design deck-compile sound-design"
     ),
     "Produce & deliver": (
         "producer-order producer-run producer-status producer-affected producer-rebuild "

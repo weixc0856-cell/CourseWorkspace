@@ -271,6 +271,16 @@ from course_control.production.checks_news import NEWS_RULES  # noqa: E402
 
 AUTO_RULES.update(NEWS_RULES)
 
+# E1 display chain alignment (production/checks_display.py), same pattern.
+from course_control.production.checks_display import DISPLAY_RULES  # noqa: E402
+
+AUTO_RULES.update(DISPLAY_RULES)
+
+# E6 deck design binding (production/checks_deck_design.py): plain pages fail.
+from course_control.production.checks_deck_design import DECK_DESIGN_RULES  # noqa: E402
+
+AUTO_RULES.update(DECK_DESIGN_RULES)
+
 
 @dataclass
 class CheckReport:

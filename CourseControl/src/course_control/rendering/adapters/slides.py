@@ -55,6 +55,9 @@ def _make_handler(workspace: Path, lessons: Path, log_handle):
             if rel == "lessons" or rel.startswith("lessons/"):
                 base = lessons
                 tail = rel[len("lessons"):].lstrip("/")
+            elif rel == "build" or rel.startswith("build/"):
+                base = lessons.parent / "build"
+                tail = rel[len("build"):].lstrip("/")
             elif rel == "CourseSlides" or rel.startswith("CourseSlides/"):
                 base = workspace if (workspace / "CourseSlides").is_dir() else repo_workspace
                 tail = rel
@@ -106,6 +109,42 @@ def _start_server(paths: LessonPaths, log_dir: Path) -> _CaptureServer:
     raise RuntimeError(f"capture server did not become ready; see {log_path}")
 
 
+def _deck_binding_error(paths: LessonPaths) -> str | None:
+    """The compiled EVDS deck must exist and be bound to the current inputs.
+
+    capture used to fall back to the plain CourseSlides/template shell whenever
+    nothing else was wired up, silently producing unstyled pages.  Requiring a
+    fresh deck-manifest.json here makes that failure loud instead of silent.
+    """
+    deck_dir = paths.build_root / "deck"
+    index = deck_dir / "index.html"
+    manifest_path = deck_dir / "deck-manifest.json"
+    if not index.is_file() or not manifest_path.is_file():
+        return (
+            "compiled deck missing; run course-control deck-compile --lesson "
+            f"{paths.slug} before capture"
+        )
+    try:
+        deck_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return f"cannot read deck manifest: {exc}"
+    slides_path = paths.content_path(paths.lesson.content.slides)
+    production_path = paths.lesson_dir / "authoring/production.yaml"
+    for label, path, key in (
+        ("slides.md", slides_path, "slides_sha256"),
+        ("production.yaml", production_path, "production_sha256"),
+    ):
+        if not path.is_file():
+            return f"{label} is not readable: {path}"
+        current = hashlib.sha256(path.read_bytes()).hexdigest()
+        if deck_manifest.get(key) != current:
+            return (
+                f"compiled deck is stale against {label}; "
+                f"re-run course-control deck-compile --lesson {paths.slug}"
+            )
+    return None
+
+
 def capture_slides(paths: LessonPaths) -> StageOutcome:
     log_dir = paths.build_root / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -113,10 +152,19 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
     started = time.monotonic()
     server = None
     try:
+        binding_error = _deck_binding_error(paths)
+        if binding_error:
+            return StageOutcome(
+                "capture_slides",
+                Status.FAIL,
+                errors=[binding_error],
+                duration_ms=int((time.monotonic() - started) * 1000),
+            )
         if not _server_ready():
             server = _start_server(paths, log_dir)
         width, height = paths.lesson.outputs.resolution
         slides_path = paths.content_path(paths.lesson.content.slides)
+        deck_url = f"{BASE_URL}/build/{paths.slug}/deck/index.html"
         command = [
             *which_command("node"),
             "scripts/capture-slides.mjs",
@@ -130,6 +178,8 @@ def capture_slides(paths: LessonPaths) -> StageOutcome:
             str(height),
             "--base-url",
             BASE_URL,
+            "--url",
+            deck_url,
             "--out",
             str(paths.build_root / "slides"),
         ]

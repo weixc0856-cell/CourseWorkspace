@@ -31,6 +31,7 @@ if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(lesson)) {
 }
 
 const baseUrl = args['base-url'] ?? 'http://localhost:8081';
+const urlOverride = args.url ?? null;
 const outDir = path.resolve(args.out ?? path.join(workspaceRoot, 'build', lesson, 'slides'));
 const maxPages = args.max ? Number(args.max) : null;
 const slidesPath = args.slides ? path.resolve(args.slides) : null;
@@ -157,7 +158,7 @@ try {
     deviceScaleFactor: 1,
   });
 
-  const url = `${baseUrl}/CourseSlides/template/?lesson=${lesson}`;
+  const url = urlOverride ?? `${baseUrl}/CourseSlides/template/?lesson=${lesson}`;
   console.log(`CAPTURE ${url}`);
   const response = await page.goto(url, {waitUntil: 'networkidle', timeout: 60000});
   if (!response || !response.ok()) {
@@ -214,6 +215,16 @@ try {
     await page.screenshot({path: target, fullPage: false});
     const info = await stat(target);
     if (info.size <= 0) throw new Error(`empty screenshot: ${target}`);
+    // Positive content assertion: a blank/near-blank 1920x1080 frame compresses
+    // to a few KB; real archetype pages are tens of KB or more.  The geometric
+    // audit above can pass on a page that renders blank (e.g. a CSS stacking
+    // bug), so this catches that failure mode without a new image dependency.
+    const minBytes = width * height * 0.01;
+    if (info.size < minBytes) {
+      throw new Error(
+        `slide ${pageNumber} looks blank: ${info.size} bytes < ${Math.round(minBytes)} minimum`,
+      );
+    }
     pages.push({
       index,
       page: pageNumber,

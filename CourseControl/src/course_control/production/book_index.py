@@ -89,27 +89,62 @@ def load_card(path: Path) -> EpisodeCard:
     )
 
 
-COURSE_MAP_ROW = re.compile(
-    r"^\|\s*(T\d+-\d{2})\s*\|\s*([^|]+?)\s*\|\s*(\d+(?:\.\d+)*)[^|]*"
-    r"\|\s*([^|]*?)\s*\|\s*(\d+)\s*\|$",
-    re.M,
-)
+COURSE_MAP_EPISODE = re.compile(r"^T\d+-\d{2}$")
+COURSE_MAP_MINUTES = re.compile(r"^(\d+)\s*(?:min)?$")
+# A legacy map spells the section as "1.1 Scope"; the English section name is
+# prose, not part of the id. v5.2 ranges ("1.2.5–1.2.6"), unions ("1.9 & 1.11")
+# and Chinese markers ("6.3.3 扩展") are part of the id and must survive.
+COURSE_MAP_SECTION_PROSE = re.compile(r"\s+[A-Za-z][A-Za-z0-9 ,\-/'()]*$")
+# LaTeX in a summary cell escapes its pipes ("\|A_F\|"); those are not columns.
+COURSE_MAP_CELL_SPLIT = re.compile(r"(?<!\\)\|")
+
+
+def _map_cells(line: str) -> list[str]:
+    parts = COURSE_MAP_CELL_SPLIT.split(line)
+    return [item.strip().replace("**", "").strip() for item in parts[1:-1]]
 
 
 def load_course_map(path: Path) -> list[dict]:
-    """Read the episode table from COURSE_MAP.md; the map is the source of truth."""
+    """Read the episode table from COURSE_MAP.md; the map is the source of truth.
+
+    Two table shapes are accepted: the legacy 5-column row and the v5.2-Freeze
+    7-column row (which adds a page column, a source tag and a "N min" unit).
+    Cells are matched by shape rather than by position so a column added later
+    does not silently shift the parse. Other tables in the same document reuse
+    episode ids (the T2 theory-to-engineering mapping table is 3-column), so a
+    row only counts when it has a known column count *and* a minutes cell.
+    """
     if not path.is_file():
         raise BookIndexError(f"course map not found: {path}")
     text = path.read_text(encoding="utf-8")
-    rows = [
-        {
-            "episode": match.group(1),
-            "title": match.group(2).strip(),
-            "section": match.group(3),
-            "minutes": int(match.group(5)),
-        }
-        for match in COURSE_MAP_ROW.finditer(text)
-    ]
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for line in text.splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = _map_cells(line)
+        if len(cells) not in (5, 7):
+            continue
+        episode = cells[0]
+        if not COURSE_MAP_EPISODE.match(episode) or episode in seen:
+            continue
+        minutes = None
+        for cell in cells[3:]:
+            match = COURSE_MAP_MINUTES.match(cell.strip("`"))
+            if match:
+                minutes = int(match.group(1))
+        if minutes is None:
+            continue
+        section = COURSE_MAP_SECTION_PROSE.sub("", cells[2]).strip()
+        rows.append(
+            {
+                "episode": episode,
+                "title": cells[1],
+                "section": section,
+                "minutes": minutes,
+            }
+        )
+        seen.add(episode)
     if not rows:
         raise BookIndexError(f"{path}: no episode rows found")
     return rows

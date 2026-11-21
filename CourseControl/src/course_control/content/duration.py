@@ -39,6 +39,24 @@ class ResolvedDuration:
     def tolerance(self) -> float:
         return max(self.page_tolerance, 0.5)
 
+    def profile_overrides(self) -> dict[str, dict[str, float]]:
+        """Explicit values that replace the profile defaults, with both numbers.
+
+        Recording the override keeps ``profile`` and the effective window from
+        reading as a contradiction: the profile is the starting point, the
+        declared values are the authority.
+        """
+        defaults = PROFILES[self.profile]
+        overrides: dict[str, dict[str, float]] = {}
+        for name, declared, key in (
+            ("target_seconds", self.declared_target, "target"),
+            ("min_seconds", self.declared_min, "min"),
+            ("max_seconds", self.declared_max, "max"),
+        ):
+            if declared is not None and float(declared) != defaults[key]:
+                overrides[name] = {"profile": defaults[key], "declared": float(declared)}
+        return overrides
+
     def as_dict(self) -> dict:
         return {
             "profile": self.profile,
@@ -46,6 +64,7 @@ class ResolvedDuration:
             "min_seconds": self.minimum,
             "max_seconds": self.maximum,
             "page_tolerance_seconds": self.page_tolerance,
+            "profile_overrides": self.profile_overrides(),
         }
 
 

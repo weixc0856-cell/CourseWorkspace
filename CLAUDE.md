@@ -109,11 +109,13 @@
   node RemotionStudio/scripts/frame-audit.mjs                 # 帧审计（正向断言）
   python scripts/static_hold.py --film <mp4>                  # 死画面检测
   python scripts/check_docs.py                                # 文档地图/链接/命令/路径
+  python scripts/analyze_session_tokens.py <session.jsonl>    # 会话token账单（协作协议§12）
   python scripts/check_build_layout.py <build> <lessons> <fixtures>  # build 顶层布局
   python scripts/verify_content_manifest.py --manifest <json> --content-root <root>  # 内容根变更清单复核
   ```
   其余子命令见 `course-control --help`；完整验收命令见 [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
-- **协作协议**：[docs/协作协议-双会话流水线.md](docs/协作协议-双会话流水线.md)（作者 / 验证 / 统筹三分，交接三样证据）。
+- **协作协议**：[docs/协作协议-双会话流水线.md](docs/协作协议-双会话流水线.md)（作者 / 验证 / 统筹三分，交接三样证据）。做课会话一律执行其 **§12 上下文纪律**：会话分节（主会话 ≤80K）、大产物走生成器落盘、命令输出截流到 `build/_logs/`、一书一 digest 一图一判定、审阅派子代理；质量门禁一条不减，每集交付附 token 账单。
+- **避坑清单**：[docs/课程开发避坑清单.md](docs/课程开发避坑清单.md)。Top5 默认执行、不需 owner 提醒：①改上游必重生成全链+残留扫描归零；②配置三查（字段位置/传 id 不传路径/一次改齐再重签）；③Windows 中文 `-X utf8`+脚本落盘（`-I` 忽略编码环境变量）；④语速时长实测，估算只作初值；⑤大产物生成器落盘，不整份 Write 重写。硬门只卡交付质量与法律风险；token 纪律走默认路径+每集账单反馈（WARN 级），不新增 blocking 门。
 
 ---
 

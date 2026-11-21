@@ -263,6 +263,44 @@ def _validate_shots(paths: LessonPaths, result: ValidationResult) -> ValidationR
     return result
 
 
+MODE_AUTHORITY_RE = re.compile(r"\b([a-z][a-z_]+)-mode\s+authority\b", re.I)
+
+
+def _check_mode_declaration(result: ValidationResult, paths: LessonPaths) -> None:
+    """A storyboard header declaring the wrong compose mode is a stale derive.
+
+    Generators write ``# DERIVED from ... (<mode>-mode authority)`` into the
+    storyboard's leading comments.  When the lesson switches compose mode the
+    header must be regenerated with it; a mismatch means downstream consumers
+    are reading two different authorities.
+    """
+    rel = paths.lesson.content.storyboard
+    if not rel:
+        return
+    path = paths.content_path(rel)
+    if not path.is_file():
+        return  # a missing storyboard is already a V-02 error
+    declared: str | None = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if not stripped.startswith("#"):
+            break
+        match = MODE_AUTHORITY_RE.search(stripped)
+        if match:
+            declared = match.group(1).lower()
+            break
+    if declared is not None and declared != paths.lesson.compose.mode:
+        result.add(
+            "V-49",
+            "error",
+            f"storyboard declares {declared}-mode authority but compose.mode is "
+            f"{paths.lesson.compose.mode}; regenerate the storyboard from the "
+            "current compose mode",
+        )
+
+
 def _check_subtitle_length(result, paths: LessonPaths, subtitles: Path) -> None:
     """Stale subtitles are caught before rendering, not by collect.
 
@@ -308,6 +346,8 @@ def validate(paths: LessonPaths, *, capture_only: bool = False) -> ValidationRes
 
     if not SLUG_RE.match(paths.slug) or lesson.lesson_id != paths.lesson_dir.name:
         result.add("V-01", "error", "lesson_id must be a slug and match the directory name")
+
+    _check_mode_declaration(result, paths)
 
     if lesson.compose.mode == "shots":
         return _validate_shots(paths, result)
