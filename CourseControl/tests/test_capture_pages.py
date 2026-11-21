@@ -60,7 +60,7 @@ class CapturePageCountTest(unittest.TestCase):
         )
         from course_control.rendering.deck_compiler import compile_deck
 
-        compile_deck(self.paths)
+        compile_deck(self.paths, font="default")
         self.manifest = self.paths.build_root / "slides" / "capture-manifest.json"
         self.manifest.parent.mkdir(parents=True, exist_ok=True)
 

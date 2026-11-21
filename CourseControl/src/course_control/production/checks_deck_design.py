@@ -11,6 +11,21 @@ Contract with the deck compiler (production.yaml -> build/<slug>/deck/index.html
 - those book-figure pages must carry a non-empty ``.slide-footer .source``
   citation line (CSS contract: CourseSlides/css/mckinsey-orange.css:208).
 
+Visual hard-defect checks (structure alone let garbage through once):
+
+- instruction_leak: director instructions (spotlight / mask reveal / pin
+  labels / sweep along / hold-the-callout, or any text chunk truncated with
+  "…") must never appear as screen text;
+- placeholder_mechanism: a page with no <img> whose main visual is an inline
+  SVG containing a large rounded horizontal block (rx>0, width/height>2,
+  width>=150, height>=40 viewBox units — the "rounded-rect car body" tell)
+  is a placeholder, not a mechanism illustration.  Heuristic, strict side:
+  thin chart bars (height<40) are exempt;
+- data_binding: a slide--data page must carry real numbers in its body
+  (a percentage, or >=3 standalone axis-tick numbers); footer folio and
+  kicker numbers do not count.  "schematic — not measured" with no numbers
+  fails.
+
 A plain reveal.js shell fails.  Missing deck HTML or production contract is
 ``not_run`` (queued, never pass).  Shots-mode lessons are not applicable
 (``not_run``); the sign-off gate only invokes this in deck mode.
@@ -18,6 +33,7 @@ A plain reveal.js shell fails.  Missing deck HTML or production contract is
 
 from __future__ import annotations
 
+import re
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -27,6 +43,12 @@ ARCHETYPES = {
     "slide--comparison", "slide--process", "slide--data",
 }
 _VOID = {"img", "br", "hr", "meta", "link", "input", "source", "wbr"}
+_INSTRUCTION = re.compile(
+    r"spotlight|mask reveal|pin labels?|sweep along|hold the\b[^.]*callout",
+    re.IGNORECASE,
+)
+_PERCENT = re.compile(r"\d+(?:\.\d+)?\s*(?:%|percent)")
+_NUMBER = re.compile(r"\b\d+(?:\.\d+)?\b")
 
 
 class _PageParser(HTMLParser):
@@ -35,8 +57,10 @@ class _PageParser(HTMLParser):
         self.pages: list[dict] = []
         self._depth = 0
         self._cur: dict | None = None
-        self._stack: list[tuple[str, bool, bool]] = []
+        self._stack: list[tuple[str, bool, bool, bool]] = []
         self._buf: list[str] = []
+        self._svg = 0
+        self._skip = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = dict(attrs)
@@ -48,18 +72,38 @@ class _PageParser(HTMLParser):
                     "archetypes": sorted(c for c in cls if c in ARCHETYPES),
                     "imgs": [],
                     "source": "",
+                    "chunks": [],
+                    "body": [],
+                    "svg_rects": [],
                 }
                 self._buf = []
+                self._svg = 0
+                self._skip = 0
         if self._cur is not None:
+            if tag in ("script", "style"):
+                self._skip += 1
+            if tag == "svg":
+                self._svg += 1
             if tag == "img":
                 for key in ("src", "data-asset-src"):
                     if a.get(key):
                         self._cur["imgs"].append(a[key])
-            in_footer = any(footer for _, footer, _ in self._stack)
+            if tag == "rect" and self._svg:
+                try:
+                    w = float(a.get("width") or 0)
+                    h = float(a.get("height") or 0)
+                    rx = float(a.get("rx") or 0)
+                except ValueError:
+                    w = h = rx = 0.0
+                if rx > 0 and h > 0 and w / h > 2 and w >= 150 and h >= 40:
+                    self._cur["svg_rects"].append((w, h, rx))
+            in_footer = any(footer for _, footer, _, _ in self._stack)
+            in_kicker = any(kicker for _, _, _, kicker in self._stack)
             is_footer = "slide-footer" in cls
             is_source = "source" in cls and in_footer
+            is_kicker = "kicker" in cls
             if tag not in _VOID:
-                self._stack.append((tag, is_footer, is_source))
+                self._stack.append((tag, is_footer, is_source, is_kicker))
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.handle_starttag(tag, attrs)
@@ -73,14 +117,24 @@ class _PageParser(HTMLParser):
                 self._cur["source"] = "".join(self._buf).strip()
                 self.pages.append(self._cur)
                 self._cur = None
+        if tag in ("script", "style"):
+            self._skip = max(0, self._skip - 1)
+        if tag == "svg":
+            self._svg = max(0, self._svg - 1)
         for i in range(len(self._stack) - 1, -1, -1):
             if self._stack[i][0] == tag:
                 del self._stack[i:]
                 break
 
     def handle_data(self, data: str) -> None:
-        if self._cur is not None and any(source for _, _, source in self._stack):
+        if self._cur is None or self._skip:
+            return
+        if any(source for _, _, source, _ in self._stack):
             self._buf.append(data)
+        if data.strip():
+            self._cur["chunks"].append(data.strip())
+        if not any(footer or kicker for _, footer, _, kicker in self._stack):
+            self._cur["body"].append(data)
 
 
 def _book_assets(sequence: dict) -> list[str]:
@@ -141,6 +195,24 @@ def deck_design_problems(
                 findings.append(f"{label}: book figure not bound: {', '.join(missing)}")
             if not page["source"]:
                 findings.append(f"{label}: book figure page lacks .slide-footer .source citation")
+        for chunk in page["chunks"]:
+            if _INSTRUCTION.search(chunk) or chunk.endswith("…"):
+                findings.append(
+                    f"{label}: director instruction leaked to screen: {chunk[:60]}"
+                )
+                break
+        if not page["imgs"] and page["svg_rects"]:
+            findings.append(
+                f"{label}: placeholder mechanism (rounded-rect body block in SVG, "
+                "no real illustration)"
+            )
+        if "slide--data" in page["archetypes"]:
+            body = " ".join(page["body"])
+            if not _PERCENT.search(body) and len(_NUMBER.findall(body)) < 3:
+                findings.append(
+                    f"{label}: data page carries no real numbers "
+                    "(no percentage, fewer than 3 axis ticks)"
+                )
     status = "fail" if findings else "pass"
     return status, findings, stats
 

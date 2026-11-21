@@ -1,27 +1,20 @@
 """Compile production.yaml + slides.md into a static EVDS deck (reveal.js).
 
-The plain CourseSlides/template shell only renders slides.md's markdown text;
-it never applies the archetype layouts in css/mckinsey-orange.css.  This
-compiler is the missing link: it reads the shot plan (which shots carry a
-book figure, which are schematic/data/diagram beats) and pours that data into
-the six EVDS archetypes (docs/教育内容视觉设计体系与视觉叙事规范.md, mapped in
-docs/版式系统.md §3.1).
+Figure-driven, reuse-first (CLAUDE.md A1/A2/A4): every page's main visual is a
+real illustration -- an original book figure (warm-white #EDE7DA panel, pixels
+untouched) or an owner-designated study-aid supplement (assets/baseline-*.png,
+white figure panel).  No hand-drawn SVG mechanism is ever emitted (red line A4);
+the only SVG is the data page's chart, rebuilt to scale from canonical numbers
+with a labelled 0-100% axis (red line A6).
 
-Display text (headline, bullets) comes from slides.md unchanged -- that is
-owner-authored content.  production.yaml only drives layout: which archetype,
-which image, and the callout/chart annotations that describe what the shot
-will animate.  No numeric value is invented; schematic charts stay labelled
-"schematic -- not measured", matching the shot notes' own disclaimer.
+Display text (headline, bullets) comes from slides.md unchanged -- owner content.
+production.yaml drives layout only: archetype, which figures (shot ``objects``),
+and nothing else.  Director instructions (shot action notes) never reach the
+screen; they belong to the animation layer.
 
-Layout, colour and type follow the mandatory visual specs, not the CSS file's
-own drifted defaults:
-  - docs/配色规范.md §3 Color Tokens (mckinsey-orange.css's :root has drifted
-    from these; overridden locally rather than editing the shared theme).
-  - docs/课程页面系统.md §3 fixed grid (header/title/main-visual/source/folio
-    anchors) and §4 source citation format.
-  - docs/版式系统.md §9.1 font-size tiers (body >= 24px, title >= 56px).
-Book figures keep the mandated warm-white #EDE7DA panel (CLAUDE.md red line 3);
-original pixels are never altered.
+Layout follows the open-design golden-board benchmark and the mandatory specs:
+kicker (orange caps) / headline with orange rule / large figure / source bottom
+left / folio bottom right; EVDS archetype class on the <section> (E6 contract).
 """
 from __future__ import annotations
 
@@ -29,6 +22,7 @@ import hashlib
 import html
 import json
 import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,16 +30,60 @@ from course_control.content.paths import LessonPaths
 from course_control.content.production import Sequence, ShotPlan, load_production
 
 ARCHETYPES = ("hero", "editorial", "annotated", "comparison", "process", "data")
-FIGURE_TYPES = ("book_figure_annotated", "schematic_annotated")
+BOOK_FIGURE = "book_figure_annotated"
+SUPPLEMENT_PREFIX = "assets/baseline-"
 
-# docs/配色规范.md §3 Color Tokens (canonical; mckinsey-orange.css has drifted).
+# docs/配色规范.md §3 canonical tokens (mckinsey-orange.css :root has drifted).
 INK = "#252A31"
 BODY = "#2E3338"
 MUTED = "#6B7280"
 ORANGE = "#E8733B"
 PAPER = "#FBFAF7"
-BOOK_PANEL = "#EDE7DA"  # CLAUDE.md red line 3: warm-white panel for original book pixels
+BOOK_PANEL = "#EDE7DA"  # red line 3: warm-white panel for original book pixels
 BORDER = "#E3E0D7"
+
+NBLM_CREDIT = (
+    "Illustration · NotebookLM study aid after Hucho, Aerodynamics of Road Vehicles"
+)
+CHART_CREDIT = (
+    "Chart · NotebookLM study aid after Hucho, Aerodynamics of Road Vehicles, Ch. 1"
+)
+# Full credits (with edition / mapping notes) are preserved off-screen in the
+# citation provenance sidecar; the on-screen line stays single-line and compact.
+FULL_NBLM_CREDIT = (
+    "Illustration · NotebookLM study aid after Hucho, "
+    "Aerodynamics of Road Vehicles, 5th ed."
+)
+FULL_CHART_CREDIT = (
+    "Chart redrawn to scale · NotebookLM study aid after Hucho, "
+    "Aerodynamics of Road Vehicles, 5th ed., Ch. 1"
+)
+# Page-mapping notes are evidence, not screen text: stripped from the display
+# line and recorded in the provenance sidecar.
+MAPPING_NOTE = re.compile(r"\s*·?\s*printed page\s*=\s*PDF page\s*[−-]\s*\d+", re.I)
+
+# Local OFL faces (content-root references/fonts, manifest-verified).  Compiled
+# into build/<slug>/deck/fonts and referenced relatively; a missing file is a
+# hard error, never a silent fallback to a system/CDN font.
+FONT_SOURCES = {
+    "inter": ("inter/Inter-var.ttf", "Inter"),
+    "sourcesans3": ("sourcesans3/SourceSans3-var.ttf", "Source Sans 3"),
+}
+SYSTEM_STACK = "Inter, Helvetica, Arial, sans-serif"
+
+# Debug-phase display titles (English screen text, red line B7).  At template
+# freeze these are driven from the COURSE_MAP canonical episode titles.
+DISPLAY_TITLE = {
+    "t1-01-why-aerodynamics": "Why a car is fundamentally a bluff-body flow problem",
+}
+HERO_KICKER = "T1-01 · The Bluff-Body Paradigm"
+
+# Canonical automotive drag breakdown (shared course data, not per-lesson invention).
+DRAG_SEGMENTS = (
+    (75.0, "70–80%", "Pressure / Form drag", ORANGE),
+    (12.5, "10–15%", "Friction drag", MUTED),
+    (10.0, "8–12%", "Internal / Cooling", BORDER),
+)
 
 
 @dataclass
@@ -79,7 +117,7 @@ def parse_slides(text: str) -> list[SlidePage]:
 
 
 def choose_archetype(seq: Sequence) -> str:
-    if any(s.objects and s.visual_type in FIGURE_TYPES for s in seq.shots):
+    if any(s.objects and s.visual_type == BOOK_FIGURE for s in seq.shots):
         return "annotated"
     if all(s.visual_type == "data_chart" for s in seq.shots):
         return "data"
@@ -91,264 +129,154 @@ def choose_archetype(seq: Sequence) -> str:
     return "editorial"
 
 
-def _concept(note: str) -> str:
-    n = (note or "").lower()
-    for key, words in (
-        ("caliper", ["caliper", "l/h"]),
-        ("ground", ["mirror", "ground", "wall"]),
-        ("reynolds", ["reynolds", "decade"]),
-        ("transition", ["laminar", "turbulent at", "transition station"]),
-        ("routing", ["routing", "grille", "exhauster", "cabin inlet"]),
-        ("separation", ["separation", "pin", "wake switch", "bubble", "vortex"]),
-        ("envelope", ["subtract", "residual", "envelope"]),
-        ("streamlines", ["streamline", "detach", "fold", "trace"]),
-    ):
-        if any(w in n for w in words):
-            return key
-    return "card"
-
-
-def _detached(note: str) -> bool:
-    n = (note or "").lower()
-    return any(w in n for w in ("detach", "separate", "lets go", "lose", "let go"))
-
-
-def _svg_wrap(inner: str) -> str:
-    return (
-        '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet" '
-        'style="width:100%;height:100%;display:block;">' + inner + "</svg>"
-    )
-
-
-def _flow_svg(attached: bool) -> str:
-    body = f'<rect x="70" y="130" width="260" height="70" rx="30" fill="{BORDER}" />'
-    if attached:
-        lines = "".join(
-            f'<path d="M20,{90 + i * 18} C120,{80 + i * 18} 280,{80 + i * 18} 380,{90 + i * 18}" '
-            f'stroke="{MUTED}" stroke-width="2.5" fill="none" />'
-            for i in range(4)
-        )
-        tag = "attached to the trailing edge"
-    else:
-        lines = "".join(
-            f'<path d="M20,{90 + i * 18} C120,{80 + i * 18} 220,{70 + i * 18} 260,{40 + i * 22}" '
-            f'stroke="{ORANGE}" stroke-width="2.5" fill="none" />'
-            for i in range(4)
-        )
-        tag = "lets go at the rear"
-    label = f'<text x="200" y="270" text-anchor="middle" font-size="18" fill="{MUTED}">{tag}</text>'
-    return _svg_wrap(body + lines + label)
-
-
-def _caliper_svg() -> str:
-    body = f'<rect x="60" y="120" width="280" height="80" rx="24" fill="{BORDER}" />'
-    cal = (
-        f'<line x1="60" y1="230" x2="340" y2="230" stroke="{INK}" stroke-width="3" />'
-        f'<line x1="60" y1="220" x2="60" y2="240" stroke="{INK}" stroke-width="3" />'
-        f'<line x1="340" y1="220" x2="340" y2="240" stroke="{INK}" stroke-width="3" />'
-    )
-    label = f'<text x="200" y="260" text-anchor="middle" font-size="18" fill="{INK}">L/H ~ 3 (typical)</text>'
-    return _svg_wrap(body + cal + label)
-
-
-def _reynolds_svg() -> str:
-    axis = f'<line x1="30" y1="150" x2="370" y2="150" stroke="{INK}" stroke-width="3" />'
-    ticks = "".join(
-        f'<line x1="{30 + i * 85}" y1="140" x2="{30 + i * 85}" y2="160" stroke="{INK}" stroke-width="2" />'
-        f'<text x="{30 + i * 85}" y="182" text-anchor="middle" font-size="16" fill="{MUTED}">1e{4 + i}</text>'
-        for i in range(4)
-    )
-    mark = f'<circle cx="285" cy="150" r="9" fill="{ORANGE}" />'
-    label = f'<text x="200" y="110" text-anchor="middle" font-size="18" fill="{INK}">Re ~ 1e7 at highway speed</text>'
-    return _svg_wrap(axis + ticks + mark + label)
-
-
-def _envelope_svg() -> str:
-    body = f'<rect x="50" y="110" width="300" height="90" rx="20" fill="{BORDER}" />'
-    cuts = "".join(
-        f'<rect x="{x}" y="110" width="{w}" height="90" fill="{BOOK_PANEL}" stroke="{ORANGE}" stroke-width="2" />'
-        for x, w in ((50, 70), (160, 70), (270, 80))
-    )
-    labels = "".join(
-        f'<text x="{x}" y="95" text-anchor="middle" font-size="16" fill="{ORANGE}">{lab}</text>'
-        for x, lab in ((85, "crash"), (195, "cooling"), (310, "sightlines"))
-    )
-    return _svg_wrap(body + cuts + labels)
-
-
-def _separation_svg() -> str:
-    body = f'<rect x="40" y="120" width="220" height="70" rx="24" fill="{BORDER}" />'
-    pin = f'<circle cx="260" cy="120" r="7" fill="{ORANGE}" />'
-    bubble = f'<circle cx="310" cy="155" r="45" stroke="{INK}" stroke-width="3" fill="none" />'
-    label = f'<text x="200" y="240" text-anchor="middle" font-size="18" fill="{INK}">place the separation line</text>'
-    return _svg_wrap(body + pin + bubble + label)
-
-
-def _card_svg() -> str:
-    return _svg_wrap(
-        f'<rect x="60" y="100" width="280" height="100" rx="8" fill="none" stroke="{BORDER}" stroke-width="2" />'
-    )
-
-
-_CONCEPT_SVG = {
-    "caliper": _caliper_svg,
-    "reynolds": _reynolds_svg,
-    "envelope": _envelope_svg,
-    "separation": _separation_svg,
-}
-
-
-def _concept_svg(note: str) -> str:
-    key = _concept(note)
-    if key == "streamlines":
-        return _flow_svg(attached=not _detached(note))
-    fn = _CONCEPT_SVG.get(key, _card_svg)
-    return fn()
-
-
-def _chart_svg() -> str:
-    bars = (
-        (60, 260, INK, "lost"),
-        (150, 90, MUTED, "recovered"),
-        (240, 170, ORANGE, "wake deficit"),
-    )
-    parts = [f'<text x="200" y="30" text-anchor="middle" font-size="17" fill="{MUTED}">schematic — not measured</text>']
-    for y, w, colour, lab in bars:
-        parts.append(f'<text x="20" y="{y + 22}" font-size="17" fill="{INK}">{lab}</text>')
-        parts.append(f'<rect x="120" y="{y}" width="{w}" height="30" fill="{colour}" rx="3" />')
-    return _svg_wrap("".join(parts))
-
-
-def _badge_position(note: str, index: int) -> tuple[str, str]:
-    n = (note or "").lower()
-    top = f"calc(6% + {index * 38}px)"
-    if any(w in n for w in ("bonnet", "nose", "grille", "front", "stagnation")):
-        return (top, "4%")
-    if any(w in n for w in ("roof", "top", "upper")):
-        return (top, "30%")
-    if any(w in n for w in ("underbody", "floor", "diffuser", "ground")):
-        return (top, "20%")
-    if any(w in n for w in ("rear", "tail", "wake", "bubble", "separation", "exit", "vortex")):
-        return (top, "62%")
-    return (top, "44%")
-
-
-def _short_label(note: str, limit: int = 42) -> str:
-    note = note.strip()
-    if len(note) <= limit:
-        return note
-    cut = note[:limit]
-    space = cut.rfind(" ")
-    if space > 0:
-        cut = cut[:space]
-    return cut.rstrip(",;") + "…"
-
-
 def _esc(text: str) -> str:
     return html.escape(text, quote=True)
 
 
-def _figure_shots(seq: Sequence) -> list[ShotPlan]:
-    return [s for s in seq.shots if s.objects and s.visual_type in FIGURE_TYPES]
+def _figures(seq: Sequence) -> list[tuple[str, bool]]:
+    """(object path, is_book) in shot order, deduped.
+
+    baseline-* (study-aid mattes) and flow-* (region crops of the study-aid
+    three-systems diagram) are supplements, not original book pixels.
+    """
+    out: list[tuple[str, bool]] = []
+    for shot in seq.shots:
+        for obj in shot.objects:
+            if obj not in [o for o, _ in out]:
+                is_book = not (obj.startswith(SUPPLEMENT_PREFIX) or obj.startswith("assets/flow-"))
+                out.append((obj, is_book))
+    return out
+
+
+def _img_panel(obj: str, is_book: bool, slug: str, lesson_dir: Path, cls: str) -> str:
+    path = lesson_dir / obj
+    if not path.is_file():
+        raise FileNotFoundError(f"deck asset missing: {path}")
+    name = Path(obj).name
+    bg = BOOK_PANEL if is_book else "#FFFFFF"
+    return (
+        f'<div class="figure-panel {cls}" style="background:{bg};">'
+        f'<img src="/lessons/{slug}/assets/{name}" alt="{_esc(name)}">'
+        "</div>"
+    )
+
+
+def _caption(bullets: list[str], cls: str = "deck-caption") -> str:
+    if not bullets:
+        return ""
+    items = "".join(f"<li>{_esc(b)}</li>" for b in bullets)
+    return f'<ul class="{cls}">{items}</ul>'
+
+
+def _render_hero(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path) -> str:
+    figs = _figures(seq)
+    panels = "".join(
+        _img_panel(obj, is_book, slug, lesson_dir, "hero-figure" if i == 0 else "hero-strip")
+        for i, (obj, is_book) in enumerate(figs)
+    )
+    return f'<div class="hero-stack">{panels}{_caption(page.bullets)}</div>'
 
 
 def _render_annotated(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path) -> str:
-    figure_shots = _figure_shots(seq)
-    assets: list[str] = []
-    for s in figure_shots:
-        for obj in s.objects:
-            if obj not in assets:
-                assets.append(obj)
-    multi = len(assets) > 1
-    dual_class = " dual" if multi else ""
-    blocks = []
-    for obj in assets:
-        asset_path = lesson_dir / obj
-        if not asset_path.is_file():
-            raise FileNotFoundError(f"deck asset missing: {asset_path}")
-        filename = Path(obj).name
-        badges = []
-        for s in figure_shots:
-            if obj not in s.objects:
-                continue
-            for action in s.actions:
-                if not action.note:
-                    continue
-                top, left = _badge_position(action.note, len(badges))
-                label = _short_label(action.note)
-                badges.append(
-                    f'<div class="callout-badge" style="top:{top};left:{left};">{_esc(label)}</div>'
-                )
-        blocks.append(
-            f'<div class="annotated-container{dual_class}" style="background:{BOOK_PANEL};">'
-            f'<img src="/lessons/{slug}/assets/{filename}" alt="{_esc(filename)}">'
-            + "".join(badges)
-            + "</div>"
-        )
-    caption = "".join(f"<li>{_esc(b)}</li>" for b in page.bullets)
-    return (
-        '<div class="slide--annotated">'
-        + "".join(blocks)
-        + f'<ul class="deck-caption">{caption}</ul>'
-        + "</div>"
+    figs = _figures(seq)
+    multi = len(figs) > 1
+    panels = "".join(
+        _img_panel(obj, is_book, slug, lesson_dir, "ann-figure" + (" dual" if multi else ""))
+        for obj, is_book in figs
     )
+    return f'<div class="ann-stack">{panels}{_caption(page.bullets)}</div>'
 
 
-def _render_comparison(seq: Sequence, page: SlidePage) -> str:
-    bullets = page.bullets or ["", "", ""]
-    b1 = bullets[0]
-    b2 = bullets[1] if len(bullets) > 1 else ""
-    rest = bullets[2:]
-    notes = [s.actions[0].note if s.actions else "" for s in seq.shots]
-    n1 = notes[0] if notes else ""
-    n2 = notes[1] if len(notes) > 1 else ""
+def _render_comparison(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path) -> str:
+    figs = _figures(seq)
+    panel = _img_panel(figs[0][0], figs[0][1], slug, lesson_dir, "compare-figure") if figs else ""
+    b = page.bullets or ["", ""]
     cards = (
-        f'<div class="compare-card"><div class="compare-visual">{_concept_svg(n1)}</div>'
-        f'<p class="deck-body">{_esc(b1)}</p></div>'
-        f'<div class="compare-card active"><div class="compare-visual">{_concept_svg(n2)}</div>'
-        f'<p class="deck-body">{_esc(b2)}</p></div>'
+        f'<div class="compare-card"><p class="deck-body">{_esc(b[0])}</p></div>'
+        f'<div class="compare-card active"><p class="deck-body">{_esc(b[1] if len(b) > 1 else "")}</p></div>'
     )
-    conclusion = "".join(f"<li>{_esc(b)}</li>" for b in rest)
-    tail = f'<ul class="deck-caption deck-span">{conclusion}</ul>' if rest else ""
-    return f'<div class="slide--comparison">{cards}{tail}</div>'
+    return f'<div class="compare-stack">{panel}<div class="compare-row">{cards}</div>{_caption(page.bullets[2:])}</div>'
 
 
-def _render_editorial(seq: Sequence, page: SlidePage) -> str:
-    note = seq.shots[0].actions[0].note if seq.shots and seq.shots[0].actions else ""
-    visual = _concept_svg(note)
+def _render_editorial(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path) -> str:
+    figs = _figures(seq)
+    panel = _img_panel(figs[0][0], figs[0][1], slug, lesson_dir, "edit-figure") if figs else ""
     steps = "".join(
-        f'<div class="step-item active"><div class="step-number">{i + 1:02d}</div>'
+        f'<div class="step-item"><div class="step-number">{i + 1:02d}</div>'
         f'<p class="deck-body">{_esc(b)}</p></div>'
         for i, b in enumerate(page.bullets)
     )
-    return (
-        '<div class="slide--editorial">'
-        f'<div class="editorial-visual">{visual}</div>'
-        f'<div class="editorial-text">{steps}</div>'
-        "</div>"
+    return f'<div class="edit-grid"><div class="edit-text">{steps}</div>{panel}</div>'
+
+
+def _chart_svg() -> str:
+    """Data chart rebuilt to scale from canonical numbers, labelled 0-100% axis.
+
+    Narrow segments carry no inside text (it would collide); a swatch legend
+    below the axis names every segment with its range, so nothing overlaps.
+    """
+    parts = ['<svg viewBox="0 0 900 500" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;">']
+    x0, x1, y, h = 40, 860, 60, 110
+    cursor = x0
+    for i, (frac, lab, name, colour) in enumerate(DRAG_SEGMENTS):
+        w = (x1 - x0) * frac / 100.0
+        parts.append(f'<rect x="{cursor:.1f}" y="{y}" width="{w:.1f}" height="{h}" fill="{colour}" />')
+        if i == 0:
+            parts.append(
+                f'<text x="{cursor + w / 2:.1f}" y="{y + h / 2 - 4}" text-anchor="middle" '
+                f'font-size="34" font-weight="700" fill="#FFFFFF">{lab}</text>'
+            )
+            parts.append(
+                f'<text x="{cursor + w / 2:.1f}" y="{y + h / 2 + 34}" text-anchor="middle" '
+                f'font-size="24" fill="#FFFFFF">{name}</text>'
+            )
+        cursor += w
+    axis_y = y + h + 34
+    parts.append(f'<line x1="{x0}" y1="{axis_y}" x2="{x1}" y2="{axis_y}" stroke="{INK}" stroke-width="3" />')
+    for tick in (0, 25, 50, 75, 100):
+        tx = x0 + (x1 - x0) * tick / 100.0
+        parts.append(f'<line x1="{tx:.1f}" y1="{axis_y - 8}" x2="{tx:.1f}" y2="{axis_y + 8}" stroke="{INK}" stroke-width="2" />')
+        parts.append(f'<text x="{tx:.1f}" y="{axis_y + 40}" text-anchor="middle" font-size="24" fill="{MUTED}">{tick}%</text>')
+    ly = axis_y + 86
+    for frac, lab, name, colour in DRAG_SEGMENTS:
+        parts.append(f'<rect x="{x0}" y="{ly - 20}" width="26" height="26" fill="{colour}" />')
+        parts.append(f'<text x="{x0 + 40}" y="{ly}" font-size="25" fill="{BODY}">{lab}  {name}</text>')
+        ly += 44
+    parts.append(
+        f'<text x="{x0}" y="{ly + 16}" font-size="25" fill="{BODY}">'
+        "Passenger car Cd 0.25–0.40 · streamlined body ~0.05</text>"
     )
+    parts.append(
+        f'<text x="{x0}" y="{ly + 52}" font-size="25" fill="{BODY}">'
+        "Cooling alone ~10% of total aerodynamic drag</text>"
+    )
+    parts.append("</svg>")
+    return "".join(parts)
 
 
-def _render_data(seq: Sequence, page: SlidePage) -> str:
-    takeaway = "".join(f"<li>{_esc(b)}</li>" for b in page.bullets)
+def _render_data(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path) -> str:
+    takeaway = _caption(page.bullets, "deck-body-list")
     return (
-        '<div class="slide--data">'
+        '<div class="data-grid">'
         f'<div class="chart-container">{_chart_svg()}</div>'
-        f'<div><div class="takeaway-box"><ul class="deck-body-list">{takeaway}</ul></div></div>'
+        f'<div class="takeaway-box">{takeaway}</div>'
         "</div>"
     )
 
 
-def _render_process(seq: Sequence, page: SlidePage) -> str:
+def _render_process(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path) -> str:
+    figs = _figures(seq)
+    panel = _img_panel(figs[0][0], figs[0][1], slug, lesson_dir, "process-figure") if figs else ""
     steps = "".join(
         f'<div class="process-step"><div class="step-tag">Step {i + 1:02d}</div>'
         f'<p class="deck-body">{_esc(b)}</p></div>'
         for i, b in enumerate(page.bullets)
     )
-    return f'<div class="slide--process"><div class="process-grid">{steps}</div></div>'
+    return f'<div class="process-stack">{panel}<div class="process-grid">{steps}</div></div>'
 
 
 _RENDERERS = {
+    "hero": _render_hero,
     "annotated": _render_annotated,
     "comparison": _render_comparison,
     "editorial": _render_editorial,
@@ -357,65 +285,275 @@ _RENDERERS = {
 }
 
 
-def _source_text(page: SlidePage) -> str:
-    if not page.source:
-        return "Schematic · no external source"
-    text = page.source
-    if text.startswith("Source:"):
-        text = "Source ·" + text[len("Source:"):]
-    return text
+# --- P0 composition pilots (pages 1/2/3/7).  Owner approves the composition
+# system on these four before the remaining pages are batched.  Figures are
+# swapped by source only (book hi-res / approved supplements); nothing redrawn.
+
+def _render_p01(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
+                pages: list[SlidePage] | None = None) -> str:
+    figs = _figures(seq)
+    main = next((o for o, _ in figs if "aircraft-vs-automobile" in o), figs[0][0] if figs else "")
+    panel = _img_panel(main, False, slug, lesson_dir, "p01-main") if main else ""
+    b = page.bullets or ["", "", ""]
+    cards = (
+        '<div class="p01-card"><span class="p01-tag">Streamlined · attached</span>'
+        f'<p class="deck-body">{_esc(b[0])}</p></div>'
+        '<div class="p01-card active"><span class="p01-tag">Bluff · separated</span>'
+        f'<p class="deck-body">{_esc(b[1] if len(b) > 1 else "")}</p></div>'
+    )
+    key = b[2] if len(b) > 2 else ""
+    idea = f"{key} — manage separation and the wake, not just guide the flow." if key else \
+        "Manage separation and the wake, not just guide the flow."
+    return (
+        '<div class="p01-stack">'
+        f'{panel}<div class="p01-cards">{cards}</div>'
+        f'<div class="key-idea"><span class="key-tag">Key idea</span>{_esc(idea)}</div>'
+        "</div>"
+    )
 
 
-def _footer(page: SlidePage, idx: int, total: int) -> str:
+def _render_p02(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
+                pages: list[SlidePage] | None = None) -> str:
+    figs = _figures(seq)
+    panel = _img_panel(figs[0][0], True, slug, lesson_dir, "p02-fig") if figs else ""
+    notes = "".join(
+        f'<li class="{"hot" if i == 2 else ""}"><span class="note-num">{i + 1:02d}</span>'
+        f'<p class="deck-body">{_esc(b)}</p></li>'
+        for i, b in enumerate(page.bullets[:3])
+    )
+    return f'<div class="p02-grid">{panel}<ol class="p02-notes">{notes}</ol></div>'
+
+
+def _render_p03(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
+                pages: list[SlidePage] | None = None) -> str:
+    left = "assets/book-hi-fig-1.4a.png"
+    right = "assets/book-hi-fig-1.4b.png"
+    lp = _img_panel(left, True, slug, lesson_dir, "p03-fig")
+    rp = _img_panel(right, True, slug, lesson_dir, "p03-fig")
+    b = page.bullets or ["", ""]
+    exp_caption = ""
+    if pages and len(pages) > 1 and len(pages[1].bullets) > 1:
+        exp_caption = pages[1].bullets[1]
+    return (
+        '<div class="p03-grid">'
+        f'<div class="p03-col"><span class="p03-label">Experiment</span>{lp}'
+        f'<p class="deck-caption-line">{_esc(exp_caption)}</p></div>'
+        '<div class="p03-mid"><p class="p03-relation">Compare the separation point</p>'
+        '<p class="p03-confidence">Agreement, under proper validation, strengthens confidence.</p></div>'
+        f'<div class="p03-col"><span class="p03-label">Computation</span>{rp}'
+        f'<p class="deck-caption-line">{_esc(b[0])}</p></div>'
+        "</div>"
+    )
+
+
+def _render_p07(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
+                pages: list[SlidePage] | None = None) -> str:
+    figs = [o for o, _ in _figures(seq)]
+    order = ["flow-external", "flow-cooling", "flow-cabin"]
+    picks = [next((o for o in figs if k in o), "") for k in order]
+    titles = ["External flow", "Engine-bay cooling", "Cabin ventilation"]
+    lines = [
+        page.bullets[0] if page.bullets else "",
+        "Through the body: cooling",
+        "Through the body: cabin",
+    ]
+    cols = "".join(
+        f'<div class="p07-col"><div class="figure-panel p07-fig">'
+        f'<img src="/lessons/{slug}/assets/{Path(o).name}" alt="{_esc(Path(o).name)}"></div>'
+        f'<div class="p07-head"><span class="note-num">{i + 1:02d}</span>'
+        f'<span class="p07-title">{_esc(t)}</span></div>'
+        f'<p class="deck-body">{_esc(l)}</p></div>'
+        for i, (o, t, l) in enumerate(zip(picks, titles, lines)) if o
+    )
+    scope = page.bullets[2] if len(page.bullets) > 2 else ""
+    summary = ("A vehicle is not a solid aerodynamic object. Air flows around it, through it, and inside it.")
+    return (
+        f'<div class="p07-stack"><div class="p07-grid">{cols}</div>'
+        f'<p class="p07-scope">{_esc(scope)}</p>'
+        f'<div class="key-idea"><span class="key-tag">Summary</span>{_esc(summary)}</div></div>'
+    )
+
+
+P0_LAYOUTS = {1: _render_p01, 2: _render_p02, 3: _render_p03, 7: _render_p07}
+
+# Verified book citations (figure/page checked against the book PDF, printed
+# page 5 = PDF page 26, Figure 1.4, photo/figure Daimler AG).  The slides.md
+# page mapping was wrong; the correction is recorded in the provenance sidecar.
+VERIFIED_BOOK_SOURCE = {
+    ("t1-01-why-aerodynamics", 2): "Source · Aerodynamics of Road Vehicles, Fig. 1.4a, p. 5 · Photo: Daimler AG",
+    ("t1-01-why-aerodynamics", 3): "Source · Aerodynamics of Road Vehicles, Fig. 1.4a–b, p. 5 · Photo: Daimler AG",
+}
+VERIFIED_BOOK_FULL = {
+    ("t1-01-why-aerodynamics", 2): "Source · Aerodynamics of Road Vehicles, 5th ed., Fig. 1.4a, p. 5 · Photo: Daimler AG",
+    ("t1-01-why-aerodynamics", 3): "Source · Aerodynamics of Road Vehicles, 5th ed., Fig. 1.4a–b, p. 5 · Photo/figure: Daimler AG",
+}
+
+
+def _display_source(text: str) -> str:
+    """On-screen citation: single line, mapping notes moved to provenance."""
+    return MAPPING_NOTE.sub("", text).strip().rstrip("·").strip()
+
+
+def _source_text(page: SlidePage, seq: Sequence, archetype: str, idx: int | None = None, slug: str | None = None) -> str:
+    if (slug, idx) in VERIFIED_BOOK_SOURCE:
+        return VERIFIED_BOOK_SOURCE[(slug, idx)]
+    figs = _figures(seq)
+    has_book = any(is_book for _, is_book in figs)
+    if has_book and page.source:
+        text = page.source
+        if text.startswith("Source:"):
+            text = "Source ·" + text[len("Source:"):]
+        return _display_source(text)
+    if archetype == "data":
+        return CHART_CREDIT
+    if figs:
+        return NBLM_CREDIT
+    return "Schematic · no external source"
+
+
+def _full_source(page: SlidePage, seq: Sequence, archetype: str, idx: int | None = None, slug: str | None = None) -> str:
+    if (slug, idx) in VERIFIED_BOOK_FULL:
+        return VERIFIED_BOOK_FULL[(slug, idx)]
+    figs = _figures(seq)
+    has_book = any(is_book for _, is_book in figs)
+    if has_book and page.source:
+        text = page.source
+        if text.startswith("Source:"):
+            text = "Source ·" + text[len("Source:"):]
+        return text
+    if archetype == "data":
+        return FULL_CHART_CREDIT
+    if figs:
+        return FULL_NBLM_CREDIT
+    return "Schematic · no external source"
+
+
+def _footer(page: SlidePage, seq: Sequence, archetype: str, idx: int, total: int, slug: str | None = None) -> str:
     return (
         '<div class="slide-footer">'
-        f'<span class="source">{_esc(_source_text(page))}</span>'
+        f'<span class="source">{_esc(_source_text(page, seq, archetype, idx, slug))}</span>'
         f'<span class="folio">{idx:02d} / {total:02d}</span>'
         "</div>"
     )
 
 
-# Local overrides: canonical colour tokens, the fixed grid from
-# docs/课程页面系统.md §3, and font-size tiers from docs/版式系统.md §9.1.
-# Scoped to this generated deck only; the shared mckinsey-orange.css is not edited.
 _OVERRIDE_CSS = """
+__FACE_CSS__
 :root {
   --mk-white: #FBFAF7; --mk-text: #252A31; --mk-text-muted: #6B7280;
   --mk-orange: #E8733B; --mk-orange-soft: #F6E3D6; --mk-border: #E3E0D7; --mk-code-bg: #F3F1EA;
 }
 html, body, .reveal-viewport { background: #FBFAF7; }
-.reveal { font-size: 30px; color: #252A31; }
-.reveal .slides > section { padding: 0 !important; }
+.reveal { font-size: 30px; color: #252A31; font-family: __FONT_STACK__; }
+.reveal .slides > section { padding: 0 !important; text-align: left; }
 .reveal .kicker {
   position: absolute; left: 110px; top: 70px; margin: 0;
-  font-size: 20px; font-weight: 700; color: #E8733B; letter-spacing: 0.12em; text-transform: uppercase;
+  font-family: __FONT_STACK__;
+  font-size: 21px; font-weight: 700; color: #E8733B; letter-spacing: 0.14em; text-transform: uppercase;
 }
 .reveal h2.headline {
-  position: absolute; left: 110px; top: 128px; width: 1700px; margin: 0;
-  font-size: 60px; font-weight: 700; line-height: 1.15; color: #252A31;
+  position: absolute; left: 110px; top: 122px; width: 1700px; margin: 0;
+  font-family: __FONT_STACK__;
+  font-size: 62px; font-weight: 700; line-height: 1.12; color: #252A31;
 }
-.main-visual { position: absolute; left: 110px; top: 330px; width: 1700px; height: 500px; }
+.reveal h2.headline::after {
+  content: ""; display: block; width: 220px; height: 4px; background: #E8733B; margin-top: 18px;
+}
+.main-visual { position: absolute; left: 110px; top: 320px; width: 1700px; height: 510px; }
+/* Source sits in the true bottom-left corner (left 60 / bottom 48), width-capped
+   so it never reaches the centered low_center subtitle column (x>=580); folio
+   holds the bottom-right.  No full-width rule: it would read as a content
+   divider and crowd the body.  Body main-visual ends at y830; source top stays
+   below y880. */
 .reveal .slide-footer {
-  position: absolute; left: 110px; right: 110px; bottom: 175px;
-  font-size: 19px; color: #6B7280; border-top: 1px solid #E3E0D7; padding-top: 6px;
+  position: absolute; left: 60px; right: 60px; bottom: 48px;
+  font-family: __FONT_STACK__;
+  font-size: 15px; color: #6B7280;
 }
-.reveal .slide-footer .source { color: #2E3338; max-width: 1250px; }
+.reveal .slide-footer .source {
+  position: absolute; left: 0; bottom: 0; max-width: 560px;
+  color: #2E3338; font-size: 15px; line-height: 1.3;
+  font-family: __FONT_STACK__; letter-spacing: -0.01em; white-space: nowrap;
+}
 .reveal .slide-footer .folio {
-  color: #252A31; background: #F3F1EA; border: 1px solid #E3E0D7; letter-spacing: 0.16em;
+  position: absolute; right: 0; bottom: 0;
+  color: #E8733B; font-weight: 700; letter-spacing: 0.16em; white-space: nowrap; font-size: 15px;
 }
-.reveal .slide--annotated .annotated-container { height: 370px; }
-.reveal .slide--annotated .annotated-container.dual { height: 165px; }
-.reveal .slide--annotated .callout-badge {
-  font-size: 24px; background: rgba(37, 42, 49, 0.92); white-space: nowrap;
+.figure-panel {
+  border: 1px solid #E3E0D7; box-shadow: 0 4px 18px rgba(37,42,49,.08);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
-.reveal .slide--editorial .editorial-visual { height: 460px; }
-.reveal .slide--comparison .compare-visual { height: 250px; }
-.reveal .slide--data .chart-container { height: 430px; }
-.deck-body, .reveal .slide--editorial .step-item p, .reveal .slide--process .process-step p,
-.reveal .slide--comparison .compare-card p { font-size: 30px; margin: 8px 0 0; }
-.deck-body-list, .deck-caption { font-size: 26px; color: #6B7280; margin: 10px 0 0; padding-left: 22px; }
-.deck-span { grid-column: 1 / 3; }
-.reveal .slide--editorial .step-number, .reveal .slide--process .step-tag { font-size: 24px; }
+.figure-panel img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.deck-body { font-size: 30px; line-height: 1.4; color: #2E3338; margin: 0; }
+.deck-caption, .deck-body-list { list-style: none; margin: 14px 0 0; padding: 0; }
+.deck-caption li, .deck-body-list li {
+  font-size: 27px; line-height: 1.45; color: #2E3338; margin: 0 0 10px; padding-left: 30px; position: relative;
+}
+.deck-caption li::before, .deck-body-list li::before {
+  content: ""; position: absolute; left: 0; top: 12px; width: 12px; height: 12px; background: #E8733B;
+}
+.hero-stack { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+.hero-figure { height: 280px; }
+.hero-strip { height: 170px; }
+.hero-stack .deck-caption { display: flex; gap: 48px; margin: 0; }
+.hero-stack .deck-caption li { margin: 0; }
+.ann-stack { display: flex; flex-direction: column; gap: 14px; height: 100%; }
+.ann-figure { height: 380px; }
+.ann-figure.dual { height: 180px; }
+.compare-stack { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+.compare-figure { height: 300px; }
+.compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.compare-card { border-left: 4px solid #E3E0D7; padding-left: 22px; }
+.compare-card.active { border-left-color: #E8733B; }
+.edit-grid { display: grid; grid-template-columns: 620px 1fr; gap: 60px; height: 100%; align-items: center; }
+.edit-text { display: flex; flex-direction: column; gap: 26px; }
+.step-item { display: grid; grid-template-columns: 64px 1fr; gap: 18px; align-items: start; }
+.step-number { font-size: 26px; font-weight: 700; color: #E8733B; letter-spacing: .08em; }
+.edit-figure { height: 480px; }
+.data-grid { display: grid; grid-template-columns: 1fr 520px; gap: 60px; height: 100%; align-items: center; }
+.chart-container { height: 460px; }
+.takeaway-box { border: 1px solid #E3E0D7; background: #FFFFFF; padding: 30px 34px; box-shadow: 0 4px 18px rgba(37,42,49,.06); }
+.process-stack { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+.process-figure { height: 320px; }
+.process-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+.process-step { border-top: 4px solid #E8733B; padding-top: 14px; }
+.step-tag { font-size: 22px; font-weight: 700; color: #E8733B; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+/* P0 composition pilots */
+.p01-stack { display: flex; flex-direction: column; gap: 14px; height: 100%; }
+.p01-main { height: 270px; }
+.p01-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.p01-card { border-left: 4px solid #E3E0D7; padding-left: 20px; }
+.p01-card.active { border-left-color: #E8733B; }
+.p01-tag { font-size: 20px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #6B7280; }
+.p01-card.active .p01-tag { color: #E8733B; }
+.p01-card .deck-body { font-size: 26px; margin-top: 6px; }
+.key-idea { display: flex; align-items: baseline; gap: 16px; border-left: 4px solid #E8733B; padding-left: 18px; font-size: 26px; color: #252A31; font-weight: 600; }
+.key-tag { font-size: 19px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #E8733B; white-space: nowrap; }
+.p02-grid { display: flex; gap: 50px; height: 100%; align-items: stretch; }
+.p02-fig { flex: 0 0 auto; width: auto; height: 100%; }
+.p02-fig img { height: 100%; width: auto; }
+.p02-notes { flex: 1; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; gap: 30px; }
+.p02-notes li { display: grid; grid-template-columns: 64px 1fr; gap: 18px; align-items: start; }
+.note-num { font-size: 26px; font-weight: 700; color: #6B7280; letter-spacing: .08em; }
+.p02-notes li.hot .note-num { color: #E8733B; }
+.p02-notes li.hot .deck-body { color: #252A31; font-weight: 600; }
+.p02-notes .deck-body { font-size: 28px; }
+.p03-grid { display: grid; grid-template-columns: 1fr 360px 1fr; gap: 40px; height: 100%; align-items: center; }
+.p03-col { display: flex; flex-direction: column; gap: 12px; }
+.p03-label { font-size: 20px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #6B7280; }
+.p03-fig { width: 100%; }
+.p03-fig img { width: 100%; height: auto; }
+.deck-caption-line { font-size: 24px; color: #2E3338; margin: 0; }
+.p03-mid { display: flex; flex-direction: column; gap: 18px; align-items: center; text-align: center; }
+.p03-relation { font-size: 30px; font-weight: 700; color: #252A31; margin: 0; }
+.p03-confidence { font-size: 24px; color: #6B7280; margin: 0; }
+.p07-stack { display: flex; flex-direction: column; gap: 14px; height: 100%; }
+.p07-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+.p07-fig { height: 260px; }
+.p07-head { display: flex; gap: 14px; align-items: baseline; margin-top: 10px; }
+.p07-title { font-size: 26px; font-weight: 700; color: #252A31; }
+.p07-col .deck-body { font-size: 24px; margin-top: 4px; }
+.p07-scope { font-size: 22px; color: #6B7280; margin: 0; }
 """
 
 _HEAD = """<!DOCTYPE html>
@@ -447,7 +585,7 @@ _TAIL = """</div></div>
 """
 
 
-def compile_deck(paths: LessonPaths) -> dict:
+def compile_deck(paths: LessonPaths, font: str = "inter", out_dir: Path | None = None) -> dict:
     lesson_dir = paths.lesson_dir
     slug = paths.slug
     production_file = lesson_dir / "authoring/production.yaml"
@@ -459,45 +597,77 @@ def compile_deck(paths: LessonPaths) -> dict:
             f"slides.md has {len(pages)} pages but production.yaml has {len(plan.sequences)} sequences"
         )
 
+    out_dir = Path(out_dir) if out_dir is not None else paths.build_root / "deck"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    face_css = ""
+    font_stack = SYSTEM_STACK
+    if font != "default":
+        rel, _family = FONT_SOURCES[font]
+        src = lesson_dir.parent.parent / "references" / "fonts" / rel
+        if not src.is_file():
+            raise FileNotFoundError(f"local OFL font missing (no silent fallback): {src}")
+        fonts_dir = out_dir / "fonts"
+        fonts_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, fonts_dir / src.name)
+        ofl = src.parent / "OFL.txt"
+        if ofl.is_file():
+            shutil.copyfile(ofl, fonts_dir / "OFL.txt")
+        face_css = (
+            "@font-face{font-family:'DeckSans';src:url('fonts/" + src.name + "') format('truetype-variations');"
+            "font-weight:100 900;font-style:normal;font-display:block;}"
+        )
+        font_stack = "'DeckSans', " + SYSTEM_STACK
+    override_css = _OVERRIDE_CSS.replace("__FACE_CSS__", face_css).replace("__FONT_STACK__", font_stack)
+
     total = len(pages)
     sections = []
     manifest_pages = []
+    citations = []
     assets_used: list[str] = []
     for idx, (seq, page) in enumerate(zip(plan.sequences, pages), start=1):
-        archetype = choose_archetype(seq)
-        if archetype == "annotated":
-            body = _render_annotated(seq, page, slug, lesson_dir)
-            for s in _figure_shots(seq):
-                for obj in s.objects:
-                    if obj not in assets_used:
-                        assets_used.append(obj)
+        archetype = "hero" if idx == 1 else choose_archetype(seq)
+        if idx in P0_LAYOUTS:
+            body = P0_LAYOUTS[idx](seq, page, slug, lesson_dir, pages)
         else:
-            body = _RENDERERS[archetype](seq, page)
-        headline = page.heading or seq.title
-        kicker = f"{idx:02d} / {total:02d} · {_esc(seq.title)}"
+            body = _RENDERERS[archetype](seq, page, slug, lesson_dir)
+        for obj, _ in _figures(seq):
+            if obj not in assets_used:
+                assets_used.append(obj)
+        headline = DISPLAY_TITLE.get(slug, page.heading) if idx == 1 else (page.heading or seq.title)
+        kicker = HERO_KICKER if idx == 1 else f"{idx:02d} / {total:02d} · {_esc(seq.title)}"
         section = (
-            "<section>"
+            f'<section class="slide--{archetype}">'
             f'<div class="kicker">{kicker}</div>'
             f'<h2 class="headline">{_esc(headline)}</h2>'
             f'<div class="main-visual">{body}</div>'
-            f"{_footer(page, idx, total)}"
+            f"{_footer(page, seq, archetype, idx, total, slug)}"
             "</section>"
         )
         sections.append(section)
         manifest_pages.append({"page": idx, "archetype": archetype, "has_source": bool(page.source)})
+        citations.append({
+            "page": idx,
+            "display": _source_text(page, seq, archetype, idx, slug),
+            "full": _full_source(page, seq, archetype, idx, slug),
+            "slides_source": page.source,
+            "page_correction": (slug, idx) in VERIFIED_BOOK_SOURCE,
+        })
 
-    out_dir = paths.build_root / "deck"
-    out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "index.html"
     title = f"{slug} · Deck"
-    doc = _HEAD.format(title=_esc(title), override_css=_OVERRIDE_CSS) + "\n".join(sections) + "\n" + _TAIL
+    doc = _HEAD.format(title=_esc(title), override_css=override_css) + "\n".join(sections) + "\n" + _TAIL
     out_file.write_text(doc, encoding="utf-8")
+    (out_dir / "citation-provenance.json").write_text(
+        json.dumps({"lesson": slug, "citations": citations}, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
     production_sha = hashlib.sha256(production_file.read_bytes()).hexdigest()
     slides_sha = hashlib.sha256(slides_file.read_bytes()).hexdigest()
     manifest = {
         "lesson": slug,
         "pages": total,
+        "font": font,
         "archetypes": manifest_pages,
         "assets_used": assets_used,
         "production_sha256": production_sha,

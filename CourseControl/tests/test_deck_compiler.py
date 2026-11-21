@@ -147,35 +147,73 @@ class CompileDeckTest(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_manifest_pages_archetypes_and_assets(self):
-        manifest = compile_deck(self.paths)
+        manifest = compile_deck(self.paths, font="default")
         self.assertEqual(manifest["pages"], 2)
-        self.assertEqual([p["archetype"] for p in manifest["archetypes"]], ["comparison", "annotated"])
+        self.assertEqual([p["archetype"] for p in manifest["archetypes"]], ["hero", "annotated"])
         self.assertEqual(manifest["assets_used"], ["assets/fig.png"])
         for page in manifest["archetypes"]:
             self.assertIn(page["archetype"], ARCHETYPES)
 
     def test_book_figure_page_has_nonempty_source(self):
-        compile_deck(self.paths)
+        compile_deck(self.paths, font="default")
         html = (self.paths.build_root / "deck" / "index.html").read_text(encoding="utf-8")
         self.assertIn("Source · Hucho, Fig. 1.4a, p. 26", html)
         self.assertIn('src="/lessons/demo/assets/fig.png"', html)
 
     def test_schematic_page_has_no_fabricated_source(self):
-        compile_deck(self.paths)
+        compile_deck(self.paths, font="default")
         html = (self.paths.build_root / "deck" / "index.html").read_text(encoding="utf-8")
         self.assertIn("Schematic · no external source", html)
 
     def test_canonical_palette_overrides_drifted_css(self):
-        compile_deck(self.paths)
+        compile_deck(self.paths, font="default")
         html = (self.paths.build_root / "deck" / "index.html").read_text(encoding="utf-8")
         self.assertIn("#E8733B", html)  # canonical orange, not the CSS file's #A8422B
         self.assertIn("#FBFAF7", html)  # canonical paper, not #F4EFEA
         self.assertIn("#EDE7DA", html)  # book-figure panel stays the mandated warm white
 
+    def test_missing_local_font_fails_loud(self):
+        # No silent fallback: a declared local OFL face that is absent must raise.
+        with self.assertRaises(FileNotFoundError):
+            compile_deck(self.paths, font="inter")
+
+    def test_local_font_copied_and_face_emitted(self):
+        fonts = self.ws / "references" / "fonts" / "inter"
+        fonts.mkdir(parents=True)
+        (fonts / "Inter-var.ttf").write_bytes(b"\x00\x01\x00\x00dummy")
+        (fonts / "OFL.txt").write_text("SIL Open Font License", encoding="utf-8")
+        manifest = compile_deck(self.paths, font="inter")
+        deck = self.paths.build_root / "deck"
+        self.assertTrue((deck / "fonts" / "Inter-var.ttf").is_file())
+        self.assertTrue((deck / "fonts" / "OFL.txt").is_file())
+        html = (deck / "index.html").read_text(encoding="utf-8")
+        self.assertIn("@font-face", html)
+        self.assertIn("fonts/Inter-var.ttf", html)  # relative, no absolute path / CDN
+        self.assertEqual(manifest["font"], "inter")
+
+    def test_source_single_line_and_mapping_note_off_screen(self):
+        slides = self.paths.content_path(self.paths.lesson.content.slides)
+        text = slides.read_text(encoding="utf-8")
+        slides.write_text(
+            text.replace(
+                "<small>Source: Hucho, Fig. 1.4a, p. 26</small>",
+                "<small>Source: Hucho, Fig. 1.4a, p. 26 · printed page = PDF page - 21</small>",
+            ),
+            encoding="utf-8",
+        )
+        compile_deck(self.paths, font="default")
+        deck = self.paths.build_root / "deck"
+        html = (deck / "index.html").read_text(encoding="utf-8")
+        self.assertIn("white-space: nowrap", html)
+        self.assertNotIn("printed page", html)  # mapping note is evidence, not screen text
+        prov = json.loads((deck / "citation-provenance.json").read_text(encoding="utf-8"))
+        full = [c["full"] for c in prov["citations"]]
+        self.assertTrue(any("printed page = PDF page - 21" in f for f in full))
+
     def test_manifest_binds_current_input_hashes(self):
         import hashlib
 
-        manifest = compile_deck(self.paths)
+        manifest = compile_deck(self.paths, font="default")
         self.assertEqual(
             manifest["slides_sha256"], hashlib.sha256(self.slides_md.read_bytes()).hexdigest()
         )
@@ -186,12 +224,12 @@ class CompileDeckTest(unittest.TestCase):
     def test_missing_asset_is_loud(self):
         (self.lesson / "assets" / "fig.png").unlink()
         with self.assertRaises(FileNotFoundError):
-            compile_deck(self.paths)
+            compile_deck(self.paths, font="default")
 
     def test_page_count_mismatch_is_loud(self):
         self.slides_md.write_text("## 1. Only one page\n\n- bullet\n", encoding="utf-8")
         with self.assertRaises(ValueError):
-            compile_deck(self.paths)
+            compile_deck(self.paths, font="default")
 
 
 if __name__ == "__main__":

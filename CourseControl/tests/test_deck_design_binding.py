@@ -96,6 +96,95 @@ class DeckDesignCheckTest(unittest.TestCase):
         self.assertEqual(status, "fail")
         self.assertTrue(any("archetype" in f for f in findings))
 
+    def test_instruction_leak_fails(self):
+        self._deck(COMPLIANT_DECK.replace(
+            '<figure class="annotated-container">',
+            '<figure class="annotated-container">'
+            '<div class="callout-badge">spotlight sweep along original smoke…</div>',
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "fail")
+        self.assertTrue(any("instruction leaked" in f for f in findings))
+
+    def test_truncated_badge_alone_fails(self):
+        self._deck(COMPLIANT_DECK.replace(
+            '<figure class="annotated-container">',
+            '<figure class="annotated-container">'
+            '<div class="callout-badge">pin labels on the closed recirculation…</div>',
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "fail")
+        self.assertTrue(any("instruction leaked" in f for f in findings))
+
+    def test_physical_labels_pass(self):
+        self._deck(COMPLIANT_DECK.replace(
+            '<figure class="annotated-container">',
+            '<figure class="annotated-container">'
+            '<div class="callout-badge">separation line</div>'
+            '<div class="callout-badge">closed recirculation bubble</div>',
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "pass", findings)
+
+    def test_placeholder_mechanism_fails(self):
+        svg = ('<svg viewBox="0 0 400 300"><rect x="70" y="130" width="260" '
+               'height="70" rx="30" fill="#E3E0D7"/></svg>')
+        self._deck(COMPLIANT_DECK.replace(
+            '<p class="headline">Takeaway</p>',
+            '<p class="headline">Takeaway</p>' + svg,
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "fail")
+        self.assertTrue(any("placeholder mechanism" in f for f in findings))
+
+    def test_book_figure_page_with_svg_exempt(self):
+        svg = ('<svg viewBox="0 0 400 300"><rect x="70" y="130" width="260" '
+               'height="70" rx="30" fill="#E3E0D7"/></svg>')
+        self._deck(COMPLIANT_DECK.replace(
+            '<figure class="annotated-container">',
+            '<figure class="annotated-container">' + svg,
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "pass", findings)
+
+    def test_data_page_without_numbers_fails(self):
+        body = ('<svg viewBox="0 0 400 300"><text x="200" y="30">schematic — not measured</text>'
+                '<rect x="120" y="60" width="260" height="30" rx="3"/>'
+                '<text x="20" y="82">lost</text><text x="20" y="172">recovered</text></svg>')
+        self._deck(COMPLIANT_DECK.replace(
+            '<section class="slide--editorial"><p class="headline">Takeaway</p>',
+            '<section class="slide--data"><p class="headline">Takeaway</p>' + body,
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "fail")
+        self.assertTrue(any("no real numbers" in f for f in findings))
+        self.assertFalse(any("placeholder mechanism" in f for f in findings))
+
+    def test_data_page_with_percentages_passes(self):
+        body = ('<svg viewBox="0 0 400 300"><text x="100" y="80">70-80%</text>'
+                '<text x="250" y="80">10-15%</text><text x="330" y="80">8-12%</text>'
+                '<text x="20" y="280">0%</text><text x="100" y="280">25%</text>'
+                '<text x="180" y="280">50%</text><text x="260" y="280">75%</text>'
+                '<text x="340" y="280">100%</text>'
+                '<rect x="20" y="60" width="260" height="30" rx="3"/></svg>')
+        self._deck(COMPLIANT_DECK.replace(
+            '<section class="slide--editorial"><p class="headline">Takeaway</p>',
+            '<section class="slide--data"><p class="headline">Takeaway</p>' + body,
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "pass", findings)
+
+    def test_folio_and_kicker_numbers_do_not_count(self):
+        body = ('<svg viewBox="0 0 400 300"><text x="200" y="30">schematic — not measured</text>'
+                '<rect x="120" y="60" width="260" height="30" rx="3"/></svg>')
+        self._deck(COMPLIANT_DECK.replace(
+            '<section class="slide--editorial"><p class="headline">Takeaway</p>',
+            '<section class="slide--data"><p class="headline">Takeaway</p>' + body,
+        ))
+        status, findings, _ = self._check()
+        self.assertEqual(status, "fail")
+        self.assertTrue(any("page 2" in f and "no real numbers" in f for f in findings))
+
     def test_folio_alone_is_not_a_citation(self):
         self._deck(COMPLIANT_DECK.replace(
             '<span class="source">Hucho, Fig. 1.4a, p. 12</span>', ""))
