@@ -23,7 +23,7 @@ import html
 import json
 import re
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from course_control.content.paths import LessonPaths
@@ -46,7 +46,7 @@ NBLM_CREDIT = (
     "Illustration · NotebookLM study aid after Hucho, Aerodynamics of Road Vehicles"
 )
 CHART_CREDIT = (
-    "Chart · NotebookLM study aid after Hucho, Aerodynamics of Road Vehicles, Ch. 1"
+    "Schematic · illustrative ranges after Hucho, Aerodynamics of Road Vehicles, §4.3"
 )
 # Full credits (with edition / mapping notes) are preserved off-screen in the
 # citation provenance sidecar; the on-screen line stays single-line and compact.
@@ -55,8 +55,8 @@ FULL_NBLM_CREDIT = (
     "Aerodynamics of Road Vehicles, 5th ed."
 )
 FULL_CHART_CREDIT = (
-    "Chart redrawn to scale · NotebookLM study aid after Hucho, "
-    "Aerodynamics of Road Vehicles, 5th ed., Ch. 1"
+    "Schematic · illustrative ranges after Hucho, Aerodynamics of Road Vehicles, "
+    "5th ed., §4.3 (Fig. 4.19/4.22 give exact per-body-shape splits; not read here)"
 )
 # Page-mapping notes are evidence, not screen text: stripped from the display
 # line and recorded in the provenance sidecar.
@@ -78,12 +78,14 @@ DISPLAY_TITLE = {
 }
 HERO_KICKER = "T1-01 · The Bluff-Body Paradigm"
 
-# Canonical automotive drag breakdown (shared course data, not per-lesson invention).
-DRAG_SEGMENTS = (
-    (75.0, "70–80%", "Pressure / Form drag", ORANGE),
-    (12.5, "10–15%", "Friction drag", MUTED),
-    (10.0, "8–12%", "Internal / Cooling", BORDER),
-)
+# No fixed percentage breakdown: Hucho 5th ed. §4.3.1 (p.244) states the
+# friction share itself depends on whether radiator drag is booked as
+# pressure or friction (just under 8% vs almost 25% for the same car) — a
+# single split would misrepresent that as a fixed fact.  Precise per-body
+# splits live in Fig. 4.19/4.22 (image-only in our Docling extract, not read);
+# this page stays qualitative until those numbers are sourced.  See
+# docs/v2/汽车空气动力学180节课程大纲地图-v5.2-Freeze.md T4-02/T4-10 for the
+# lesson that owns the quantitative breakdown.
 
 
 @dataclass
@@ -210,45 +212,39 @@ def _render_editorial(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Pat
 
 
 def _chart_svg() -> str:
-    """Data chart rebuilt to scale from canonical numbers, labelled 0-100% axis.
+    """Qualitative dominance示意, not a measured percentage breakdown.
 
-    Narrow segments carry no inside text (it would collide); a swatch legend
-    below the axis names every segment with its range, so nothing overlaps.
+    Bar lengths are illustrative only (no axis, no numbers): Hucho §4.3.1
+    shows the friction/cooling split itself depends on an accounting
+    convention, so a fixed percentage chart here would overclaim precision
+    we have not sourced.  T4-02/T4-10 own the quantitative breakdown.
     """
+    rows = (
+        ("Pressure / form drag", "dominant share", 1.0, ORANGE),
+        ("Skin friction", "smaller share", 0.32, MUTED),
+        ("Cooling / internal", "accounting-dependent", 0.22, BORDER),
+    )
     parts = ['<svg viewBox="0 0 900 500" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;">']
-    x0, x1, y, h = 40, 860, 60, 110
-    cursor = x0
-    for i, (frac, lab, name, colour) in enumerate(DRAG_SEGMENTS):
-        w = (x1 - x0) * frac / 100.0
-        parts.append(f'<rect x="{cursor:.1f}" y="{y}" width="{w:.1f}" height="{h}" fill="{colour}" />')
-        if i == 0:
-            parts.append(
-                f'<text x="{cursor + w / 2:.1f}" y="{y + h / 2 - 4}" text-anchor="middle" '
-                f'font-size="34" font-weight="700" fill="#FFFFFF">{lab}</text>'
-            )
-            parts.append(
-                f'<text x="{cursor + w / 2:.1f}" y="{y + h / 2 + 34}" text-anchor="middle" '
-                f'font-size="24" fill="#FFFFFF">{name}</text>'
-            )
-        cursor += w
-    axis_y = y + h + 34
-    parts.append(f'<line x1="{x0}" y1="{axis_y}" x2="{x1}" y2="{axis_y}" stroke="{INK}" stroke-width="3" />')
-    for tick in (0, 25, 50, 75, 100):
-        tx = x0 + (x1 - x0) * tick / 100.0
-        parts.append(f'<line x1="{tx:.1f}" y1="{axis_y - 8}" x2="{tx:.1f}" y2="{axis_y + 8}" stroke="{INK}" stroke-width="2" />')
-        parts.append(f'<text x="{tx:.1f}" y="{axis_y + 40}" text-anchor="middle" font-size="24" fill="{MUTED}">{tick}%</text>')
-    ly = axis_y + 86
-    for frac, lab, name, colour in DRAG_SEGMENTS:
-        parts.append(f'<rect x="{x0}" y="{ly - 20}" width="26" height="26" fill="{colour}" />')
-        parts.append(f'<text x="{x0 + 40}" y="{ly}" font-size="25" fill="{BODY}">{lab}  {name}</text>')
-        ly += 44
+    x0, max_w, y, h, gap = 40, 620, 40, 78, 46
+    for name, tag, frac, colour in rows:
+        w = max_w * frac
+        parts.append(f'<text x="{x0}" y="{y - 12}" font-size="27" font-weight="700" fill="{INK}">{name}</text>')
+        parts.append(f'<rect x="{x0}" y="{y}" width="{w:.1f}" height="{h}" fill="{colour}" />')
+        parts.append(
+            f'<text x="{x0 + w + 20:.1f}" y="{y + h / 2 + 9}" font-size="24" fill="{MUTED}">{tag}</text>'
+        )
+        y += h + gap
     parts.append(
-        f'<text x="{x0}" y="{ly + 16}" font-size="25" fill="{BODY}">'
-        "Passenger car Cd 0.25–0.40 · streamlined body ~0.05</text>"
+        f'<text x="{x0}" y="{y + 6}" font-size="24" fill="{BODY}">'
+        "Illustrative ranges, not universal constants — the split depends on the</text>"
     )
     parts.append(
-        f'<text x="{x0}" y="{ly + 52}" font-size="25" fill="{BODY}">'
-        "Cooling alone ~10% of total aerodynamic drag</text>"
+        f'<text x="{x0}" y="{y + 38}" font-size="24" fill="{BODY}">'
+        "body shape and on where cooling drag is booked (pressure vs. friction).</text>"
+    )
+    parts.append(
+        f'<text x="{x0}" y="{y + 82}" font-size="24" fill="{MUTED}">'
+        "Cd context only: passenger car ~0.25–0.40 · idealised streamlined body ~0.05</text>"
     )
     parts.append("</svg>")
     return "".join(parts)
@@ -316,10 +312,16 @@ def _render_p02(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
                 pages: list[SlidePage] | None = None) -> str:
     figs = _figures(seq)
     panel = _img_panel(figs[0][0], True, slug, lesson_dir, "p02-fig") if figs else ""
+    bullets = list(page.bullets[:3])
+    if len(bullets) == 3:
+        # Smoke shows where flow leaves the surface, not the closed wake
+        # structure itself (matches narration s2b: "what the photograph
+        # shows is where the flow leaves the surface").
+        bullets[2] = "Rear flow turns diffuse: separation indicated, wake structure unresolved"
     notes = "".join(
         f'<li class="{"hot" if i == 2 else ""}"><span class="note-num">{i + 1:02d}</span>'
         f'<p class="deck-body">{_esc(b)}</p></li>'
-        for i, b in enumerate(page.bullets[:3])
+        for i, b in enumerate(bullets)
     )
     return f'<div class="p02-grid">{panel}<ol class="p02-notes">{notes}</ol></div>'
 
@@ -338,8 +340,8 @@ def _render_p03(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
         '<div class="p03-grid">'
         f'<div class="p03-col"><span class="p03-label">Experiment</span>{lp}'
         f'<p class="deck-caption-line">{_esc(exp_caption)}</p></div>'
-        '<div class="p03-mid"><p class="p03-relation">Compare the separation point</p>'
-        '<p class="p03-confidence">Agreement, under proper validation, strengthens confidence.</p></div>'
+        '<div class="p03-mid"><p class="p03-relation">Compare the onset and location of separation</p>'
+        '<p class="p03-confidence">Qualitative agreement, under proper validation, strengthens confidence.</p></div>'
         f'<div class="p03-col"><span class="p03-label">Computation</span>{rp}'
         f'<p class="deck-caption-line">{_esc(b[0])}</p></div>'
         "</div>"
@@ -375,6 +377,28 @@ def _render_p07(seq: Sequence, page: SlidePage, slug: str, lesson_dir: Path,
 
 
 P0_LAYOUTS = {1: _render_p01, 2: _render_p02, 3: _render_p03, 7: _render_p07}
+
+# Display-layer wording corrections (third-party content review, verified
+# against Hucho 5th ed. text; slides.md itself is owner content, untouched).
+# Keyed by (slug, page index, original bullet text) so a future slides.md
+# edit that no longer matches simply falls through to the original text
+# instead of silently overwriting new content.
+DISPLAY_BULLET_OVERRIDE = {
+    ("t1-01-why-aerodynamics", 6, "Fully three-dimensional, fully turbulent"):
+        "Strongly three-dimensional, predominantly turbulent",
+    ("t1-01-why-aerodynamics", 8, "Both interact; both cost drag"):
+        "Both interact and shape the drag",
+    ("t1-01-why-aerodynamics", 9, "Styling, brand and package set the outline"):
+        "Styling, brand and package constrain the design envelope",
+    ("t1-01-why-aerodynamics", 9, "Aerodynamics works inside that outline"):
+        "Aerodynamics helps shape the car within those constraints",
+    ("t1-01-why-aerodynamics", 10, "Place the separation line"):
+        "Control where and how the flow separates",
+}
+
+
+def _display_bullets(page: SlidePage, idx: int, slug: str | None) -> list[str]:
+    return [DISPLAY_BULLET_OVERRIDE.get((slug, idx, b), b) for b in page.bullets]
 
 # Verified book citations (figure/page checked against the book PDF, printed
 # page 5 = PDF page 26, Figure 1.4, photo/figure Daimler AG).  The slides.md
@@ -626,10 +650,11 @@ def compile_deck(paths: LessonPaths, font: str = "inter", out_dir: Path | None =
     assets_used: list[str] = []
     for idx, (seq, page) in enumerate(zip(plan.sequences, pages), start=1):
         archetype = "hero" if idx == 1 else choose_archetype(seq)
+        display_page = replace(page, bullets=_display_bullets(page, idx, slug))
         if idx in P0_LAYOUTS:
-            body = P0_LAYOUTS[idx](seq, page, slug, lesson_dir, pages)
+            body = P0_LAYOUTS[idx](seq, display_page, slug, lesson_dir, pages)
         else:
-            body = _RENDERERS[archetype](seq, page, slug, lesson_dir)
+            body = _RENDERERS[archetype](seq, display_page, slug, lesson_dir)
         for obj, _ in _figures(seq):
             if obj not in assets_used:
                 assets_used.append(obj)
