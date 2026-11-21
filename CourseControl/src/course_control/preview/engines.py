@@ -296,7 +296,9 @@ def _motion_canvas(paths: LessonPaths, unit: PreviewUnit, profile: PreviewProfil
             "--sink-port",
             os.environ.get("MOTION_CANVAS_SINK_PORT", "4174"),
         ],
-        paths.engine_root("motion_canvas"),
+        # Engine HOME, not the scene root: scripts/render-headless.mjs lives
+        # in MotionStudio; the scene root may be the content root.
+        paths.engine_home("motion_canvas"),
         timeout=resolve_timeout(paths, "render:motion_canvas"),
         log_path=paths.build_root / "preview" / "logs" / f"motion-canvas-{_safe(unit.id)}.log",
         env=(
