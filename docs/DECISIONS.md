@@ -1490,3 +1490,17 @@ JPEG 中间帧代价：同一帧与 PNG 路径成片对比 PSNR 40.34 dB vs 40.5
 **问责**：做课窗口——读而不行、看而不改、违令绕路、最小合规；统筹窗口（本窗口）——结构门+结构预检给垃圾发通行证（未看帧）、跨会话通道当作已送达已读（实际半断）、上游稿标题页缺口未察。owner 的基准与禁令（书图优先/禁 SVG/NBLM 补充）早已明确，执行层全违反。
 
 **处置**：视觉编译器所有权移交统筹（D-120 后续），复用 golden-board 验证设计+书图+NBLM 补充图重做，统筹亲自看帧后交 owner；E6 增补 instruction_leak/placeholder_mechanism/data_binding；命令通道改为 owner 窗口粘贴关键指令兜底；hook 需 /hooks 或重启加载。
+
+## D-122 外部 Skill 视觉规则评审裁决（2026-11-22）
+
+**背景**：owner 提议借鉴四个轻量 Claude Code Skill（remotion-dev/skills + haidrrrry/claude-remotion-skill、leonxlnx/taste-skill、Nutlope/hallmark、pbakaus/impeccable）中的排版/配色/缓动约束。研究子代理读取 raw SKILL.md 与 reference 文件后，按 §0.2 出《差异核验与改动清单》，owner 逐条裁决。
+
+**裁决**（owner 2026-11-22）：
+
+1. **配色驳回 Hallmark**：其 direction.md 把"暖白纸 + 陶土橙"列为拒收套路，与本项目已定稿的 `#FBFAF7` + `#E8733B` 直接冲突——全量保留现有配色规范，不换方向。
+2. **页眉与编号保留现状**：教学场景 `01/02/03` 编号承载知识序列信息（属 Impeccable 自留例外），页眉 20px 橙色全大写保留；字距克制（0.05–0.10 em），写入 课程页面系统.md §3。
+3. **渐变禁令折中采纳**：只禁"页面背景本身的装饰性渐变"；原书图面板的白纸边框与微投影是红线 A.3 固定规格，不受波及。写入 配色规范.md §6。
+4. **7 项工程加固全部批准**：缓动三曲线（0.16,1,0.3,1 / 0.83,0,0.17,1 / 0.7,0,0.84,0）+ 禁 linear 入场 + 禁 UI bounce、入场 2–3 属性联动 + 退场 60–75%、错峰 3–6 帧 / 30–50 ms 上限 500 ms、只动 transform/opacity 禁 transition:all（→ 动画视觉导演规范.md §10）；标题 tracking -0.02~-0.04 em + 正文行高 1.5–1.65 + measure 45–75ch（→ 版式系统.md §9.1）；彩底次要文字同色系深色 + accent 占屏 <5%（→ 配色规范.md §1/§5）。
+5. **不适用项全部驳回**：haidrrrry 默认紫青调色板（正是其余三家所禁）、taste-skill 网页滚动叙事条款（视频时间线无滚动概念）、Impeccable 编译进二进制的 62 条检测器（不可核验）。
+
+**后果**：规范只改文档不动引擎（工具冻结）；存量 `RemotionStudio/src/short/*.tsx` 的裸 spring 参数记为历史取值，交付后升级窗口统一。外部规则均带 repo+文件出处；引用为 2026-11-22 main 分支快照，冻结进校验器前需复核 hash。
