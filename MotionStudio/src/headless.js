@@ -119,7 +119,15 @@ const main = async () => {
   const label = result === 0 ? 'success' : result === 2 ? 'aborted' : 'error';
   setStatus(`finished: ${label}`);
   window.__RENDER_RESULT__ = label;
-  window.__RENDER_ERRORS__ = [];
+  // The Renderer catches scene exceptions into the project logger instead of
+  // letting them reach window.onerror; without this the meta shows error with
+  // an empty errors[] and the failure is undiagnosable.
+  window.__RENDER_ERRORS__ = project.logger.history
+    .filter(entry => entry.level === 'error')
+    .map(entry => {
+      const m = entry.message;
+      return String((m && (m.stack || m.message)) || m || JSON.stringify(entry));
+    });
   window.__RENDER_DONE__ = true;
 };
 
