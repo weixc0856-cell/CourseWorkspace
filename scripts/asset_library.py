@@ -59,6 +59,8 @@ def main() -> int:
                         help="filter by asset quality tier")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--check", action="store_true", help="verify every path exists")
+    parser.add_argument("--verify-hashes", action="store_true",
+                        help="with --check: verify registered files against _catalog/sha256.json")
     args = parser.parse_args()
 
     root = content_root(args.workspace.resolve())
@@ -91,6 +93,42 @@ def main() -> int:
             print(json.dumps({"ok": False, "missing": missing,
                               "broken_dependencies": broken_deps}, ensure_ascii=False, indent=2))
             return 1
+        if args.verify_hashes:
+            import hashlib
+            catalog_path = library_path.parent / "_catalog" / "sha256.json"
+            if not catalog_path.is_file():
+                print(json.dumps({"ok": False, "error": f"hash catalog not found: {catalog_path}"}))
+                return 1
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))["files"]
+            base = library_path.parent
+            bad, unhashed = [], []
+            for asset in assets:
+                path = Path(str(asset.get("path") or ""))
+                if not path.is_absolute():
+                    path = base / path
+                if path.is_file() and asset.get("kind") == "model":
+                    path = path.parent
+                files = sorted(path.rglob("*")) if path.is_dir() else [path]
+                for f in files:
+                    if not f.is_file():
+                        continue
+                    rel = f.relative_to(base).as_posix()
+                    entry = catalog.get(rel)
+                    if entry is None:
+                        unhashed.append(rel)
+                        continue
+                    h = hashlib.sha256()
+                    with f.open("rb") as fh:
+                        for chunk in iter(lambda: fh.read(1 << 20), b""):
+                            h.update(chunk)
+                    if h.hexdigest() != entry["sha256"]:
+                        bad.append(rel)
+            if bad or unhashed:
+                print(json.dumps({"ok": False, "hash_mismatch": bad, "not_in_catalog": unhashed},
+                                 ensure_ascii=False, indent=2))
+                return 1
+            print(f"asset library ok: {len(assets)} assets, sha256 verified ({len(catalog)} files in catalog)")
+            return 0
         print(f"asset library ok: {len(assets)} assets under {library_path}")
         return 0
 
