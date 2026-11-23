@@ -63,7 +63,15 @@
 25. **四类来源严禁混淆。** 逐集必须标定 `[B] Book-based`、`[C] Cross-chapter`、`[E] Engineering extension`、`[M] Modern update`。出版后新技术严禁冒充原书节次；工程经验数值（CMS $\Delta C_D$、扩散角等）必须带测试工况，严禁当作普适物理常数。
 26. **工程开发闭环贯穿。** 严禁做成“视频版原书目录”。必须建立 `机理识别 (T4) -> 数值预测 (T14) -> 物理验证 (T13) -> 整车迭代` 的完整工程主轴，以标准参考体与量产车为贯穿线。
 27. **状态机与五重门禁。** 生成必须由 SQLite 状态库驱动（`symbol_registry` 符号圣经、`covered_ledger` 强制前序仅一句引用防车轱辘话、`forward_guard` 防剧透）；逐集必须通过确定性五重 QA 门禁（动态词数、套话率 $\le 12\%$、查重 $\le 0.82$、LaTeX 符号核对、Slide/Script 1:1 对齐）。
-28. **代码仓与内容根物理分离。** 仓库只进代码/工具/规范；视频/音频/教材/课程正文全在内容根（工作区映射为 `content_data/`，实际路径由 `config/local-paths.yaml` 的 `content_root` 或环境变量指定），绝不入 Git。路径单源走 `scripts/resolve_paths.py`，严禁硬编码绝对路径。提交前必须 `python scripts/course_pipeline.py status` 验证通过。
+28. **代码仓与内容根物理双根隔离铁律（严防资产与过程物污染开发管线）。**
+    - **开发仓库 (`CourseWorkspace`)**：只进工程代码、编译脚本、规范与 JSON Schemas。**严禁出现任何课程正文、课程图表、CFD网格、临时渲染切片、测试视频或 SQLite 数据库**。
+    - **内容根 (`D:\CourseContent`)**：所有生产过程资产、临时排查物与最终交付物 100% 落地于此：
+      - 课程科学图表与 CFD 仿真代码：`projects/<course_id>/ScientificFigures/`
+      - 运行期状态数据库：`runtime/state/aerodynamics_pipeline.db`
+      - 生产与构建过程物：`build/<slug>/`（临时排查切片写进 `build/<slug>/tmp/`）
+      - 终版双版本成片与外挂字幕：`deliver/<slug>/`
+    - **路径单源解析**：统一通过 `scripts/resolve_paths.py` 动态定位，严禁硬编码代码仓内部相对路径来写媒体文件。
+    - **PowerShell 入口收敛**：所有历史遗留与冲突的 `.ps1` 流程归档于 `scripts/archive/legacy_ps1/`，生产唯一规范入口为 `scripts/build_lesson.ps1 -Lesson <slug>`。提交前必须 `python scripts/course_pipeline.py status` 验证通过。
 
 ---
 

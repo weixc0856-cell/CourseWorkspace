@@ -164,7 +164,7 @@ const Label: React.FC<{c: Callout; u: number; v: number; dim: boolean}> = ({c, u
           top: by,
           width: boxW,
           padding: '12px 16px',
-          background: 'rgba(14,18,24,0.82)',
+          background: 'rgba(14,18,24,0.92)',
           border: `1px solid ${c.focus ? 'rgba(232,115,59,0.55)' : 'rgba(140,160,180,0.35)'}`,
           borderRadius: 10,
           fontFamily: SANS_FAMILY,
@@ -229,12 +229,15 @@ export const Episode: React.FC<EpisodeProps> = ({shots}) => {
           </div>
           <div
             style={{
-              marginTop: 10,
+              display: 'inline-block',
+              marginTop: 12,
+              padding: '6px 12px',
+              background: 'rgba(14,18,24,0.94)',
+              borderRadius: 6,
               fontFamily: SANS_FAMILY,
               fontSize: 22,
               color: MUTED,
               maxWidth: 1200,
-              textShadow: '0 1px 10px rgba(0,0,0,0.9)',
             }}
           >
             {shot.slow_motion_factor
@@ -251,7 +254,7 @@ export const Episode: React.FC<EpisodeProps> = ({shots}) => {
             top: 300,
             width: 760,
             padding: '26px 30px',
-            background: 'rgba(14,18,24,0.80)',
+            background: 'rgba(14,18,24,0.92)',
             border: '1px solid rgba(140,160,180,0.35)',
             borderRadius: 14,
             opacity: clamp01((local - shot.formula.from) / RAMP) * clamp01((shot.formula.to - local) / RAMP),
@@ -279,7 +282,7 @@ export const Episode: React.FC<EpisodeProps> = ({shots}) => {
                 top: c.y ?? 220,
                 maxWidth: 900,
                 padding: '14px 18px',
-                background: 'rgba(14,18,24,0.80)',
+                background: 'rgba(14,18,24,0.92)',
                 border: `1px solid ${c.focus ? 'rgba(232,115,59,0.55)' : 'rgba(140,160,180,0.35)'}`,
                 borderRadius: 10,
                 fontFamily: SANS_FAMILY,
@@ -309,13 +312,15 @@ export const Episode: React.FC<EpisodeProps> = ({shots}) => {
         style={{
           position: 'absolute',
           left: 64,
-          top: H - SUBTITLE_BAND - 40,
+          top: H - SUBTITLE_BAND - 44,
+          padding: '6px 12px',
+          background: 'rgba(14,18,24,0.94)',
+          borderRadius: 6,
           fontFamily: SANS_FAMILY,
           fontSize: 20,
           color: MUTED,
           maxWidth: 1792 - 128,
-          opacity: 0.95,
-          textShadow: '0 1px 10px rgba(0,0,0,0.9)',
+          opacity: 0.97,
         }}
       >
         {shot.source_line}

@@ -14,6 +14,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+try:
+    from resolve_paths import get_pipeline_db_path
+except ImportError:
+    from .resolve_paths import get_pipeline_db_path
+
 
 @dataclass
 class SymbolEntry:
@@ -38,8 +43,11 @@ class LedgerEntry:
 
 
 class PipelineStateDB:
-    def __init__(self, db_path: Path):
-        self.db_path = db_path
+    def __init__(self, db_path: Optional[Path] = None):
+        if db_path is None:
+            self.db_path = get_pipeline_db_path()
+        else:
+            self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
@@ -159,7 +167,7 @@ def seed_standard_aerodynamics_symbols(db: PipelineStateDB) -> None:
 
 
 if __name__ == "__main__":
-    db_file = Path("shared/state/aerodynamics_pipeline.db")
+    db_file = get_pipeline_db_path()
     db = PipelineStateDB(db_file)
     seed_standard_aerodynamics_symbols(db)
     print(f"Successfully initialized pipeline state DB at {db_file}")
