@@ -48,7 +48,13 @@ questions:
   path: 专业书籍转工业级课程内容划分方法论.md
 - question: 课件视觉体系与幻灯片设计规范
   path: 教育内容视觉设计体系与视觉叙事规范.md
+- question: AI底层物理与系统工程通识短视频规范与全景蓝图是什么
+  path: AI底层物理与系统工程通识-短视频生产规范与全景蓝图.md
 documents:
+- path: AI底层物理与系统工程通识-短视频生产规范与全景蓝图.md
+  layer: contract
+  status: current
+  answers: 《AI 底层物理与系统工程通识》6 季 36 集全景地图、去幻觉四维红线、HTML 16:9 纯白底色无声观看分镜 SOP 与 EP02 黄金样例
 - path: 个人IP-内容生产系统-顶层目标.md
   layer: contract
   status: current
@@ -57,6 +63,14 @@ documents:
   layer: record
   status: record
   answers: 2026-11-18 实查的能力对照、缺口、实施顺序与验收证据
+- path: audit/2026-11-21-上下文纪律与证据门-实施方案.md
+  layer: record
+  status: record
+  answers: 2026-11-21 实测 token 构成、上下文纪律落地与五组证据门（E1–E5）的文件级方案
+- path: 课程开发避坑清单.md
+  layer: contract
+  status: current
+  answers: 做课窗口实测坑位（编码/合同/返工链/token）与每集开工前 Top5 自查、账单监测机制
 - path: 课程开发管线-分层架构.md
   layer: contract
   status: current

@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I scripts/context_depth_hook.py",
+            "timeout": 5,
+            "statusMessage": "Checking session depth (§12)"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I scripts/inject_visual_rules.py",
+            "timeout": 5,
+            "statusMessage": "Injecting visual hard rules"
+          }
+        ]
+      }
+    ]
+  }
+}

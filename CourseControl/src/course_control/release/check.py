@@ -19,6 +19,15 @@ PASS_WITH_EXEMPTION = "pass_with_exemption"
 FAIL = "fail"
 INCOMPLETE = "incomplete"
 EXEMPT = "exempt"
+# Warning-level anomalies (E5 token bill): printed and recorded, never a pass,
+# but deliberately non-blocking in the first round.  ``_overall`` ignores them.
+WARN = "warn"
+NOT_RUN = "not_run"
+
+# Cost-weighted baseline per lesson (协作协议 §12): in=1, cache write=1.25,
+# cache read=0.1, output=5.  The hard gate threshold awaits three measured
+# lessons and an owner decision; until then an over-baseline bill is a warning.
+TOKEN_BILL_BASELINE = 40_000_000
 
 
 @dataclass
@@ -44,6 +53,8 @@ def _now() -> str:
 
 
 def _overall(steps: list[Step]) -> str:
+    # WARN / NOT_RUN are warning-level anomalies: surfaced, never a pass, but
+    # not FAIL/INCOMPLETE/EXEMPT, so they do not block the overall verdict.
     if any(step.status == FAIL for step in steps):
         return FAIL
     if any(step.status == INCOMPLETE for step in steps):
@@ -672,6 +683,56 @@ def _lesson_approval_problems(paths: LessonPaths) -> list[str]:
     )
 
 
+def _token_bill_step(paths: LessonPaths) -> Step:
+    """Warning-level token budget gate (协作协议 §12 / E5).
+
+    Reads ``build/_logs/token-bill-<lesson>.json`` (written by
+    ``scripts/analyze_session_tokens.py --json``).  Over the cost-weighted
+    baseline without a ``token-bill-<lesson>-note.md`` explanation beside it ->
+    WARN; a missing or unreadable bill -> NOT_RUN.  Both are printed and never
+    counted as a pass, but neither blocks delivery in the first round: the step
+    is appended after the certificate is issued, so it stays out of the blocking
+    list, and ``_overall`` ignores WARN / NOT_RUN.  The hard threshold awaits
+    three measured lessons and an owner decision.
+    """
+    logs = paths.build_root.parent / "_logs"
+    bill_path = logs / f"token-bill-{paths.slug}.json"
+    note_path = logs / f"token-bill-{paths.slug}-note.md"
+    data = {"cost_weighted": None, "baseline": TOKEN_BILL_BASELINE}
+    if not bill_path.is_file():
+        return Step(
+            "token_bill", NOT_RUN,
+            f"missing {bill_path}; run analyze_session_tokens.py --json",
+            str(bill_path), data=data,
+        )
+    try:
+        bill = json.loads(bill_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return Step("token_bill", NOT_RUN, f"unreadable bill: {exc}", str(bill_path), data=data)
+    cost = bill.get("cost_weighted") if isinstance(bill, dict) else None
+    if not isinstance(cost, (int, float)):
+        return Step(
+            "token_bill", NOT_RUN, "bill has no numeric cost_weighted", str(bill_path), data=data
+        )
+    data = {
+        "cost_weighted": cost,
+        "baseline": TOKEN_BILL_BASELINE,
+        "api_calls": bill.get("api_calls"),
+    }
+    if cost > TOKEN_BILL_BASELINE:
+        if note_path.is_file():
+            return Step(
+                "token_bill", PASS,
+                f"{cost:,.0f} > baseline; explanation note recorded", str(bill_path), data=data,
+            )
+        return Step(
+            "token_bill", WARN,
+            f"{cost:,.0f} > {TOKEN_BILL_BASELINE:,} baseline; no {note_path.name}",
+            str(bill_path), data=data,
+        )
+    return Step("token_bill", PASS, f"{cost:,.0f} <= baseline", str(bill_path), data=data)
+
+
 def run_release_check(
     workspace: Path,
     *,
@@ -683,6 +744,9 @@ def run_release_check(
     approvals: list[str] = []
     if paths is not None:
         steps = _lesson_steps(workspace.resolve(), paths)
+        # Appended after the certificate is issued inside _lesson_steps, so the
+        # warning-level token bill stays out of the blocking list (E5).
+        steps.append(_token_bill_step(paths))
         subject = {"kind": "lesson", "id": paths.slug}
         approvals = _lesson_approval_problems(paths)
     elif topic_video is not None:
@@ -707,4 +771,7 @@ def run_release_check(
     }
 
 
-__all__ = ["FAIL", "INCOMPLETE", "PASS", "PASS_WITH_EXEMPTION", "Step", "run_release_check"]
+__all__ = [
+    "FAIL", "INCOMPLETE", "NOT_RUN", "PASS", "PASS_WITH_EXEMPTION", "WARN",
+    "Step", "TOKEN_BILL_BASELINE", "run_release_check",
+]

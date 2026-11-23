@@ -108,6 +108,7 @@ def _audit_lessons(workspace: Path, root: Path, result: AuditResult) -> None:
     the content audit answers what a lesson *is* and whether the human
     approvals still match it.
     """
+    from course_control.authoring.pipeline import approval_evidence_problems
     from course_control.content.paths import LessonPaths
     from course_control.content.validators import approval_problems
 
@@ -117,6 +118,7 @@ def _audit_lessons(workspace: Path, root: Path, result: AuditResult) -> None:
         return
     checked = 0
     failed = 0
+    warned = 0
     for lesson in sorted(lessons.iterdir()):
         if not lesson.is_dir() or not (lesson / "lesson.yaml").is_file():
             continue
@@ -143,9 +145,14 @@ def _audit_lessons(workspace: Path, root: Path, result: AuditResult) -> None:
         for problem in approval_problems(paths):
             failed += 1
             result.add("lessons", FAIL, f"{lesson.name}: {problem}")
+        # Provenance warnings: blocking under --strict (release), not during
+        # production, so legacy hand-written entries do not stall a build.
+        for problem in approval_evidence_problems(lesson):
+            warned += 1
+            result.add("lessons", WARN, f"{lesson.name}: {problem}")
     if checked == 0:
         result.add("lessons", WARN, "no lesson.yaml under lessons/")
-    elif failed == 0:
+    elif failed == 0 and warned == 0:
         result.add("lessons", PASS, f"{checked} lesson(s) have their source and approvals")
 
 

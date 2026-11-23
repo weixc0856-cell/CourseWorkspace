@@ -58,7 +58,9 @@ def _render_once(
         command += ["--fail-at", fail_at]
     result = run_command(
         command,
-        paths.engine_root("motion_canvas"),
+        # Execute from the engine HOME (scripts/ lives there); engine_root is
+        # where scenes live, which may be the content root with no scripts/.
+        paths.engine_home("motion_canvas"),
         timeout=resolve_timeout(paths, "render:motion_canvas"),
         log_path=log_dir / f"motion-canvas-{shot_id}-attempt{attempt}.log",
     )

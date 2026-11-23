@@ -18,7 +18,10 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 
 def get_workspace_root() -> Path:
@@ -82,6 +85,52 @@ def get_project_yaml_path(course_id: str = "automotive-aerodynamics", workspace:
     """Get the project.yaml path for a given course."""
     root = get_content_root(workspace)
     return root / "projects" / course_id / "project.yaml"
+
+
+def get_build_dir(lesson_slug: str, workspace: Optional[Path] = None) -> Path:
+    """Get the build directory for a specific lesson/episode under Content Root."""
+    root = get_content_root(workspace)
+    d = root / "build" / lesson_slug
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def get_deliver_dir(lesson_slug: str, workspace: Optional[Path] = None) -> Path:
+    """Get the deliver directory for a specific lesson/episode under Content Root."""
+    root = get_content_root(workspace)
+    d = root / "deliver" / lesson_slug
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def get_runtime_state_dir(workspace: Optional[Path] = None) -> Path:
+    """Get the runtime state directory under Content Root."""
+    root = get_content_root(workspace)
+    d = root / "runtime" / "state"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def get_pipeline_db_path(workspace: Optional[Path] = None) -> Path:
+    """Get the authoritative pipeline state database path under Content Root."""
+    state_dir = get_runtime_state_dir(workspace)
+    return state_dir / "aerodynamics_pipeline.db"
+
+
+def get_scientific_figures_dir(course_id: str = "automotive-aerodynamics", workspace: Optional[Path] = None) -> Path:
+    """Get the scientific figures project directory for a course under Content Root."""
+    root = get_content_root(workspace)
+    d = root / "projects" / course_id / "ScientificFigures"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def get_templates_dir(workspace: Optional[Path] = None) -> Path:
+    """Get the course templates directory under Content Root."""
+    root = get_content_root(workspace)
+    d = root / "templates"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 def check_and_ensure_junction(workspace: Optional[Path] = None) -> tuple[bool, str]:

@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-11-21",
+  "policy": "Bundled OFL 1.1 fonts only, loaded explicitly via @remotion/fonts loadFont (src/fonts/loadFonts.ts). No system font installation, no font modification, no silent fallback to system CJK faces (Microsoft YaHei is never referenced).",
+  "fonts": [
+    {
+      "family": "Noto Sans SC",
+      "note": "Google's distribution of Source Han Sans CN (same Adobe/Google typeface, same SIL OFL 1.1). Subtitle zh rendering uses the chinese-simplified 400 subset; Latin subsets are unicode-range scoped.",
+      "source": "@fontsource/noto-sans-sc@5.3.1 (redistributes google/fonts ofl/notosanssc)",
+      "upstream": "https://github.com/adobe-fonts/source-han-sans",
+      "license": {
+        "name": "SIL Open Font License 1.1",
+        "file": "LICENSE-NotoSansSC.txt",
+        "sha256": "1efbdc9cb2d98aaa844574b5123f8d5233532c214ba259e1536e1d5702d058a1"
+      },
+      "files": [
+        {
+          "file": "noto-sans-sc-chinese-simplified-400-normal.woff2",
+          "weight_class": 400,
+          "subset": "chinese-simplified",
+          "size_bytes": 1142552,
+          "sha256": "95e3633b6a98f764ba3adfb54504a0cd4799328c009adf9081d6c1850f9c4c78"
+        },
+        {
+          "file": "noto-sans-sc-latin-400-normal.woff2",
+          "weight_class": 400,
+          "subset": "latin",
+          "size_bytes": 13304,
+          "sha256": "2a75408e073f2d7e03e14c24f25fb093571b73a030f2f483ae256d6975e930d0"
+        },
+        {
+          "file": "noto-sans-sc-latin-600-normal.woff2",
+          "weight_class": 600,
+          "subset": "latin",
+          "size_bytes": 13272,
+          "sha256": "d1fffa4c12444d2e1bc5f6534825258c3b9ba81e275abb02f4e6c05f6d03eaa6"
+        },
+        {
+          "file": "noto-sans-sc-latin-700-normal.woff2",
+          "weight_class": 700,
+          "subset": "latin",
+          "size_bytes": 13416,
+          "sha256": "79a7c3f1ddff7c79ba3eff8556ee7acc7f3c95259f3982b34a711b6de5fbd6a7"
+        }
+      ]
+    },
+    {
+      "family": "Jost",
+      "note": "Display numerals only; never used for Chinese text.",
+      "source": "@fontsource/jost@5.3.0 (upstream indestructible-type/Jost)",
+      "license": {
+        "name": "SIL Open Font License 1.1",
+        "file": "LICENSE-Jost.txt",
+        "sha256": "997d734c0f6e0f4b14645c84fa021d2dccb337517a836a3e47e05b4f673343a2"
+      },
+      "files": [
+        {
+          "file": "jost-latin-200-normal.woff2",
+          "weight_class": 200,
+          "subset": "latin",
+          "size_bytes": 10200,
+          "sha256": "f2c361936b378eb30dcc3c81e2f71fe291c6b5a7e12881907740510c40262e0e"
+        },
+        {
+          "file": "jost-latin-300-normal.woff2",
+          "weight_class": 300,
+          "subset": "latin",
+          "size_bytes": 9876,
+          "sha256": "4755701d1a52180592b7619acd5f7f7852beb54adb7ee282ea8ad1d1bcfb2ae6"
+        },
+        {
+          "file": "jost-latin-700-normal.woff2",
+          "weight_class": 700,
+          "subset": "latin",
+          "size_bytes": 10520,
+          "sha256": "81da4d711250508c3f686d210ed07d5eb6229185d313fcc73fda7bf2b37d2ca5"
+        },
+        {
+          "file": "jost-latin-800-normal.woff2",
+          "weight_class": 800,
+          "subset": "latin",
+          "size_bytes": 10500,
+          "sha256": "37856c7d540426b536582fa551c6ff9b2479ae10752eb3e51741f9e4dd52ccd6"
+        },
+        {
+          "file": "jost-latin-900-normal.woff2",
+          "weight_class": 900,
+          "subset": "latin",
+          "size_bytes": 9964,
+          "sha256": "7e9acb6f0c11ec5d5b4e2220e20ce7bc8b780e33644f2e1a62c072241b862ca5"
+        }
+      ]
+    }
+  ]
+}

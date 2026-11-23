@@ -179,6 +179,11 @@ def cmd_clean_build(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    # Redirected stdout on Windows defaults to the ANSI codepage (GBK here);
+    # the status report prints bullets and en-dashes that it cannot encode.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="Course Production Pipeline CLI")
     parser.add_argument("--course", default="automotive-aerodynamics", help="Course ID")
     subparsers = parser.add_subparsers(dest="command")

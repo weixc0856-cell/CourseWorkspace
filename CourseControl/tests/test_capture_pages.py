@@ -45,6 +45,22 @@ class CapturePageCountTest(unittest.TestCase):
             encoding="utf-8",
         )
         self.paths = LessonPaths.load(self.ws, self.lesson)
+        (self.lesson / "authoring").mkdir(parents=True, exist_ok=True)
+        (self.lesson / "authoring" / "production.yaml").write_text(
+            "schema_version: 1\nlesson: demo\nsequences:\n"
+            "- id: seq_01\n  title: One\n  shots:\n"
+            "  - id: s01_01\n    duration_s: 8\n    purpose: explain\n"
+            "    visual_type: diagram_animated\n    grammar: long_take\n"
+            "    renderer: motion_canvas\n    source: demo/s01_01.tsx\n"
+            "- id: seq_02\n  title: Two\n  shots:\n"
+            "  - id: s02_01\n    duration_s: 8\n    purpose: explain\n"
+            "    visual_type: diagram_animated\n    grammar: long_take\n"
+            "    renderer: motion_canvas\n    source: demo/s02_01.tsx\n",
+            encoding="utf-8",
+        )
+        from course_control.rendering.deck_compiler import compile_deck
+
+        compile_deck(self.paths, font="default")
         self.manifest = self.paths.build_root / "slides" / "capture-manifest.json"
         self.manifest.parent.mkdir(parents=True, exist_ok=True)
 
@@ -96,6 +112,20 @@ class CapturePageCountTest(unittest.TestCase):
             outcome = slides.capture_slides(self.paths)
         self.assertEqual(outcome.status.value, "fail")
         self.assertTrue(outcome.errors)
+
+    def test_missing_compiled_deck_is_a_failure(self):
+        import shutil
+
+        shutil.rmtree(self.paths.build_root / "deck")
+        outcome = self._capture(total=2, captured=2)
+        self.assertEqual(outcome.status.value, "fail")
+        self.assertIn("deck-compile", " ".join(outcome.errors))
+
+    def test_stale_compiled_deck_is_a_failure(self):
+        self.slides_md.write_text("<h1>One</h1>\n---\n<h2>Two changed</h2>\n", encoding="utf-8")
+        outcome = self._capture(total=2, captured=2)
+        self.assertEqual(outcome.status.value, "fail")
+        self.assertIn("stale", " ".join(outcome.errors))
 
 
 if __name__ == "__main__":

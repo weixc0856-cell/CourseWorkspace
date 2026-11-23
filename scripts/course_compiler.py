@@ -134,7 +134,8 @@ class CourseCompiler:
 
 
 if __name__ == "__main__":
-    compiler = CourseCompiler(Path("shared/state/aerodynamics_pipeline.db"))
+    from resolve_paths import get_pipeline_db_path
+    compiler = CourseCompiler(get_pipeline_db_path())
     prompt = compiler.build_prompt_for_episode({
         "episode": "T1-01",
         "title": "Why Road Vehicles Are Fundamentally Bluff Body Problems",

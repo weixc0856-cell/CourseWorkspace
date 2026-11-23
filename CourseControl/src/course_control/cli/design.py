@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 
 from . import app
-from course_control.cli._common import _lesson_path
+from course_control.cli._common import _lesson_path, _paths
 
 
 @app.command("visual-design")
@@ -49,3 +49,27 @@ def visual_design_command(
         typer.echo(f"{name}: {path}")
     failed = document.errors > 0 or (strict and document.warnings > 0)
     raise typer.Exit(1 if failed else 0)
+
+
+@app.command("deck-compile")
+def deck_compile_command(
+    lesson: str = typer.Option(..., "--lesson"),
+    lesson_dir: Path | None = typer.Option(None, "--lesson-dir"),
+    workspace: Path = typer.Option(Path.cwd(), "--workspace"),
+) -> None:
+    """Compile production.yaml + slides.md into the static EVDS deck used by capture."""
+    from course_control.content.paths import ContractError
+    from course_control.rendering.deck_compiler import compile_deck
+
+    try:
+        paths = _paths(workspace, lesson, lesson_dir)
+        manifest = compile_deck(paths)
+    except (ContractError, ValueError, FileNotFoundError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"pages: {manifest['pages']}")
+    for page in manifest["archetypes"]:
+        typer.echo(f"  page {page['page']:02d}: {page['archetype']}")
+    typer.echo(f"assets: {len(manifest['assets_used'])}")
+    typer.echo(f"deck: {paths.build_root / 'deck' / 'index.html'}")

@@ -9,7 +9,7 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import yaml
@@ -521,6 +521,8 @@ def generate_content(
 
 # -- approval gate ---------------------------------------------------------
 
+APPROVAL_TOOL = "course-control author-accept"
+
 
 def approval_path(lesson_dir: Path) -> Path:
     return lesson_dir.resolve() / "authoring" / "approval.json"
@@ -560,6 +562,7 @@ def approve(
         sha256=_sha(target),
         approved_by=approved_by.strip(),
         approved_at=_now(),
+        tool=APPROVAL_TOOL,
     )
     approval.approvals.append(entry)
     save_approval(lesson_dir, approval)
@@ -581,6 +584,59 @@ def assert_approved(lesson_dir: Path, relative_path: str) -> None:
         )
     if entry.sha256 != _sha(target):
         raise AuthoringError(f"file changed after approval: {relative_path}")
+
+
+def _placeholder_timestamp(value: str) -> bool:
+    """Midnight-UTC stamps are the hand-written placeholder pattern (T1-01,
+    2026-11-21). Real approvals carry the local offset, so a genuine local
+    midnight is not flagged; an unreadable stamp is always a problem."""
+    try:
+        stamp = datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return True
+    if stamp.tzinfo is None:
+        return True
+    return (
+        stamp.hour == 0
+        and stamp.minute == 0
+        and stamp.second == 0
+        and stamp.microsecond == 0
+        and stamp.utcoffset() == timedelta(0)
+    )
+
+
+def approval_evidence_problems(lesson_dir: Path) -> list[str]:
+    """Provenance problems in the effective approval entries.
+
+    Only the latest entry per path is audited (find/get semantics); superseded
+    entries are history. A missing tool marker means the entry was not written
+    by author-accept. Reported by the content audit as warnings (blocking under
+    --strict); assert_approved's hash/name gate is deliberately unchanged so
+    in-flight production is not blocked by legacy entries.
+    """
+    if not approval_path(lesson_dir).is_file():
+        return []
+    try:
+        approval = load_approval(lesson_dir)
+    except Exception as exc:  # noqa: BLE001 - a broken file is a finding
+        return [f"cannot read approval file: {exc}"]
+    problems: list[str] = []
+    seen: set[str] = set()
+    for entry in reversed(approval.approvals):
+        if entry.path in seen:
+            continue
+        seen.add(entry.path)
+        if not entry.tool:
+            problems.append(
+                f"approval for {entry.path} has no tool provenance "
+                "(hand-written?); re-sign with course-control author-accept"
+            )
+        if _placeholder_timestamp(entry.approved_at):
+            problems.append(
+                f"approval for {entry.path} has a placeholder timestamp "
+                f"({entry.approved_at}); re-sign with course-control author-accept"
+            )
+    return problems
 
 
 SIGNOFF_KIND = "storyboard-page"
@@ -642,6 +698,20 @@ def sign_storyboard_page(
             "course plan/card/spec changed after the page was built; "
             "rebuild the page and review it"
         )
+
+    # The design-binding contract is defined against the production contract;
+    # legacy deck lessons without one stay on the prior sign-off path (the
+    # checks executor still queues them as not_run).
+    production_file = lesson_dir / (paths.lesson.production or "authoring/production.yaml")
+    if paths.lesson.compose.mode == "deck" and production_file.is_file():
+        from course_control.production.checks_deck_design import deck_design_problems
+
+        status, findings, _stats = deck_design_problems(lesson_dir, build_root_for(workspace, lesson_dir.name))
+        if status != "pass":
+            raise AuthoringError(
+                f"deck design binding blocked sign-off ({status}): "
+                + "; ".join(findings)
+            )
 
     decisions_path = page_dir / "decisions.json"
     if not decisions_path.is_file():
@@ -894,6 +964,9 @@ ACCEPTANCE_KINDS: dict[str, list[tuple[str, str]]] = {
         ("slides.md", "slides.md"),
         ("lecture_notes.md", "lecture_notes.md"),
         ("storyboard.yaml", "storyboard.yaml"),
+    ],
+    "production": [
+        ("production.yaml", "authoring/production.yaml"),
     ],
 }
 
